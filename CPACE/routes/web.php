@@ -26,4 +26,19 @@ Route::middleware('auth')->group(function () {
     Route::get('/adaptive-quizzes', function () {
         return view('adaptive-quizzes');
     })->name('adaptive-quizzes');
+    Route::get('/mock-exams', function () {
+        return view('mock-exams');
+    })->name('mock-exams');
+    Route::get('/performance', function () {
+        return view('performance');
+    })->name('performance');
+    Route::get('/review-notes', function () {
+        return view('review-notes');
+    })->name('review-notes');
+    Route::get('/calendar', function () {
+        return view('calendar');
+    })->name('calendar');
+    Route::get('/achievements', function () {
+        return view('achievements');
+    })->name('achievements');
 });

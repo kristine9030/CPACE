@@ -588,13 +588,13 @@
                 <li><a href="{{ route('dashboard') }}"><i class="fas fa-home"></i><span>Dashboard</span></a></li>
                 <li><a href="{{ route('subjects') }}" class="active"><i class="fas fa-book"></i><span>Subjects</span></a></li>
                 <li><a href="{{ route('adaptive-quizzes') }}"><i class="fas fa-brain"></i><span>Adaptive Quizzes</span></a></li>
-                <li><a href="#"><i class="fas fa-file-alt"></i><span>Mock Exams</span></a></li>
-                <li><a href="#"><i class="fas fa-chart-bar"></i><span>Performance</span></a></li>
-                <li><a href="#"><i class="fas fa-book-open"></i><span>Review Notes</span></a></li>
+                <li><a href="{{ route('mock-exams') }}"><i class="fas fa-file-alt"></i><span>Mock Exams</span></a></li>
+                <li><a href="{{ route('performance') }}"><i class="fas fa-chart-bar"></i><span>Performance</span></a></li>
+                <li><a href="{{ route('review-notes') }}"><i class="fas fa-book-open"></i><span>Review Notes</span></a></li>
                 <li><a href="#"><i class="fas fa-layer-group"></i><span>Flashcards</span></a></li>
-                <li><a href="#"><i class="fas fa-calendar-alt"></i><span>Calendar</span></a></li>
+                <li><a href="{{ route('calendar') }}"><i class="fas fa-calendar-alt"></i><span>Calendar</span></a></li>
                 <li><a href="#"><i class="fas fa-chart-line"></i><span>Progress</span></a></li>
-                <li><a href="#"><i class="fas fa-trophy"></i><span>Achievements</span></a></li>
+                <li><a href="{{ route('achievements') }}"><i class="fas fa-trophy"></i><span>Achievements</span></a></li>
                 <li><a href="#"><i class="fas fa-cog"></i><span>Settings</span></a></li>
             </nav>
 
