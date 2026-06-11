@@ -173,7 +173,7 @@
         /* ─── MAIN CONTENT ─── */
         .main-content {
             margin-left: 220px;
-            padding: 28px 32px;
+            padding: 30px 40px;
             min-height: 100vh;
             transition: margin-left 0.3s ease;
         }
@@ -748,44 +748,7 @@
 <body>
 
 <!-- ════════════════════════ SIDEBAR ════════════════════════ -->
-<aside class="sidebar" id="sidebar">
-    <div class="sidebar-logo">
-        <div class="logo-circle">
-            <i class="fas fa-shield-alt"></i>
-        </div>
-        <div class="logo-text">
-            <strong>CPACE</strong>
-            <small>CPA Reviewer</small>
-        </div>
-    </div>
-
-    <ul class="sidebar-nav">
-        <li><a href="{{ route('dashboard') }}" class="active"><i class="fas fa-home"></i><span>Dashboard</span></a></li>
-        <li><a href="{{ route('subjects') }}"><i class="fas fa-book-open"></i><span>Subjects</span></a></li>
-        <li><a href="{{ route('adaptive-quizzes') }}"><i class="fas fa-pen-fancy"></i><span>Quizzes</span></a></li>
-        <li><a href="{{ route('mock-exams') }}"><i class="fas fa-file-alt"></i><span>Mock Exams</span></a></li>
-        <li><a href="{{ route('performance') }}"><i class="fas fa-chart-bar"></i><span>Performance</span></a></li>
-        <li><a href="{{ route('review-notes') }}"><i class="fas fa-sticky-note"></i><span>Review Notes</span></a></li>
-        <li><a href="#"><i class="fas fa-layer-group"></i><span>Flashcards</span></a></li>
-        <li><a href="{{ route('calendar') }}"><i class="fas fa-calendar-alt"></i><span>Calendar</span></a></li>
-        <li><a href="#"><i class="fas fa-chart-line"></i><span>Progress</span></a></li>
-        <li><a href="{{ route('achievements') }}"><i class="fas fa-trophy"></i><span>Achievements</span></a></li>
-        <li><a href="#"><i class="fas fa-cog"></i><span>Settings</span></a></li>
-    </ul>
-
-    <div class="sidebar-footer">
-        <div class="user-profile">
-            <div class="avatar-sm">
-                {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}{{ strtoupper(substr(explode(' ', Auth::user()->name)[array_key_last(explode(' ', Auth::user()->name))], 0, 1)) }}
-            </div>
-            <div class="user-details">
-                <span class="uname">{{ Auth::user()->name }}</span>
-                <span class="urole">Reviewer</span>
-            </div>
-            <i class="fas fa-chevron-down chevron-icon" style="color:rgba(255,255,255,0.6); font-size:11px;"></i>
-        </div>
-    </div>
-</aside>
+@include('partials.sidebar', ['active' => 'dashboard'])
 
 <!-- ════════════════════════ MAIN CONTENT ════════════════════════ -->
 <main class="main-content">
@@ -806,10 +769,16 @@
             </div>
             <button class="notif-btn">
                 <i class="fas fa-bell"></i>
-                <span class="badge">3</span>
+                @if($unreadNotifications > 0)
+                    <span class="badge">{{ $unreadNotifications }}</span>
+                @endif
             </button>
             <div class="header-dropdown-wrap">
-                <button class="profile-avatar" id="profileBtn">KD</button>
+                @php
+                    $nameParts = preg_split('/\s+/', trim(Auth::user()->name));
+                    $initials = strtoupper(substr($nameParts[0], 0, 1) . (count($nameParts) > 1 ? substr(end($nameParts), 0, 1) : ''));
+                @endphp
+                <button class="profile-avatar" id="profileBtn">{{ $initials }}</button>
                 <div class="dropdown-menu" id="profileDropdown">
                     <a href="#"><i class="fas fa-user"></i> Profile Settings</a>
                     <a href="#"><i class="fas fa-chart-line"></i> My Progress</a>
@@ -830,7 +799,11 @@
             <p>Every day you study brings you closer to your goal.</p>
             <div class="exam-countdown">
                 <i class="fas fa-fire-alt"></i>
-                78 days until board exam
+                @if($daysToExam !== null)
+                    {{ $daysToExam }} {{ \Illuminate\Support\Str::plural('day', $daysToExam) }} until board exam
+                @else
+                    Set your exam target date to start the countdown
+                @endif
             </div>
         </div>
         <div class="welcome-illustration">
@@ -865,8 +838,8 @@
                 <div class="metric-icon-wrap red"><i class="fas fa-chart-area"></i></div>
             </div>
             <div class="metric-label">Board Readiness Score</div>
-            <div class="metric-number">78%</div>
-            <div class="metric-change"><i class="fas fa-arrow-up"></i> 5% from last week</div>
+            <div class="metric-number">{{ $readiness }}%</div>
+            <div class="metric-change neutral">Overall accuracy across all topics</div>
             <div class="metric-chart">
                 <svg class="sparkline" viewBox="0 0 100 36" preserveAspectRatio="none">
                     <defs>
@@ -887,8 +860,10 @@
                 <div class="metric-icon-wrap green"><i class="fas fa-clipboard-check"></i></div>
             </div>
             <div class="metric-label">Questions Answered</div>
-            <div class="metric-number">1,247</div>
-            <div class="metric-change"><i class="fas fa-arrow-up"></i> 128 this week</div>
+            <div class="metric-number">{{ number_format($questionsAnswered) }}</div>
+            <div class="metric-change {{ $questionsThisWeek > 0 ? '' : 'neutral' }}">
+                @if($questionsThisWeek > 0)<i class="fas fa-arrow-up"></i> {{ $questionsThisWeek }} this week @else No activity this week @endif
+            </div>
             <div class="metric-chart">
                 <svg class="sparkline" viewBox="0 0 100 36" preserveAspectRatio="none">
                     <rect x="2"  y="20" width="10" height="16" rx="2" fill="#10b981" opacity="0.5"/>
@@ -908,8 +883,10 @@
                 <div class="metric-icon-wrap blue"><i class="fas fa-clock"></i></div>
             </div>
             <div class="metric-label">Study Time</div>
-            <div class="metric-number">42h</div>
-            <div class="metric-change"><i class="fas fa-arrow-up"></i> 8h this week</div>
+            <div class="metric-number">{{ $studyHours }}h</div>
+            <div class="metric-change {{ $studyHoursWeek > 0 ? '' : 'neutral' }}">
+                @if($studyHoursWeek > 0)<i class="fas fa-arrow-up"></i> {{ $studyHoursWeek }}h this week @else No activity this week @endif
+            </div>
             <div class="metric-chart">
                 <svg class="sparkline" viewBox="0 0 100 36" preserveAspectRatio="none">
                     <rect x="2"  y="24" width="10" height="12" rx="2" fill="#3b82f6" opacity="0.5"/>
@@ -929,15 +906,17 @@
                 <div class="metric-icon-wrap orange"><i class="fas fa-fire"></i></div>
             </div>
             <div class="metric-label">Day Streak</div>
-            <div class="metric-number">14</div>
-            <div class="metric-change neutral">Keep it up!</div>
+            <div class="metric-number">{{ $streak }}</div>
+            <div class="metric-change neutral">{{ $streak > 0 ? 'Keep it up!' : 'Start a quiz to begin a streak' }}</div>
             <div class="metric-chart">
                 <div class="fire-row">
-                    <span class="fire-icon lit">&#128293;</span>
-                    <span class="fire-icon lit">&#128293;</span>
-                    <span class="fire-icon lit">&#128293;</span>
-                    <span class="fire-icon lit">&#128293;</span>
-                    <span class="fire-icon unlit"><i class="fas fa-fire" style="color:#e0e0e0;"></i></span>
+                    @for($i = 1; $i <= 5; $i++)
+                        @if($i <= min($streak, 5))
+                            <span class="fire-icon lit">&#128293;</span>
+                        @else
+                            <span class="fire-icon unlit"><i class="fas fa-fire" style="color:#e0e0e0;"></i></span>
+                        @endif
+                    @endfor
                 </div>
             </div>
         </div>
@@ -950,64 +929,44 @@
         <div class="card">
             <div class="card-header">
                 <span class="card-title">Subject Mastery</span>
+                <a class="card-link" href="{{ route('subjects') }}">View All</a>
             </div>
-            <div class="subject-item">
-                <div class="subject-icon s1"><i class="fas fa-book"></i></div>
-                <span class="subject-name">Financial Accounting &amp; Reporting</span>
-                <i class="fas fa-chevron-right subject-arrow"></i>
-            </div>
-            <div class="subject-item">
-                <div class="subject-icon s2"><i class="fas fa-search"></i></div>
-                <span class="subject-name">Auditing</span>
-                <i class="fas fa-chevron-right subject-arrow"></i>
-            </div>
-            <div class="subject-item">
-                <div class="subject-icon s3"><i class="fas fa-table"></i></div>
-                <span class="subject-name">Taxation</span>
-                <i class="fas fa-chevron-right subject-arrow"></i>
-            </div>
-            <div class="subject-item">
-                <div class="subject-icon s4"><i class="fas fa-users"></i></div>
-                <span class="subject-name">Management Services</span>
-                <i class="fas fa-chevron-right subject-arrow"></i>
-            </div>
-            <div class="subject-item">
-                <div class="subject-icon s5"><i class="fas fa-balance-scale"></i></div>
-                <span class="subject-name">Regulatory Framework</span>
-                <i class="fas fa-chevron-right subject-arrow"></i>
-            </div>
+            @php
+                $subjectIcons = [
+                    'FAR' => 'fa-book', 'AFAR' => 'fa-layer-group', 'MS' => 'fa-users',
+                    'TAX' => 'fa-table', 'AUD' => 'fa-search', 'RFBT' => 'fa-balance-scale',
+                ];
+            @endphp
+            @foreach($subjectMastery as $i => $subject)
+                <a href="{{ route('subjects') }}" class="subject-item" style="text-decoration:none;">
+                    <div class="subject-icon s{{ ($i % 5) + 1 }}"><i class="fas {{ $subjectIcons[$subject->code] ?? 'fa-book' }}"></i></div>
+                    <span class="subject-name">{{ $subject->name }}</span>
+                    <span style="font-size:13px; font-weight:600; color:var(--gray-700); margin-right:10px;">{{ $subject->mastery }}%</span>
+                    <i class="fas fa-chevron-right subject-arrow"></i>
+                </a>
+            @endforeach
         </div>
 
         <!-- Top Weaknesses -->
         <div class="card">
             <div class="card-header">
                 <span class="card-title">Top Weaknesses</span>
-                <a class="card-link" href="#">Focus Areas</a>
+                <a class="card-link" href="{{ route('performance') }}">Focus Areas</a>
             </div>
-            <div class="weakness-item">
-                <div class="weakness-num n1">1</div>
-                <div class="weakness-info">
-                    <div class="weakness-title">Estate Tax Computation</div>
-                    <div class="weakness-sub">Taxation</div>
+            @forelse($weaknesses as $i => $weakness)
+                <div class="weakness-item">
+                    <div class="weakness-num n{{ $i + 1 }}">{{ $i + 1 }}</div>
+                    <div class="weakness-info">
+                        <div class="weakness-title">{{ $weakness->topic }}</div>
+                        <div class="weakness-sub">{{ $weakness->subject_code }} &ndash; {{ round($weakness->accuracy_rate) }}% accuracy</div>
+                    </div>
+                    <i class="fas fa-chevron-right weakness-arrow"></i>
                 </div>
-                <i class="fas fa-chevron-right weakness-arrow"></i>
-            </div>
-            <div class="weakness-item">
-                <div class="weakness-num n2">2</div>
-                <div class="weakness-info">
-                    <div class="weakness-title">Revenue Recognition</div>
-                    <div class="weakness-sub">FAR &ndash; PFRS 15</div>
-                </div>
-                <i class="fas fa-chevron-right weakness-arrow"></i>
-            </div>
-            <div class="weakness-item">
-                <div class="weakness-num n3">3</div>
-                <div class="weakness-info">
-                    <div class="weakness-title">Audit Sampling</div>
-                    <div class="weakness-sub">Auditing &ndash; PSA 530</div>
-                </div>
-                <i class="fas fa-chevron-right weakness-arrow"></i>
-            </div>
+            @empty
+                <p style="font-size:13px; color:var(--gray-500); padding:14px 0;">
+                    No weak areas detected yet. Take a few quizzes and your focus areas will appear here.
+                </p>
+            @endforelse
         </div>
 
         <!-- RIGHT PANEL -->
@@ -1020,14 +979,15 @@
                 </div>
                 <div class="progress-wrap">
                     <div class="progress-circle-container">
+                        @php $circumference = 2 * pi() * 42; $filled = round($circumference * $readiness / 100, 1); @endphp
                         <svg viewBox="0 0 100 100">
                             <circle cx="50" cy="50" r="42" fill="none" stroke="#f0c9c9" stroke-width="9"/>
                             <circle cx="50" cy="50" r="42" fill="none" stroke="#7B1D1D" stroke-width="9"
-                                    stroke-dasharray="205.8 263.9" stroke-linecap="round"/>
+                                    stroke-dasharray="{{ $filled }} {{ round($circumference, 1) }}" stroke-linecap="round"/>
                         </svg>
                         <div class="progress-inner">
-                            <div class="progress-pct">78%</div>
-                            <div class="progress-lbl">Complete</div>
+                            <div class="progress-pct">{{ $readiness }}%</div>
+                            <div class="progress-lbl">Ready</div>
                         </div>
                     </div>
                     <div class="progress-legend">
@@ -1035,27 +995,40 @@
                         <span><span class="legend-dot left"></span>Remaining</span>
                     </div>
                 </div>
-                <a href="#" class="quick-btn primary">Start Quick Quiz &rarr;</a>
-                <a href="#" class="quick-btn outline">Continue Last Session</a>
+                <a href="{{ route('adaptive-quizzes') }}" class="quick-btn primary">Start Quick Quiz &rarr;</a>
+                <a href="{{ route('mock-exams') }}" class="quick-btn outline">Take a Mock Exam</a>
             </div>
 
             <!-- Recent Activity -->
             <div class="card">
                 <div class="card-header">
                     <span class="card-title">Recent Activity</span>
-                    <a class="card-link" href="#">View All</a>
+                    <a class="card-link" href="{{ route('performance') }}">View All</a>
                 </div>
-                <div class="activity-item">
-                    <div class="activity-icon quiz"><i class="fas fa-clipboard-list"></i></div>
-                    <div class="activity-info">
-                        <div class="activity-name">Adaptive Quiz &ndash; FAR</div>
-                        <div class="activity-meta">20 Questions &bull; Score: 85%</div>
+                @php
+                    $sessionLabels = [
+                        'training' => 'Training Quiz', 'testing' => 'Adaptive Quiz',
+                        'mock_exam' => 'Mock Exam', 'spaced_review' => 'Spaced Review',
+                    ];
+                @endphp
+                @forelse($recentActivity as $activity)
+                    <div class="activity-item">
+                        <div class="activity-icon quiz"><i class="fas fa-clipboard-list"></i></div>
+                        <div class="activity-info">
+                            <div class="activity-name">{{ $sessionLabels[$activity->session_type] ?? 'Quiz' }}@if($activity->subject_code) &ndash; {{ $activity->subject_code }}@endif</div>
+                            <div class="activity-meta">
+                                {{ $activity->total_items }} Questions
+                                @if($activity->score_percent !== null) &bull; Score: {{ round($activity->score_percent) }}% @endif
+                            </div>
+                        </div>
+                        <div class="activity-right">
+                            <div class="activity-time">{{ \Illuminate\Support\Carbon::parse($activity->started_at)->diffForHumans(null, true) }} ago</div>
+                            <div class="activity-chevron"><i class="fas fa-chevron-right"></i></div>
+                        </div>
                     </div>
-                    <div class="activity-right">
-                        <div class="activity-time">2h ago</div>
-                        <div class="activity-chevron"><i class="fas fa-chevron-right"></i></div>
-                    </div>
-                </div>
+                @empty
+                    <p style="font-size:13px; color:var(--gray-500); padding:10px 0;">No recent activity yet.</p>
+                @endforelse
             </div>
         </div>
     </div>
@@ -1067,10 +1040,10 @@
             <div>
                 <div class="streak-title">Study Streak</div>
                 <div class="streak-num-row">
-                    <span class="streak-num">14</span>
-                    <span class="streak-unit">days</span>
+                    <span class="streak-num">{{ $streak }}</span>
+                    <span class="streak-unit">{{ \Illuminate\Support\Str::plural('day', $streak) }}</span>
                 </div>
-                <div class="streak-sub">Keep the momentum going!</div>
+                <div class="streak-sub">{{ $streak > 0 ? 'Keep the momentum going!' : 'Study today to start your streak.' }}</div>
             </div>
             <div style="font-size:72px; opacity:0.35; user-select:none;">&#128197;&#127807;</div>
         </div>

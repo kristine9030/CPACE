@@ -803,47 +803,7 @@
 <body>
     <div class="dashboard-container">
         <!-- SIDEBAR -->
-        <aside class="sidebar" id="sidebar">
-            <div class="sidebar-logo">
-                <div class="logo-circle" style="width:44px;height:44px;background:rgba(255,255,255,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;border:2px solid rgba(255,255,255,0.3);"><i class="fas fa-shield-alt"></i></div>
-                <div class="sidebar-logo-text">
-                    <strong>CPACE</strong>
-                    <small>CPA Reviewer</small>
-                </div>
-            </div>
-
-            <nav class="sidebar-nav">
-                <li><a href="{{ route('dashboard') }}"><i class="fas fa-home"></i><span>Dashboard</span></a></li>
-                <li><a href="{{ route('subjects') }}"><i class="fas fa-book"></i><span>Subjects</span></a></li>
-                <li><a href="{{ route('adaptive-quizzes') }}" class="active"><i class="fas fa-brain"></i><span>Quizzes</span></a></li>
-                <li><a href="{{ route('mock-exams') }}"><i class="fas fa-file-alt"></i><span>Mock Exams</span></a></li>
-                <li><a href="{{ route('performance') }}"><i class="fas fa-chart-line"></i><span>Performance</span></a></li>
-                <li><a href="{{ route('review-notes') }}"><i class="fas fa-sticky-note"></i><span>Review Notes</span></a></li>
-                <li><a href="#"><i class="fas fa-layer-group"></i><span>Flashcards</span></a></li>
-                <li><a href="{{ route('calendar') }}"><i class="fas fa-calendar-alt"></i><span>Calendar</span></a></li>
-                <li><a href="#"><i class="fas fa-chart-bar"></i><span>Progress</span></a></li>
-                <li><a href="{{ route('achievements') }}"><i class="fas fa-trophy"></i><span>Achievements</span></a></li>
-                <li><a href="#"><i class="fas fa-cog"></i><span>Settings</span></a></li>
-            </nav>
-
-            <div class="sidebar-challenge">
-                <div class="challenge-box">
-                    <p>Need a challenge?</p>
-                    <p style="margin-bottom: 12px; font-size: 14px; font-weight: 700;">Try a Mock Exam</p>
-                    <a href="#"><i class="fas fa-arrow-right"></i> Go to Mock Exams</a>
-                </div>
-            </div>
-
-            <div class="sidebar-footer">
-                <div class="user-avatar">
-                    <div class="avatar-circle">{{ strtoupper(substr(Auth::user()->name, 0, 1)) }}{{ strtoupper(substr(explode(' ', Auth::user()->name)[array_key_last(explode(' ', Auth::user()->name))], 0, 1)) }}</div>
-                    <div class="user-info-sidebar">
-                        <span class="name">{{ Auth::user()->name }}</span>
-                        <span class="role">Reviewer</span>
-                    </div>
-                </div>
-            </div>
-        </aside>
+        @include('partials.sidebar', ['active' => 'quizzes'])
 
         <!-- MAIN CONTENT -->
         <main class="main-content">
@@ -905,44 +865,33 @@
                 <div>
                     <div class="page-section">
                         <div class="section-title">Select Subject Area</div>
-                        <div class="section-subtitle">Choose a CPALE subject to begin your adaptive quiz.</div>
+                        <div class="section-subtitle">Choose a CPALE subject to begin your quiz.</div>
+                        @if(session('error'))
+                            <div style="background:#fee2e2;color:#b91c1c;padding:12px 18px;border-radius:10px;margin-bottom:18px;font-size:13px;font-weight:600;">
+                                <i class="fas fa-exclamation-circle"></i> {{ session('error') }}
+                            </div>
+                        @endif
+                        @php
+                            $subjectIcons = [
+                                'FAR' => ['fa-chart-line', '#4A90E2'], 'AFAR' => ['fa-coins', '#17A2B8'],
+                                'MS' => ['fa-gears', '#F39C12'], 'TAX' => ['fa-file-invoice-dollar', '#27AE60'],
+                                'AUD' => ['fa-magnifying-glass', '#c0392b'], 'RFBT' => ['fa-scale-balanced', '#9B59B6'],
+                            ];
+                        @endphp
                         <div class="subject-grid">
-                            <div class="subject-select-card">
-                                <div class="subject-select-icon" style="color: #c0392b;">ðŸ”</div>
-                                <div class="subject-select-name">AUD</div>
-                                <div class="subject-select-full">Auditing and Attestation</div>
-                                <div class="questions-count">1,234 Questions</div>
-                            </div>
-                            <div class="subject-select-card">
-                                <div class="subject-select-icon" style="color: #27AE60;">ðŸ“Š</div>
-                                <div class="subject-select-name">TAX</div>
-                                <div class="subject-select-full">Taxation</div>
-                                <div class="questions-count">1,456 Questions</div>
-                            </div>
-                            <div class="subject-select-card">
-                                <div class="subject-select-icon" style="color: #F39C12;">âš™ï¸</div>
-                                <div class="subject-select-name">MS</div>
-                                <div class="subject-select-full">Management Services</div>
-                                <div class="questions-count">987 Questions</div>
-                            </div>
-                            <div class="subject-select-card">
-                                <div class="subject-select-icon" style="color: #4A90E2;">ðŸ“ˆ</div>
-                                <div class="subject-select-name">FAR</div>
-                                <div class="subject-select-full">Financial Accounting and Reporting</div>
-                                <div class="questions-count">1,789 Questions</div>
-                            </div>
-                            <div class="subject-select-card">
-                                <div class="subject-select-icon" style="color: #9B59B6;">âš–ï¸</div>
-                                <div class="subject-select-name">RFBT</div>
-                                <div class="subject-select-full">Regulatory Framework for Business</div>
-                                <div class="questions-count">1,123 Questions</div>
-                            </div>
-                            <div class="subject-select-card">
-                                <div class="subject-select-icon" style="color: #17A2B8;">ðŸ’°</div>
-                                <div class="subject-select-name">AFAR</div>
-                                <div class="subject-select-full">Advanced Financial Accounting and Reporting</div>
-                                <div class="questions-count">1,034 Questions</div>
-                            </div>
+                            @foreach($subjects as $subject)
+                                @php [$icon, $color] = $subjectIcons[$subject->code] ?? ['fa-book', '#7B1D1D']; @endphp
+                                <form method="POST" action="{{ route('quiz.start') }}">
+                                    @csrf
+                                    <input type="hidden" name="subject_id" value="{{ $subject->id }}">
+                                    <button type="submit" class="subject-select-card" style="display:block;width:100%;text-align:center;cursor:pointer;{{ $subject->question_count === 0 ? 'opacity:.55;cursor:not-allowed;' : '' }}" {{ $subject->question_count === 0 ? 'disabled' : '' }}>
+                                        <div class="subject-select-icon" style="color: {{ $color }};"><i class="fas {{ $icon }}"></i></div>
+                                        <div class="subject-select-name">{{ $subject->code }}</div>
+                                        <div class="subject-select-full">{{ $subject->name }}</div>
+                                        <div class="questions-count">{{ number_format($subject->question_count) }} Questions</div>
+                                    </button>
+                                </form>
+                            @endforeach
                         </div>
                     </div>
                 </div>
@@ -953,7 +902,7 @@
 
                     <div class="mastery-circle">
                         <div class="mastery-circle-inner">
-                            <div class="mastery-percentage">72%</div>
+                            <div class="mastery-percentage">{{ $accuracy }}%</div>
                             <div class="mastery-label">Overall Mastery</div>
                         </div>
                     </div>
@@ -976,16 +925,12 @@
 
                     <div class="stats-grid-sidebar">
                         <div class="stat-box">
-                            <div class="stat-box-value">346</div>
-                            <div class="stat-box-label">Total Questions</div>
+                            <div class="stat-box-value">{{ number_format($totalAnswered) }}</div>
+                            <div class="stat-box-label">Questions Answered</div>
                         </div>
                         <div class="stat-box">
-                            <div class="stat-box-value">68%</div>
+                            <div class="stat-box-value">{{ $accuracy }}%</div>
                             <div class="stat-box-label">Accuracy</div>
-                        </div>
-                        <div class="stat-box" style="grid-column: 1 / -1;">
-                            <div class="stat-box-value improvement">+12% <i class="fas fa-arrow-up"></i></div>
-                            <div class="stat-box-label">Improvement</div>
                         </div>
                     </div>
                 </div>
@@ -995,67 +940,30 @@
             <div class="page-section">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
                     <div>
-                        <div class="section-title">Continue Where You Left Off</div>
-                        <div class="section-subtitle">Pick up your last adaptive quizzes.</div>
+                        <div class="section-title">Your Recent Quizzes</div>
+                        <div class="section-subtitle">Review the quizzes you have completed.</div>
                     </div>
-                    <a href="#" style="color: #c0392b; font-size: 12px; font-weight: 600; text-decoration: none;">View All</a>
                 </div>
                 <div class="continue-grid">
-                    <div class="continue-card">
-                        <div class="continue-header">
-                            <div class="continue-icon" style="background: #ffe8e8; color: #c0392b;"><i class="fas fa-file-alt"></i></div>
-                            <div>
-                                <div class="continue-title">FAR Adaptive Quiz</div>
-                                <div class="continue-type">Adaptive Mode</div>
+                    @forelse($recentSessions as $rs)
+                        <div class="continue-card">
+                            <div class="continue-header">
+                                <div class="continue-icon" style="background: #ffe8e8; color: #c0392b;"><i class="fas fa-file-alt"></i></div>
+                                <div>
+                                    <div class="continue-title">{{ $rs->subject->code ?? 'Quiz' }} Quiz</div>
+                                    <div class="continue-type">Score: {{ (int) round($rs->score_percent) }}% &bull; {{ $rs->correct_answers }}/{{ $rs->total_items }}</div>
+                                </div>
+                            </div>
+                            <div class="continue-footer">
+                                <span class="continue-timestamp">{{ \Illuminate\Support\Carbon::parse($rs->completed_at)->diffForHumans() }}</span>
+                                <a href="{{ route('quiz.results', $rs->id) }}" class="continue-btn">View Results</a>
                             </div>
                         </div>
-                        <div class="continue-footer">
-                            <span class="continue-timestamp">Last played: 2h ago</span>
-                            <a href="#" class="continue-btn">Continue</a>
+                    @empty
+                        <div class="continue-card" style="grid-column:1/-1;text-align:center;color:#999;">
+                            You haven't completed any quizzes yet. Pick a subject above to start your first one!
                         </div>
-                    </div>
-
-                    <div class="continue-card">
-                        <div class="continue-header">
-                            <div class="continue-icon" style="background: #e8f5e9; color: #27AE60;"><i class="fas fa-list-check"></i></div>
-                            <div>
-                                <div class="continue-title">TAX Topic Quiz</div>
-                                <div class="continue-type">Topic Mode</div>
-                            </div>
-                        </div>
-                        <div class="continue-footer">
-                            <span class="continue-timestamp">Last played: 1d ago</span>
-                            <a href="#" class="continue-btn">Continue</a>
-                        </div>
-                    </div>
-
-                    <div class="continue-card">
-                        <div class="continue-header">
-                            <div class="continue-icon" style="background: #e3f2fd; color: #4A90E2;"><i class="fas fa-hourglass-end"></i></div>
-                            <div>
-                                <div class="continue-title">AUD Adaptive Quiz</div>
-                                <div class="continue-type">Adaptive Mode</div>
-                            </div>
-                        </div>
-                        <div class="continue-footer">
-                            <span class="continue-timestamp">Last played: 2d ago</span>
-                            <a href="#" class="continue-btn">Continue</a>
-                        </div>
-                    </div>
-
-                    <div class="continue-card">
-                        <div class="continue-header">
-                            <div class="continue-icon" style="background: #fff3e0; color: #F39C12;"><i class="fas fa-history"></i></div>
-                            <div>
-                                <div class="continue-title">MS Timed Quiz</div>
-                                <div class="continue-type">Timed Mode</div>
-                            </div>
-                        </div>
-                        <div class="continue-footer">
-                            <span class="continue-timestamp">Last played: 3d ago</span>
-                            <a href="#" class="continue-btn">Continue</a>
-                        </div>
-                    </div>
+                    @endforelse
                 </div>
             </div>
 
@@ -1113,4 +1021,5 @@
     </script>
 </body>
 </html>
+
 

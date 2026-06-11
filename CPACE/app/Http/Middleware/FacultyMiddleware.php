@@ -10,7 +10,7 @@ class FacultyMiddleware
 {
     public function handle(Request $request, Closure $next): Response
     {
-        if (!$request->user() || $request->user()->role !== 'faculty') {
+        if (!$request->user() || !$request->user()->isFaculty()) {
             abort(403, 'Access denied. Faculty only.');
         }
 

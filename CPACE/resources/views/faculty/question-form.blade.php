@@ -197,8 +197,28 @@
         </div>
     </div>
 
-    <form action="#" method="POST" id="questionForm">
+    <form action="{{ $editMode ? route('faculty.question.update', $question->id) : route('faculty.question.store') }}" method="POST" id="questionForm">
         @csrf
+        @if($editMode) @method('PUT') @endif
+
+        @if($errors->any())
+            <div style="background:#fde8e8;color:var(--accent);padding:12px 18px;border-radius:10px;margin-bottom:18px;font-size:13px;">
+                <strong><i class="fas fa-exclamation-circle"></i> Please fix the following:</strong>
+                <ul style="margin:6px 0 0 18px;">
+                    @foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach
+                </ul>
+            </div>
+        @endif
+
+        @php
+            $choicesByLabel = $editMode ? $question->choices->keyBy('choice_label') : collect();
+            $diffEnumToLabel = ['easy' => 'Easy', 'moderate' => 'Medium', 'difficult' => 'Hard'];
+            $curType = old('question_type', $editMode ? $question->question_type : 'mcq');
+            $curDiff = old('difficulty', $editMode ? ($diffEnumToLabel[$question->difficulty] ?? 'Medium') : 'Medium');
+            $tfCorrect = $editMode && $question->question_type === 'true_false'
+                ? optional($question->choices->firstWhere('is_correct', true))->choice_text
+                : null;
+        @endphp
         <div class="form-layout a1">
             <!-- LEFT — MAIN FORM -->
             <div>
@@ -207,23 +227,22 @@
                     <div class="card-title"><i class="fas fa-question-circle"></i> Question</div>
                     <div class="form-group">
                         <label>Question Text <span class="req">*</span></label>
-                        <textarea name="question_text" placeholder="Enter the full question here..." id="questionText">{{ isset($editMode) ? 'Under PFRS 15, revenue is recognized when or as performance obligations are satisfied. Which of the following best describes when a performance obligation is satisfied?' : '' }}</textarea>
+                        <textarea name="question_text" placeholder="Enter the full question here..." id="questionText">{{ old('question_text', $editMode ? $question->question_text : '') }}</textarea>
                     </div>
                     <div class="form-row">
                         <div class="form-group">
                             <label>Question Type <span class="req">*</span></label>
-                            <select name="type" id="questionType" onchange="handleTypeChange(this.value)">
-                                <option value="mcq" {{ !isset($editMode) ? 'selected' : '' }}>Multiple Choice (MCQ)</option>
-                                <option value="tf">True / False</option>
-                                <option value="id">Identification</option>
+                            <select name="question_type" id="questionType" onchange="handleTypeChange(this.value)">
+                                <option value="mcq" {{ $curType === 'mcq' ? 'selected' : '' }}>Multiple Choice (MCQ)</option>
+                                <option value="true_false" {{ $curType === 'true_false' ? 'selected' : '' }}>True / False</option>
                             </select>
                         </div>
                         <div class="form-group">
                             <label>Difficulty <span class="req">*</span></label>
                             <select name="difficulty">
-                                <option>Easy</option>
-                                <option selected>Medium</option>
-                                <option>Hard</option>
+                                <option {{ $curDiff === 'Easy' ? 'selected' : '' }}>Easy</option>
+                                <option {{ $curDiff === 'Medium' ? 'selected' : '' }}>Medium</option>
+                                <option {{ $curDiff === 'Hard' ? 'selected' : '' }}>Hard</option>
                             </select>
                         </div>
                     </div>
@@ -234,30 +253,15 @@
                     <div class="card-title"><i class="fas fa-list-ul"></i> Answer Choices</div>
                     <p style="font-size:12px;color:#aaa;margin-bottom:14px;">Select the radio button next to the correct answer.</p>
                     <div class="choices-list">
+                        @foreach(['a' => 'A', 'b' => 'B', 'c' => 'C', 'd' => 'D'] as $key => $label)
+                        @php $choice = $choicesByLabel[$label] ?? null; @endphp
                         <div class="choice-item">
-                            <div class="choice-letter cl-a">A</div>
-                            <input type="text" name="choice_a" placeholder="Choice A" value="{{ isset($editMode) ? 'When the customer pays for the good or service' : '' }}">
-                            <input type="radio" class="choice-radio" name="correct_answer" value="a" title="Mark as correct">
+                            <div class="choice-letter cl-{{ $key }}">{{ $label }}</div>
+                            <input type="text" name="choice_{{ $key }}" placeholder="Choice {{ $label }}" value="{{ old('choice_'.$key, $choice->choice_text ?? '') }}">
+                            <input type="radio" class="choice-radio" name="correct_answer" value="{{ $key }}" {{ old('correct_answer', optional($choice)->is_correct ? $key : '') === $key ? 'checked' : '' }} title="Mark as correct">
                             <span class="correct-label">Correct</span>
                         </div>
-                        <div class="choice-item">
-                            <div class="choice-letter cl-b">B</div>
-                            <input type="text" name="choice_b" placeholder="Choice B" value="{{ isset($editMode) ? 'When the contract is signed by both parties' : '' }}">
-                            <input type="radio" class="choice-radio" name="correct_answer" value="b">
-                            <span class="correct-label">Correct</span>
-                        </div>
-                        <div class="choice-item">
-                            <div class="choice-letter cl-c">C</div>
-                            <input type="text" name="choice_c" placeholder="Choice C" value="{{ isset($editMode) ? 'When the entity transfers control of a promised good or service' : '' }}">
-                            <input type="radio" class="choice-radio" name="correct_answer" value="c" checked>
-                            <span class="correct-label">Correct</span>
-                        </div>
-                        <div class="choice-item">
-                            <div class="choice-letter cl-d">D</div>
-                            <input type="text" name="choice_d" placeholder="Choice D" value="{{ isset($editMode) ? 'When the invoice is issued to the customer' : '' }}">
-                            <input type="radio" class="choice-radio" name="correct_answer" value="d">
-                            <span class="correct-label">Correct</span>
-                        </div>
+                        @endforeach
                     </div>
                 </div>
 
@@ -265,18 +269,8 @@
                 <div class="card" id="tfSection" style="display:none;">
                     <div class="card-title"><i class="fas fa-check-square"></i> True / False Answer</div>
                     <div class="radio-group">
-                        <label class="radio-option"><input type="radio" name="tf_answer" value="true"><span>True</span></label>
-                        <label class="radio-option"><input type="radio" name="tf_answer" value="false"><span>False</span></label>
-                    </div>
-                </div>
-
-                <!-- IDENTIFICATION (hidden by default) -->
-                <div class="card" id="idSection" style="display:none;">
-                    <div class="card-title"><i class="fas fa-pen"></i> Correct Answer</div>
-                    <div class="form-group">
-                        <label>Expected Answer <span class="req">*</span></label>
-                        <input type="text" name="id_answer" placeholder="Enter the correct answer keyword or phrase">
-                        <div class="help-tip">The system will check for this exact phrase (case-insensitive).</div>
+                        <label class="radio-option"><input type="radio" name="tf_answer" value="true" {{ old('tf_answer', $tfCorrect === 'True' ? 'true' : '') === 'true' ? 'checked' : '' }}><span>True</span></label>
+                        <label class="radio-option"><input type="radio" name="tf_answer" value="false" {{ old('tf_answer', $tfCorrect === 'False' ? 'false' : '') === 'false' ? 'checked' : '' }}><span>False</span></label>
                     </div>
                 </div>
 
@@ -285,7 +279,7 @@
                     <div class="card-title"><i class="fas fa-lightbulb"></i> Explanation / Rationale</div>
                     <div class="form-group">
                         <label>Explanation <span style="font-size:11px;color:#aaa;">(shown after answering)</span></label>
-                        <textarea name="explanation" placeholder="Explain why the correct answer is correct. This helps students understand the concept." style="min-height:90px;">{{ isset($editMode) ? 'Under PFRS 15, an entity satisfies a performance obligation by transferring a promised good or service to a customer. A good or service is transferred when (or as) the customer obtains control of that asset.' : '' }}</textarea>
+                        <textarea name="explanation" placeholder="Explain why the correct answer is correct. This helps students understand the concept." style="min-height:90px;">{{ old('explanation', $editMode ? $question->explanation : '') }}</textarea>
                     </div>
                 </div>
             </div>
@@ -299,11 +293,12 @@
                         <div class="toggle-row">
                             <span style="font-size:13px;color:#555;">Status</span>
                             <div class="toggle-wrap">
+                                @php $isActive = old('is_active', $editMode ? $question->is_active : true); @endphp
                                 <label class="toggle">
-                                    <input type="checkbox" name="is_active" checked id="statusToggle">
+                                    <input type="checkbox" name="is_active" value="1" {{ $isActive ? 'checked' : '' }} id="statusToggle">
                                     <span class="toggle-slider"></span>
                                 </label>
-                                <span class="toggle-lbl" id="statusLabel">Active</span>
+                                <span class="toggle-lbl" id="statusLabel">{{ $isActive ? 'Active' : 'Draft' }}</span>
                             </div>
                         </div>
                         <div class="help-tip" style="margin-top:6px;">Active questions appear in quizzes and exams.</div>
@@ -321,28 +316,21 @@
                 <!-- CLASSIFICATION -->
                 <div class="side-card">
                     <div class="side-title">Classification</div>
+                    @php $selectedTopic = old('topic_id', $editMode ? $question->topic_id : ''); @endphp
                     <div class="meta-item">
                         <label>Subject <span class="req">*</span></label>
-                        <select name="subject" id="subjectSelect" onchange="loadTopics(this.value)">
+                        <select id="subjectSelect" onchange="loadTopics(this.value)">
                             <option value="">Select Subject</option>
-                            <option value="far" {{ isset($editMode) ? 'selected' : '' }}>FAR – Financial Accounting &amp; Reporting</option>
-                            <option value="aud">AUD – Auditing</option>
-                            <option value="tax">TAX – Taxation</option>
-                            <option value="ms">MS – Management Services</option>
-                            <option value="rfbt">RFBT – Regulatory Framework</option>
-                            <option value="afar">AFAR – Advanced Financial Accounting</option>
+                            @foreach($subjects as $subject)
+                                <option value="{{ $subject->id }}" {{ (string) old('subject', $editMode ? $currentSubject : '') === (string) $subject->id ? 'selected' : '' }}>{{ $subject->code }} – {{ $subject->name }}</option>
+                            @endforeach
                         </select>
                     </div>
                     <div class="meta-item">
-                        <label>Topic</label>
-                        <select name="topic" id="topicSelect">
+                        <label>Topic <span class="req">*</span></label>
+                        <select name="topic_id" id="topicSelect" data-selected="{{ $selectedTopic }}">
                             <option value="">Select Subject First</option>
-                            <option value="revenue" {{ isset($editMode) ? 'selected' : '' }}>Revenue Recognition</option>
                         </select>
-                    </div>
-                    <div class="meta-item">
-                        <label>Tags <span style="font-size:11px;color:#aaa;">(optional, comma-separated)</span></label>
-                        <input type="text" name="tags" placeholder="e.g. pfrs15, revenue, control" value="{{ isset($editMode) ? 'pfrs15, revenue recognition, control' : '' }}">
                     </div>
                 </div>
 
@@ -413,29 +401,28 @@ document.addEventListener('DOMContentLoaded', () => {
     const toggle = document.getElementById('statusToggle');
     const lbl = document.getElementById('statusLabel');
     if (toggle) toggle.addEventListener('change', function() { lbl.textContent = this.checked ? 'Active' : 'Draft'; });
+
+    // Initialise type sections and topic dropdown from current values.
+    handleTypeChange(document.getElementById('questionType').value);
+    loadTopics(document.getElementById('subjectSelect').value);
 });
 
 function handleTypeChange(type) {
     document.getElementById('mcqSection').style.display = type === 'mcq' ? 'block' : 'none';
-    document.getElementById('tfSection').style.display  = type === 'tf'  ? 'block' : 'none';
-    document.getElementById('idSection').style.display  = type === 'id'  ? 'block' : 'none';
+    document.getElementById('tfSection').style.display  = type === 'true_false' ? 'block' : 'none';
 }
 
-const topicMap = {
-    far:  ['Revenue Recognition','Financial Instruments','Inventory','Property, Plant & Equipment','Leases','Business Combinations'],
-    aud:  ['Audit Risk','Internal Controls','Audit Evidence','Audit Reports','Professional Ethics'],
-    tax:  ['Income Tax','VAT','Estate Tax','Donor\'s Tax','Business Taxes'],
-    ms:   ['Cost Accounting','Capital Budgeting','Macroeconomics','Financial Management'],
-    rfbt: ['Contracts','Business Organizations','Taxation Law','Securities Regulation'],
-    afar: ['Leases','Derivatives','Foreign Currency','Partnership Accounting'],
-};
-function loadTopics(subject) {
+const topicMap = @json($subjects->mapWithKeys(fn($s) => [$s->id => $s->topics->map(fn($t) => ['id' => $t->id, 'name' => $t->name])->values()]));
+
+function loadTopics(subjectId) {
     const sel = document.getElementById('topicSelect');
+    const preselect = String(sel.dataset.selected || '');
     sel.innerHTML = '<option value="">Select Topic</option>';
-    (topicMap[subject] || []).forEach(t => {
+    (topicMap[subjectId] || []).forEach(t => {
         const opt = document.createElement('option');
-        opt.value = t.toLowerCase().replace(/\s+/g,'-');
-        opt.textContent = t;
+        opt.value = t.id;
+        opt.textContent = t.name;
+        if (String(t.id) === preselect) opt.selected = true;
         sel.appendChild(opt);
     });
 }
