@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -33,7 +33,7 @@
 
         /* SIDEBAR */
         .sidebar {
-            background: #8B3A3A;
+            background: #7B1D1D;
             color: white;
             padding: 30px 0;
             position: fixed;
@@ -181,7 +181,7 @@
             align-items: center;
             gap: 6px;
             background: white;
-            color: #8B3A3A;
+            color: #7B1D1D;
             padding: 8px 14px;
             border-radius: 6px;
             text-align: center;
@@ -212,7 +212,7 @@
         .avatar-circle {
             width: 40px;
             height: 40px;
-            background: #d84949;
+            background: #c0392b;
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -280,7 +280,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #8B3A3A;
+            color: #7B1D1D;
             font-size: 18px;
             transition: all 0.3s;
         }
@@ -317,7 +317,7 @@
             left: 15px;
             top: 50%;
             transform: translateY(-50%);
-            color: #d84949;
+            color: #c0392b;
             font-size: 14px;
         }
 
@@ -364,7 +364,7 @@
             right: -3px;
             width: 18px;
             height: 18px;
-            background: #d84949;
+            background: #c0392b;
             color: white;
             border-radius: 50%;
             display: flex;
@@ -377,7 +377,7 @@
         .profile-btn {
             width: 42px;
             height: 42px;
-            background: #8B3A3A;
+            background: #7B1D1D;
             border: none;
             border-radius: 50%;
             color: white;
@@ -388,7 +388,7 @@
         }
 
         .profile-btn:hover {
-            background: #6d2e2e;
+            background: #6a1818;
         }
 
         /* CALENDAR LAYOUT */
@@ -445,8 +445,8 @@
 
         .nav-btn:hover {
             background: #f5f5f5;
-            border-color: #d84949;
-            color: #d84949;
+            border-color: #c0392b;
+            color: #c0392b;
         }
 
         .today-btn {
@@ -488,13 +488,13 @@
         }
 
         .view-btn.active {
-            border-color: #d84949;
-            color: #d84949;
+            border-color: #c0392b;
+            color: #c0392b;
             background: #fff5f5;
         }
 
         .view-btn:hover {
-            border-color: #d84949;
+            border-color: #c0392b;
         }
 
         /* CALENDAR GRID */
@@ -588,7 +588,7 @@
         .event.far::before { background: #27AE60; }
 
         .event.aud { background: #fdeaea; }
-        .event.aud::before { background: #d84949; }
+        .event.aud::before { background: #c0392b; }
 
         /* RIGHT SIDEBAR */
         .calendar-sidebar {
@@ -640,14 +640,14 @@
         .today-date-badge .m {
             font-size: 11px;
             font-weight: 600;
-            color: #d84949;
+            color: #c0392b;
             text-transform: uppercase;
         }
 
         .today-date-badge .d {
             font-size: 20px;
             font-weight: 700;
-            color: #d84949;
+            color: #c0392b;
             line-height: 1;
         }
 
@@ -708,7 +708,7 @@
             margin-top: 16px;
             padding: 12px;
             background: #fdeaea;
-            color: #d84949;
+            color: #c0392b;
             border: none;
             border-radius: 8px;
             font-size: 13px;
@@ -790,7 +790,7 @@
             right: 18px;
             bottom: 14px;
             font-size: 46px;
-            color: #d84949;
+            color: #c0392b;
             opacity: 0.85;
         }
 
@@ -835,7 +835,7 @@
         <!-- SIDEBAR -->
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-logo">
-                <div class="sidebar-logo-icon"><i class="fas fa-bullseye"></i></div>
+                <div class="logo-circle" style="width:44px;height:44px;background:rgba(255,255,255,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;border:2px solid rgba(255,255,255,0.3);"><i class="fas fa-shield-alt"></i></div>
                 <div class="sidebar-logo-text">
                     <strong>CPACE</strong>
                     <small>CPA Reviewer</small>
@@ -845,7 +845,7 @@
             <nav class="sidebar-nav">
                 <li><a href="{{ route('dashboard') }}"><i class="fas fa-home"></i><span>Dashboard</span></a></li>
                 <li><a href="{{ route('subjects') }}"><i class="fas fa-book"></i><span>Subjects</span></a></li>
-                <li><a href="{{ route('adaptive-quizzes') }}"><i class="fas fa-brain"></i><span>Adaptive Quizzes</span></a></li>
+                <li><a href="{{ route('adaptive-quizzes') }}"><i class="fas fa-brain"></i><span>Quizzes</span></a></li>
                 <li><a href="{{ route('mock-exams') }}"><i class="fas fa-file-alt"></i><span>Mock Exams</span></a></li>
                 <li><a href="{{ route('performance') }}"><i class="fas fa-chart-line"></i><span>Performance</span></a></li>
                 <li><a href="{{ route('review-notes') }}"><i class="fas fa-sticky-note"></i><span>Review Notes</span></a></li>
@@ -1067,7 +1067,7 @@
                         </div>
 
                         <div class="review-item">
-                            <div class="review-dot" style="background: #d84949;"></div>
+                            <div class="review-dot" style="background: #c0392b;"></div>
                             <div class="review-info">
                                 <div class="review-subject">Audit</div>
                                 <div class="review-difficulty">High difficulty</div>
@@ -1122,7 +1122,7 @@
                     <div class="side-card focus-card">
                         <div class="focus-card-title">Focus on What Matters</div>
                         <div class="focus-card-text">Topics you find difficult will appear more often. Keep reviewing to strengthen your understanding!</div>
-                        <div class="focus-card-icon"><i class="fas fa-bullseye"></i></div>
+                        <div class="focus-card-icon"><i class="fas fa-shield-alt"></i></div>
                     </div>
                 </div>
             </div>
@@ -1154,3 +1154,4 @@
     </script>
 </body>
 </html>
+

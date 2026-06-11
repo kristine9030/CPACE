@@ -17,6 +17,16 @@ Route::middleware('guest')->group(function () {
 
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+    // Faculty Routes
+    Route::prefix('faculty')->name('faculty.')->middleware('faculty')->group(function () {
+        Route::get('/dashboard', fn() => view('faculty.dashboard'))->name('dashboard');
+        Route::get('/test-bank', fn() => view('faculty.test-bank'))->name('test-bank');
+        Route::get('/test-bank/create', fn() => view('faculty.question-form'))->name('question.create');
+        Route::get('/test-bank/{id}/edit', fn($id) => view('faculty.question-form', ['editMode' => true]))->name('question.edit');
+        Route::get('/subjects', fn() => view('faculty.subjects'))->name('subjects');
+        Route::get('/performance', fn() => view('faculty.performance'))->name('performance');
+    });
     Route::get('/dashboard', function () {
         return view('dashboard');
     })->name('dashboard');

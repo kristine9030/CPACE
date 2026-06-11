@@ -4,823 +4,630 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Subjects - CPACE CPA Reviewer</title>
-
-    <!-- Google Fonts - Poppins -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-
-    <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        :root {
+            --primary: #7B1D1D;
+            --primary-hover: #6a1818;
+            --primary-light: #f5e8e8;
+            --accent-red: #c0392b;
+            --sidebar-bg: #7B1D1D;
         }
 
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
         body {
-            font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: #f8f9fa;
+            font-family: 'Poppins', sans-serif;
+            background: #f4f5f7;
             color: #333;
         }
 
-        .dashboard-container {
-            display: block;
-            min-height: 100vh;
-        }
-
-        /* SIDEBAR */
+        /* ─── SIDEBAR ─── */
         .sidebar {
-            background: #8B3A3A;
+            background: var(--sidebar-bg);
             color: white;
-            padding: 30px 0;
             position: fixed;
-            width: 211px;
+            width: 220px;
             height: 100vh;
             overflow-y: auto;
-            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
-            transition: width 0.3s ease;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
             z-index: 1000;
+            transition: width 0.3s ease;
         }
-
-        .sidebar.collapsed {
-            width: 70px;
-        }
+        .sidebar.collapsed { width: 70px; }
 
         .sidebar-logo {
             display: flex;
             align-items: center;
-            gap: 12px;
-            padding: 0 20px 30px 20px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            margin-bottom: 30px;
+            gap: 10px;
+            padding: 24px 20px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.12);
         }
 
-        .sidebar.collapsed .sidebar-logo {
-            padding: 0 10px 30px 10px;
+        .logo-circle {
+            width: 44px; height: 44px;
+            background: rgba(255,255,255,0.15);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px; color: white; flex-shrink: 0;
+            border: 2px solid rgba(255,255,255,0.3);
         }
 
-        .sidebar-logo-icon {
-            font-size: 32px;
-        }
+        .logo-text strong { display: block; font-size: 15px; font-weight: 700; letter-spacing: 0.5px; }
+        .logo-text small  { font-size: 11px; opacity: 0.8; }
+        .sidebar.collapsed .logo-text { display: none; }
 
-        .sidebar-logo-text {
-            font-size: 14px;
-            line-height: 1.3;
-            font-family: 'Poppins', sans-serif;
-        }
+        .sidebar-nav { list-style: none; flex: 1; padding: 12px 0; }
 
-        .sidebar.collapsed .sidebar-logo-text {
-            display: none;
-        }
-
-        .sidebar-logo-text strong {
-            display: block;
-            font-size: 13px;
-            font-weight: 700;
-        }
-
-        .sidebar-nav {
-            list-style: none;
-        }
-
-        .sidebar-nav li {
-            margin: 0;
-        }
-
-        .sidebar-nav a {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 20px;
-            color: rgba(255, 255, 255, 0.8);
+        .sidebar-nav li a {
+            display: flex; align-items: center; gap: 12px;
+            padding: 11px 22px;
+            color: rgba(255,255,255,0.75);
             text-decoration: none;
             font-size: 13px;
-            transition: all 0.3s;
+            transition: all 0.2s;
             border-left: 3px solid transparent;
-            font-family: 'Poppins', sans-serif;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
         }
-
-        .sidebar.collapsed .sidebar-nav a {
-            padding: 12px 10px;
-            justify-content: center;
-            gap: 0;
+        .sidebar-nav li a:hover { color: white; background: rgba(255,255,255,0.1); }
+        .sidebar-nav li a.active {
+            color: white; background: rgba(255,255,255,0.18);
+            border-left-color: white; font-weight: 500;
         }
+        .sidebar-nav li a i { width: 18px; text-align: center; font-size: 15px; flex-shrink: 0; }
 
-        .sidebar.collapsed .sidebar-nav a span {
-            display: none;
-        }
+        .sidebar.collapsed .sidebar-nav li a { padding: 11px 0; justify-content: center; gap: 0; }
+        .sidebar.collapsed .sidebar-nav li a span { display: none; }
 
-        .sidebar-nav a:hover {
-            color: white;
-            background: rgba(255, 255, 255, 0.1);
-        }
-
-        .sidebar-nav a.active {
-            color: white;
-            background: rgba(255, 255, 255, 0.15);
-            border-left-color: white;
-        }
-
-        .sidebar-nav i {
-            margin-right: 8px;
-            width: 18px;
-            text-align: center;
-        }
-
-        .sidebar.collapsed .sidebar-nav i {
-            margin-right: 0;
-        }
-
-        .sidebar-footer {
-            position: absolute;
-            bottom: 20px;
-            left: 0;
-            right: 0;
-            padding: 0 20px;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            padding-top: 20px;
-        }
-
+        /* Challenge Box */
         .sidebar-challenge {
-            margin-bottom: 60px;
-            padding: 0 20px;
+            padding: 14px 16px;
+            margin: 8px 12px 4px;
         }
+        .sidebar.collapsed .sidebar-challenge { display: none; }
 
         .challenge-box {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 8px;
-            padding: 15px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(0,0,0,0.25);
+            border-radius: 10px;
+            padding: 14px;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.1);
         }
-
-        .challenge-box p {
-            font-size: 12px;
-            color: white;
-            margin-bottom: 10px;
-            font-weight: 600;
+        .challenge-box .ch-label {
+            font-size: 11px; color: rgba(255,255,255,0.75); margin-bottom: 3px;
         }
-
+        .challenge-box .ch-title {
+            font-size: 13px; font-weight: 700; color: white; margin-bottom: 12px;
+        }
         .challenge-box a {
-            display: block;
-            background: white;
-            color: #8B3A3A;
-            padding: 10px;
-            border-radius: 6px;
-            text-align: center;
-            font-size: 12px;
-            font-weight: 600;
-            text-decoration: none;
-            transition: all 0.3s;
-            margin-bottom: 8px;
+            display: inline-flex; align-items: center; gap: 6px;
+            background: white; color: var(--primary);
+            padding: 8px 12px;
+            border-radius: 6px; font-size: 11px; font-weight: 700;
+            text-decoration: none; transition: all 0.2s;
+        }
+        .challenge-box a:hover { background: #f5e8e8; }
+        .challenge-icon {
+            position: absolute; right: 10px; bottom: 8px;
+            font-size: 28px; opacity: 0.3; color: white;
         }
 
-        .challenge-box a:hover {
-            background: #f9f9f9;
-            transform: translateY(-2px);
+        /* Sidebar Footer */
+        .sidebar-footer {
+            border-top: 1px solid rgba(255,255,255,0.12);
+            padding: 16px 20px;
         }
-
-        .user-avatar {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            color: white;
-            font-size: 13px;
-        }
-
-        .avatar-circle {
-            width: 40px;
-            height: 40px;
-            background: #d84949;
+        .user-profile { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+        .avatar-sm {
+            width: 38px; height: 38px;
+            background: var(--accent-red);
             border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 600;
-            font-size: 16px;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 13px; color: white; flex-shrink: 0;
         }
+        .user-details { flex: 1; min-width: 0; }
+        .user-details .uname { display: block; font-size: 13px; font-weight: 600; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .user-details .urole { display: block; font-size: 11px; color: rgba(255,255,255,0.65); }
+        .sidebar.collapsed .user-details, .sidebar.collapsed .chevron-icon { display: none; }
 
-        .user-info-sidebar {
-            flex: 1;
-            font-family: 'Poppins', sans-serif;
-        }
-
-        .user-info-sidebar .name {
-            display: block;
-            font-weight: 600;
-            font-size: 13px;
-        }
-
-        .user-info-sidebar .role {
-            display: block;
-            font-size: 11px;
-            opacity: 0.8;
-        }
-
-        /* MAIN CONTENT */
+        /* ─── MAIN ─── */
         .main-content {
-            margin-left: 211px;
-            padding: 30px 40px;
-            overflow-y: auto;
+            margin-left: 220px;
+            padding: 28px 32px;
+            min-height: 100vh;
             transition: margin-left 0.3s ease;
         }
+        .sidebar.collapsed ~ .main-content { margin-left: 70px; }
 
-        .sidebar.collapsed ~ .main-content {
-            margin-left: 70px;
-        }
-
-        /* HEADER */
-        .header {
+        /* ─── TOP BAR ─── */
+        .top-bar {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 40px;
+            margin-bottom: 28px;
+            gap: 20px;
+        }
+        .top-bar-left { display: flex; align-items: center; gap: 14px; }
+        .toggle-btn {
+            width: 38px; height: 38px;
+            border: 1px solid #e0e0e0; background: white; border-radius: 8px;
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            color: var(--primary); font-size: 16px; transition: background 0.2s;
+        }
+        .toggle-btn:hover { background: #f0f0f0; }
+        .top-bar-right { display: flex; align-items: center; gap: 14px; }
+
+        .search-wrap { position: relative; }
+        .search-wrap i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #aaa; font-size: 14px; }
+        .search-wrap input {
+            width: 280px; padding: 10px 14px 10px 36px;
+            border: 1px solid #e0e0e0; border-radius: 24px;
+            font-size: 13px; font-family: 'Poppins', sans-serif;
+            background: white; color: #555; outline: none;
+        }
+        .search-wrap input:focus { border-color: var(--primary); }
+        .search-wrap input::placeholder { color: #bbb; }
+
+        .notif-btn {
+            position: relative; width: 40px; height: 40px;
+            border: none; background: white; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 17px; color: #555; cursor: pointer;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+        }
+        .notif-btn:hover { background: #f0f0f0; }
+        .badge {
+            position: absolute; top: -3px; right: -3px;
+            width: 18px; height: 18px; background: var(--accent-red);
+            color: white; border-radius: 50%; font-size: 10px; font-weight: 700;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .profile-avatar {
+            width: 40px; height: 40px; background: var(--primary);
+            border-radius: 10px; border: none; color: white;
+            font-weight: 700; font-size: 14px; cursor: pointer;
+            font-family: 'Poppins', sans-serif; transition: background 0.2s;
+        }
+        .profile-avatar:hover { background: var(--primary-hover); }
+
+        /* ─── PAGE HEADER ROW ─── */
+        .page-header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 28px;
             gap: 20px;
         }
 
-        .header-left {
-            flex: 1;
+        .page-title { font-size: 30px; font-weight: 700; color: #1a1a1a; margin-bottom: 6px; }
+        .page-subtitle { font-size: 14px; color: #999; }
+
+        /* Page header illustration */
+        .page-header-illus {
             display: flex;
-            align-items: center;
-            gap: 20px;
-        }
-
-        .sidebar-toggle {
-            background: white;
-            border: 1px solid #ddd;
-            width: 40px;
-            height: 40px;
-            border-radius: 6px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #8B3A3A;
-            font-size: 18px;
-            transition: all 0.3s;
-        }
-
-        .sidebar-toggle:hover {
-            background: #f0f0f0;
-        }
-
-        .header-title {
-            font-size: 32px;
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 5px;
-            font-family: 'Poppins', sans-serif;
-        }
-
-        .header-subtitle {
-            color: #999;
-            font-size: 14px;
-        }
-
-        .header-right {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-        }
-
-        .search-box {
-            flex: 0 1 300px;
-        }
-
-        .search-box input {
-            width: 100%;
-            padding: 10px 15px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            font-size: 13px;
-            background: white;
-            color: #666;
-            font-family: 'Poppins', sans-serif;
-        }
-
-        .search-box input::placeholder {
-            color: #aaa;
-        }
-
-        .header-icons {
-            display: flex;
-            gap: 15px;
-            align-items: center;
-        }
-
-        .icon-btn {
-            width: 40px;
-            height: 40px;
-            border: none;
-            background: white;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 18px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s;
+            align-items: flex-end;
+            gap: 10px;
             position: relative;
-            color: #8B3A3A;
         }
-
-        .icon-btn:hover {
-            background: #f0f0f0;
-        }
-
-        .notification-badge {
+        .illus-circle-bg {
             position: absolute;
-            top: -5px;
-            right: -5px;
-            width: 20px;
-            height: 20px;
-            background: #d84949;
-            color: white;
+            right: -10px; top: -20px;
+            width: 160px; height: 160px;
+            background: radial-gradient(circle, #fde8e8 0%, transparent 70%);
             border-radius: 50%;
+            z-index: 0;
+        }
+        .illus-books {
             display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 11px;
-            font-weight: 600;
-        }
-
-        .profile-btn {
-            width: 40px;
-            height: 40px;
-            background: #8B3A3A;
-            border: none;
-            border-radius: 6px;
-            color: white;
-            font-weight: 600;
-            cursor: pointer;
-            font-size: 14px;
+            align-items: flex-end;
+            gap: 4px;
             position: relative;
-            font-family: 'Poppins', sans-serif;
+            z-index: 1;
         }
-
-        .profile-btn:hover {
-            background: #6d2e2e;
+        .illus-book {
+            width: 36px;
+            border-radius: 4px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 9px; font-weight: 800; color: white;
+            writing-mode: vertical-rl; letter-spacing: 1px;
         }
+        .illus-book.b1 { height: 110px; background: linear-gradient(180deg,#1abc9c,#16a085); }
+        .illus-book.b2 { height: 90px; background: linear-gradient(180deg,#c0392b,#922b21); }
+        .illus-book.b3 { height: 75px; background: linear-gradient(180deg,#27ae60,#1e8449); }
+        .illus-plant { font-size: 38px; margin-bottom: 2px; position: relative; z-index:1; }
+        .illus-mug { font-size: 34px; margin-bottom: 2px; position: relative; z-index:1; }
 
-        /* PAGE HEADER */
-        .page-header {
-            margin-bottom: 40px;
-        }
-
-        .page-title {
-            font-size: 28px;
-            font-weight: 700;
-            color: #333;
-            margin-bottom: 8px;
-            font-family: 'Poppins', sans-serif;
-        }
-
-        .page-subtitle {
-            font-size: 14px;
-            color: #999;
-        }
-
-        /* SUBJECT CARDS GRID */
+        /* ─── SUBJECT GRID ─── */
         .subjects-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 30px;
-            margin-bottom: 40px;
+            gap: 22px;
         }
 
         .subject-card {
             background: white;
-            border-radius: 12px;
-            padding: 30px;
-            transition: all 0.3s;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            border-radius: 16px;
+            padding: 24px;
+            transition: transform 0.25s, box-shadow 0.25s;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
         }
-
         .subject-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 10px 24px rgba(0,0,0,0.1);
         }
 
-        .subject-header {
-            display: flex;
-            align-items: flex-start;
-            gap: 20px;
-            margin-bottom: 25px;
-        }
-
-        .subject-icon {
-            width: 60px;
-            height: 60px;
-            border-radius: 12px;
+        .subject-card-top {
             display: flex;
             align-items: center;
-            justify-content: center;
-            font-size: 32px;
-            color: white;
+            gap: 18px;
+            margin-bottom: 20px;
+        }
+
+        .subject-icon-circle {
+            width: 72px; height: 72px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 28px;
             flex-shrink: 0;
         }
+        .si-far   { background: #e8f0fd; color: #3b82f6; }
+        .si-aud   { background: #fde8f0; color: #e8567d; }
+        .si-tax   { background: #e8f7ee; color: #27ae60; }
+        .si-ms    { background: #f0e8fd; color: #9b59b6; }
+        .si-rfbt  { background: #fef3e0; color: #f39c12; }
+        .si-afar  { background: #e8f7f9; color: #17a2b8; }
 
-        .subject-icon.far {
-            background: linear-gradient(135deg, #4A90E2, #357ABD);
-        }
-
-        .subject-icon.aud {
-            background: linear-gradient(135deg, #E8567D, #D63860);
-        }
-
-        .subject-icon.tax {
-            background: linear-gradient(135deg, #27AE60, #1F8449);
-        }
-
-        .subject-icon.ms {
-            background: linear-gradient(135deg, #9B59B6, #7D3C98);
-        }
-
-        .subject-icon.rfbt {
-            background: linear-gradient(135deg, #F39C12, #D68910);
-        }
-
-        .subject-icon.afar {
-            background: linear-gradient(135deg, #17A2B8, #138496);
-        }
-
-        .subject-info h3 {
-            font-size: 18px;
-            font-weight: 700;
-            color: #333;
-            margin-bottom: 5px;
-            font-family: 'Poppins', sans-serif;
-        }
-
-        .subject-info p {
-            font-size: 13px;
-            color: #999;
-        }
+        .subject-info { flex: 1; }
+        .subject-abbr { font-size: 20px; font-weight: 800; color: #1a1a1a; margin-bottom: 3px; }
+        .subject-full { font-size: 12px; color: #888; line-height: 1.4; }
 
         .subject-stats {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
-            padding: 20px 0;
-            border-top: 1px solid #f0f0f0;
-            border-bottom: 1px solid #f0f0f0;
-            margin-bottom: 20px;
-        }
-
-        .stat {
+            gap: 8px;
+            padding: 16px 0;
+            border-top: 1px solid #f5f5f5;
+            border-bottom: 1px solid #f5f5f5;
+            margin-bottom: 16px;
             text-align: center;
         }
-
-        .stat-number {
-            font-size: 20px;
-            font-weight: 700;
-            color: #333;
+        .stat-num {
             display: block;
-            margin-bottom: 5px;
+            font-size: 20px; font-weight: 700; color: #1a1a1a;
+            margin-bottom: 3px;
+        }
+        .stat-num.weak { color: var(--accent-red); }
+        .stat-lbl {
+            font-size: 10px; color: #aaa; text-transform: uppercase; letter-spacing: 0.4px;
         }
 
-        .stat-label {
-            font-size: 11px;
-            color: #999;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .stat.weak .stat-number {
-            color: #d84949;
-        }
-
-        .subject-action {
-            display: block;
-            width: 100%;;
-            text-align: center;
-            padding: 12px;
-            background: none;
+        .subject-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 11px 16px;
             border: none;
-            color: #4A90E2;
+            border-radius: 8px;
             font-size: 13px;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s;
             font-family: 'Poppins', sans-serif;
+            text-decoration: none;
+            transition: opacity 0.2s;
+            margin-top: auto;
         }
+        .subject-btn:hover { opacity: 0.85; }
 
-        .subject-card:nth-child(1) .subject-action {
-            color: #4A90E2;
+        .btn-far   { background: #e8f0fd; color: #3b82f6; }
+        .btn-aud   { background: #fde8f0; color: #e8567d; }
+        .btn-tax   { background: #e8f7ee; color: #27ae60; }
+        .btn-ms    { background: #f0e8fd; color: #9b59b6; }
+        .btn-rfbt  { background: #fef3e0; color: #f39c12; }
+        .btn-afar  { background: #e8f7f9; color: #17a2b8; }
+
+        @media (max-width: 1200px) {
+            .subjects-grid { grid-template-columns: repeat(2, 1fr); }
         }
-
-        .subject-card:nth-child(2) .subject-action {
-            color: #E8567D;
-        }
-
-        .subject-card:nth-child(3) .subject-action {
-            color: #27AE60;
-        }
-
-        .subject-card:nth-child(4) .subject-action {
-            color: #9B59B6;
-        }
-
-        .subject-card:nth-child(5) .subject-action {
-            color: #F39C12;
-        }
-
-        .subject-card:nth-child(6) .subject-action {
-            color: #17A2B8;
-        }
-
-        .subject-action:hover {
-            transform: translateX(5px);
-        }
-
-        .subject-action i {
-            margin-left: 8px;
-        }
-
-        /* RESPONSIVE */
-        @media (max-width: 1400px) {
-            .subjects-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-
         @media (max-width: 768px) {
-            .dashboard-container {
-                grid-template-columns: 1fr;
-            }
-
-            .sidebar {
-                width: 100%;
-                height: auto;
-                position: relative;
-                padding: 15px 0;
-            }
-
-            .main-content {
-                margin-left: 0;
-                padding: 20px;
-            }
-
-            .subjects-grid {
-                grid-template-columns: 1fr;
-            }
+            .sidebar { width: 70px; }
+            .main-content { margin-left: 70px; padding: 20px; }
+            .subjects-grid { grid-template-columns: 1fr; }
+            .search-wrap input { width: 160px; }
         }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(14px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .anim { animation: fadeUp 0.4s ease both; }
     </style>
 </head>
 <body>
-    <div class="dashboard-container">
-        <!-- SIDEBAR -->
-        <aside class="sidebar" id="sidebar">
-            <div class="sidebar-logo">
-                <div class="sidebar-logo-icon"><i class="fas fa-bullseye"></i></div>
-                <div class="sidebar-logo-text">
-                    <strong>CPACE</strong>
-                    <small>CPA Reviewer</small>
-                </div>
-            </div>
 
-            <nav class="sidebar-nav">
-                <li><a href="{{ route('dashboard') }}"><i class="fas fa-home"></i><span>Dashboard</span></a></li>
-                <li><a href="{{ route('subjects') }}" class="active"><i class="fas fa-book"></i><span>Subjects</span></a></li>
-                <li><a href="{{ route('adaptive-quizzes') }}"><i class="fas fa-brain"></i><span>Adaptive Quizzes</span></a></li>
-                <li><a href="{{ route('mock-exams') }}"><i class="fas fa-file-alt"></i><span>Mock Exams</span></a></li>
-                <li><a href="{{ route('performance') }}"><i class="fas fa-chart-bar"></i><span>Performance</span></a></li>
-                <li><a href="{{ route('review-notes') }}"><i class="fas fa-book-open"></i><span>Review Notes</span></a></li>
-                <li><a href="#"><i class="fas fa-layer-group"></i><span>Flashcards</span></a></li>
-                <li><a href="{{ route('calendar') }}"><i class="fas fa-calendar-alt"></i><span>Calendar</span></a></li>
-                <li><a href="#"><i class="fas fa-chart-line"></i><span>Progress</span></a></li>
-                <li><a href="{{ route('achievements') }}"><i class="fas fa-trophy"></i><span>Achievements</span></a></li>
-                <li><a href="#"><i class="fas fa-cog"></i><span>Settings</span></a></li>
-            </nav>
-
-            <div class="sidebar-challenge">
-                <div class="challenge-box">
-                    <p>Need a challenge?</p>
-                    <p style="margin-bottom: 12px; font-size: 14px; font-weight: 700;">Try a Mock Exam</p>
-                    <a href="#"><i class="fas fa-arrow-right"></i> Go to Mock Exams</a>
-                </div>
-            </div>
-
-            <div class="sidebar-footer">
-                <div class="user-avatar">
-                    <div class="avatar-circle">{{ strtoupper(substr(Auth::user()->name, 0, 1)) }}{{ strtoupper(substr(explode(' ', Auth::user()->name)[array_key_last(explode(' ', Auth::user()->name))], 0, 1)) }}</div>
-                    <div class="user-info-sidebar">
-                        <span class="name">{{ Auth::user()->name }}</span>
-                        <span class="role">Reviewer</span>
-                    </div>
-                </div>
-            </div>
-        </aside>
-
-        <!-- MAIN CONTENT -->
-        <main class="main-content">
-            <!-- HEADER -->
-            <div class="header">
-                <div class="header-left">
-                    <button class="sidebar-toggle" id="sidebarToggle">
-                        <i class="fas fa-bars"></i>
-                    </button>
-                    <div>
-                        <div class="header-title">Subjects</div>
-                        <div class="header-subtitle">Review by subject area and strengthen your knowledge.</div>
-                    </div>
-                </div>
-                <div class="header-right">
-                    <div class="search-box">
-                        <input type="text" placeholder="Search topics, questions...">
-                    </div>
-                    <div class="header-icons">
-                        <button class="icon-btn">
-                            <i class="fas fa-bell"></i>
-                            <span class="notification-badge">3</span>
-                        </button>
-                        <button class="profile-btn">KD</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- SUBJECTS GRID -->
-            <div class="subjects-grid">
-                <!-- FAR -->
-                <div class="subject-card">
-                    <div class="subject-header">
-                        <div class="subject-icon far"><i class="fas fa-chart-line"></i></div>
-                        <div class="subject-info">
-                            <h3>FAR</h3>
-                            <p>Financial Accounting and Reporting</p>
-                        </div>
-                    </div>
-                    <div class="subject-stats">
-                        <div class="stat">
-                            <span class="stat-number">128</span>
-                            <span class="stat-label">Topics</span>
-                        </div>
-                        <div class="stat">
-                            <span class="stat-number">245</span>
-                            <span class="stat-label">Questions</span>
-                        </div>
-                        <div class="stat weak">
-                            <span class="stat-number">18</span>
-                            <span class="stat-label">Weak Topics</span>
-                        </div>
-                    </div>
-                    <button class="subject-action">Review Subject <i class="fas fa-arrow-right"></i></button>
-                </div>
-
-                <!-- AUD -->
-                <div class="subject-card">
-                    <div class="subject-header">
-                        <div class="subject-icon aud"><i class="fas fa-search"></i></div>
-                        <div class="subject-info">
-                            <h3>AUD</h3>
-                            <p>Auditing and Attestation</p>
-                        </div>
-                    </div>
-                    <div class="subject-stats">
-                        <div class="stat">
-                            <span class="stat-number">98</span>
-                            <span class="stat-label">Topics</span>
-                        </div>
-                        <div class="stat">
-                            <span class="stat-number">189</span>
-                            <span class="stat-label">Questions</span>
-                        </div>
-                        <div class="stat weak">
-                            <span class="stat-number">14</span>
-                            <span class="stat-label">Weak Topics</span>
-                        </div>
-                    </div>
-                    <button class="subject-action">Review Subject <i class="fas fa-arrow-right"></i></button>
-                </div>
-
-                <!-- TAX -->
-                <div class="subject-card">
-                    <div class="subject-header">
-                        <div class="subject-icon tax"><i class="fas fa-file-invoice-dollar"></i></div>
-                        <div class="subject-info">
-                            <h3>TAX</h3>
-                            <p>Taxation</p>
-                        </div>
-                    </div>
-                    <div class="subject-stats">
-                        <div class="stat">
-                            <span class="stat-number">87</span>
-                            <span class="stat-label">Topics</span>
-                        </div>
-                        <div class="stat">
-                            <span class="stat-number">176</span>
-                            <span class="stat-label">Questions</span>
-                        </div>
-                        <div class="stat weak">
-                            <span class="stat-number">12</span>
-                            <span class="stat-label">Weak Topics</span>
-                        </div>
-                    </div>
-                    <button class="subject-action">Review Subject <i class="fas fa-arrow-right"></i></button>
-                </div>
-
-                <!-- MS -->
-                <div class="subject-card">
-                    <div class="subject-header">
-                        <div class="subject-icon ms"><i class="fas fa-users"></i></div>
-                        <div class="subject-info">
-                            <h3>MS</h3>
-                            <p>Management Services</p>
-                        </div>
-                    </div>
-                    <div class="subject-stats">
-                        <div class="stat">
-                            <span class="stat-number">76</span>
-                            <span class="stat-label">Topics</span>
-                        </div>
-                        <div class="stat">
-                            <span class="stat-number">142</span>
-                            <span class="stat-label">Questions</span>
-                        </div>
-                        <div class="stat weak">
-                            <span class="stat-number">10</span>
-                            <span class="stat-label">Weak Topics</span>
-                        </div>
-                    </div>
-                    <button class="subject-action">Review Subject <i class="fas fa-arrow-right"></i></button>
-                </div>
-
-                <!-- RFBT -->
-                <div class="subject-card">
-                    <div class="subject-header">
-                        <div class="subject-icon rfbt"><i class="fas fa-balance-scale"></i></div>
-                        <div class="subject-info">
-                            <h3>RFBT</h3>
-                            <p>Regulatory Framework for Business Transactions</p>
-                        </div>
-                    </div>
-                    <div class="subject-stats">
-                        <div class="stat">
-                            <span class="stat-number">92</span>
-                            <span class="stat-label">Topics</span>
-                        </div>
-                        <div class="stat">
-                            <span class="stat-number">168</span>
-                            <span class="stat-label">Questions</span>
-                        </div>
-                        <div class="stat weak">
-                            <span class="stat-number">11</span>
-                            <span class="stat-label">Weak Topics</span>
-                        </div>
-                    </div>
-                    <button class="subject-action">Review Subject <i class="fas fa-arrow-right"></i></button>
-                </div>
-
-                <!-- AFAR -->
-                <div class="subject-card">
-                    <div class="subject-header">
-                        <div class="subject-icon afar"><i class="fas fa-calculator"></i></div>
-                        <div class="subject-info">
-                            <h3>AFAR</h3>
-                            <p>Advanced Financial Accounting and Reporting</p>
-                        </div>
-                    </div>
-                    <div class="subject-stats">
-                        <div class="stat">
-                            <span class="stat-number">85</span>
-                            <span class="stat-label">Topics</span>
-                        </div>
-                        <div class="stat">
-                            <span class="stat-number">154</span>
-                            <span class="stat-label">Questions</span>
-                        </div>
-                        <div class="stat weak">
-                            <span class="stat-number">9</span>
-                            <span class="stat-label">Weak Topics</span>
-                        </div>
-                    </div>
-                    <button class="subject-action">Review Subject <i class="fas fa-arrow-right"></i></button>
-                </div>
-            </div>
-        </main>
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+        <div class="logo-circle"><i class="fas fa-shield-alt"></i></div>
+        <div class="logo-text">
+            <strong>CPACE</strong>
+            <small>CPA Reviewer</small>
+        </div>
     </div>
 
-    <script>
-        // Sidebar Toggle
-        const sidebarToggle = document.getElementById('sidebarToggle');
-        const sidebar = document.getElementById('sidebar');
+    <ul class="sidebar-nav">
+        <li><a href="{{ route('dashboard') }}"><i class="fas fa-home"></i><span>Dashboard</span></a></li>
+        <li><a href="{{ route('subjects') }}" class="active"><i class="fas fa-book-open"></i><span>Subjects</span></a></li>
+        <li><a href="{{ route('adaptive-quizzes') }}"><i class="fas fa-pen-fancy"></i><span>Quizzes</span></a></li>
+        <li><a href="{{ route('mock-exams') }}"><i class="fas fa-file-alt"></i><span>Mock Exams</span></a></li>
+        <li><a href="{{ route('performance') }}"><i class="fas fa-chart-bar"></i><span>Performance</span></a></li>
+        <li><a href="{{ route('review-notes') }}"><i class="fas fa-sticky-note"></i><span>Review Notes</span></a></li>
+        <li><a href="#"><i class="fas fa-layer-group"></i><span>Flashcards</span></a></li>
+        <li><a href="{{ route('calendar') }}"><i class="fas fa-calendar-alt"></i><span>Calendar</span></a></li>
+        <li><a href="#"><i class="fas fa-chart-line"></i><span>Progress</span></a></li>
+        <li><a href="{{ route('achievements') }}"><i class="fas fa-trophy"></i><span>Achievements</span></a></li>
+        <li><a href="#"><i class="fas fa-cog"></i><span>Settings</span></a></li>
+    </ul>
 
-        if (sidebarToggle) {
-            sidebarToggle.addEventListener('click', () => {
-                sidebar.classList.toggle('collapsed');
-                localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
-            });
-        }
+    <!-- Challenge Box -->
+    <div class="sidebar-challenge">
+        <div class="challenge-box">
+            <div class="ch-label">Need a challenge?</div>
+            <div class="ch-title">Try a Mock Exam</div>
+            <a href="{{ route('mock-exams') }}">Go to Mock Exams <i class="fas fa-arrow-right"></i></a>
+            <div class="challenge-icon"><i class="fas fa-clipboard-list"></i></div>
+        </div>
+    </div>
 
-        // Load sidebar state
-        if (localStorage.getItem('sidebarCollapsed') === 'true') {
-            sidebar.classList.add('collapsed');
-        }
-    </script>
+    <div class="sidebar-footer">
+        <div class="user-profile">
+            <div class="avatar-sm">
+                {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}{{ strtoupper(substr(explode(' ', Auth::user()->name)[array_key_last(explode(' ', Auth::user()->name))], 0, 1)) }}
+            </div>
+            <div class="user-details">
+                <span class="uname">{{ Auth::user()->name }}</span>
+                <span class="urole">Reviewer</span>
+            </div>
+            <i class="fas fa-chevron-down chevron-icon" style="color:rgba(255,255,255,0.6);font-size:11px;"></i>
+        </div>
+    </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main-content">
+
+    <!-- TOP BAR -->
+    <div class="top-bar anim" style="animation-delay:0s">
+        <div class="top-bar-left">
+            <button class="toggle-btn" id="sidebarToggle"><i class="fas fa-bars"></i></button>
+        </div>
+        <div class="top-bar-right">
+            <div class="search-wrap">
+                <i class="fas fa-search"></i>
+                <input type="text" placeholder="Search topics, questions...">
+            </div>
+            <button class="notif-btn">
+                <i class="fas fa-bell"></i>
+                <span class="badge">3</span>
+            </button>
+            <button class="profile-avatar">KD</button>
+        </div>
+    </div>
+
+    <!-- PAGE HEADER -->
+    <div class="page-header-row anim" style="animation-delay:0.06s">
+        <div>
+            <div class="page-title">Subjects</div>
+            <div class="page-subtitle">Review by subject area and strengthen your knowledge.</div>
+        </div>
+        <div class="page-header-illus">
+            <div class="illus-circle-bg"></div>
+            <div class="illus-plant">&#127807;</div>
+            <div class="illus-books">
+                <div class="illus-book b1">FAR</div>
+                <div class="illus-book b2">AUD</div>
+                <div class="illus-book b3">TAX</div>
+            </div>
+            <div class="illus-mug">&#9749;</div>
+        </div>
+    </div>
+
+    <!-- SUBJECTS GRID -->
+    <div class="subjects-grid anim" style="animation-delay:0.12s">
+
+        <!-- FAR -->
+        <div class="subject-card">
+            <div class="subject-card-top">
+                <div class="subject-icon-circle si-far">
+                    <i class="fas fa-chart-bar"></i>
+                </div>
+                <div class="subject-info">
+                    <div class="subject-abbr">FAR</div>
+                    <div class="subject-full">Financial Accounting<br>and Reporting</div>
+                </div>
+            </div>
+            <div class="subject-stats">
+                <div>
+                    <span class="stat-num">128</span>
+                    <span class="stat-lbl">Topics</span>
+                </div>
+                <div>
+                    <span class="stat-num">245</span>
+                    <span class="stat-lbl">Questions</span>
+                </div>
+                <div>
+                    <span class="stat-num weak">18</span>
+                    <span class="stat-lbl">Weak Topics</span>
+                </div>
+            </div>
+            <a href="#" class="subject-btn btn-far">Review Subject <i class="fas fa-arrow-right"></i></a>
+        </div>
+
+        <!-- AUD -->
+        <div class="subject-card">
+            <div class="subject-card-top">
+                <div class="subject-icon-circle si-aud">
+                    <i class="fas fa-search"></i>
+                </div>
+                <div class="subject-info">
+                    <div class="subject-abbr">AUD</div>
+                    <div class="subject-full">Auditing and<br>Attestation</div>
+                </div>
+            </div>
+            <div class="subject-stats">
+                <div>
+                    <span class="stat-num">98</span>
+                    <span class="stat-lbl">Topics</span>
+                </div>
+                <div>
+                    <span class="stat-num">189</span>
+                    <span class="stat-lbl">Questions</span>
+                </div>
+                <div>
+                    <span class="stat-num weak">14</span>
+                    <span class="stat-lbl">Weak Topics</span>
+                </div>
+            </div>
+            <a href="#" class="subject-btn btn-aud">Review Subject <i class="fas fa-arrow-right"></i></a>
+        </div>
+
+        <!-- TAX -->
+        <div class="subject-card">
+            <div class="subject-card-top">
+                <div class="subject-icon-circle si-tax">
+                    <i class="fas fa-table"></i>
+                </div>
+                <div class="subject-info">
+                    <div class="subject-abbr">TAX</div>
+                    <div class="subject-full">Taxation</div>
+                </div>
+            </div>
+            <div class="subject-stats">
+                <div>
+                    <span class="stat-num">87</span>
+                    <span class="stat-lbl">Topics</span>
+                </div>
+                <div>
+                    <span class="stat-num">176</span>
+                    <span class="stat-lbl">Questions</span>
+                </div>
+                <div>
+                    <span class="stat-num weak">12</span>
+                    <span class="stat-lbl">Weak Topics</span>
+                </div>
+            </div>
+            <a href="#" class="subject-btn btn-tax">Review Subject <i class="fas fa-arrow-right"></i></a>
+        </div>
+
+        <!-- MS -->
+        <div class="subject-card">
+            <div class="subject-card-top">
+                <div class="subject-icon-circle si-ms">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="subject-info">
+                    <div class="subject-abbr">MS</div>
+                    <div class="subject-full">Management<br>Services</div>
+                </div>
+            </div>
+            <div class="subject-stats">
+                <div>
+                    <span class="stat-num">76</span>
+                    <span class="stat-lbl">Topics</span>
+                </div>
+                <div>
+                    <span class="stat-num">142</span>
+                    <span class="stat-lbl">Questions</span>
+                </div>
+                <div>
+                    <span class="stat-num weak">10</span>
+                    <span class="stat-lbl">Weak Topics</span>
+                </div>
+            </div>
+            <a href="#" class="subject-btn btn-ms">Review Subject <i class="fas fa-arrow-right"></i></a>
+        </div>
+
+        <!-- RFBT -->
+        <div class="subject-card">
+            <div class="subject-card-top">
+                <div class="subject-icon-circle si-rfbt">
+                    <i class="fas fa-balance-scale"></i>
+                </div>
+                <div class="subject-info">
+                    <div class="subject-abbr">RFBT</div>
+                    <div class="subject-full">Regulatory Framework<br>for Business Transactions</div>
+                </div>
+            </div>
+            <div class="subject-stats">
+                <div>
+                    <span class="stat-num">92</span>
+                    <span class="stat-lbl">Topics</span>
+                </div>
+                <div>
+                    <span class="stat-num">168</span>
+                    <span class="stat-lbl">Questions</span>
+                </div>
+                <div>
+                    <span class="stat-num weak">11</span>
+                    <span class="stat-lbl">Weak Topics</span>
+                </div>
+            </div>
+            <a href="#" class="subject-btn btn-rfbt">Review Subject <i class="fas fa-arrow-right"></i></a>
+        </div>
+
+        <!-- AFAR -->
+        <div class="subject-card">
+            <div class="subject-card-top">
+                <div class="subject-icon-circle si-afar">
+                    <i class="fas fa-calendar-alt"></i>
+                </div>
+                <div class="subject-info">
+                    <div class="subject-abbr">AFAR</div>
+                    <div class="subject-full">Advanced Financial<br>Accounting and Reporting</div>
+                </div>
+            </div>
+            <div class="subject-stats">
+                <div>
+                    <span class="stat-num">85</span>
+                    <span class="stat-lbl">Topics</span>
+                </div>
+                <div>
+                    <span class="stat-num">154</span>
+                    <span class="stat-lbl">Questions</span>
+                </div>
+                <div>
+                    <span class="stat-num weak">9</span>
+                    <span class="stat-lbl">Weak Topics</span>
+                </div>
+            </div>
+            <a href="#" class="subject-btn btn-afar">Review Subject <i class="fas fa-arrow-right"></i></a>
+        </div>
+
+    </div>
+</main>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const toggleBtn = document.getElementById('sidebarToggle');
+    const sidebar   = document.getElementById('sidebar');
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('collapsed');
+            localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
+        });
+    }
+    if (localStorage.getItem('sidebarCollapsed') === 'true') {
+        sidebar.classList.add('collapsed');
+    }
+});
+</script>
 </body>
 </html>

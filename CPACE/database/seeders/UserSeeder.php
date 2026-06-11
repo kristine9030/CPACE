@@ -13,18 +13,24 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
-        // Create test account
-        User::create([
+        // Student accounts
+        User::updateOrCreate(['email' => 'test@cpace.com'], [
             'name' => 'Test User',
-            'email' => 'test@cpace.com',
+            'role' => 'student',
             'password' => Hash::make('Password123'),
         ]);
 
-        // Create additional test account
-        User::create([
+        User::updateOrCreate(['email' => 'john@cpace.com'], [
             'name' => 'John Doe',
-            'email' => 'john@cpace.com',
+            'role' => 'student',
             'password' => Hash::make('Password123'),
+        ]);
+
+        // Faculty account
+        User::updateOrCreate(['email' => 'faculty@cpace.com'], [
+            'name' => 'Faculty Admin',
+            'role' => 'faculty',
+            'password' => Hash::make('Faculty123'),
         ]);
     }
 }

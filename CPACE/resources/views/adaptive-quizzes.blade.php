@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -33,7 +33,7 @@
 
         /* SIDEBAR */
         .sidebar {
-            background: #8B3A3A;
+            background: #7B1D1D;
             color: white;
             padding: 30px 0;
             position: fixed;
@@ -177,7 +177,7 @@
         .challenge-box a {
             display: block;
             background: white;
-            color: #8B3A3A;
+            color: #7B1D1D;
             padding: 10px;
             border-radius: 6px;
             text-align: center;
@@ -209,7 +209,7 @@
         .avatar-circle {
             width: 40px;
             height: 40px;
-            background: #d84949;
+            background: #c0392b;
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -277,7 +277,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #8B3A3A;
+            color: #7B1D1D;
             font-size: 18px;
             transition: all 0.3s;
         }
@@ -338,7 +338,7 @@
             justify-content: center;
             transition: all 0.3s;
             position: relative;
-            color: #8B3A3A;
+            color: #7B1D1D;
         }
 
         .icon-btn:hover {
@@ -351,7 +351,7 @@
             right: -5px;
             width: 20px;
             height: 20px;
-            background: #d84949;
+            background: #c0392b;
             color: white;
             border-radius: 50%;
             display: flex;
@@ -364,7 +364,7 @@
         .profile-btn {
             width: 40px;
             height: 40px;
-            background: #8B3A3A;
+            background: #7B1D1D;
             border: none;
             border-radius: 6px;
             color: white;
@@ -376,7 +376,7 @@
         }
 
         .profile-btn:hover {
-            background: #6d2e2e;
+            background: #6a1818;
         }
 
         /* PAGE SECTION */
@@ -423,7 +423,7 @@
         }
 
         .mode-card.active {
-            border-color: #d84949;
+            border-color: #c0392b;
             background: #fff9f9;
         }
 
@@ -434,7 +434,7 @@
             right: 15px;
             width: 24px;
             height: 24px;
-            background: #d84949;
+            background: #c0392b;
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -444,13 +444,13 @@
         }
 
         .mode-card.active::before {
-            content: '✓';
+            content: 'âœ“';
             position: absolute;
             top: 15px;
             right: 15px;
             width: 24px;
             height: 24px;
-            background: #d84949;
+            background: #c0392b;
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -463,7 +463,7 @@
         .mode-icon {
             font-size: 32px;
             margin-bottom: 15px;
-            color: #d84949;
+            color: #c0392b;
         }
 
         .mode-title {
@@ -507,7 +507,7 @@
             width: 150px;
             height: 150px;
             border-radius: 50%;
-            background: conic-gradient(#17A2B8 0deg 151.2deg, #F39C12 151.2deg 259.2deg, #d84949 259.2deg 360deg);
+            background: conic-gradient(#17A2B8 0deg 151.2deg, #F39C12 151.2deg 259.2deg, #c0392b 259.2deg 360deg);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -613,7 +613,7 @@
         .subject-select-card:hover {
             transform: translateY(-5px);
             box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
-            border-color: #d84949;
+            border-color: #c0392b;
         }
 
         .subject-select-icon {
@@ -725,7 +725,7 @@
         .step-number {
             font-size: 24px;
             font-weight: 700;
-            color: #8B3A3A;
+            color: #7B1D1D;
             margin-bottom: 10px;
         }
 
@@ -805,7 +805,7 @@
         <!-- SIDEBAR -->
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-logo">
-                <div class="sidebar-logo-icon"><i class="fas fa-bullseye"></i></div>
+                <div class="logo-circle" style="width:44px;height:44px;background:rgba(255,255,255,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;border:2px solid rgba(255,255,255,0.3);"><i class="fas fa-shield-alt"></i></div>
                 <div class="sidebar-logo-text">
                     <strong>CPACE</strong>
                     <small>CPA Reviewer</small>
@@ -815,7 +815,7 @@
             <nav class="sidebar-nav">
                 <li><a href="{{ route('dashboard') }}"><i class="fas fa-home"></i><span>Dashboard</span></a></li>
                 <li><a href="{{ route('subjects') }}"><i class="fas fa-book"></i><span>Subjects</span></a></li>
-                <li><a href="{{ route('adaptive-quizzes') }}" class="active"><i class="fas fa-brain"></i><span>Adaptive Quizzes</span></a></li>
+                <li><a href="{{ route('adaptive-quizzes') }}" class="active"><i class="fas fa-brain"></i><span>Quizzes</span></a></li>
                 <li><a href="{{ route('mock-exams') }}"><i class="fas fa-file-alt"></i><span>Mock Exams</span></a></li>
                 <li><a href="{{ route('performance') }}"><i class="fas fa-chart-line"></i><span>Performance</span></a></li>
                 <li><a href="{{ route('review-notes') }}"><i class="fas fa-sticky-note"></i><span>Review Notes</span></a></li>
@@ -908,37 +908,37 @@
                         <div class="section-subtitle">Choose a CPALE subject to begin your adaptive quiz.</div>
                         <div class="subject-grid">
                             <div class="subject-select-card">
-                                <div class="subject-select-icon" style="color: #d84949;">🔍</div>
+                                <div class="subject-select-icon" style="color: #c0392b;">ðŸ”</div>
                                 <div class="subject-select-name">AUD</div>
                                 <div class="subject-select-full">Auditing and Attestation</div>
                                 <div class="questions-count">1,234 Questions</div>
                             </div>
                             <div class="subject-select-card">
-                                <div class="subject-select-icon" style="color: #27AE60;">📊</div>
+                                <div class="subject-select-icon" style="color: #27AE60;">ðŸ“Š</div>
                                 <div class="subject-select-name">TAX</div>
                                 <div class="subject-select-full">Taxation</div>
                                 <div class="questions-count">1,456 Questions</div>
                             </div>
                             <div class="subject-select-card">
-                                <div class="subject-select-icon" style="color: #F39C12;">⚙️</div>
+                                <div class="subject-select-icon" style="color: #F39C12;">âš™ï¸</div>
                                 <div class="subject-select-name">MS</div>
                                 <div class="subject-select-full">Management Services</div>
                                 <div class="questions-count">987 Questions</div>
                             </div>
                             <div class="subject-select-card">
-                                <div class="subject-select-icon" style="color: #4A90E2;">📈</div>
+                                <div class="subject-select-icon" style="color: #4A90E2;">ðŸ“ˆ</div>
                                 <div class="subject-select-name">FAR</div>
                                 <div class="subject-select-full">Financial Accounting and Reporting</div>
                                 <div class="questions-count">1,789 Questions</div>
                             </div>
                             <div class="subject-select-card">
-                                <div class="subject-select-icon" style="color: #9B59B6;">⚖️</div>
+                                <div class="subject-select-icon" style="color: #9B59B6;">âš–ï¸</div>
                                 <div class="subject-select-name">RFBT</div>
                                 <div class="subject-select-full">Regulatory Framework for Business</div>
                                 <div class="questions-count">1,123 Questions</div>
                             </div>
                             <div class="subject-select-card">
-                                <div class="subject-select-icon" style="color: #17A2B8;">💰</div>
+                                <div class="subject-select-icon" style="color: #17A2B8;">ðŸ’°</div>
                                 <div class="subject-select-name">AFAR</div>
                                 <div class="subject-select-full">Advanced Financial Accounting and Reporting</div>
                                 <div class="questions-count">1,034 Questions</div>
@@ -969,7 +969,7 @@
                         <span class="stat-value">30%</span>
                     </div>
                     <div class="stat-item">
-                        <div class="stat-dot" style="background: #d84949;"></div>
+                        <div class="stat-dot" style="background: #c0392b;"></div>
                         <span class="stat-label">Weak</span>
                         <span class="stat-value">28%</span>
                     </div>
@@ -998,12 +998,12 @@
                         <div class="section-title">Continue Where You Left Off</div>
                         <div class="section-subtitle">Pick up your last adaptive quizzes.</div>
                     </div>
-                    <a href="#" style="color: #d84949; font-size: 12px; font-weight: 600; text-decoration: none;">View All</a>
+                    <a href="#" style="color: #c0392b; font-size: 12px; font-weight: 600; text-decoration: none;">View All</a>
                 </div>
                 <div class="continue-grid">
                     <div class="continue-card">
                         <div class="continue-header">
-                            <div class="continue-icon" style="background: #ffe8e8; color: #d84949;"><i class="fas fa-file-alt"></i></div>
+                            <div class="continue-icon" style="background: #ffe8e8; color: #c0392b;"><i class="fas fa-file-alt"></i></div>
                             <div>
                                 <div class="continue-title">FAR Adaptive Quiz</div>
                                 <div class="continue-type">Adaptive Mode</div>
@@ -1113,3 +1113,4 @@
     </script>
 </body>
 </html>
+

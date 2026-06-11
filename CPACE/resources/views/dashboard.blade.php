@@ -14,6 +14,25 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
+        :root {
+            --primary: #7B1D1D;
+            --primary-hover: #6a1818;
+            --primary-light: #f5e8e8;
+            --primary-mid: #c0392b;
+            --accent-red: #c0392b;
+            --sidebar-bg: #7B1D1D;
+            --white: #ffffff;
+            --gray-100: #f8f9fa;
+            --gray-200: #f0f0f0;
+            --gray-300: #e0e0e0;
+            --gray-500: #999999;
+            --gray-700: #555555;
+            --gray-900: #333333;
+            --green: #10b981;
+            --blue: #3b82f6;
+            --orange: #f59e0b;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -21,1252 +40,1084 @@
         }
 
         body {
-            font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: #f8f9fa;
-            color: #333;
+            font-family: 'Poppins', sans-serif;
+            background: #f4f5f7;
+            color: var(--gray-900);
         }
 
-        .dashboard-container {
-            display: block;
-            min-height: 100vh;
-        }
-
-        /* SIDEBAR */
+        /* ─── SIDEBAR ─── */
         .sidebar {
-            background: #8B3A3A;
+            background: var(--sidebar-bg);
             color: white;
-            padding: 30px 0;
             position: fixed;
-            width: 211px;
+            width: 220px;
             height: 100vh;
             overflow-y: auto;
-            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
-            transition: width 0.3s ease;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
             z-index: 1000;
+            transition: width 0.3s ease;
         }
 
-        .sidebar.collapsed {
-            width: 70px;
-        }
+        .sidebar.collapsed { width: 70px; }
 
         .sidebar-logo {
             display: flex;
             align-items: center;
-            gap: 12px;
-            padding: 0 20px 30px 20px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            margin-bottom: 30px;
+            gap: 10px;
+            padding: 24px 20px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.12);
         }
 
-        .sidebar.collapsed .sidebar-logo {
-            padding: 0 10px 30px 10px;
+        .logo-circle {
+            width: 44px;
+            height: 44px;
+            background: rgba(255,255,255,0.15);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            color: white;
+            flex-shrink: 0;
+            border: 2px solid rgba(255,255,255,0.3);
         }
 
-        .sidebar-logo-icon {
-            font-size: 32px;
-        }
+        .logo-text { line-height: 1.25; }
+        .logo-text strong { display: block; font-size: 15px; font-weight: 700; letter-spacing: 0.5px; }
+        .logo-text small  { font-size: 11px; opacity: 0.8; font-weight: 400; }
 
-        .sidebar-logo-text {
-            font-size: 14px;
-            line-height: 1.3;
-            font-family: 'Poppins', sans-serif;
-        }
-
-        .sidebar.collapsed .sidebar-logo-text {
-            display: none;
-        }
-
-        .sidebar-logo-text strong {
-            display: block;
-            font-size: 13px;
-            font-weight: 700;
-        }
+        .sidebar.collapsed .logo-text { display: none; }
 
         .sidebar-nav {
             list-style: none;
+            flex: 1;
+            padding: 12px 0;
         }
 
-        .sidebar-nav li {
-            margin: 0;
-        }
-
-        .sidebar-nav a {
+        .sidebar-nav li a {
             display: flex;
             align-items: center;
             gap: 12px;
-            padding: 12px 20px;
-            color: rgba(255, 255, 255, 0.8);
+            padding: 11px 22px;
+            color: rgba(255,255,255,0.75);
             text-decoration: none;
             font-size: 13px;
-            transition: all 0.3s;
-            border-left: 3px solid transparent;
-            font-family: 'Poppins', sans-serif;
+            font-weight: 400;
+            transition: all 0.2s;
             white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            border-left: 3px solid transparent;
         }
 
-        .sidebar.collapsed .sidebar-nav a {
-            padding: 12px 10px;
+        .sidebar-nav li a:hover {
+            color: white;
+            background: rgba(255,255,255,0.1);
+        }
+
+        .sidebar-nav li a.active {
+            color: white;
+            background: rgba(255,255,255,0.18);
+            border-left-color: white;
+            font-weight: 500;
+        }
+
+        .sidebar-nav li a i {
+            width: 18px;
+            text-align: center;
+            font-size: 15px;
+            flex-shrink: 0;
+        }
+
+        .sidebar.collapsed .sidebar-nav li a {
+            padding: 11px 0;
             justify-content: center;
             gap: 0;
         }
-
-        .sidebar.collapsed .sidebar-nav a span {
-            display: none;
-        }
-
-        .sidebar-nav a:hover {
-            color: white;
-            background: rgba(255, 255, 255, 0.1);
-        }
-
-        .sidebar-nav a.active {
-            color: white;
-            background: rgba(255, 255, 255, 0.15);
-            border-left-color: white;
-        }
-
-        .sidebar-nav .icon {
-            font-size: 18px;
-            width: 20px;
-            text-align: center;
-        }
-
-        .sidebar-nav i {
-            margin-right: 8px;
-            width: 18px;
-            text-align: center;
-        }
-
-        .sidebar.collapsed .sidebar-nav i {
-            margin-right: 0;
-        }
-
-        .sidebar-nav .icon::before {
-            margin: 0;
-        }
+        .sidebar.collapsed .sidebar-nav li a span { display: none; }
+        .sidebar.collapsed .sidebar-logo .logo-text { display: none; }
 
         .sidebar-footer {
-            position: absolute;
-            bottom: 20px;
-            left: 0;
-            right: 0;
-            padding: 0 20px;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            padding-top: 20px;
+            border-top: 1px solid rgba(255,255,255,0.12);
+            padding: 16px 20px;
         }
 
-        .user-avatar {
+        .user-profile {
             display: flex;
             align-items: center;
             gap: 10px;
-            color: white;
-            font-size: 13px;
+            cursor: pointer;
         }
 
-        .avatar-circle {
-            width: 40px;
-            height: 40px;
-            background: #d84949;
+        .avatar-sm {
+            width: 38px;
+            height: 38px;
+            background: var(--accent-red);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-weight: 600;
-            font-size: 16px;
-        }
-
-        .user-info-sidebar {
-            flex: 1;
-            font-family: 'Poppins', sans-serif;
-        }
-
-        .user-info-sidebar .name {
-            display: block;
-            font-weight: 600;
+            font-weight: 700;
             font-size: 13px;
+            color: white;
+            flex-shrink: 0;
         }
 
-        .user-info-sidebar .role {
-            display: block;
-            font-size: 11px;
-            opacity: 0.8;
-        }
+        .user-details { flex: 1; min-width: 0; }
+        .user-details .uname { display: block; font-size: 13px; font-weight: 600; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .user-details .urole { display: block; font-size: 11px; color: rgba(255,255,255,0.65); }
 
-        /* MAIN CONTENT */
+        .sidebar.collapsed .user-details,
+        .sidebar.collapsed .chevron-icon { display: none; }
+
+        /* ─── MAIN CONTENT ─── */
         .main-content {
-            margin-left: 211px;
-            padding: 30px 40px;
-            overflow-y: auto;
+            margin-left: 220px;
+            padding: 28px 32px;
+            min-height: 100vh;
             transition: margin-left 0.3s ease;
         }
 
-        .sidebar.collapsed ~ .main-content {
-            margin-left: 70px;
-        }
+        .sidebar.collapsed ~ .main-content { margin-left: 70px; }
 
-        /* HEADER */
-        .header {
+        /* ─── HEADER ─── */
+        .page-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 40px;
+            margin-bottom: 24px;
             gap: 20px;
         }
 
-        .header-left {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            gap: 20px;
-        }
+        .page-header-left { display: flex; align-items: center; gap: 14px; }
 
-        .sidebar-toggle {
+        .toggle-btn {
+            width: 38px; height: 38px;
+            border: 1px solid var(--gray-300);
             background: white;
-            border: 1px solid #ddd;
-            width: 40px;
-            height: 40px;
-            border-radius: 6px;
+            border-radius: 8px;
             cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #8B3A3A;
-            font-size: 18px;
-            transition: all 0.3s;
+            display: flex; align-items: center; justify-content: center;
+            color: var(--primary);
+            font-size: 16px;
+            transition: background 0.2s;
         }
+        .toggle-btn:hover { background: var(--gray-200); }
 
-        .sidebar-toggle:hover {
-            background: #f0f0f0;
+        .page-title { font-size: 28px; font-weight: 700; color: var(--gray-900); line-height: 1.2; }
+        .page-subtitle { font-size: 13px; color: var(--gray-500); margin-top: 2px; }
+
+        .page-header-right { display: flex; align-items: center; gap: 14px; }
+
+        .search-wrap {
+            position: relative;
         }
-
-        .header-title {
-            font-size: 32px;
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 5px;
-            font-family: 'Poppins', sans-serif;
-        }
-
-        .header-subtitle {
-            color: #999;
+        .search-wrap i {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray-500);
             font-size: 14px;
         }
-
-        .header-right {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-        }
-
-        .search-box {
-            flex: 0 1 300px;
-        }
-
-        .search-box input {
-            width: 100%;
-            padding: 10px 15px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
+        .search-wrap input {
+            width: 300px;
+            padding: 10px 14px 10px 36px;
+            border: 1px solid var(--gray-300);
+            border-radius: 24px;
             font-size: 13px;
-            background: white;
-            color: #666;
             font-family: 'Poppins', sans-serif;
+            background: white;
+            color: var(--gray-700);
+            outline: none;
+            transition: border-color 0.2s;
         }
+        .search-wrap input:focus { border-color: var(--primary); }
+        .search-wrap input::placeholder { color: #bbb; }
 
-        .search-box input::placeholder {
-            color: #aaa;
-        }
-
-        .header-icons {
-            display: flex;
-            gap: 15px;
-            align-items: center;
-        }
-
-        .icon-btn {
-            width: 40px;
-            height: 40px;
+        .notif-btn {
+            position: relative;
+            width: 40px; height: 40px;
             border: none;
             background: white;
-            border-radius: 6px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 17px;
+            color: var(--gray-700);
             cursor: pointer;
-            font-size: 18px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s;
-            position: relative;
-            color: #8B3A3A;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+            transition: background 0.2s;
         }
+        .notif-btn:hover { background: var(--gray-200); }
 
-        .icon-btn:hover {
-            background: #f0f0f0;
-        }
-
-        .notification-badge {
+        .badge {
             position: absolute;
-            top: -5px;
-            right: -5px;
-            width: 20px;
-            height: 20px;
-            background: #d84949;
+            top: -3px; right: -3px;
+            width: 18px; height: 18px;
+            background: var(--accent-red);
             color: white;
             border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 11px;
-            font-weight: 600;
+            font-size: 10px;
+            font-weight: 700;
+            display: flex; align-items: center; justify-content: center;
         }
 
-        .profile-btn {
-            width: 40px;
-            height: 40px;
-            background: #8B3A3A;
+        .profile-avatar {
+            width: 40px; height: 40px;
+            background: var(--primary);
+            border-radius: 10px;
             border: none;
-            border-radius: 6px;
             color: white;
-            font-weight: 600;
-            cursor: pointer;
+            font-weight: 700;
             font-size: 14px;
-            position: relative;
+            cursor: pointer;
             font-family: 'Poppins', sans-serif;
+            transition: background 0.2s;
         }
+        .profile-avatar:hover { background: var(--primary-hover); }
 
-        .profile-btn:hover {
-            background: #6d2e2e;
-        }
+        .header-dropdown-wrap { position: relative; }
 
         .dropdown-menu {
             position: absolute;
-            top: 100%;
+            top: calc(100% + 8px);
             right: 0;
             background: white;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            min-width: 180px;
-            margin-top: 10px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            border: 1px solid var(--gray-300);
+            border-radius: 10px;
+            min-width: 185px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.12);
             display: none;
-            z-index: 1000;
-            font-family: 'Poppins', sans-serif;
+            z-index: 2000;
         }
-
-        .dropdown-menu.active {
-            display: block;
-        }
-
-        .dropdown-menu a,
-        .dropdown-menu form {
-            display: block;
-        }
-
-        .dropdown-menu a {
-            padding: 12px 16px;
-            color: #333;
-            text-decoration: none;
+        .dropdown-menu.active { display: block; }
+        .dropdown-menu a, .dropdown-menu button {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 11px 16px;
             font-size: 13px;
-            transition: all 0.2s;
-            border-bottom: 1px solid #f0f0f0;
-        }
-
-        .dropdown-menu a i {
-            margin-right: 8px;
-            width: 16px;
-            text-align: center;
-            color: #8B3A3A;
-        }
-
-        .dropdown-menu a:hover {
-            background: #f9f9f9;
-            color: #8B3A3A;
-        }
-
-        .dropdown-menu a:last-child,
-        .dropdown-menu button {
-            border-bottom: none;
-        }
-
-        .dropdown-menu button {
-            width: 100%;
-            padding: 12px 16px;
+            font-family: 'Poppins', sans-serif;
+            text-decoration: none;
+            color: var(--gray-900);
             background: none;
             border: none;
+            width: 100%;
             text-align: left;
-            color: #d84949;
-            font-size: 13px;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: background 0.2s;
+            border-bottom: 1px solid #f5f5f5;
         }
+        .dropdown-menu a:last-child,
+        .dropdown-menu form:last-child button { border-bottom: none; }
+        .dropdown-menu a:hover,
+        .dropdown-menu button:hover { background: var(--gray-100); }
+        .dropdown-menu a i, .dropdown-menu button i { color: var(--primary); width: 16px; text-align: center; }
+        .dropdown-menu .logout-btn { color: #e53e3e; }
+        .dropdown-menu .logout-btn i { color: #e53e3e; }
 
-        .dropdown-menu button i {
-            margin-right: 8px;
-            width: 16px;
-            text-align: center;
-        }
-
-        .dropdown-menu button:hover {
-            background: #f9f9f9;
-        }
-
-        /* WELCOME BANNER */
+        /* ─── WELCOME BANNER ─── */
         .welcome-banner {
             background: white;
-            border-radius: 8px;
-            padding: 40px;
-            margin-bottom: 30px;
+            border-radius: 16px;
+            padding: 32px 36px;
+            margin-bottom: 22px;
             display: grid;
             grid-template-columns: 1fr auto;
-            gap: 40px;
+            gap: 30px;
             align-items: center;
+            overflow: hidden;
+            position: relative;
         }
 
-        .welcome-content h2 {
-            font-size: 28px;
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 10px;
-            font-family: 'Poppins', sans-serif;
+        .welcome-banner h2 {
+            font-size: 26px;
+            font-weight: 700;
+            color: var(--gray-900);
+            margin-bottom: 8px;
         }
 
-        .welcome-content p {
-            color: #999;
-            font-size: 14px;
-            margin-bottom: 20px;
+        .welcome-banner p {
+            font-size: 13px;
+            color: var(--gray-500);
+            margin-bottom: 18px;
         }
 
         .exam-countdown {
-            display: flex;
+            display: inline-flex;
             align-items: center;
-            gap: 15px;
-            margin-top: 20px;
+            gap: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--accent-red);
         }
 
-        .countdown-number {
-            font-size: 36px;
-            font-weight: 700;
-            color: #d84949;
-        }
-
-        .countdown-text {
-            font-size: 13px;
-            color: #666;
-        }
-
-        .welcome-image {
-            width: 300px;
-            height: 200px;
-            background: linear-gradient(135deg, #f8f9fa, #f0f0f0);
-            border-radius: 12px;
+        .welcome-illustration {
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 25px;
-            font-size: 70px;
-            color: #8B3A3A;
+            gap: 10px;
+            padding: 10px 20px;
+            position: relative;
         }
 
-        .welcome-image i {
-            opacity: 0.9;
-            filter: drop-shadow(0 2px 4px rgba(139, 58, 58, 0.1));
+        .illus-book {
+            width: 70px; height: 90px;
+            border-radius: 6px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 11px; font-weight: 700;
+            color: white;
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+            letter-spacing: 2px;
+        }
+        .illus-book.tax { background: linear-gradient(135deg, #c0392b, #962d22); }
+        .illus-book.audit { background: linear-gradient(135deg, #7B1D1D, #5a1515); }
+        .illus-book.far { background: linear-gradient(135deg, #8e44ad, #6c3483); }
+
+        .illus-laptop {
+            width: 120px; height: 85px;
+            background: #2d3748;
+            border-radius: 8px 8px 0 0;
+            display: flex; align-items: center; justify-content: center;
+            margin-bottom: -2px;
+            position: relative;
+        }
+        .illus-laptop::after {
+            content: '';
+            position: absolute;
+            bottom: -10px; left: -15px;
+            width: 150px; height: 10px;
+            background: #1a202c;
+            border-radius: 0 0 6px 6px;
         }
 
-        /* METRICS SECTION */
+        .illus-laptop-screen {
+            width: 104px; height: 70px;
+            background: #1a1a2e;
+            border-radius: 4px;
+            display: flex; align-items: center; justify-content: center;
+        }
+
+        .illus-logo-screen {
+            width: 48px; height: 48px;
+            background: var(--sidebar-bg);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px; color: white;
+        }
+
+        .illus-plant {
+            font-size: 40px;
+            margin-bottom: 10px;
+        }
+
+        .illus-mug {
+            font-size: 36px;
+        }
+
+        .welcome-deco {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* ─── METRICS ─── */
         .metrics-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 20px;
-            margin-bottom: 30px;
+            gap: 18px;
+            margin-bottom: 22px;
         }
 
         .metric-card {
             background: white;
-            padding: 25px;
-            border-radius: 8px;
-            text-align: center;
+            border-radius: 14px;
+            padding: 22px 22px 16px;
+            position: relative;
+            overflow: hidden;
         }
 
-        .metric-icon {
-            font-size: 24px;
+        .metric-top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
             margin-bottom: 12px;
-            color: #8B3A3A;
         }
 
-        .metric-number {
-            font-size: 28px;
-            font-weight: 700;
-            color: #333;
-            margin-bottom: 5px;
+        .metric-icon-wrap {
+            width: 38px; height: 38px;
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px;
         }
+        .metric-icon-wrap.red   { background: #fde8e8; color: var(--accent-red); }
+        .metric-icon-wrap.green { background: #d1fae5; color: var(--green); }
+        .metric-icon-wrap.blue  { background: #dbeafe; color: var(--blue); }
+        .metric-icon-wrap.orange{ background: #fef3c7; color: var(--orange); }
 
-        .metric-label {
-            color: #999;
-            font-size: 12px;
-            margin-bottom: 12px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
+        .metric-body {}
+        .metric-label { font-size: 11px; color: var(--gray-500); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+        .metric-number { font-size: 30px; font-weight: 700; color: var(--gray-900); line-height: 1; margin-bottom: 6px; }
+        .metric-change { font-size: 11px; color: var(--green); }
+        .metric-change.neutral { color: var(--gray-500); }
 
-        .metric-change {
-            font-size: 11px;
-            color: #10b981;
-        }
+        .metric-chart { margin-top: 14px; }
 
-        /* MAIN GRID LAYOUT */
+        /* Sparkline charts */
+        .sparkline { width: 100%; height: 36px; }
+        .fire-row { display: flex; gap: 4px; margin-top: 6px; }
+        .fire-icon { font-size: 18px; }
+        .fire-icon.lit   { color: var(--orange); }
+        .fire-icon.unlit { color: var(--gray-300); }
+
+        /* ─── CONTENT GRID ─── */
         .content-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr 360px;
-            gap: 20px;
-            margin-bottom: 30px;
+            grid-template-columns: 1fr 1fr 330px;
+            gap: 18px;
+            margin-bottom: 18px;
         }
 
-        .content-grid-left {
-            grid-column: 1 / 3;
-        }
-
-        .content-grid-right {
-            grid-column: 3;
-            grid-row: 1 / 3;
-        }
-
-        /* CARDS */
-        .section-card {
+        /* ─── CARDS ─── */
+        .card {
             background: white;
-            border-radius: 8px;
-            padding: 25px;
-            margin-bottom: 20px;
+            border-radius: 14px;
+            padding: 22px;
         }
 
-        .section-card h3 {
-            font-size: 16px;
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 18px;
+        }
+
+        .card-title {
+            font-size: 15px;
             font-weight: 600;
-            color: #333;
-            margin-bottom: 20px;
-            font-family: 'Poppins', sans-serif;
+            color: var(--gray-900);
         }
 
-        .section-card h4 {
-            font-size: 14px;
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 15px;
-            font-family: 'Poppins', sans-serif;
+        .card-link {
+            font-size: 12px;
+            color: var(--accent-red);
+            text-decoration: none;
+            font-weight: 500;
+            cursor: pointer;
         }
+        .card-link:hover { text-decoration: underline; }
 
+        /* ─── SUBJECT MASTERY ─── */
         .subject-item {
-            padding: 12px 0;
-            border-bottom: 1px solid #f0f0f0;
             display: flex;
             align-items: center;
-            justify-content: space-between;
+            gap: 12px;
+            padding: 11px 8px;
+            border-bottom: 1px solid #f5f5f5;
             cursor: pointer;
-            transition: all 0.3s;
-            padding-right: 10px;
+            border-radius: 8px;
+            transition: background 0.2s;
         }
-
-        .subject-item:last-child {
-            border-bottom: none;
-        }
-
-        .subject-item:hover {
-            background: #f9f9f9;
-            border-radius: 4px;
-            padding-left: 10px;
-        }
-
-        .subject-name {
-            font-size: 13px;
-            color: #333;
-            flex: 1;
-        }
+        .subject-item:last-child { border-bottom: none; }
+        .subject-item:hover { background: var(--gray-100); }
 
         .subject-icon {
-            font-size: 16px;
-            margin-right: 10px;
-            width: 18px;
-            text-align: center;
-            color: #8B3A3A;
+            width: 32px; height: 32px;
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 15px;
+            flex-shrink: 0;
         }
+        .subject-icon.s1 { background: #fde8e8; color: var(--accent-red); }
+        .subject-icon.s2 { background: #fde8e8; color: var(--accent-red); }
+        .subject-icon.s3 { background: #d1fae5; color: var(--green); }
+        .subject-icon.s4 { background: #dbeafe; color: var(--blue); }
+        .subject-icon.s5 { background: #fef3c7; color: var(--orange); }
 
+        .subject-name { flex: 1; font-size: 13px; color: var(--gray-900); }
+        .subject-arrow { color: var(--gray-500); font-size: 12px; }
+
+        /* ─── TOP WEAKNESSES ─── */
         .weakness-item {
             display: flex;
             align-items: center;
-            gap: 15px;
-            padding: 15px 0;
-            border-bottom: 1px solid #f0f0f0;
-        }
-
-        .weakness-item:last-child {
-            border-bottom: none;
-        }
-
-        .weakness-badge {
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 600;
-            font-size: 12px;
-            color: white;
-            flex-shrink: 0;
-        }
-
-        .weakness-badge.badge-1 {
-            background: #d84949;
-        }
-
-        .weakness-badge.badge-2 {
-            background: #f59e0b;
-        }
-
-        .weakness-badge.badge-3 {
-            background: #8B3A3A;
-        }
-
-        .weakness-content {
-            flex: 1;
-        }
-
-        .weakness-title {
-            font-size: 13px;
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 3px;
-        }
-
-        .weakness-category {
-            font-size: 11px;
-            color: #999;
-        }
-
-        .focus-area {
-            padding: 12px;
-            margin-bottom: 10px;
-            background: #f9f9f9;
-            border-radius: 6px;
+            gap: 14px;
+            padding: 13px 0;
+            border-bottom: 1px solid #f5f5f5;
             cursor: pointer;
-            transition: all 0.3s;
         }
+        .weakness-item:last-child { border-bottom: none; }
 
-        .focus-area:hover {
-            background: #f0f0f0;
+        .weakness-num {
+            width: 30px; height: 30px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 13px;
+            color: white; flex-shrink: 0;
         }
+        .weakness-num.n1 { background: var(--accent-red); }
+        .weakness-num.n2 { background: var(--orange); }
+        .weakness-num.n3 { background: var(--primary); }
 
-        .focus-area-title {
-            font-size: 13px;
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 5px;
-        }
+        .weakness-info { flex: 1; }
+        .weakness-title { font-size: 13px; font-weight: 600; color: var(--gray-900); margin-bottom: 2px; }
+        .weakness-sub   { font-size: 11px; color: var(--gray-500); }
+        .weakness-arrow { color: var(--gray-500); font-size: 12px; }
 
-        .focus-area-desc {
-            font-size: 11px;
-            color: #999;
-        }
+        /* ─── RIGHT PANEL ─── */
+        .right-panel { display: flex; flex-direction: column; gap: 18px; }
 
-        /* PROGRESS CIRCLE */
-        .progress-section {
-            text-align: center;
-        }
+        /* Overall Progress */
+        .progress-wrap { text-align: center; }
 
-        .progress-circle {
-            width: 150px;
-            height: 150px;
-            margin: 0 auto 25px;
+        .progress-circle-container {
+            width: 160px; height: 160px;
+            margin: 0 auto 16px;
             position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            display: flex; align-items: center; justify-content: center;
         }
 
-        .progress-circle svg {
-            width: 100%;
-            height: 100%;
+        .progress-circle-container svg {
+            width: 100%; height: 100%;
             transform: rotate(-90deg);
         }
 
-        .progress-text {
+        .progress-inner {
             position: absolute;
             text-align: center;
         }
 
-        .progress-number {
-            font-size: 32px;
-            font-weight: 700;
-            color: #333;
-        }
-
-        .progress-label {
-            font-size: 11px;
-            color: #999;
-        }
+        .progress-pct { font-size: 34px; font-weight: 700; color: var(--gray-900); line-height: 1; }
+        .progress-lbl { font-size: 12px; color: var(--gray-500); margin-top: 3px; }
 
         .progress-legend {
             display: flex;
             justify-content: center;
-            gap: 20px;
+            gap: 18px;
             font-size: 12px;
-            margin-top: 20px;
+            color: var(--gray-700);
+            margin-bottom: 20px;
         }
-
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-
         .legend-dot {
-            width: 8px;
-            height: 8px;
+            width: 10px; height: 10px;
             border-radius: 50%;
+            display: inline-block;
+            margin-right: 5px;
+            vertical-align: middle;
         }
+        .legend-dot.done { background: var(--primary); }
+        .legend-dot.left { background: #f0c9c9; }
 
-        .legend-dot.completed {
-            background: #8B3A3A;
-        }
-
-        .legend-dot.remaining {
-            background: #f0c9c9;
-        }
-
-        /* ACTIVITY SECTION */
-        .activity-item {
-            display: flex;
-            gap: 15px;
-            padding: 15px 0;
-            border-bottom: 1px solid #f0f0f0;
-        }
-
-        .activity-item:last-child {
-            border-bottom: none;
-        }
-
-        .activity-icon {
-            width: 36px;
-            height: 36px;
-            border-radius: 6px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 16px;
-            flex-shrink: 0;
-            background: #f0f0f0;
-            color: #333;
-        }
-
-        .activity-icon.quiz {
-            background: #e8f5e9;
-            color: #10b981;
-        }
-
-        .activity-content {
-            flex: 1;
-        }
-
-        .activity-title {
-            font-size: 13px;
+        /* Quick Action Buttons */
+        .quick-btn {
+            width: 100%;
+            padding: 13px;
+            border-radius: 10px;
+            font-size: 14px;
             font-weight: 600;
-            color: #333;
-            margin-bottom: 3px;
-        }
-
-        .activity-meta {
-            font-size: 11px;
-            color: #999;
-        }
-
-        .activity-score {
-            font-size: 12px;
-            font-weight: 600;
-            color: #333;
-            text-align: right;
-        }
-
-        .activity-time {
-            font-size: 11px;
-            color: #999;
-            text-align: right;
-        }
-
-        .activity-link {
-            font-size: 11px;
-            color: #8B3A3A;
+            font-family: 'Poppins', sans-serif;
             cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            gap: 8px;
+            transition: all 0.2s;
+            margin-bottom: 10px;
             text-decoration: none;
         }
-
-        .activity-link i {
-            margin-right: 4px;
+        .quick-btn:last-child { margin-bottom: 0; }
+        .quick-btn.primary {
+            background: var(--primary);
+            color: white;
+            border: none;
         }
-
-        .activity-link:hover {
-            text-decoration: underline;
-        }
-
-        /* STREAK SECTION */
-        .streak-section {
+        .quick-btn.primary:hover { background: var(--primary-hover); }
+        .quick-btn.outline {
             background: white;
-            border-radius: 8px;
-            padding: 25px;
-            margin-bottom: 30px;
+            color: var(--primary);
+            border: 1.5px solid var(--primary);
         }
+        .quick-btn.outline:hover { background: var(--primary-light); }
 
-        .streak-content {
+        /* Recent Activity */
+        .activity-item {
             display: flex;
-            gap: 30px;
             align-items: center;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid #f5f5f5;
         }
+        .activity-item:last-child { border-bottom: none; }
 
-        .streak-info {
-            flex: 1;
+        .activity-icon {
+            width: 38px; height: 38px;
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
         }
+        .activity-icon.quiz { background: #d1fae5; color: var(--green); }
 
-        .streak-number {
-            font-size: 48px;
-            font-weight: 700;
-            color: #8B3A3A;
-            margin-bottom: 10px;
-        }
+        .activity-info { flex: 1; }
+        .activity-name { font-size: 13px; font-weight: 600; color: var(--gray-900); margin-bottom: 2px; }
+        .activity-meta { font-size: 11px; color: var(--gray-500); }
 
-        .streak-label {
-            font-size: 14px;
-            color: #666;
-            margin-bottom: 5px;
-        }
+        .activity-right { text-align: right; flex-shrink: 0; }
+        .activity-time { font-size: 11px; color: var(--gray-500); }
+        .activity-chevron { font-size: 11px; color: var(--gray-500); margin-top: 4px; }
 
-        .streak-text {
-            font-size: 13px;
-            color: #999;
-        }
-
-        .streak-image {
-            font-size: 120px;
-            color: #8B3A3A;
-        }
-
-        /* QUICK ACTIONS */
-        .quick-actions {
+        /* ─── BOTTOM ROW ─── */
+        .bottom-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-top: 20px;
+            gap: 18px;
         }
 
-        .action-btn {
-            padding: 12px 16px;
-            border: none;
-            border-radius: 6px;
-            font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
+        /* Study Streak */
+        .streak-card {
+            background: white;
+            border-radius: 14px;
+            padding: 28px 28px;
             display: flex;
             align-items: center;
-            justify-content: center;
-            gap: 8px;
-            font-family: 'Poppins', sans-serif;
+            justify-content: space-between;
+            gap: 20px;
+            overflow: hidden;
         }
 
-        .action-btn.primary {
-            background: #8B3A3A;
-            color: white;
-        }
+        .streak-title { font-size: 15px; font-weight: 600; color: var(--gray-900); margin-bottom: 14px; }
 
-        .action-btn.primary:hover {
-            background: #6d2e2e;
-        }
+        .streak-num-row { display: flex; align-items: baseline; gap: 6px; margin-bottom: 4px; }
+        .streak-num { font-size: 52px; font-weight: 700; color: var(--gray-900); line-height: 1; }
+        .streak-unit { font-size: 18px; font-weight: 500; color: var(--gray-500); }
+        .streak-sub { font-size: 13px; color: var(--gray-500); }
 
-        .action-btn.secondary {
+        .streak-deco { font-size: 90px; color: #f0c9c9; flex-shrink: 0; opacity: 0.7; }
+
+        /* Quote Card */
+        .quote-card {
             background: white;
-            color: #8B3A3A;
-            border: 1px solid #ddd;
+            border-radius: 14px;
+            padding: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            overflow: hidden;
         }
 
-        .action-btn.secondary:hover {
-            background: #f9f9f9;
+        .quote-body {}
+        .quote-marks { font-size: 48px; color: var(--primary-light); line-height: 0.8; margin-bottom: 10px; font-family: Georgia, serif; color: #e0d0d0; }
+        .quote-text { font-size: 14px; color: var(--gray-700); line-height: 1.6; font-style: italic; margin-bottom: 12px; }
+        .quote-author { font-size: 13px; color: var(--gray-500); font-weight: 500; }
+
+        .quote-deco { font-size: 80px; flex-shrink: 0; opacity: 0.6; color: #f0c9c9; }
+
+        /* ─── CARD MENU ─── */
+        .card-menu-btn {
+            background: none; border: none;
+            color: var(--gray-500); font-size: 16px;
+            cursor: pointer; padding: 2px 6px;
         }
 
-        /* RESPONSIVE */
-        @media (max-width: 1400px) {
-            .metrics-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-
-            .content-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .content-grid-left {
-                grid-column: 1;
-            }
-
-            .content-grid-right {
-                grid-column: 1;
-                grid-row: auto;
-            }
+        /* ─── RESPONSIVE ─── */
+        @media (max-width: 1280px) {
+            .content-grid { grid-template-columns: 1fr 1fr; }
+            .content-grid .right-panel { grid-column: 1 / 3; }
+            .metrics-grid { grid-template-columns: repeat(2, 1fr); }
         }
 
-        @media (max-width: 768px) {
-            .dashboard-container {
-                grid-template-columns: 1fr;
-            }
-
-            .sidebar {
-                width: 100%;
-                height: auto;
-                position: relative;
-                padding: 15px 0;
-            }
-
-            .main-content {
-                margin-left: 0;
-                padding: 20px;
-            }
-
-            .metrics-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-
-            .welcome-banner {
-                grid-template-columns: 1fr;
-            }
-
-            .welcome-image {
-                width: 100%;
-            }
+        @media (max-width: 900px) {
+            .sidebar { width: 70px; }
+            .main-content { margin-left: 70px; }
+            .content-grid { grid-template-columns: 1fr; }
+            .content-grid .right-panel { grid-column: 1; }
+            .bottom-grid { grid-template-columns: 1fr; }
+            .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+            .search-wrap input { width: 180px; }
         }
+
+        /* ─── ANIMATION ─── */
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(16px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .anim { animation: fadeUp 0.45s ease both; }
     </style>
 </head>
 <body>
-    <div class="dashboard-container">
-        <!-- SIDEBAR -->
-        <aside class="sidebar" id="sidebar">
-            <div class="sidebar-logo">
-                <div class="sidebar-logo-icon"><i class="fas fa-bullseye"></i></div>
-                <div class="sidebar-logo-text">
-                    <strong>CPACE</strong>
-                    <small>CPA Reviewer</small>
-                </div>
-            </div>
 
-            <nav class="sidebar-nav">
-                <li><a href="{{ route('dashboard') }}" class="active"><i class="fas fa-home"></i><span>Dashboard</span></a></li>
-                <li><a href="{{ route('subjects') }}"><i class="fas fa-book"></i><span>Subjects</span></a></li>
-                <li><a href="{{ route('adaptive-quizzes') }}"><i class="fas fa-brain"></i><span>Adaptive Quizzes</span></a></li>
-                <li><a href="{{ route('mock-exams') }}"><i class="fas fa-file-alt"></i><span>Mock Exams</span></a></li>
-                <li><a href="{{ route('performance') }}"><i class="fas fa-chart-bar"></i><span>Performance</span></a></li>
-                <li><a href="{{ route('review-notes') }}"><i class="fas fa-book-open"></i><span>Review Notes</span></a></li>
-                <li><a href="#"><i class="fas fa-layer-group"></i><span>Flashcards</span></a></li>
-                <li><a href="{{ route('calendar') }}"><i class="fas fa-calendar-alt"></i><span>Calendar</span></a></li>
-                <li><a href="#"><i class="fas fa-chart-line"></i><span>Progress</span></a></li>
-                <li><a href="{{ route('achievements') }}"><i class="fas fa-trophy"></i><span>Achievements</span></a></li>
-                <li><a href="#"><i class="fas fa-cog"></i><span>Settings</span></a></li>
-            </nav>
-
-            <div class="sidebar-footer">
-                <div class="user-avatar">
-                    <div class="avatar-circle">{{ strtoupper(substr(Auth::user()->name, 0, 1)) }}{{ strtoupper(substr(explode(' ', Auth::user()->name)[array_key_last(explode(' ', Auth::user()->name))], 0, 1)) }}</div>
-                    <div class="user-info-sidebar">
-                        <span class="name">{{ Auth::user()->name }}</span>
-                        <span class="role">Reviewer</span>
-                    </div>
-                </div>
-            </div>
-        </aside>
-
-        <!-- MAIN CONTENT -->
-        <main class="main-content">
-            <!-- HEADER -->
-            <div class="header">
-                <div class="header-left">
-                    <button class="sidebar-toggle" id="sidebarToggle">
-                        <i class="fas fa-bars"></i>
-                    </button>
-                    <div>
-                        <div class="header-title">Dashboard</div>
-                        <div class="header-subtitle">Welcome back, {{ Auth::user()->name }}! Let's keep up the momentum.</div>
-                    </div>
-                </div>
-                <div class="header-right">
-                    <div class="search-box">
-                        <input type="text" placeholder="Search topics, questions, subjects...">
-                    </div>
-                    <div class="header-icons">
-                        <button class="icon-btn">
-                            <i class="fas fa-bell"></i>
-                            <span class="notification-badge">3</span>
-                        </button>
-                        <div style="position: relative;">
-                            <button class="profile-btn" id="profileBtn">KD</button>
-                            <div class="dropdown-menu" id="profileDropdown">
-                                <a href="#"><i class="fas fa-user"></i> Profile Settings</a>
-                                <a href="#"><i class="fas fa-chart-line"></i> My Progress</a>
-                                <a href="#"><i class="fas fa-question-circle"></i> Help & Support</a>
-                                <form method="POST" action="{{ route('logout') }}" style="margin: 0; padding: 0;">
-                                    @csrf
-                                    <button type="submit"><i class="fas fa-sign-out-alt"></i> Logout</button>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- WELCOME BANNER -->
-            <div class="welcome-banner">
-                <div class="welcome-content">
-                    <h2>Good morning, Kristine! <i class="fas fa-wave-hand"></i></h2>
-                    <p>Every day you study brings you closer to your goal.</p>
-                    <div class="exam-countdown">
-                        <div>
-                            <div class="countdown-number">78</div>
-                            <div class="countdown-text">days until<br>board exam</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="welcome-image">
-                    <i class="fas fa-book"></i>
-                    <i class="fas fa-laptop"></i>
-                    <i class="fas fa-mug-hot"></i>
-                </div>
-            </div>
-
-            <!-- METRICS -->
-            <div class="metrics-grid">
-                <div class="metric-card">
-                    <div class="metric-icon"><i class="fas fa-chart-area"></i></div>
-                    <div class="metric-label">Board Readiness Score</div>
-                    <div class="metric-number">78%</div>
-                    <div class="metric-change"><i class="fas fa-arrow-up"></i> 5% from last week</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-icon"><i class="fas fa-check-circle"></i></div>
-                    <div class="metric-label">Questions Answered</div>
-                    <div class="metric-number">1,247</div>
-                    <div class="metric-change"><i class="fas fa-arrow-up"></i> 128 this week</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-icon"><i class="fas fa-hourglass-end"></i></div>
-                    <div class="metric-label">Study Time</div>
-                    <div class="metric-number">42h</div>
-                    <div class="metric-change"><i class="fas fa-arrow-up"></i> 8h this week</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-icon"><i class="fas fa-fire"></i></div>
-                    <div class="metric-label">Day Streak</div>
-                    <div class="metric-number">14</div>
-                    <div class="metric-change">Keep it up!</div>
-                </div>
-            </div>
-
-            <!-- MAIN CONTENT GRID -->
-            <div class="content-grid">
-                <!-- LEFT COLUMN -->
-                <div class="content-grid-left">
-                    <!-- SUBJECT MASTERY -->
-                    <div class="section-card">
-                        <h3>Subject Mastery</h3>
-                        <div class="subject-item">
-                            <i class="subject-icon fas fa-chart-pie"></i>
-                            <span class="subject-name">Financial Accounting & Reporting</span>
-                            <i class="subject-icon fas fa-arrow-right"></i>
-                        </div>
-                        <div class="subject-item">
-                            <i class="subject-icon fas fa-search"></i>
-                            <span class="subject-name">Auditing</span>
-                            <i class="subject-icon fas fa-arrow-right"></i>
-                        </div>
-                        <div class="subject-item">
-                            <i class="subject-icon fas fa-list"></i>
-                            <span class="subject-name">Taxation</span>
-                            <i class="subject-icon fas fa-arrow-right"></i>
-                        </div>
-                        <div class="subject-item">
-                            <i class="subject-icon fas fa-cogs"></i>
-                            <span class="subject-name">Management Services</span>
-                            <i class="subject-icon fas fa-arrow-right"></i>
-                        </div>
-                        <div class="subject-item">
-                            <i class="subject-icon fas fa-balance-scale"></i>
-                            <span class="subject-name">Regulatory Framework</span>
-                            <i class="subject-icon fas fa-arrow-right"></i>
-                        </div>
-                    </div>
-
-                    <!-- TOP WEAKNESSES -->
-                    <div class="section-card">
-                        <h3>Top Weaknesses</h3>
-                        <div class="weakness-item">
-                            <div class="weakness-badge badge-1">1</div>
-                            <div class="weakness-content">
-                                <div class="weakness-title">Estate Tax Computation</div>
-                                <div class="weakness-category">Taxation</div>
-                            </div>
-                        </div>
-                        <div class="weakness-item">
-                            <div class="weakness-badge badge-2">2</div>
-                            <div class="weakness-content">
-                                <div class="weakness-title">Revenue Recognition</div>
-                                <div class="weakness-category">FAR - PFRS 15</div>
-                            </div>
-                        </div>
-                        <div class="weakness-item">
-                            <div class="weakness-badge badge-3">3</div>
-                            <div class="weakness-content">
-                                <div class="weakness-title">Audit Sampling</div>
-                                <div class="weakness-category">Auditing - PSA 530</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- FOCUS AREAS -->
-                    <div class="section-card">
-                        <h3>Focus Areas</h3>
-                        <div class="focus-area">
-                            <div class="focus-area-title">Estate Tax Computation</div>
-                            <div class="focus-area-desc">Practice 5 more questions</div>
-                        </div>
-                        <div class="focus-area">
-                            <div class="focus-area-title">Revenue Recognition</div>
-                            <div class="focus-area-desc">Review concepts & quiz</div>
-                        </div>
-                        <div class="focus-area">
-                            <div class="focus-area-title">Audit Sampling</div>
-                            <div class="focus-area-desc">Complete mock exam</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- RIGHT COLUMN -->
-                <div class="content-grid-right">
-                    <!-- OVERALL PROGRESS -->
-                    <div class="section-card">
-                        <h3>Overall Progress</h3>
-                        <div class="progress-section">
-                            <div class="progress-circle">
-                                <svg viewBox="0 0 100 100">
-                                    <circle cx="50" cy="50" r="45" fill="none" stroke="#f0c9c9" stroke-width="8"/>
-                                    <circle cx="50" cy="50" r="45" fill="none" stroke="#8B3A3A" stroke-width="8"
-                                            stroke-dasharray="113.1 282.7" stroke-linecap="round"/>
-                                </svg>
-                                <div class="progress-text">
-                                    <div class="progress-number">78%</div>
-                                    <div class="progress-label">Complete</div>
-                                </div>
-                            </div>
-                            <div class="progress-legend">
-                                <div class="legend-item">
-                                    <span class="legend-dot completed"></span>
-                                    <span>Completed</span>
-                                </div>
-                                <div class="legend-item">
-                                    <span class="legend-dot remaining"></span>
-                                    <span>Remaining</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- RECENT ACTIVITY -->
-                    <div class="section-card">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                            <h3 style="margin-bottom: 0;">Recent Activity</h3>
-                            <a class="activity-link" href="#"><i class="fas fa-eye"></i> View All</a>
-                        </div>
-                        <div class="activity-item">
-                            <div class="activity-icon quiz"><i class="fas fa-clipboard-list"></i></div>
-                            <div class="activity-content">
-                                <div class="activity-title">Adaptive Quiz - FAR</div>
-                                <div class="activity-meta">20 Questions • Score: 85%</div>
-                            </div>
-                            <div>
-                                <div class="activity-time">2h ago</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- STUDY STREAK SECTION -->
-            <div class="streak-section">
-                <div class="streak-content">
-                    <div class="streak-info">
-                        <div class="streak-number">14</div>
-                        <div class="streak-label">days</div>
-                        <div class="streak-text">Keep the momentum going!</div>
-                    </div>
-                    <div class="streak-image"><i class="fas fa-calendar"></i></div>
-                </div>
-            </div>
-        </main>
+<!-- ════════════════════════ SIDEBAR ════════════════════════ -->
+<aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+        <div class="logo-circle">
+            <i class="fas fa-shield-alt"></i>
+        </div>
+        <div class="logo-text">
+            <strong>CPACE</strong>
+            <small>CPA Reviewer</small>
+        </div>
     </div>
 
-    <script>
-        // Initialize
-        document.addEventListener('DOMContentLoaded', function() {
-            // Add smooth animations
-            const elements = document.querySelectorAll('.metric-card, .section-card, .welcome-banner');
-            elements.forEach((el, index) => {
-                el.style.animation = `slideUp 0.5s ease ${index * 0.1}s both`;
-            });
+    <ul class="sidebar-nav">
+        <li><a href="{{ route('dashboard') }}" class="active"><i class="fas fa-home"></i><span>Dashboard</span></a></li>
+        <li><a href="{{ route('subjects') }}"><i class="fas fa-book-open"></i><span>Subjects</span></a></li>
+        <li><a href="{{ route('adaptive-quizzes') }}"><i class="fas fa-pen-fancy"></i><span>Quizzes</span></a></li>
+        <li><a href="{{ route('mock-exams') }}"><i class="fas fa-file-alt"></i><span>Mock Exams</span></a></li>
+        <li><a href="{{ route('performance') }}"><i class="fas fa-chart-bar"></i><span>Performance</span></a></li>
+        <li><a href="{{ route('review-notes') }}"><i class="fas fa-sticky-note"></i><span>Review Notes</span></a></li>
+        <li><a href="#"><i class="fas fa-layer-group"></i><span>Flashcards</span></a></li>
+        <li><a href="{{ route('calendar') }}"><i class="fas fa-calendar-alt"></i><span>Calendar</span></a></li>
+        <li><a href="#"><i class="fas fa-chart-line"></i><span>Progress</span></a></li>
+        <li><a href="{{ route('achievements') }}"><i class="fas fa-trophy"></i><span>Achievements</span></a></li>
+        <li><a href="#"><i class="fas fa-cog"></i><span>Settings</span></a></li>
+    </ul>
 
-            // Profile dropdown
-            const profileBtn = document.getElementById('profileBtn');
-            const profileDropdown = document.getElementById('profileDropdown');
+    <div class="sidebar-footer">
+        <div class="user-profile">
+            <div class="avatar-sm">
+                {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}{{ strtoupper(substr(explode(' ', Auth::user()->name)[array_key_last(explode(' ', Auth::user()->name))], 0, 1)) }}
+            </div>
+            <div class="user-details">
+                <span class="uname">{{ Auth::user()->name }}</span>
+                <span class="urole">Reviewer</span>
+            </div>
+            <i class="fas fa-chevron-down chevron-icon" style="color:rgba(255,255,255,0.6); font-size:11px;"></i>
+        </div>
+    </div>
+</aside>
 
-            if (profileBtn && profileDropdown) {
-                profileBtn.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    profileDropdown.classList.toggle('active');
-                });
+<!-- ════════════════════════ MAIN CONTENT ════════════════════════ -->
+<main class="main-content">
 
-                // Close dropdown when clicking outside
-                document.addEventListener('click', function() {
-                    profileDropdown.classList.remove('active');
-                });
+    <!-- HEADER -->
+    <div class="page-header anim" style="animation-delay:0s">
+        <div class="page-header-left">
+            <button class="toggle-btn" id="sidebarToggle"><i class="fas fa-bars"></i></button>
+            <div>
+                <div class="page-title">Dashboard</div>
+                <div class="page-subtitle">Welcome back, {{ Auth::user()->name }}! Let's keep up the momentum.</div>
+            </div>
+        </div>
+        <div class="page-header-right">
+            <div class="search-wrap">
+                <i class="fas fa-search"></i>
+                <input type="text" placeholder="Search topics, questions, subjects...">
+            </div>
+            <button class="notif-btn">
+                <i class="fas fa-bell"></i>
+                <span class="badge">3</span>
+            </button>
+            <div class="header-dropdown-wrap">
+                <button class="profile-avatar" id="profileBtn">KD</button>
+                <div class="dropdown-menu" id="profileDropdown">
+                    <a href="#"><i class="fas fa-user"></i> Profile Settings</a>
+                    <a href="#"><i class="fas fa-chart-line"></i> My Progress</a>
+                    <a href="#"><i class="fas fa-question-circle"></i> Help &amp; Support</a>
+                    <form method="POST" action="{{ route('logout') }}" style="margin:0;padding:0;">
+                        @csrf
+                        <button type="submit" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 
-                // Prevent closing when clicking inside dropdown
-                profileDropdown.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                });
-            }
+    <!-- WELCOME BANNER -->
+    <div class="welcome-banner anim" style="animation-delay:0.08s">
+        <div class="welcome-content">
+            <h2>Good morning, {{ explode(' ', Auth::user()->name)[0] }}! &#128075;</h2>
+            <p>Every day you study brings you closer to your goal.</p>
+            <div class="exam-countdown">
+                <i class="fas fa-fire-alt"></i>
+                78 days until board exam
+            </div>
+        </div>
+        <div class="welcome-illustration">
+            <div style="display:flex; flex-direction:column; align-items:flex-end; gap:8px;">
+                <div style="display:flex; align-items:flex-end; gap:8px;">
+                    <div style="display:flex; flex-direction:column; gap:4px;">
+                        <div class="illus-book tax">TAX</div>
+                        <div class="illus-book audit" style="height:75px;">AUDIT</div>
+                        <div class="illus-book far" style="height:65px; background:linear-gradient(135deg,#e67e22,#ca6f1e);">FAR</div>
+                    </div>
+                    <div style="display:flex; flex-direction:column; align-items:center; gap:10px;">
+                        <div>&#127807;</div>
+                        <div class="illus-laptop">
+                            <div class="illus-laptop-screen">
+                                <div class="illus-logo-screen">
+                                    <i class="fas fa-shield-alt"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="font-size:28px;">&#9749;</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- METRICS -->
+    <div class="metrics-grid anim" style="animation-delay:0.14s">
+        <!-- Board Readiness Score -->
+        <div class="metric-card">
+            <div class="metric-top">
+                <div class="metric-icon-wrap red"><i class="fas fa-chart-area"></i></div>
+            </div>
+            <div class="metric-label">Board Readiness Score</div>
+            <div class="metric-number">78%</div>
+            <div class="metric-change"><i class="fas fa-arrow-up"></i> 5% from last week</div>
+            <div class="metric-chart">
+                <svg class="sparkline" viewBox="0 0 100 36" preserveAspectRatio="none">
+                    <defs>
+                        <linearGradient id="redGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#c0392b" stop-opacity="0.3"/>
+                            <stop offset="100%" stop-color="#c0392b" stop-opacity="0"/>
+                        </linearGradient>
+                    </defs>
+                    <path d="M0,30 L14,26 L28,22 L42,20 L56,16 L70,13 L84,9 L100,5" fill="none" stroke="#c0392b" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M0,30 L14,26 L28,22 L42,20 L56,16 L70,13 L84,9 L100,5 L100,36 L0,36 Z" fill="url(#redGrad)"/>
+                </svg>
+            </div>
+        </div>
+
+        <!-- Questions Answered -->
+        <div class="metric-card">
+            <div class="metric-top">
+                <div class="metric-icon-wrap green"><i class="fas fa-clipboard-check"></i></div>
+            </div>
+            <div class="metric-label">Questions Answered</div>
+            <div class="metric-number">1,247</div>
+            <div class="metric-change"><i class="fas fa-arrow-up"></i> 128 this week</div>
+            <div class="metric-chart">
+                <svg class="sparkline" viewBox="0 0 100 36" preserveAspectRatio="none">
+                    <rect x="2"  y="20" width="10" height="16" rx="2" fill="#10b981" opacity="0.5"/>
+                    <rect x="16" y="14" width="10" height="22" rx="2" fill="#10b981" opacity="0.6"/>
+                    <rect x="30" y="18" width="10" height="18" rx="2" fill="#10b981" opacity="0.65"/>
+                    <rect x="44" y="10" width="10" height="26" rx="2" fill="#10b981" opacity="0.75"/>
+                    <rect x="58" y="12" width="10" height="24" rx="2" fill="#10b981" opacity="0.8"/>
+                    <rect x="72" y="6"  width="10" height="30" rx="2" fill="#10b981" opacity="0.9"/>
+                    <rect x="86" y="2"  width="10" height="34" rx="2" fill="#10b981"/>
+                </svg>
+            </div>
+        </div>
+
+        <!-- Study Time -->
+        <div class="metric-card">
+            <div class="metric-top">
+                <div class="metric-icon-wrap blue"><i class="fas fa-clock"></i></div>
+            </div>
+            <div class="metric-label">Study Time</div>
+            <div class="metric-number">42h</div>
+            <div class="metric-change"><i class="fas fa-arrow-up"></i> 8h this week</div>
+            <div class="metric-chart">
+                <svg class="sparkline" viewBox="0 0 100 36" preserveAspectRatio="none">
+                    <rect x="2"  y="24" width="10" height="12" rx="2" fill="#3b82f6" opacity="0.5"/>
+                    <rect x="16" y="20" width="10" height="16" rx="2" fill="#3b82f6" opacity="0.6"/>
+                    <rect x="30" y="16" width="10" height="20" rx="2" fill="#3b82f6" opacity="0.65"/>
+                    <rect x="44" y="18" width="10" height="18" rx="2" fill="#3b82f6" opacity="0.7"/>
+                    <rect x="58" y="10" width="10" height="26" rx="2" fill="#3b82f6" opacity="0.8"/>
+                    <rect x="72" y="8"  width="10" height="28" rx="2" fill="#3b82f6" opacity="0.9"/>
+                    <rect x="86" y="4"  width="10" height="32" rx="2" fill="#3b82f6"/>
+                </svg>
+            </div>
+        </div>
+
+        <!-- Day Streak -->
+        <div class="metric-card">
+            <div class="metric-top">
+                <div class="metric-icon-wrap orange"><i class="fas fa-fire"></i></div>
+            </div>
+            <div class="metric-label">Day Streak</div>
+            <div class="metric-number">14</div>
+            <div class="metric-change neutral">Keep it up!</div>
+            <div class="metric-chart">
+                <div class="fire-row">
+                    <span class="fire-icon lit">&#128293;</span>
+                    <span class="fire-icon lit">&#128293;</span>
+                    <span class="fire-icon lit">&#128293;</span>
+                    <span class="fire-icon lit">&#128293;</span>
+                    <span class="fire-icon unlit"><i class="fas fa-fire" style="color:#e0e0e0;"></i></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CONTENT GRID -->
+    <div class="content-grid anim" style="animation-delay:0.2s">
+
+        <!-- Subject Mastery -->
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">Subject Mastery</span>
+            </div>
+            <div class="subject-item">
+                <div class="subject-icon s1"><i class="fas fa-book"></i></div>
+                <span class="subject-name">Financial Accounting &amp; Reporting</span>
+                <i class="fas fa-chevron-right subject-arrow"></i>
+            </div>
+            <div class="subject-item">
+                <div class="subject-icon s2"><i class="fas fa-search"></i></div>
+                <span class="subject-name">Auditing</span>
+                <i class="fas fa-chevron-right subject-arrow"></i>
+            </div>
+            <div class="subject-item">
+                <div class="subject-icon s3"><i class="fas fa-table"></i></div>
+                <span class="subject-name">Taxation</span>
+                <i class="fas fa-chevron-right subject-arrow"></i>
+            </div>
+            <div class="subject-item">
+                <div class="subject-icon s4"><i class="fas fa-users"></i></div>
+                <span class="subject-name">Management Services</span>
+                <i class="fas fa-chevron-right subject-arrow"></i>
+            </div>
+            <div class="subject-item">
+                <div class="subject-icon s5"><i class="fas fa-balance-scale"></i></div>
+                <span class="subject-name">Regulatory Framework</span>
+                <i class="fas fa-chevron-right subject-arrow"></i>
+            </div>
+        </div>
+
+        <!-- Top Weaknesses -->
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">Top Weaknesses</span>
+                <a class="card-link" href="#">Focus Areas</a>
+            </div>
+            <div class="weakness-item">
+                <div class="weakness-num n1">1</div>
+                <div class="weakness-info">
+                    <div class="weakness-title">Estate Tax Computation</div>
+                    <div class="weakness-sub">Taxation</div>
+                </div>
+                <i class="fas fa-chevron-right weakness-arrow"></i>
+            </div>
+            <div class="weakness-item">
+                <div class="weakness-num n2">2</div>
+                <div class="weakness-info">
+                    <div class="weakness-title">Revenue Recognition</div>
+                    <div class="weakness-sub">FAR &ndash; PFRS 15</div>
+                </div>
+                <i class="fas fa-chevron-right weakness-arrow"></i>
+            </div>
+            <div class="weakness-item">
+                <div class="weakness-num n3">3</div>
+                <div class="weakness-info">
+                    <div class="weakness-title">Audit Sampling</div>
+                    <div class="weakness-sub">Auditing &ndash; PSA 530</div>
+                </div>
+                <i class="fas fa-chevron-right weakness-arrow"></i>
+            </div>
+        </div>
+
+        <!-- RIGHT PANEL -->
+        <div class="right-panel">
+            <!-- Overall Progress -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">Overall Progress</span>
+                    <button class="card-menu-btn"><i class="fas fa-ellipsis-h"></i></button>
+                </div>
+                <div class="progress-wrap">
+                    <div class="progress-circle-container">
+                        <svg viewBox="0 0 100 100">
+                            <circle cx="50" cy="50" r="42" fill="none" stroke="#f0c9c9" stroke-width="9"/>
+                            <circle cx="50" cy="50" r="42" fill="none" stroke="#7B1D1D" stroke-width="9"
+                                    stroke-dasharray="205.8 263.9" stroke-linecap="round"/>
+                        </svg>
+                        <div class="progress-inner">
+                            <div class="progress-pct">78%</div>
+                            <div class="progress-lbl">Complete</div>
+                        </div>
+                    </div>
+                    <div class="progress-legend">
+                        <span><span class="legend-dot done"></span>Completed</span>
+                        <span><span class="legend-dot left"></span>Remaining</span>
+                    </div>
+                </div>
+                <a href="#" class="quick-btn primary">Start Quick Quiz &rarr;</a>
+                <a href="#" class="quick-btn outline">Continue Last Session</a>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">Recent Activity</span>
+                    <a class="card-link" href="#">View All</a>
+                </div>
+                <div class="activity-item">
+                    <div class="activity-icon quiz"><i class="fas fa-clipboard-list"></i></div>
+                    <div class="activity-info">
+                        <div class="activity-name">Adaptive Quiz &ndash; FAR</div>
+                        <div class="activity-meta">20 Questions &bull; Score: 85%</div>
+                    </div>
+                    <div class="activity-right">
+                        <div class="activity-time">2h ago</div>
+                        <div class="activity-chevron"><i class="fas fa-chevron-right"></i></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- BOTTOM ROW -->
+    <div class="bottom-grid anim" style="animation-delay:0.26s">
+        <!-- Study Streak -->
+        <div class="streak-card">
+            <div>
+                <div class="streak-title">Study Streak</div>
+                <div class="streak-num-row">
+                    <span class="streak-num">14</span>
+                    <span class="streak-unit">days</span>
+                </div>
+                <div class="streak-sub">Keep the momentum going!</div>
+            </div>
+            <div style="font-size:72px; opacity:0.35; user-select:none;">&#128197;&#127807;</div>
+        </div>
+
+        <!-- Quote -->
+        <div class="quote-card">
+            <div class="quote-body">
+                <div class="quote-marks">&ldquo;</div>
+                <div class="quote-text">Success is the sum of small efforts, repeated day in and day out.</div>
+                <div class="quote-author">&mdash; Robert Collier</div>
+            </div>
+            <div style="font-size:70px; opacity:0.3; user-select:none; flex-shrink:0;">&#128218;&#128161;</div>
+        </div>
+    </div>
+
+</main>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Sidebar toggle
+    const toggleBtn = document.getElementById('sidebarToggle');
+    const sidebar   = document.getElementById('sidebar');
+
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('collapsed');
+            localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
         });
+    }
 
-        // Add CSS animation
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes slideUp {
-                from {
-                    opacity: 0;
-                    transform: translateY(20px);
-                }
-                to {
-                    opacity: 1;
-                    transform: translateY(0);
-                }
-            }
-        `;
-        document.head.appendChild(style);
+    if (localStorage.getItem('sidebarCollapsed') === 'true') {
+        sidebar.classList.add('collapsed');
+    }
 
-        // Sidebar Toggle
-        const sidebarToggle = document.getElementById('sidebarToggle');
-        const sidebar = document.getElementById('sidebar');
+    // Profile dropdown
+    const profileBtn = document.getElementById('profileBtn');
+    const profileDrop = document.getElementById('profileDropdown');
 
-        if (sidebarToggle) {
-            sidebarToggle.addEventListener('click', () => {
-                sidebar.classList.toggle('collapsed');
-                localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
-            });
-        }
-
-        // Load sidebar state
-        if (localStorage.getItem('sidebarCollapsed') === 'true') {
-            sidebar.classList.add('collapsed');
-        }
-    </script>
+    if (profileBtn && profileDrop) {
+        profileBtn.addEventListener('click', e => {
+            e.stopPropagation();
+            profileDrop.classList.toggle('active');
+        });
+        document.addEventListener('click', () => profileDrop.classList.remove('active'));
+        profileDrop.addEventListener('click', e => e.stopPropagation());
+    }
+});
+</script>
 </body>
 </html>

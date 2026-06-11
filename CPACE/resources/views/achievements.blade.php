@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -33,7 +33,7 @@
 
         /* SIDEBAR */
         .sidebar {
-            background: #8B3A3A;
+            background: #7B1D1D;
             color: white;
             padding: 30px 0;
             position: fixed;
@@ -181,7 +181,7 @@
             align-items: center;
             gap: 6px;
             background: white;
-            color: #8B3A3A;
+            color: #7B1D1D;
             padding: 8px 14px;
             border-radius: 6px;
             text-align: center;
@@ -221,7 +221,7 @@
         .avatar-circle {
             width: 40px;
             height: 40px;
-            background: #d84949;
+            background: #c0392b;
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -289,7 +289,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #8B3A3A;
+            color: #7B1D1D;
             font-size: 18px;
             transition: all 0.3s;
         }
@@ -326,7 +326,7 @@
             left: 15px;
             top: 50%;
             transform: translateY(-50%);
-            color: #d84949;
+            color: #c0392b;
             font-size: 14px;
         }
 
@@ -373,7 +373,7 @@
             right: -3px;
             width: 18px;
             height: 18px;
-            background: #d84949;
+            background: #c0392b;
             color: white;
             border-radius: 50%;
             display: flex;
@@ -386,7 +386,7 @@
         .profile-btn {
             width: 42px;
             height: 42px;
-            background: #8B3A3A;
+            background: #7B1D1D;
             border: none;
             border-radius: 50%;
             color: white;
@@ -397,7 +397,7 @@
         }
 
         .profile-btn:hover {
-            background: #6d2e2e;
+            background: #6a1818;
         }
 
         /* STATUS BANNER */
@@ -428,7 +428,7 @@
             justify-content: center;
             font-size: 26px;
             font-weight: 700;
-            color: #d84949;
+            color: #c0392b;
             flex-shrink: 0;
         }
 
@@ -447,7 +447,7 @@
         .banner-tag {
             display: inline-block;
             background: #fdeaea;
-            color: #d84949;
+            color: #c0392b;
             font-size: 12px;
             font-weight: 600;
             padding: 5px 14px;
@@ -479,7 +479,7 @@
         .banner-status-value {
             font-size: 34px;
             font-weight: 700;
-            color: #d84949;
+            color: #c0392b;
             line-height: 1;
             margin-bottom: 6px;
         }
@@ -592,7 +592,7 @@
         .panel-link {
             font-size: 13px;
             font-weight: 600;
-            color: #d84949;
+            color: #c0392b;
             text-decoration: none;
             display: inline-flex;
             align-items: center;
@@ -627,12 +627,12 @@
         .badge-tab.active {
             background: #fdeaea;
             border-color: #fdeaea;
-            color: #d84949;
+            color: #c0392b;
             font-weight: 600;
         }
 
         .badge-tab:hover {
-            border-color: #d84949;
+            border-color: #c0392b;
         }
 
         /* BADGE GRID */
@@ -670,7 +670,7 @@
             margin: 0 auto 14px;
         }
 
-        .badge-icon.red { background: #fdeaea; color: #d84949; }
+        .badge-icon.red { background: #fdeaea; color: #c0392b; }
         .badge-icon.green { background: #e8f6ee; color: #27AE60; }
         .badge-icon.blue { background: #e5eefc; color: #4a7fd9; }
         .badge-icon.yellow { background: #fcedcb; color: #f1a417; }
@@ -743,7 +743,7 @@
         .progress-tier-icon.beginner { color: #27AE60; }
         .progress-tier-icon.intermediate { color: #f1a417; }
         .progress-tier-icon.advanced { color: #8b5cf6; }
-        .progress-tier-icon.legend { color: #d84949; }
+        .progress-tier-icon.legend { color: #c0392b; }
 
         .progress-tier-name {
             font-size: 14px;
@@ -772,7 +772,7 @@
         .progress-bar span.beginner { background: #27AE60; }
         .progress-bar span.intermediate { background: #f1a417; }
         .progress-bar span.advanced { background: #8b5cf6; }
-        .progress-bar span.legend { background: #d84949; }
+        .progress-bar span.legend { background: #c0392b; }
 
         /* LEADERBOARD */
         .leaderboard-head {
@@ -853,7 +853,7 @@
         .me-avatar {
             width: 26px;
             height: 26px;
-            background: #8B3A3A;
+            background: #7B1D1D;
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -865,7 +865,7 @@
 
         .leaderboard-row.me .leaderboard-learner {
             font-weight: 600;
-            color: #8B3A3A;
+            color: #7B1D1D;
         }
 
         .leaderboard-btn {
@@ -877,7 +877,7 @@
             margin-top: 16px;
             padding: 12px;
             background: #fdeaea;
-            color: #d84949;
+            color: #c0392b;
             border: none;
             border-radius: 8px;
             font-size: 13px;
@@ -911,7 +911,7 @@
         .status-card-value {
             font-size: 30px;
             font-weight: 700;
-            color: #d84949;
+            color: #c0392b;
             line-height: 1.1;
             margin-bottom: 8px;
         }
@@ -994,7 +994,7 @@
         <!-- SIDEBAR -->
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-logo">
-                <div class="sidebar-logo-icon"><i class="fas fa-bullseye"></i></div>
+                <div class="logo-circle" style="width:44px;height:44px;background:rgba(255,255,255,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;border:2px solid rgba(255,255,255,0.3);"><i class="fas fa-shield-alt"></i></div>
                 <div class="sidebar-logo-text">
                     <strong>CPACE</strong>
                     <small>CPA Reviewer</small>
@@ -1004,7 +1004,7 @@
             <nav class="sidebar-nav">
                 <li><a href="{{ route('dashboard') }}"><i class="fas fa-home"></i><span>Dashboard</span></a></li>
                 <li><a href="{{ route('subjects') }}"><i class="fas fa-book"></i><span>Subjects</span></a></li>
-                <li><a href="{{ route('adaptive-quizzes') }}"><i class="fas fa-brain"></i><span>Adaptive Quizzes</span></a></li>
+                <li><a href="{{ route('adaptive-quizzes') }}"><i class="fas fa-brain"></i><span>Quizzes</span></a></li>
                 <li><a href="{{ route('mock-exams') }}"><i class="fas fa-file-alt"></i><span>Mock Exams</span></a></li>
                 <li><a href="{{ route('performance') }}"><i class="fas fa-chart-line"></i><span>Performance</span></a></li>
                 <li><a href="{{ route('review-notes') }}"><i class="fas fa-sticky-note"></i><span>Review Notes</span></a></li>
@@ -1125,7 +1125,7 @@
 
                         <div class="badge-grid">
                             <div class="badge-card">
-                                <div class="badge-icon red"><i class="fas fa-bullseye"></i></div>
+                                <div class="badge-icon red"><i class="fas fa-shield-alt"></i></div>
                                 <div class="badge-name">First Step</div>
                                 <div class="badge-desc">Complete your first adaptive quiz.</div>
                                 <div class="badge-earned">Earned on May 1, 2025</div>
@@ -1323,3 +1323,4 @@
     </script>
 </body>
 </html>
+

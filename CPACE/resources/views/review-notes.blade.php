@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -33,7 +33,7 @@
 
         /* SIDEBAR */
         .sidebar {
-            background: #8B3A3A;
+            background: #7B1D1D;
             color: white;
             padding: 30px 0;
             position: fixed;
@@ -163,7 +163,7 @@
 
         .sidebar-promo button {
             width: 100%;
-            background: #d84949;
+            background: #c0392b;
             color: white;
             border: none;
             border-radius: 7px;
@@ -200,7 +200,7 @@
         .avatar-circle {
             width: 40px;
             height: 40px;
-            background: #d84949;
+            background: #c0392b;
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -269,7 +269,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #8B3A3A;
+            color: #7B1D1D;
             font-size: 18px;
             transition: all 0.3s;
         }
@@ -358,7 +358,7 @@
             right: 0;
             width: 18px;
             height: 18px;
-            background: #d84949;
+            background: #c0392b;
             color: white;
             border-radius: 50%;
             display: flex;
@@ -371,7 +371,7 @@
         .profile-btn {
             width: 42px;
             height: 42px;
-            background: #8B3A3A;
+            background: #7B1D1D;
             border: none;
             border-radius: 50%;
             color: white;
@@ -383,7 +383,7 @@
         }
 
         .profile-btn:hover {
-            background: #6d2e2e;
+            background: #6a1818;
         }
 
         .dropdown-menu {
@@ -419,12 +419,12 @@
             margin-right: 8px;
             width: 16px;
             text-align: center;
-            color: #8B3A3A;
+            color: #7B1D1D;
         }
 
         .dropdown-menu a:hover {
             background: #f9f9f9;
-            color: #8B3A3A;
+            color: #7B1D1D;
         }
 
         .dropdown-menu button {
@@ -433,7 +433,7 @@
             background: none;
             border: none;
             text-align: left;
-            color: #d84949;
+            color: #c0392b;
             font-size: 13px;
             cursor: pointer;
             transition: all 0.2s;
@@ -477,7 +477,7 @@
             flex-shrink: 0;
         }
 
-        .stat-icon.red { background: #fdeaea; color: #d84949; }
+        .stat-icon.red { background: #fdeaea; color: #c0392b; }
         .stat-icon.green { background: #e8f7ee; color: #21a366; }
         .stat-icon.purple { background: #f0eafb; color: #8e5bd0; }
         .stat-icon.amber { background: #fef3e2; color: #e8910b; }
@@ -580,7 +580,7 @@
             align-items: center;
             gap: 8px;
             padding: 10px 18px;
-            background: #8B3A3A;
+            background: #7B1D1D;
             color: white;
             border: none;
             border-radius: 8px;
@@ -592,7 +592,7 @@
             transition: all 0.3s;
         }
 
-        .new-note-btn:hover { background: #6d2e2e; }
+        .new-note-btn:hover { background: #6a1818; }
 
         /* TABLE */
         .notes-table {
@@ -642,7 +642,7 @@
             flex-shrink: 0;
         }
 
-        .note-icon.red { background: #fdeaea; color: #d84949; }
+        .note-icon.red { background: #fdeaea; color: #c0392b; }
         .note-icon.green { background: #e8f7ee; color: #21a366; }
         .note-icon.blue { background: #e9f1fd; color: #3b7ddd; }
         .note-icon.purple { background: #f0eafb; color: #8e5bd0; }
@@ -662,7 +662,7 @@
             font-weight: 600;
         }
 
-        .subject-tag.aud { background: #fdeaea; color: #d84949; }
+        .subject-tag.aud { background: #fdeaea; color: #c0392b; }
         .subject-tag.tax { background: #e8f7ee; color: #21a366; }
         .subject-tag.far { background: #e9f1fd; color: #3b7ddd; }
         .subject-tag.rfbt { background: #f0eafb; color: #8e5bd0; }
@@ -682,7 +682,7 @@
             transition: color 0.2s;
         }
 
-        .actions-cell i:hover { color: #8B3A3A; }
+        .actions-cell i:hover { color: #7B1D1D; }
 
         /* PAGINATION */
         .notes-footer {
@@ -720,9 +720,9 @@
         .pagination button:hover { background: #f6f6f6; }
 
         .pagination button.active {
-            background: #8B3A3A;
+            background: #7B1D1D;
             color: white;
-            border-color: #8B3A3A;
+            border-color: #7B1D1D;
         }
 
         .pagination button.dots {
@@ -768,7 +768,7 @@
 
         .quick-btn:hover { transform: translateY(-2px); }
 
-        .quick-btn.red { background: #fdeef0; color: #d84949; }
+        .quick-btn.red { background: #fdeef0; color: #c0392b; }
         .quick-btn.amber { background: #fef6e8; color: #e8910b; }
         .quick-btn.green { background: #ecf7f0; color: #21a366; }
         .quick-btn.blue { background: #eaf1fb; color: #3b7ddd; }
@@ -845,7 +845,7 @@
         }
 
         .streak-check.done {
-            background: #8B3A3A;
+            background: #7B1D1D;
             color: white;
         }
 
@@ -870,7 +870,7 @@
 
         .top-head a {
             font-size: 12px;
-            color: #d84949;
+            color: #c0392b;
             text-decoration: none;
             font-weight: 500;
         }
@@ -898,7 +898,7 @@
             flex-shrink: 0;
         }
 
-        .top-icon.red { background: #fdeaea; color: #d84949; }
+        .top-icon.red { background: #fdeaea; color: #c0392b; }
         .top-icon.green { background: #e8f7ee; color: #21a366; }
         .top-icon.purple { background: #f0eafb; color: #8e5bd0; }
         .top-icon.amber { background: #fef3e2; color: #e8910b; }
@@ -939,7 +939,7 @@
         <!-- SIDEBAR -->
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-logo">
-                <div class="sidebar-logo-icon"><i class="fas fa-bullseye"></i></div>
+                <div class="logo-circle" style="width:44px;height:44px;background:rgba(255,255,255,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;border:2px solid rgba(255,255,255,0.3);"><i class="fas fa-shield-alt"></i></div>
                 <div class="sidebar-logo-text">
                     <strong>CPACE</strong>
                     <small>CPA Reviewer</small>
@@ -949,7 +949,7 @@
             <nav class="sidebar-nav">
                 <li><a href="{{ route('dashboard') }}"><i class="fas fa-home"></i><span>Dashboard</span></a></li>
                 <li><a href="{{ route('subjects') }}"><i class="fas fa-book"></i><span>Subjects</span></a></li>
-                <li><a href="{{ route('adaptive-quizzes') }}"><i class="fas fa-clipboard-list"></i><span>Adaptive Quizzes</span></a></li>
+                <li><a href="{{ route('adaptive-quizzes') }}"><i class="fas fa-clipboard-list"></i><span>Quizzes</span></a></li>
                 <li><a href="{{ route('mock-exams') }}"><i class="fas fa-file-alt"></i><span>Mock Exams</span></a></li>
                 <li><a href="{{ route('performance') }}"><i class="fas fa-chart-bar"></i><span>Performance</span></a></li>
                 <li><a href="{{ route('review-notes') }}" class="active"><i class="fas fa-book-open"></i><span>Review Notes</span></a></li>
@@ -1339,3 +1339,4 @@
     </script>
 </body>
 </html>
+

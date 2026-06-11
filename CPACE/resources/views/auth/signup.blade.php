@@ -1,9 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign Up - CPACE CPA Reviewer</title>
+    <link href='https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap' rel='stylesheet'>
     <style>
         * {
             margin: 0;
@@ -12,7 +13,7 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: ''Poppins', sans-serif;
             background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
             min-height: 100vh;
             display: flex;
@@ -35,7 +36,7 @@
         }
 
         .left-section {
-            background: linear-gradient(135deg, #8B3A3A 0%, #A84C4C 100%);
+            background: linear-gradient(135deg, #7B1D1D 0%, #8B2525 100%);
             color: white;
             padding: 60px 40px;
             display: flex;
@@ -143,7 +144,7 @@
         input[type="email"]:focus,
         input[type="password"]:focus {
             outline: none;
-            border-color: #8B3A3A;
+            border-color: #7B1D1D;
             box-shadow: 0 0 0 3px rgba(139, 58, 58, 0.1);
         }
 
@@ -164,7 +165,7 @@
             width: 18px;
             height: 18px;
             cursor: pointer;
-            accent-color: #8B3A3A;
+            accent-color: #7B1D1D;
             margin-top: 2px;
             flex-shrink: 0;
         }
@@ -179,7 +180,7 @@
         .btn-signup {
             width: 100%;
             padding: 12px;
-            background: linear-gradient(135deg, #8B3A3A 0%, #A84C4C 100%);
+            background: linear-gradient(135deg, #7B1D1D 0%, #8B2525 100%);
             color: white;
             border: none;
             border-radius: 6px;
@@ -243,7 +244,7 @@
         }
 
         .social-btn:hover {
-            border-color: #8B3A3A;
+            border-color: #7B1D1D;
         }
 
         .login-link {
@@ -253,7 +254,7 @@
         }
 
         .login-link a {
-            color: #8B3A3A;
+            color: #7B1D1D;
             text-decoration: none;
             font-weight: 600;
         }
@@ -297,7 +298,7 @@
         <div class="left-section">
             <div>
                 <div class="logo">
-                    <div class="logo-circle">🎯</div>
+                    <div class="logo-circle">ðŸŽ¯</div>
                     <div class="logo-text">
                         <h1>CPACE</h1>
                         <p>CPA Reviewer</p>
@@ -383,10 +384,10 @@
 
                 <div class="social-login">
                     <button class="social-btn" onclick="alert('Google signup coming soon')">
-                        <span>🔍</span> Google
+                        <span>ðŸ”</span> Google
                     </button>
                     <button class="social-btn" onclick="alert('Microsoft signup coming soon')">
-                        <span>⊞</span> Microsoft
+                        <span>âŠž</span> Microsoft
                     </button>
                 </div>
 
@@ -398,3 +399,4 @@
     </div>
 </body>
 </html>
+

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -33,7 +33,7 @@
 
         /* SIDEBAR */
         .sidebar {
-            background: #8B3A3A;
+            background: #7B1D1D;
             color: white;
             padding: 30px 0;
             position: fixed;
@@ -158,7 +158,7 @@
         .avatar-circle {
             width: 40px;
             height: 40px;
-            background: #d84949;
+            background: #c0392b;
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -222,7 +222,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #8B3A3A;
+            color: #7B1D1D;
             font-size: 18px;
             transition: all 0.3s;
         }
@@ -311,7 +311,7 @@
             right: 0;
             width: 18px;
             height: 18px;
-            background: #d84949;
+            background: #c0392b;
             color: white;
             border-radius: 50%;
             display: flex;
@@ -324,7 +324,7 @@
         .profile-btn {
             width: 42px;
             height: 42px;
-            background: #8B3A3A;
+            background: #7B1D1D;
             border: none;
             border-radius: 50%;
             color: white;
@@ -336,7 +336,7 @@
         }
 
         .profile-btn:hover {
-            background: #6d2e2e;
+            background: #6a1818;
         }
 
         .dropdown-menu {
@@ -372,12 +372,12 @@
             margin-right: 8px;
             width: 16px;
             text-align: center;
-            color: #8B3A3A;
+            color: #7B1D1D;
         }
 
         .dropdown-menu a:hover {
             background: #f9f9f9;
-            color: #8B3A3A;
+            color: #7B1D1D;
         }
 
         .dropdown-menu button {
@@ -386,7 +386,7 @@
             background: none;
             border: none;
             text-align: left;
-            color: #d84949;
+            color: #c0392b;
             font-size: 13px;
             cursor: pointer;
             transition: all 0.2s;
@@ -443,7 +443,7 @@
 
         .tab.active {
             background: #fdeaea;
-            color: #d84949;
+            color: #c0392b;
         }
 
         .tab:hover:not(.active) {
@@ -465,7 +465,7 @@
         }
 
         .date-range .fa-calendar {
-            color: #8B3A3A;
+            color: #7B1D1D;
         }
 
         .date-range .fa-chevron-down {
@@ -539,7 +539,7 @@
             flex-shrink: 0;
         }
 
-        .stat-badge.red { background: #fdeaea; color: #d84949; }
+        .stat-badge.red { background: #fdeaea; color: #c0392b; }
         .stat-badge.green { background: #e8f7ee; color: #21a366; }
         .stat-badge.blue { background: #e9f1fd; color: #3b7ddd; }
         .stat-badge.amber { background: #fef3e2; color: #e8910b; }
@@ -565,7 +565,7 @@
         }
 
         .stat-change.up { color: #21a366; }
-        .stat-change.down { color: #d84949; }
+        .stat-change.down { color: #c0392b; }
         .stat-change.muted { color: #999; }
 
         .stat-spark {
@@ -614,7 +614,7 @@
 
         .card-link {
             font-size: 12px;
-            color: #d84949;
+            color: #c0392b;
             text-decoration: none;
             font-weight: 500;
         }
@@ -683,7 +683,7 @@
             white-space: nowrap;
         }
 
-        .chart-tooltip strong { color: #d84949; }
+        .chart-tooltip strong { color: #c0392b; }
 
         /* DONUT / MASTERY */
         .mastery-body {
@@ -756,7 +756,7 @@
 
         .dot.strong { background: #21a366; }
         .dot.medium { background: #f0b429; }
-        .dot.weak { background: #d84949; }
+        .dot.weak { background: #c0392b; }
 
         .mastery-note {
             margin-top: 20px;
@@ -772,7 +772,7 @@
         }
 
         .mastery-note i {
-            color: #d84949;
+            color: #c0392b;
             font-size: 15px;
             margin-top: 1px;
         }
@@ -841,7 +841,7 @@
             background: white;
         }
 
-        .insight-item.red .insight-icon { color: #d84949; }
+        .insight-item.red .insight-icon { color: #c0392b; }
         .insight-item.green .insight-icon { color: #21a366; }
         .insight-item.blue .insight-icon { color: #3b7ddd; }
 
@@ -894,7 +894,7 @@
         }
 
         .list-icon.green { background: #e8f7ee; color: #21a366; }
-        .list-icon.red { background: #fdeaea; color: #d84949; }
+        .list-icon.red { background: #fdeaea; color: #c0392b; }
         .list-icon.grey { background: #f1f1f1; color: #777; }
         .list-icon.amber { background: #fef3e2; color: #e8910b; }
         .list-icon.blue { background: #e9f1fd; color: #3b7ddd; }
@@ -919,7 +919,7 @@
         }
 
         .list-value.green { color: #21a366; }
-        .list-value.red { color: #d84949; }
+        .list-value.red { color: #c0392b; }
 
         .list-meta {
             font-size: 11px;
@@ -939,7 +939,7 @@
 
         .consistency-icon {
             font-size: 50px;
-            color: #d84949;
+            color: #c0392b;
             flex-shrink: 0;
         }
 
@@ -948,7 +948,7 @@
         .consistency-text h4 {
             font-size: 17px;
             font-weight: 600;
-            color: #d84949;
+            color: #c0392b;
             margin-bottom: 5px;
             font-family: 'Poppins', sans-serif;
         }
@@ -1005,7 +1005,7 @@
 
         .streak-check.done {
             background: #fdeaea;
-            color: #d84949;
+            color: #c0392b;
         }
 
         .streak-check.empty {
@@ -1015,7 +1015,7 @@
 
         .consistency-btn {
             padding: 12px 22px;
-            background: #8B3A3A;
+            background: #7B1D1D;
             color: white;
             border: none;
             border-radius: 8px;
@@ -1027,7 +1027,7 @@
             transition: all 0.3s;
         }
 
-        .consistency-btn:hover { background: #6d2e2e; }
+        .consistency-btn:hover { background: #6a1818; }
 
         /* RESPONSIVE */
         @media (max-width: 1500px) {
@@ -1058,7 +1058,7 @@
         <!-- SIDEBAR -->
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-logo">
-                <div class="sidebar-logo-icon"><i class="fas fa-bullseye"></i></div>
+                <div class="logo-circle" style="width:44px;height:44px;background:rgba(255,255,255,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;border:2px solid rgba(255,255,255,0.3);"><i class="fas fa-shield-alt"></i></div>
                 <div class="sidebar-logo-text">
                     <strong>CPACE</strong>
                     <small>CPA Reviewer</small>
@@ -1068,7 +1068,7 @@
             <nav class="sidebar-nav">
                 <li><a href="{{ route('dashboard') }}"><i class="fas fa-home"></i><span>Dashboard</span></a></li>
                 <li><a href="{{ route('subjects') }}"><i class="fas fa-book"></i><span>Subjects</span></a></li>
-                <li><a href="{{ route('adaptive-quizzes') }}"><i class="fas fa-clipboard-list"></i><span>Adaptive Quizzes</span></a></li>
+                <li><a href="{{ route('adaptive-quizzes') }}"><i class="fas fa-clipboard-list"></i><span>Quizzes</span></a></li>
                 <li><a href="{{ route('mock-exams') }}"><i class="fas fa-file-alt"></i><span>Mock Exams</span></a></li>
                 <li><a href="{{ route('performance') }}" class="active"><i class="fas fa-chart-bar"></i><span>Performance</span></a></li>
                 <li><a href="{{ route('review-notes') }}"><i class="fas fa-book-open"></i><span>Review Notes</span></a></li>
@@ -1154,13 +1154,13 @@
                         <div class="stat-card">
                             <div class="stat-head">
                                 <span class="stat-label">Overall Accuracy</span>
-                                <span class="stat-badge red"><i class="fas fa-bullseye"></i></span>
+                                <span class="stat-badge red"><i class="fas fa-shield-alt"></i></span>
                             </div>
                             <div class="stat-number">68%</div>
                             <div class="stat-change up"><i class="fas fa-arrow-up"></i> 8% from last week</div>
                             <div class="stat-spark">
                                 <svg viewBox="0 0 100 40" preserveAspectRatio="none">
-                                    <polyline fill="none" stroke="#d84949" stroke-width="2"
+                                    <polyline fill="none" stroke="#c0392b" stroke-width="2"
                                         points="0,32 14,28 28,30 42,20 56,24 70,14 84,16 100,8" />
                                 </svg>
                             </div>
@@ -1182,7 +1182,7 @@
                                     <span style="height:55%;background:#eea3a3"></span>
                                     <span style="height:75%;background:#dd6d6d"></span>
                                     <span style="height:70%;background:#e58a8a"></span>
-                                    <span style="height:100%;background:#d84949"></span>
+                                    <span style="height:100%;background:#c0392b"></span>
                                 </div>
                             </div>
                         </div>
@@ -1264,8 +1264,8 @@
                                 <svg viewBox="0 0 700 230" preserveAspectRatio="none">
                                     <defs>
                                         <linearGradient id="areaFill" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="0%" stop-color="#d84949" stop-opacity="0.18"/>
-                                            <stop offset="100%" stop-color="#d84949" stop-opacity="0"/>
+                                            <stop offset="0%" stop-color="#c0392b" stop-opacity="0.18"/>
+                                            <stop offset="100%" stop-color="#c0392b" stop-opacity="0"/>
                                         </linearGradient>
                                     </defs>
                                     <!-- gridlines -->
@@ -1278,10 +1278,10 @@
                                     <path d="M0,180 L100,118 L200,128 L300,108 L400,86 L500,64 L600,70 L700,58 L700,228 L0,228 Z"
                                         fill="url(#areaFill)"/>
                                     <!-- line -->
-                                    <polyline fill="none" stroke="#d84949" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
+                                    <polyline fill="none" stroke="#c0392b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
                                         points="0,180 100,118 200,128 300,108 400,86 500,64 600,70 700,58"/>
                                     <!-- highlighted point -->
-                                    <circle cx="400" cy="86" r="6" fill="#d84949" stroke="white" stroke-width="2.5"/>
+                                    <circle cx="400" cy="86" r="6" fill="#c0392b" stroke="white" stroke-width="2.5"/>
                                 </svg>
                                 <div class="chart-tooltip">
                                     May 16, 2025<br>Accuracy: <strong>72%</strong>
@@ -1425,7 +1425,7 @@
                                     <circle cx="18" cy="18" r="15.9" fill="none" stroke="#f0b429" stroke-width="3.2"
                                         stroke-dasharray="30 70" stroke-dashoffset="-42" stroke-linecap="round"/>
                                     <!-- Weak 28% red -->
-                                    <circle cx="18" cy="18" r="15.9" fill="none" stroke="#d84949" stroke-width="3.2"
+                                    <circle cx="18" cy="18" r="15.9" fill="none" stroke="#c0392b" stroke-width="3.2"
                                         stroke-dasharray="28 72" stroke-dashoffset="-72" stroke-linecap="round"/>
                                 </svg>
                                 <div class="donut-center">
@@ -1440,7 +1440,7 @@
                             </div>
                         </div>
                         <div class="mastery-note">
-                            <i class="fas fa-bullseye"></i>
+                            <i class="fas fa-shield-alt"></i>
                             <span>You're doing great! Focus on your weak topics to level up your mastery.</span>
                         </div>
                     </div>
@@ -1453,7 +1453,7 @@
                         </div>
                         <div class="accuracy-item">
                             <div class="accuracy-top"><span>Auditing (AUD)</span><span class="val">78%</span></div>
-                            <div class="accuracy-bar"><span style="width:78%;background:#d84949"></span></div>
+                            <div class="accuracy-bar"><span style="width:78%;background:#c0392b"></span></div>
                         </div>
                         <div class="accuracy-item">
                             <div class="accuracy-top"><span>Taxation (TAX)</span><span class="val">65%</span></div>
@@ -1512,7 +1512,7 @@
 
             <!-- CONSISTENCY BANNER -->
             <div class="consistency" style="margin-top:25px;">
-                <div class="consistency-icon"><i class="fas fa-bullseye"></i></div>
+                <div class="consistency-icon"><i class="fas fa-shield-alt"></i></div>
                 <div class="consistency-text">
                     <h4>Consistency is the key!</h4>
                     <p>You've been consistent for 7 days in a row.<br>Keep it up and achieve your goals!</p>
@@ -1592,3 +1592,4 @@
     </script>
 </body>
 </html>
+

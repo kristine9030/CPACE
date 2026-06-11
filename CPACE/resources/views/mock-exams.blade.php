@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -33,7 +33,7 @@
 
         /* SIDEBAR */
         .sidebar {
-            background: #8B3A3A;
+            background: #7B1D1D;
             color: white;
             padding: 30px 0;
             position: fixed;
@@ -179,7 +179,7 @@
         .challenge-box a {
             display: inline-block;
             background: white;
-            color: #8B3A3A;
+            color: #7B1D1D;
             padding: 8px 14px;
             border-radius: 6px;
             text-align: center;
@@ -218,7 +218,7 @@
         .avatar-circle {
             width: 40px;
             height: 40px;
-            background: #d84949;
+            background: #c0392b;
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -293,7 +293,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #8B3A3A;
+            color: #7B1D1D;
             font-size: 18px;
             transition: all 0.3s;
         }
@@ -330,7 +330,7 @@
             left: 15px;
             top: 50%;
             transform: translateY(-50%);
-            color: #d84949;
+            color: #c0392b;
             font-size: 14px;
         }
 
@@ -364,7 +364,7 @@
             justify-content: center;
             transition: all 0.3s;
             position: relative;
-            color: #d84949;
+            color: #c0392b;
         }
 
         .icon-btn:hover {
@@ -377,7 +377,7 @@
             right: -2px;
             width: 18px;
             height: 18px;
-            background: #d84949;
+            background: #c0392b;
             color: white;
             border-radius: 50%;
             display: flex;
@@ -390,7 +390,7 @@
         .profile-btn {
             width: 42px;
             height: 42px;
-            background: #8B3A3A;
+            background: #7B1D1D;
             border: none;
             border-radius: 50%;
             color: white;
@@ -401,7 +401,7 @@
         }
 
         .profile-btn:hover {
-            background: #6d2e2e;
+            background: #6a1818;
         }
 
         /* STATS CARDS */
@@ -498,7 +498,7 @@
         }
 
         .btn-primary {
-            background: #b8302f;
+            background: #7B1D1D;
             color: white;
             border: none;
             padding: 12px 20px;
@@ -515,7 +515,7 @@
         }
 
         .btn-primary:hover {
-            background: #9e2826;
+            background: #6a1818;
         }
 
         /* TABS */
@@ -538,8 +538,8 @@
         }
 
         .tab.active {
-            color: #b8302f;
-            border-bottom-color: #b8302f;
+            color: #7B1D1D;
+            border-bottom-color: #7B1D1D;
             font-weight: 600;
         }
 
@@ -603,7 +603,7 @@
 
         .score-tag.above { color: #27AE60; }
         .score-tag.avg { color: #F39C12; }
-        .score-tag.below { color: #d84949; }
+        .score-tag.below { color: #c0392b; }
         .score-tag.none { color: #bbb; }
 
         .time-value {
@@ -654,7 +654,7 @@
 
         .btn-take {
             background: #fde8e7;
-            color: #b8302f;
+            color: #7B1D1D;
             border: none;
             padding: 8px 16px;
             border-radius: 8px;
@@ -675,7 +675,7 @@
         }
 
         .view-all a {
-            color: #b8302f;
+            color: #7B1D1D;
             font-size: 14px;
             font-weight: 600;
             text-decoration: none;
@@ -720,9 +720,9 @@
             position: relative;
         }
 
-        .perf-illustration .fa-bullseye {
+        .perf-illustration .fa-shield-alt {
             font-size: 64px;
-            color: #d84949;
+            color: #c0392b;
         }
 
         .perf-illustration .fa-location-arrow {
@@ -794,7 +794,7 @@
             text-align: right;
             margin-top: 10px;
             font-size: 40px;
-            color: #d84949;
+            color: #c0392b;
         }
 
         /* RESPONSIVE */
@@ -839,7 +839,7 @@
         <!-- SIDEBAR -->
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-logo">
-                <div class="sidebar-logo-icon"><i class="fas fa-bullseye"></i></div>
+                <div class="logo-circle" style="width:44px;height:44px;background:rgba(255,255,255,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;border:2px solid rgba(255,255,255,0.3);"><i class="fas fa-shield-alt"></i></div>
                 <div class="sidebar-logo-text">
                     <strong>CPACE</strong>
                     <small>CPA Reviewer</small>
@@ -849,7 +849,7 @@
             <nav class="sidebar-nav">
                 <li><a href="{{ route('dashboard') }}"><i class="fas fa-home"></i><span>Dashboard</span></a></li>
                 <li><a href="{{ route('subjects') }}"><i class="fas fa-book"></i><span>Subjects</span></a></li>
-                <li><a href="{{ route('adaptive-quizzes') }}"><i class="fas fa-circle-check"></i><span>Adaptive Quizzes</span></a></li>
+                <li><a href="{{ route('adaptive-quizzes') }}"><i class="fas fa-circle-check"></i><span>Quizzes</span></a></li>
                 <li><a href="{{ route('mock-exams') }}" class="active"><i class="fas fa-file-lines"></i><span>Mock Exams</span></a></li>
                 <li><a href="{{ route('performance') }}"><i class="fas fa-chart-column"></i><span>Performance</span></a></li>
                 <li><a href="{{ route('review-notes') }}"><i class="fas fa-file-alt"></i><span>Review Notes</span></a></li>
@@ -911,7 +911,7 @@
             <!-- STATS CARDS -->
             <div class="stats-row">
                 <div class="stat-card">
-                    <div class="stat-card-icon" style="background: #fdeaea; color: #d84949;"><i class="fas fa-clipboard-list"></i></div>
+                    <div class="stat-card-icon" style="background: #fde8e8; color: #c0392b;"><i class="fas fa-clipboard-list"></i></div>
                     <div>
                         <div class="stat-card-label">Overall Average Score</div>
                         <div class="stat-card-value">68%</div>
@@ -1072,15 +1072,15 @@
                                 </td>
                                 <td><span class="type-badge type-far">FAR</span></td>
                                 <td>
-                                    <span class="score-value">—</span>
+                                    <span class="score-value">â€”</span>
                                     <span class="score-tag none">Not taken</span>
                                 </td>
                                 <td>
-                                    <span class="time-value">—</span>
+                                    <span class="time-value">â€”</span>
                                     <span class="time-sub">of 4h</span>
                                 </td>
                                 <td>
-                                    <span class="date-value">—</span>
+                                    <span class="date-value">â€”</span>
                                 </td>
                                 <td><span class="status not-taken">Not Taken</span></td>
                                 <td><button class="btn-take">Take Exam</button></td>
@@ -1106,7 +1106,7 @@
                             </select>
                         </div>
                         <div class="perf-illustration">
-                            <i class="fas fa-bullseye"></i>
+                            <i class="fas fa-shield-alt"></i>
                             <i class="fas fa-location-arrow"></i>
                         </div>
                         <div class="perf-text">Focus on improvement, not perfection.</div>
@@ -1119,7 +1119,7 @@
                         <div class="tips-subtitle">Prepare smarter for your mock exams.</div>
 
                         <div class="tip-item">
-                            <div class="tip-icon" style="background: #fdeaea; color: #d84949;"><i class="fas fa-calendar-day"></i></div>
+                            <div class="tip-icon" style="background: #fde8e8; color: #c0392b;"><i class="fas fa-calendar-day"></i></div>
                             <div>
                                 <div class="tip-name">Simulate Real Conditions</div>
                                 <div class="tip-desc">Take exams in a quiet place, with no interruptions.</div>
@@ -1171,3 +1171,4 @@
     </script>
 </body>
 </html>
+
