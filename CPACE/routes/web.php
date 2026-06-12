@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ProgramChairController;
 use App\Http\Controllers\QuizController;
 use App\Http\Controllers\TestBankController;
 
@@ -20,6 +21,23 @@ Route::middleware('guest')->group(function () {
 
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+    // Program Chair Routes (Admin role)
+    Route::prefix('chair')->name('chair.')->middleware('chair')->group(function () {
+        Route::get('/dashboard', [ProgramChairController::class, 'dashboard'])->name('dashboard');
+
+        // Faculty account management
+        Route::get('/faculty', [ProgramChairController::class, 'faculty'])->name('faculty');
+        Route::get('/faculty/create', [ProgramChairController::class, 'createFaculty'])->name('faculty.create');
+        Route::post('/faculty', [ProgramChairController::class, 'storeFaculty'])->name('faculty.store');
+        Route::get('/faculty/{id}/edit', [ProgramChairController::class, 'editFaculty'])->name('faculty.edit');
+        Route::put('/faculty/{id}', [ProgramChairController::class, 'updateFaculty'])->name('faculty.update');
+        Route::post('/faculty/{id}/assign', [ProgramChairController::class, 'assignSubjects'])->name('faculty.assign');
+        Route::post('/faculty/{id}/toggle', [ProgramChairController::class, 'toggleFaculty'])->name('faculty.toggle');
+
+        // Subject assignment overview
+        Route::get('/subjects', [ProgramChairController::class, 'subjects'])->name('subjects');
+    });
 
     // Faculty Routes
     Route::prefix('faculty')->name('faculty.')->middleware('faculty')->group(function () {

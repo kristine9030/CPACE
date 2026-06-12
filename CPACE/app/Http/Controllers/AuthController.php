@@ -87,6 +87,10 @@ class AuthController extends Controller
      */
     protected function homeFor(User $user): string
     {
+        if ($user->isChair()) {
+            return route('chair.dashboard');
+        }
+
         return $user->isFaculty()
             ? route('faculty.dashboard')
             : route('dashboard');

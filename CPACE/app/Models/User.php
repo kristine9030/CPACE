@@ -73,6 +73,23 @@ class User extends Authenticatable
     }
 
     /**
+     * The faculty member's profile (employee number, department).
+     */
+    public function facultyProfile()
+    {
+        return $this->hasOne(FacultyProfile::class);
+    }
+
+    /**
+     * CPALE subjects assigned to this faculty member by the Program Chair.
+     */
+    public function assignedSubjects()
+    {
+        return $this->belongsToMany(Subject::class, 'faculty_subjects', 'faculty_id', 'subject_id')
+            ->withPivot('assigned_by', 'assigned_at');
+    }
+
+    /**
      * Quiz sessions taken by this student.
      */
     public function quizSessions()
@@ -106,6 +123,14 @@ class User extends Authenticatable
     }
 
     public function isAdmin(): bool
+    {
+        return $this->role_id === Role::ADMIN;
+    }
+
+    /**
+     * The Program Chair is the Admin role for the BSA program.
+     */
+    public function isChair(): bool
     {
         return $this->role_id === Role::ADMIN;
     }

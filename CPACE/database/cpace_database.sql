@@ -57,6 +57,19 @@ CREATE TABLE faculty_profiles (
     CONSTRAINT fk_fp_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
+-- Faculty <-> Subject assignments (set by the Program Chair / Admin role)
+CREATE TABLE faculty_subjects (
+    id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    faculty_id  INT UNSIGNED NOT NULL,              -- users.id with role 'faculty'
+    subject_id  TINYINT UNSIGNED NOT NULL,
+    assigned_by INT UNSIGNED NULL,                  -- users.id of the chair who assigned
+    assigned_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_faculty_subject (faculty_id, subject_id),
+    CONSTRAINT fk_fs_faculty  FOREIGN KEY (faculty_id)  REFERENCES users(id)    ON DELETE CASCADE,
+    CONSTRAINT fk_fs_subject  FOREIGN KEY (subject_id)  REFERENCES subjects(id) ON DELETE CASCADE,
+    CONSTRAINT fk_fs_assigner FOREIGN KEY (assigned_by) REFERENCES users(id)    ON DELETE SET NULL
+);
+
 -- Alumni-specific profile
 CREATE TABLE alumni_profiles (
     user_id         INT UNSIGNED PRIMARY KEY,
@@ -453,5 +466,15 @@ INSERT INTO badges (name, description, criteria) VALUES
     ('Subject Master','Achieved 80%+ accuracy in a subject',  'Accuracy >= 80% across all topics of one subject'),
     ('Mock Ready',    'Completed a full Mock Exam',            'Complete 1 mock_exam session'),
     ('No Weakness',   'Cleared all weak areas in a subject',  'is_weak_area = FALSE for all topics in a subject');
+
+-- =============================================================
+-- SEED: Program Chair (Admin role) — default login
+-- email: chair@cpace.test   password: ProgramChair123
+-- =============================================================
+
+INSERT INTO users (role_id, first_name, last_name, email, password, is_active, email_verified)
+VALUES (1, 'Program', 'Chair', 'chair@cpace.test',
+        '$2y$10$dVCMqvf.kMCjuzYkvTY5kuGSp5JS24MQtE/lAD6Ix9sELgljL.GdC',
+        TRUE, TRUE);
 
 SET FOREIGN_KEY_CHECKS = 1;
