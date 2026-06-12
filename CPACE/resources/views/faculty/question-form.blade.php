@@ -13,34 +13,6 @@
         * { margin:0; padding:0; box-sizing:border-box; }
         body { font-family:'Poppins',sans-serif; background:#f4f5f7; color:#333; }
 
-        /* SIDEBAR */
-        .sidebar { background:var(--primary); position:fixed; width:230px; height:100vh; display:flex; flex-direction:column; overflow-y:auto; overflow-x:hidden; z-index:1000; transition:width .3s; }
-        .sidebar.collapsed { width:70px; }
-        .sidebar-header { padding:20px 18px 16px; border-bottom:1px solid rgba(255,255,255,.12); }
-        .sidebar-brand { display:flex; align-items:center; gap:10px; }
-        .brand-circle { width:42px; height:42px; flex-shrink:0; background:rgba(255,255,255,.15); border:2px solid rgba(255,255,255,.3); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:18px; color:white; }
-        .brand-text strong { display:block; font-size:14px; font-weight:700; color:white; }
-        .brand-text small { font-size:10px; color:rgba(255,255,255,.7); }
-        .faculty-badge { display:inline-block; margin-top:6px; background:rgba(255,255,255,.2); color:white; font-size:9px; font-weight:700; padding:2px 8px; border-radius:20px; letter-spacing:1px; text-transform:uppercase; }
-        .sidebar.collapsed .brand-text, .sidebar.collapsed .faculty-badge { display:none; }
-        .sidebar-nav { list-style:none; flex:1; padding:10px 0; }
-        .sidebar-nav .nav-group-label { padding:14px 22px 4px; font-size:9px; font-weight:700; color:rgba(255,255,255,.4); text-transform:uppercase; letter-spacing:1.2px; }
-        .sidebar.collapsed .nav-group-label { display:none; }
-        .sidebar-nav li a { display:flex; align-items:center; gap:12px; padding:10px 22px; color:rgba(255,255,255,.72); text-decoration:none; font-size:13px; border-left:3px solid transparent; transition:all .2s; }
-        .sidebar-nav li a:hover { color:white; background:rgba(255,255,255,.1); }
-        .sidebar-nav li a.active { color:white; background:rgba(255,255,255,.18); border-left-color:white; font-weight:500; }
-        .sidebar-nav li a i { width:18px; text-align:center; font-size:14px; flex-shrink:0; }
-        .sidebar.collapsed .sidebar-nav li a { padding:10px 0; justify-content:center; gap:0; }
-        .sidebar.collapsed .sidebar-nav li a span { display:none; }
-        .nav-badge { margin-left:auto; background:var(--accent); color:white; font-size:9px; font-weight:700; padding:2px 6px; border-radius:20px; min-width:18px; text-align:center; }
-        .sidebar.collapsed .nav-badge { display:none; }
-        .sidebar-footer { border-top:1px solid rgba(255,255,255,.12); padding:14px 18px; }
-        .user-row { display:flex; align-items:center; gap:10px; }
-        .user-av { width:36px; height:36px; border-radius:50%; background:var(--accent); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:12px; color:white; flex-shrink:0; }
-        .user-info .un { display:block; font-size:12px; font-weight:600; color:white; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-        .user-info .ur { display:block; font-size:10px; color:rgba(255,255,255,.6); }
-        .sidebar.collapsed .user-info, .sidebar.collapsed .user-chevron { display:none; }
-
         /* MAIN */
         .main { margin-left:230px; padding:26px 30px; min-height:100vh; transition:margin-left .3s; }
         .sidebar.collapsed ~ .main { margin-left:70px; }
@@ -144,39 +116,7 @@
 </head>
 <body>
 
-<aside class="sidebar" id="sidebar">
-    <div class="sidebar-header">
-        <div class="sidebar-brand">
-            <div class="brand-circle"><i class="fas fa-shield-alt"></i></div>
-            <div class="brand-text"><strong>CPACE</strong><small>CPA Reviewer</small></div>
-        </div>
-        <div class="faculty-badge">Faculty Portal</div>
-    </div>
-    <ul class="sidebar-nav">
-        <li class="nav-group-label">Main</li>
-        <li><a href="{{ route('faculty.dashboard') }}"><i class="fas fa-home"></i><span>Dashboard</span></a></li>
-        <li class="nav-group-label">Content</li>
-        <li><a href="{{ route('faculty.test-bank') }}"><i class="fas fa-database"></i><span>Test Bank</span><span class="nav-badge">1,543</span></a></li>
-        <li><a href="{{ route('faculty.question.create') }}" class="active"><i class="fas fa-plus-circle"></i><span>Add Question</span></a></li>
-        <li><a href="{{ route('faculty.subjects') }}"><i class="fas fa-book-open"></i><span>Subjects &amp; Topics</span></a></li>
-        <li class="nav-group-label">Analytics</li>
-        <li><a href="{{ route('faculty.performance') }}"><i class="fas fa-users"></i><span>Student Performance</span></a></li>
-        <li><a href="#"><i class="fas fa-chart-line"></i><span>Reports</span></a></li>
-        <li class="nav-group-label">System</li>
-        <li><a href="#"><i class="fas fa-cog"></i><span>Settings</span></a></li>
-        <li><a href="{{ route('dashboard') }}"><i class="fas fa-arrow-left"></i><span>Student View</span></a></li>
-    </ul>
-    <div class="sidebar-footer">
-        <div class="user-row">
-            <div class="user-av">KD</div>
-            <div class="user-info">
-                <span class="un">{{ Auth::user()->name }}</span>
-                <span class="ur">Faculty</span>
-            </div>
-            <i class="fas fa-chevron-down user-chevron" style="color:rgba(255,255,255,.5);font-size:10px;"></i>
-        </div>
-    </div>
-</aside>
+@include('partials.faculty-sidebar', ['active' => 'add-question'])
 
 <main class="main">
     <div class="topbar a0">
@@ -203,8 +143,28 @@
         </div>
     </div>
 
-    <form action="#" method="POST" id="questionForm">
+    <form action="{{ $editMode ? route('faculty.question.update', $question->id) : route('faculty.question.store') }}" method="POST" id="questionForm">
         @csrf
+        @if($editMode) @method('PUT') @endif
+
+        @if($errors->any())
+            <div style="background:#fde8e8;color:var(--accent);padding:12px 18px;border-radius:10px;margin-bottom:18px;font-size:13px;">
+                <strong><i class="fas fa-exclamation-circle"></i> Please fix the following:</strong>
+                <ul style="margin:6px 0 0 18px;">
+                    @foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach
+                </ul>
+            </div>
+        @endif
+
+        @php
+            $choicesByLabel = $editMode ? $question->choices->keyBy('choice_label') : collect();
+            $diffEnumToLabel = ['easy' => 'Easy', 'moderate' => 'Medium', 'difficult' => 'Hard'];
+            $curType = old('question_type', $editMode ? $question->question_type : 'mcq');
+            $curDiff = old('difficulty', $editMode ? ($diffEnumToLabel[$question->difficulty] ?? 'Medium') : 'Medium');
+            $tfCorrect = $editMode && $question->question_type === 'true_false'
+                ? optional($question->choices->firstWhere('is_correct', true))->choice_text
+                : null;
+        @endphp
         <div class="form-layout a1">
             <!-- LEFT — MAIN FORM -->
             <div>
@@ -213,23 +173,22 @@
                     <div class="card-title"><i class="fas fa-question-circle"></i> Question</div>
                     <div class="form-group">
                         <label>Question Text <span class="req">*</span></label>
-                        <textarea name="question_text" placeholder="Enter the full question here..." id="questionText">{{ isset($editMode) ? 'Under PFRS 15, revenue is recognized when or as performance obligations are satisfied. Which of the following best describes when a performance obligation is satisfied?' : '' }}</textarea>
+                        <textarea name="question_text" placeholder="Enter the full question here..." id="questionText">{{ old('question_text', $editMode ? $question->question_text : '') }}</textarea>
                     </div>
                     <div class="form-row">
                         <div class="form-group">
                             <label>Question Type <span class="req">*</span></label>
-                            <select name="type" id="questionType" onchange="handleTypeChange(this.value)">
-                                <option value="mcq" {{ !isset($editMode) ? 'selected' : '' }}>Multiple Choice (MCQ)</option>
-                                <option value="tf">True / False</option>
-                                <option value="id">Identification</option>
+                            <select name="question_type" id="questionType" onchange="handleTypeChange(this.value)">
+                                <option value="mcq" {{ $curType === 'mcq' ? 'selected' : '' }}>Multiple Choice (MCQ)</option>
+                                <option value="true_false" {{ $curType === 'true_false' ? 'selected' : '' }}>True / False</option>
                             </select>
                         </div>
                         <div class="form-group">
                             <label>Difficulty <span class="req">*</span></label>
                             <select name="difficulty">
-                                <option>Easy</option>
-                                <option selected>Medium</option>
-                                <option>Hard</option>
+                                <option {{ $curDiff === 'Easy' ? 'selected' : '' }}>Easy</option>
+                                <option {{ $curDiff === 'Medium' ? 'selected' : '' }}>Medium</option>
+                                <option {{ $curDiff === 'Hard' ? 'selected' : '' }}>Hard</option>
                             </select>
                         </div>
                     </div>
@@ -240,30 +199,15 @@
                     <div class="card-title"><i class="fas fa-list-ul"></i> Answer Choices</div>
                     <p style="font-size:12px;color:#aaa;margin-bottom:14px;">Select the radio button next to the correct answer.</p>
                     <div class="choices-list">
+                        @foreach(['a' => 'A', 'b' => 'B', 'c' => 'C', 'd' => 'D'] as $key => $label)
+                        @php $choice = $choicesByLabel[$label] ?? null; @endphp
                         <div class="choice-item">
-                            <div class="choice-letter cl-a">A</div>
-                            <input type="text" name="choice_a" placeholder="Choice A" value="{{ isset($editMode) ? 'When the customer pays for the good or service' : '' }}">
-                            <input type="radio" class="choice-radio" name="correct_answer" value="a" title="Mark as correct">
+                            <div class="choice-letter cl-{{ $key }}">{{ $label }}</div>
+                            <input type="text" name="choice_{{ $key }}" placeholder="Choice {{ $label }}" value="{{ old('choice_'.$key, $choice->choice_text ?? '') }}">
+                            <input type="radio" class="choice-radio" name="correct_answer" value="{{ $key }}" {{ old('correct_answer', optional($choice)->is_correct ? $key : '') === $key ? 'checked' : '' }} title="Mark as correct">
                             <span class="correct-label">Correct</span>
                         </div>
-                        <div class="choice-item">
-                            <div class="choice-letter cl-b">B</div>
-                            <input type="text" name="choice_b" placeholder="Choice B" value="{{ isset($editMode) ? 'When the contract is signed by both parties' : '' }}">
-                            <input type="radio" class="choice-radio" name="correct_answer" value="b">
-                            <span class="correct-label">Correct</span>
-                        </div>
-                        <div class="choice-item">
-                            <div class="choice-letter cl-c">C</div>
-                            <input type="text" name="choice_c" placeholder="Choice C" value="{{ isset($editMode) ? 'When the entity transfers control of a promised good or service' : '' }}">
-                            <input type="radio" class="choice-radio" name="correct_answer" value="c" checked>
-                            <span class="correct-label">Correct</span>
-                        </div>
-                        <div class="choice-item">
-                            <div class="choice-letter cl-d">D</div>
-                            <input type="text" name="choice_d" placeholder="Choice D" value="{{ isset($editMode) ? 'When the invoice is issued to the customer' : '' }}">
-                            <input type="radio" class="choice-radio" name="correct_answer" value="d">
-                            <span class="correct-label">Correct</span>
-                        </div>
+                        @endforeach
                     </div>
                 </div>
 
@@ -271,18 +215,8 @@
                 <div class="card" id="tfSection" style="display:none;">
                     <div class="card-title"><i class="fas fa-check-square"></i> True / False Answer</div>
                     <div class="radio-group">
-                        <label class="radio-option"><input type="radio" name="tf_answer" value="true"><span>True</span></label>
-                        <label class="radio-option"><input type="radio" name="tf_answer" value="false"><span>False</span></label>
-                    </div>
-                </div>
-
-                <!-- IDENTIFICATION (hidden by default) -->
-                <div class="card" id="idSection" style="display:none;">
-                    <div class="card-title"><i class="fas fa-pen"></i> Correct Answer</div>
-                    <div class="form-group">
-                        <label>Expected Answer <span class="req">*</span></label>
-                        <input type="text" name="id_answer" placeholder="Enter the correct answer keyword or phrase">
-                        <div class="help-tip">The system will check for this exact phrase (case-insensitive).</div>
+                        <label class="radio-option"><input type="radio" name="tf_answer" value="true" {{ old('tf_answer', $tfCorrect === 'True' ? 'true' : '') === 'true' ? 'checked' : '' }}><span>True</span></label>
+                        <label class="radio-option"><input type="radio" name="tf_answer" value="false" {{ old('tf_answer', $tfCorrect === 'False' ? 'false' : '') === 'false' ? 'checked' : '' }}><span>False</span></label>
                     </div>
                 </div>
 
@@ -291,7 +225,7 @@
                     <div class="card-title"><i class="fas fa-lightbulb"></i> Explanation / Rationale</div>
                     <div class="form-group">
                         <label>Explanation <span style="font-size:11px;color:#aaa;">(shown after answering)</span></label>
-                        <textarea name="explanation" placeholder="Explain why the correct answer is correct. This helps students understand the concept." style="min-height:90px;">{{ isset($editMode) ? 'Under PFRS 15, an entity satisfies a performance obligation by transferring a promised good or service to a customer. A good or service is transferred when (or as) the customer obtains control of that asset.' : '' }}</textarea>
+                        <textarea name="explanation" placeholder="Explain why the correct answer is correct. This helps students understand the concept." style="min-height:90px;">{{ old('explanation', $editMode ? $question->explanation : '') }}</textarea>
                     </div>
                 </div>
             </div>
@@ -305,11 +239,12 @@
                         <div class="toggle-row">
                             <span style="font-size:13px;color:#555;">Status</span>
                             <div class="toggle-wrap">
+                                @php $isActive = old('is_active', $editMode ? $question->is_active : true); @endphp
                                 <label class="toggle">
-                                    <input type="checkbox" name="is_active" checked id="statusToggle">
+                                    <input type="checkbox" name="is_active" value="1" {{ $isActive ? 'checked' : '' }} id="statusToggle">
                                     <span class="toggle-slider"></span>
                                 </label>
-                                <span class="toggle-lbl" id="statusLabel">Active</span>
+                                <span class="toggle-lbl" id="statusLabel">{{ $isActive ? 'Active' : 'Draft' }}</span>
                             </div>
                         </div>
                         <div class="help-tip" style="margin-top:6px;">Active questions appear in quizzes and exams.</div>
@@ -327,28 +262,21 @@
                 <!-- CLASSIFICATION -->
                 <div class="side-card">
                     <div class="side-title">Classification</div>
+                    @php $selectedTopic = old('topic_id', $editMode ? $question->topic_id : ''); @endphp
                     <div class="meta-item">
                         <label>Subject <span class="req">*</span></label>
-                        <select name="subject" id="subjectSelect" onchange="loadTopics(this.value)">
+                        <select id="subjectSelect" onchange="loadTopics(this.value)">
                             <option value="">Select Subject</option>
-                            <option value="far" {{ isset($editMode) ? 'selected' : '' }}>FAR – Financial Accounting &amp; Reporting</option>
-                            <option value="aud">AUD – Auditing</option>
-                            <option value="tax">TAX – Taxation</option>
-                            <option value="ms">MS – Management Services</option>
-                            <option value="rfbt">RFBT – Regulatory Framework</option>
-                            <option value="afar">AFAR – Advanced Financial Accounting</option>
+                            @foreach($subjects as $subject)
+                                <option value="{{ $subject->id }}" {{ (string) old('subject', $editMode ? $currentSubject : '') === (string) $subject->id ? 'selected' : '' }}>{{ $subject->code }} – {{ $subject->name }}</option>
+                            @endforeach
                         </select>
                     </div>
                     <div class="meta-item">
-                        <label>Topic</label>
-                        <select name="topic" id="topicSelect">
+                        <label>Topic <span class="req">*</span></label>
+                        <select name="topic_id" id="topicSelect" data-selected="{{ $selectedTopic }}">
                             <option value="">Select Subject First</option>
-                            <option value="revenue" {{ isset($editMode) ? 'selected' : '' }}>Revenue Recognition</option>
                         </select>
-                    </div>
-                    <div class="meta-item">
-                        <label>Tags <span style="font-size:11px;color:#aaa;">(optional, comma-separated)</span></label>
-                        <input type="text" name="tags" placeholder="e.g. pfrs15, revenue, control" value="{{ isset($editMode) ? 'pfrs15, revenue recognition, control' : '' }}">
                     </div>
                 </div>
 
@@ -419,29 +347,28 @@ document.addEventListener('DOMContentLoaded', () => {
     const toggle = document.getElementById('statusToggle');
     const lbl = document.getElementById('statusLabel');
     if (toggle) toggle.addEventListener('change', function() { lbl.textContent = this.checked ? 'Active' : 'Draft'; });
+
+    // Initialise type sections and topic dropdown from current values.
+    handleTypeChange(document.getElementById('questionType').value);
+    loadTopics(document.getElementById('subjectSelect').value);
 });
 
 function handleTypeChange(type) {
     document.getElementById('mcqSection').style.display = type === 'mcq' ? 'block' : 'none';
-    document.getElementById('tfSection').style.display  = type === 'tf'  ? 'block' : 'none';
-    document.getElementById('idSection').style.display  = type === 'id'  ? 'block' : 'none';
+    document.getElementById('tfSection').style.display  = type === 'true_false' ? 'block' : 'none';
 }
 
-const topicMap = {
-    far:  ['Revenue Recognition','Financial Instruments','Inventory','Property, Plant & Equipment','Leases','Business Combinations'],
-    aud:  ['Audit Risk','Internal Controls','Audit Evidence','Audit Reports','Professional Ethics'],
-    tax:  ['Income Tax','VAT','Estate Tax','Donor\'s Tax','Business Taxes'],
-    ms:   ['Cost Accounting','Capital Budgeting','Macroeconomics','Financial Management'],
-    rfbt: ['Contracts','Business Organizations','Taxation Law','Securities Regulation'],
-    afar: ['Leases','Derivatives','Foreign Currency','Partnership Accounting'],
-};
-function loadTopics(subject) {
+const topicMap = @json($subjects->mapWithKeys(fn($s) => [$s->id => $s->topics->map(fn($t) => ['id' => $t->id, 'name' => $t->name])->values()]));
+
+function loadTopics(subjectId) {
     const sel = document.getElementById('topicSelect');
+    const preselect = String(sel.dataset.selected || '');
     sel.innerHTML = '<option value="">Select Topic</option>';
-    (topicMap[subject] || []).forEach(t => {
+    (topicMap[subjectId] || []).forEach(t => {
         const opt = document.createElement('option');
-        opt.value = t.toLowerCase().replace(/\s+/g,'-');
-        opt.textContent = t;
+        opt.value = t.id;
+        opt.textContent = t.name;
+        if (String(t.id) === preselect) opt.selected = true;
         sel.appendChild(opt);
     });
 }

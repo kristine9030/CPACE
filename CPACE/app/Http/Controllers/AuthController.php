@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -28,9 +29,13 @@ class AuthController extends Controller
             'password' => 'required',
         ]);
 
-        if (Auth::attempt($credentials, $request->remember)) {
+        if (Auth::attempt($credentials, $request->boolean('remember'))) {
             $request->session()->regenerate();
-            return redirect()->intended('/dashboard');
+
+            $user = Auth::user();
+            $user->forceFill(['last_login_at' => now()])->save();
+
+            return redirect()->intended($this->homeFor($user));
         }
 
         return back()->withErrors([
@@ -52,21 +57,43 @@ class AuthController extends Controller
     public function signup(Request $request)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users',
+            'name' => 'required|string|max:120',
+            'email' => 'required|email|unique:users,email',
             'password' => ['required', 'confirmed', Password::defaults()],
         ]);
 
+        // The schema stores first and last name separately.
+        $name = trim($validated['name']);
+        $firstName = strtok($name, ' ');
+        $lastName = trim(substr($name, strlen($firstName)));
+
         $user = User::create([
-            'name' => $validated['name'],
+            'role_id' => Role::STUDENT,
+            'first_name' => $firstName,
+            'last_name' => $lastName !== '' ? $lastName : $firstName,
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
         ]);
 
         Auth::login($user);
         $request->session()->regenerate();
+        $user->forceFill(['last_login_at' => now()])->save();
 
-        return redirect()->intended('/dashboard');
+        return redirect()->intended($this->homeFor($user));
+    }
+
+    /**
+     * Where to send a user after authenticating, based on their role.
+     */
+    protected function homeFor(User $user): string
+    {
+        if ($user->isChair()) {
+            return route('chair.dashboard');
+        }
+
+        return $user->isFaculty()
+            ? route('faculty.dashboard')
+            : route('dashboard');
     }
 
     /**
@@ -78,6 +105,6 @@ class AuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect('/');
+        return redirect()->route('login');
     }
 }

@@ -859,48 +859,7 @@
 <body>
     <div class="dashboard-container">
         <!-- SIDEBAR -->
-        <aside class="sidebar" id="sidebar">
-            <div class="sidebar-logo">
-                <div class="logo-circle" style="width:44px;height:44px;background:rgba(255,255,255,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;border:2px solid rgba(255,255,255,0.3);"><i class="fas fa-shield-alt"></i></div>
-                <div class="sidebar-logo-text">
-                    <strong>CPACE</strong>
-                    <small>CPA Reviewer</small>
-                </div>
-            </div>
-
-            <nav class="sidebar-nav">
-                <li><a href="{{ route('dashboard') }}"><i class="fas fa-home"></i><span>Dashboard</span></a></li>
-                <li><a href="{{ route('subjects') }}"><i class="fas fa-book"></i><span>Subjects</span></a></li>
-                <li><a href="{{ route('adaptive-quizzes') }}"><i class="fas fa-circle-check"></i><span>Quizzes</span></a></li>
-                <li><a href="{{ route('mock-exams') }}" class="active"><i class="fas fa-file-lines"></i><span>Mock Exams</span></a></li>
-                <li><a href="{{ route('performance') }}"><i class="fas fa-chart-column"></i><span>Performance</span></a></li>
-                <li><a href="{{ route('review-notes') }}"><i class="fas fa-file-alt"></i><span>Review Notes</span></a></li>
-                <li><a href="#"><i class="fas fa-clone"></i><span>Flashcards</span></a></li>
-                <li><a href="{{ route('calendar') }}"><i class="fas fa-calendar-alt"></i><span>Calendar</span></a></li>
-                <li><a href="#"><i class="fas fa-chart-bar"></i><span>Progress</span></a></li>
-                <li><a href="{{ route('achievements') }}"><i class="fas fa-award"></i><span>Achievements</span></a></li>
-                <li><a href="#"><i class="fas fa-gear"></i><span>Settings</span></a></li>
-            </nav>
-
-            <div class="sidebar-challenge">
-                <div class="challenge-box">
-                    <p style="font-weight: 700; font-size: 13px;">Prepare like it's the real CPA Exam.</p>
-                    <a href="#">View Exam Tips</a>
-                    <div class="challenge-icon"><i class="fas fa-clipboard-list"></i></div>
-                </div>
-            </div>
-
-            <div class="sidebar-footer">
-                <div class="user-avatar">
-                    <div class="avatar-circle">{{ strtoupper(substr(Auth::user()->name, 0, 1)) }}{{ strtoupper(substr(explode(' ', Auth::user()->name)[array_key_last(explode(' ', Auth::user()->name))], 0, 1)) }}</div>
-                    <div class="user-info-sidebar">
-                        <span class="name">{{ Auth::user()->name }}</span>
-                        <span class="role">Reviewer</span>
-                    </div>
-                    <i class="fas fa-chevron-down user-caret"></i>
-                </div>
-            </div>
-        </aside>
+        @include('partials.sidebar', ['active' => 'mock-exams'])
 
         <!-- MAIN CONTENT -->
         <main class="main-content">

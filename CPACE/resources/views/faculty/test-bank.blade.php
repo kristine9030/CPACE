@@ -14,33 +14,6 @@
         body { font-family:'Poppins',sans-serif; background:#f4f5f7; color:#333; }
 
         /* SIDEBAR — same as dashboard */
-        .sidebar { background:var(--primary); position:fixed; width:230px; height:100vh; display:flex; flex-direction:column; overflow-y:auto; overflow-x:hidden; z-index:1000; transition:width .3s; }
-        .sidebar.collapsed { width:70px; }
-        .sidebar-header { padding:20px 18px 16px; border-bottom:1px solid rgba(255,255,255,.12); }
-        .sidebar-brand { display:flex; align-items:center; gap:10px; }
-        .brand-circle { width:42px; height:42px; flex-shrink:0; background:rgba(255,255,255,.15); border:2px solid rgba(255,255,255,.3); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:18px; color:white; }
-        .brand-text strong { display:block; font-size:14px; font-weight:700; color:white; }
-        .brand-text small { font-size:10px; color:rgba(255,255,255,.7); }
-        .faculty-badge { display:inline-block; margin-top:6px; background:rgba(255,255,255,.2); color:white; font-size:9px; font-weight:700; padding:2px 8px; border-radius:20px; letter-spacing:1px; text-transform:uppercase; }
-        .sidebar.collapsed .brand-text, .sidebar.collapsed .faculty-badge { display:none; }
-        .sidebar-nav { list-style:none; flex:1; padding:10px 0; }
-        .sidebar-nav .nav-group-label { padding:14px 22px 4px; font-size:9px; font-weight:700; color:rgba(255,255,255,.4); text-transform:uppercase; letter-spacing:1.2px; }
-        .sidebar.collapsed .nav-group-label { display:none; }
-        .sidebar-nav li a { display:flex; align-items:center; gap:12px; padding:10px 22px; color:rgba(255,255,255,.72); text-decoration:none; font-size:13px; border-left:3px solid transparent; transition:all .2s; }
-        .sidebar-nav li a:hover { color:white; background:rgba(255,255,255,.1); }
-        .sidebar-nav li a.active { color:white; background:rgba(255,255,255,.18); border-left-color:white; font-weight:500; }
-        .sidebar-nav li a i { width:18px; text-align:center; font-size:14px; flex-shrink:0; }
-        .sidebar.collapsed .sidebar-nav li a { padding:10px 0; justify-content:center; gap:0; }
-        .sidebar.collapsed .sidebar-nav li a span { display:none; }
-        .nav-badge { margin-left:auto; background:var(--accent); color:white; font-size:9px; font-weight:700; padding:2px 6px; border-radius:20px; min-width:18px; text-align:center; }
-        .sidebar.collapsed .nav-badge { display:none; }
-        .sidebar-footer { border-top:1px solid rgba(255,255,255,.12); padding:14px 18px; }
-        .user-row { display:flex; align-items:center; gap:10px; }
-        .user-av { width:36px; height:36px; border-radius:50%; background:var(--accent); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:12px; color:white; flex-shrink:0; }
-        .user-info { flex:1; min-width:0; }
-        .user-info .un { display:block; font-size:12px; font-weight:600; color:white; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-        .user-info .ur { display:block; font-size:10px; color:rgba(255,255,255,.6); }
-        .sidebar.collapsed .user-info, .sidebar.collapsed .user-chevron { display:none; }
 
         /* MAIN */
         .main { margin-left:230px; padding:26px 30px; min-height:100vh; transition:margin-left .3s; }
@@ -142,39 +115,7 @@
 </head>
 <body>
 
-<aside class="sidebar" id="sidebar">
-    <div class="sidebar-header">
-        <div class="sidebar-brand">
-            <div class="brand-circle"><i class="fas fa-shield-alt"></i></div>
-            <div class="brand-text"><strong>CPACE</strong><small>CPA Reviewer</small></div>
-        </div>
-        <div class="faculty-badge">Faculty Portal</div>
-    </div>
-    <ul class="sidebar-nav">
-        <li class="nav-group-label">Main</li>
-        <li><a href="{{ route('faculty.dashboard') }}"><i class="fas fa-home"></i><span>Dashboard</span></a></li>
-        <li class="nav-group-label">Content</li>
-        <li><a href="{{ route('faculty.test-bank') }}" class="active"><i class="fas fa-database"></i><span>Test Bank</span><span class="nav-badge">1,543</span></a></li>
-        <li><a href="{{ route('faculty.question.create') }}"><i class="fas fa-plus-circle"></i><span>Add Question</span></a></li>
-        <li><a href="{{ route('faculty.subjects') }}"><i class="fas fa-book-open"></i><span>Subjects &amp; Topics</span></a></li>
-        <li class="nav-group-label">Analytics</li>
-        <li><a href="{{ route('faculty.performance') }}"><i class="fas fa-users"></i><span>Student Performance</span></a></li>
-        <li><a href="#"><i class="fas fa-chart-line"></i><span>Reports</span></a></li>
-        <li class="nav-group-label">System</li>
-        <li><a href="#"><i class="fas fa-cog"></i><span>Settings</span></a></li>
-        <li><a href="{{ route('dashboard') }}"><i class="fas fa-arrow-left"></i><span>Student View</span></a></li>
-    </ul>
-    <div class="sidebar-footer">
-        <div class="user-row">
-            <div class="user-av">KD</div>
-            <div class="user-info">
-                <span class="un">{{ Auth::user()->name }}</span>
-                <span class="ur">Faculty</span>
-            </div>
-            <i class="fas fa-chevron-down user-chevron" style="color:rgba(255,255,255,.5);font-size:10px;"></i>
-        </div>
-    </div>
-</aside>
+@include('partials.faculty-sidebar', ['active' => 'test-bank'])
 
 <main class="main">
     <div class="topbar a0">
@@ -198,79 +139,83 @@
         </div>
     </div>
 
+    @if(session('status'))
+        <div style="background:#d1fae5;color:#059669;padding:12px 18px;border-radius:10px;margin-bottom:16px;font-size:13px;font-weight:600;">
+            <i class="fas fa-check-circle"></i> {{ session('status') }}
+        </div>
+    @endif
+
     <!-- STATS -->
     <div class="stats-row a1">
         <div class="stat-chip">
             <div class="chip-icon" style="background:#dbeafe;color:#2563eb;"><i class="fas fa-database"></i></div>
-            <div><div class="chip-num">1,543</div><div class="chip-lbl">Total Questions</div></div>
+            <div><div class="chip-num">{{ number_format($stats['total']) }}</div><div class="chip-lbl">Total Questions</div></div>
         </div>
         <div class="stat-chip">
             <div class="chip-icon" style="background:#d1fae5;color:#059669;"><i class="fas fa-check-circle"></i></div>
-            <div><div class="chip-num">1,320</div><div class="chip-lbl">Active</div></div>
+            <div><div class="chip-num">{{ number_format($stats['active']) }}</div><div class="chip-lbl">Active</div></div>
         </div>
         <div class="stat-chip">
             <div class="chip-icon" style="background:#f3f4f6;color:#9ca3af;"><i class="fas fa-file-alt"></i></div>
-            <div><div class="chip-num">223</div><div class="chip-lbl">Drafts</div></div>
+            <div><div class="chip-num">{{ number_format($stats['draft']) }}</div><div class="chip-lbl">Drafts</div></div>
         </div>
         <div class="stat-chip">
             <div class="chip-icon" style="background:#fef3c7;color:#d97706;"><i class="fas fa-clock"></i></div>
-            <div><div class="chip-num">24</div><div class="chip-lbl">Added this week</div></div>
+            <div><div class="chip-num">{{ number_format($stats['this_week']) }}</div><div class="chip-lbl">Added this week</div></div>
         </div>
     </div>
 
     <!-- FILTERS -->
-    <div class="filter-bar a1">
+    <form method="GET" action="{{ route('faculty.test-bank') }}" class="filter-bar a1" id="filterForm">
         <div class="search-wrap-tb">
             <i class="fas fa-search"></i>
-            <input class="search-inp" type="text" placeholder="Search questions...">
+            <input class="search-inp" type="text" name="search" value="{{ $filters['search'] ?? '' }}" placeholder="Search questions...">
         </div>
         <div class="filter-divider"></div>
         <div class="filter-group">
             <span class="filter-label">Subject</span>
-            <select>
-                <option>All Subjects</option>
-                <option>FAR</option><option>AUD</option><option>TAX</option>
-                <option>MS</option><option>RFBT</option><option>AFAR</option>
+            <select name="subject" onchange="document.getElementById('filterForm').submit()">
+                <option value="">All Subjects</option>
+                @foreach($subjects as $subject)
+                    <option value="{{ $subject->id }}" {{ ($filters['subject'] ?? '') == $subject->id ? 'selected' : '' }}>{{ $subject->code }}</option>
+                @endforeach
             </select>
         </div>
         <div class="filter-group">
             <span class="filter-label">Type</span>
-            <select>
-                <option>All Types</option>
-                <option>Multiple Choice</option>
-                <option>True / False</option>
-                <option>Identification</option>
+            <select name="type" onchange="document.getElementById('filterForm').submit()">
+                <option value="">All Types</option>
+                <option value="mcq" {{ ($filters['type'] ?? '') === 'mcq' ? 'selected' : '' }}>Multiple Choice</option>
+                <option value="true_false" {{ ($filters['type'] ?? '') === 'true_false' ? 'selected' : '' }}>True / False</option>
             </select>
         </div>
         <div class="filter-group">
             <span class="filter-label">Difficulty</span>
-            <select>
-                <option>All Levels</option>
-                <option>Easy</option><option>Medium</option><option>Hard</option>
+            <select name="difficulty" onchange="document.getElementById('filterForm').submit()">
+                <option value="">All Levels</option>
+                <option value="easy" {{ ($filters['difficulty'] ?? '') === 'easy' ? 'selected' : '' }}>Easy</option>
+                <option value="moderate" {{ ($filters['difficulty'] ?? '') === 'moderate' ? 'selected' : '' }}>Medium</option>
+                <option value="difficult" {{ ($filters['difficulty'] ?? '') === 'difficult' ? 'selected' : '' }}>Hard</option>
             </select>
         </div>
         <div class="filter-group">
             <span class="filter-label">Status</span>
-            <select>
-                <option>All Status</option>
-                <option>Active</option><option>Draft</option>
+            <select name="status" onchange="document.getElementById('filterForm').submit()">
+                <option value="">All Status</option>
+                <option value="active" {{ ($filters['status'] ?? '') === 'active' ? 'selected' : '' }}>Active</option>
+                <option value="draft" {{ ($filters['status'] ?? '') === 'draft' ? 'selected' : '' }}>Draft</option>
             </select>
         </div>
-    </div>
+    </form>
 
     <!-- TABLE -->
     <div class="table-card a2">
         <div class="table-head-bar">
-            <span class="count">Showing 1–10 of <strong>1,543</strong> questions</span>
-            <div class="bulk-actions">
-                <button class="bulk-btn bulk-del"><i class="fas fa-trash"></i> Delete Selected</button>
-                <button class="bulk-btn bulk-exp"><i class="fas fa-file-export"></i> Export Selected</button>
-            </div>
+            <span class="count">Showing {{ $questions->firstItem() ?? 0 }}–{{ $questions->lastItem() ?? 0 }} of <strong>{{ number_format($questions->total()) }}</strong> questions</span>
         </div>
         <table>
             <thead>
                 <tr>
-                    <th><input type="checkbox" id="selectAll"></th>
                     <th>#</th>
                     <th>Question</th>
                     <th>Subject</th>
@@ -283,60 +228,62 @@
             </thead>
             <tbody>
                 @php
-                $questions = [
-                    [1,'Under PFRS 15, revenue is recognized when or as performance obligations are...','FAR','Revenue Recognition','Multiple Choice','Medium','active'],
-                    [2,'Which of the following best describes audit risk?','AUD','Audit Risk','Multiple Choice','Hard','active'],
-                    [3,'The estate tax rate in the Philippines is flat at 6%.','TAX','Estate Tax','True / False','Easy','draft'],
-                    [4,'Balance of payments (BOP) refers to the record of all...','MS','Macroeconomics','Multiple Choice','Medium','active'],
-                    [5,'Under PFRS 9, financial assets are classified into how many categories?','FAR','Financial Instruments','Multiple Choice','Hard','active'],
-                    [6,'What is the legal basis of taxation in the Philippines?','RFBT','Taxation Law','Identification','Easy','active'],
-                    [7,'The process of examining financial records to verify accuracy is called?','AUD','Audit Concepts','Identification','Easy','draft'],
-                    [8,'Which method of depreciation results in higher depreciation expense in the early years?','FAR','Depreciation','Multiple Choice','Medium','active'],
-                    [9,'A corporation is required to file its annual income tax return on or before?','TAX','Income Tax','Multiple Choice','Medium','active'],
-                    [10,'Under PFRS 16, lessees must recognize a right-of-use asset for all leases.','AFAR','Leases','True / False','Hard','active'],
-                ];
                 $subjectClass = ['FAR'=>'b-far','AUD'=>'b-aud','TAX'=>'b-tax','MS'=>'b-ms','RFBT'=>'b-rfbt','AFAR'=>'b-afar'];
-                $diffClass = ['Easy'=>'d-easy','Medium'=>'d-medium','Hard'=>'d-hard'];
+                $diffClass = ['easy'=>'d-easy','moderate'=>'d-medium','difficult'=>'d-hard'];
+                $diffLabel = ['easy'=>'Easy','moderate'=>'Medium','difficult'=>'Hard'];
+                $typeLabel = ['mcq'=>'Multiple Choice','true_false'=>'True / False'];
                 @endphp
 
-                @foreach($questions as $q)
+                @forelse($questions as $q)
                 <tr>
-                    <td><input type="checkbox"></td>
-                    <td style="color:#aaa;font-size:12px;">{{ $q[0] }}</td>
+                    <td style="color:#aaa;font-size:12px;">{{ $q->id }}</td>
                     <td>
-                        <div class="q-text">{{ $q[1] }}</div>
-                        <div class="q-meta">{{ $q[5] }} difficulty</div>
+                        <div class="q-text">{{ \Illuminate\Support\Str::limit($q->question_text, 70) }}</div>
+                        <div class="q-meta">{{ $diffLabel[$q->difficulty] }} difficulty</div>
                     </td>
-                    <td><span class="subj-badge {{ $subjectClass[$q[2]] }}">{{ $q[2] }}</span></td>
-                    <td style="font-size:12px;color:#666;">{{ $q[3] }}</td>
-                    <td><span class="type-badge">{{ $q[4] }}</span></td>
-                    <td><span class="diff-badge {{ $diffClass[$q[5]] }}">{{ $q[5] }}</span></td>
+                    <td><span class="subj-badge {{ $subjectClass[$q->subject_code] ?? 'b-far' }}">{{ $q->subject_code }}</span></td>
+                    <td style="font-size:12px;color:#666;">{{ $q->topic_name }}</td>
+                    <td><span class="type-badge">{{ $typeLabel[$q->question_type] ?? $q->question_type }}</span></td>
+                    <td><span class="diff-badge {{ $diffClass[$q->difficulty] }}">{{ $diffLabel[$q->difficulty] }}</span></td>
                     <td>
-                        @if($q[6] === 'active')
+                        @if($q->is_active)
                             <span class="status-pill sp-active"><i class="fas fa-circle" style="font-size:6px;"></i> Active</span>
                         @else
                             <span class="status-pill sp-draft"><i class="fas fa-circle" style="font-size:6px;"></i> Draft</span>
                         @endif
                     </td>
-                    <td>
-                        <a href="{{ route('faculty.question.edit', $q[0]) }}" class="action-btn ab-edit" title="Edit"><i class="fas fa-pen"></i></a>
-                        <button class="action-btn ab-dup" style="margin-left:4px;" title="Duplicate"><i class="fas fa-copy"></i></button>
-                        <button class="action-btn ab-del" style="margin-left:4px;" title="Delete"><i class="fas fa-trash"></i></button>
+                    <td style="white-space:nowrap;">
+                        <a href="{{ route('faculty.question.edit', $q->id) }}" class="action-btn ab-edit" title="Edit"><i class="fas fa-pen"></i></a>
+                        <form method="POST" action="{{ route('faculty.question.destroy', $q->id) }}" style="display:inline;" onsubmit="return confirm('Delete this question?');">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="action-btn ab-del" style="margin-left:4px;" title="Delete"><i class="fas fa-trash"></i></button>
+                        </form>
                     </td>
                 </tr>
-                @endforeach
+                @empty
+                <tr>
+                    <td colspan="8" style="text-align:center;color:#aaa;padding:40px;">
+                        No questions yet. <a href="{{ route('faculty.question.create') }}" style="color:var(--accent);font-weight:600;">Add the first one</a>.
+                    </td>
+                </tr>
+                @endforelse
             </tbody>
         </table>
         <div class="pagination">
-            <span class="pag-info">Showing 1–10 of 1,543 results</span>
+            <span class="pag-info">Showing {{ $questions->firstItem() ?? 0 }}–{{ $questions->lastItem() ?? 0 }} of {{ number_format($questions->total()) }} results</span>
             <div class="pag-btns">
-                <button class="pag-btn"><i class="fas fa-chevron-left"></i></button>
-                <button class="pag-btn active">1</button>
-                <button class="pag-btn">2</button>
-                <button class="pag-btn">3</button>
-                <span style="padding:0 4px;font-size:13px;color:#aaa;">...</span>
-                <button class="pag-btn">155</button>
-                <button class="pag-btn"><i class="fas fa-chevron-right"></i></button>
+                @if($questions->onFirstPage())
+                    <span class="pag-btn" style="opacity:.4;"><i class="fas fa-chevron-left"></i></span>
+                @else
+                    <a href="{{ $questions->previousPageUrl() }}" class="pag-btn"><i class="fas fa-chevron-left"></i></a>
+                @endif
+                <span class="pag-btn active">{{ $questions->currentPage() }}</span>
+                @if($questions->hasMorePages())
+                    <a href="{{ $questions->nextPageUrl() }}" class="pag-btn"><i class="fas fa-chevron-right"></i></a>
+                @else
+                    <span class="pag-btn" style="opacity:.4;"><i class="fas fa-chevron-right"></i></span>
+                @endif
             </div>
         </div>
     </div>
@@ -348,9 +295,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const sb  = document.getElementById('sidebar');
     if (btn) btn.addEventListener('click', () => { sb.classList.toggle('collapsed'); localStorage.setItem('facultySidebar', sb.classList.contains('collapsed')); });
     if (localStorage.getItem('facultySidebar') === 'true') sb.classList.add('collapsed');
-    document.getElementById('selectAll').addEventListener('change', function() {
-        document.querySelectorAll('tbody input[type=checkbox]').forEach(c => c.checked = this.checked);
-    });
 });
 </script>
 </body>

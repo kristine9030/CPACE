@@ -6,12 +6,13 @@ use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-class FacultyMiddleware
+class ChairMiddleware
 {
     public function handle(Request $request, Closure $next): Response
     {
-        if (!$request->user() || !$request->user()->isFaculty()) {
-            abort(403, 'Access denied. Faculty only.');
+        // The Program Chair is the Admin role for the BSA program.
+        if (!$request->user() || !$request->user()->isChair()) {
+            abort(403, 'Access denied. Program Chair only.');
         }
 
         return $next($request);
