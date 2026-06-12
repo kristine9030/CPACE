@@ -365,6 +365,12 @@
         <div class="topbar-right">
             <a href="{{ route('faculty.question.create') }}" class="btn btn-primary"><i class="fas fa-plus"></i> Add Question</a>
             <a href="{{ route('faculty.test-bank') }}" class="btn btn-outline"><i class="fas fa-database"></i> Test Bank</a>
+            <form method="POST" action="{{ route('logout') }}" style="margin:0;">
+                @csrf
+                <button type="submit" class="btn btn-outline" style="color:#c0392b;border-color:#c0392b;">
+                    <i class="fas fa-sign-out-alt"></i> Sign Out
+                </button>
+            </form>
         </div>
     </div>
 

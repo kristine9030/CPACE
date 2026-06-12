@@ -190,9 +190,15 @@
                 <div class="page-sub">Monitor student progress and identify students that need help.</div>
             </div>
         </div>
-        <div style="display:flex;gap:10px;">
+        <div style="display:flex;gap:10px;align-items:center;">
             <button class="btn btn-ghost"><i class="fas fa-file-export"></i> Export</button>
             <button class="btn btn-primary"><i class="fas fa-envelope"></i> Send Report</button>
+            <form method="POST" action="{{ route('logout') }}" style="margin:0;">
+                @csrf
+                <button type="submit" class="btn btn-ghost" style="color:#c0392b;border-color:#c0392b;">
+                    <i class="fas fa-sign-out-alt"></i> Sign Out
+                </button>
+            </form>
         </div>
     </div>
 

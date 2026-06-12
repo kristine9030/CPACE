@@ -428,26 +428,34 @@
         }
 
         .dropdown-menu button {
+            display: flex;
+            align-items: center;
+            gap: 10px;
             width: 100%;
-            padding: 12px 16px;
+            padding: 11px 16px;
             background: none;
             border: none;
             text-align: left;
-            color: #c0392b;
+            color: #333;
             font-size: 13px;
+            font-family: 'Poppins', sans-serif;
             cursor: pointer;
             transition: all 0.2s;
+            border-bottom: 1px solid #f5f5f5;
         }
 
         .dropdown-menu button i {
-            margin-right: 8px;
             width: 16px;
             text-align: center;
+            color: #7B1D1D;
         }
 
         .dropdown-menu button:hover {
             background: #f9f9f9;
         }
+
+        .dropdown-menu .logout-btn { color: #e53e3e; }
+        .dropdown-menu .logout-btn i { color: #e53e3e; }
 
         /* STAT CARDS */
         .stats-row {
@@ -1009,7 +1017,7 @@
                                 <a href="#"><i class="fas fa-question-circle"></i> Help & Support</a>
                                 <form method="POST" action="{{ route('logout') }}" style="margin: 0; padding: 0;">
                                     @csrf
-                                    <button type="submit"><i class="fas fa-sign-out-alt"></i> Logout</button>
+                                    <button type="submit" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</button>
                                 </form>
                             </div>
                         </div>

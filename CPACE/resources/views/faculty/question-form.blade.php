@@ -192,8 +192,14 @@
                 <div class="page-sub">{{ isset($editMode) ? 'Update question details and answers.' : 'Create a new question for the test bank.' }}</div>
             </div>
         </div>
-        <div style="display:flex;gap:10px;">
+        <div style="display:flex;gap:10px;align-items:center;">
             <a href="{{ route('faculty.test-bank') }}" class="btn btn-ghost"><i class="fas fa-arrow-left"></i> Back</a>
+            <form method="POST" action="{{ route('logout') }}" style="margin:0;">
+                @csrf
+                <button type="submit" class="btn btn-ghost" style="color:#c0392b;border-color:#c0392b;">
+                    <i class="fas fa-sign-out-alt"></i> Sign Out
+                </button>
+            </form>
         </div>
     </div>
 

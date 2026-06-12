@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - CPACE CPA Reviewer</title>
     <link href='https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap' rel='stylesheet'>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
             margin: 0;
@@ -13,7 +14,7 @@
         }
 
         body {
-            font-family: ''Poppins', sans-serif;
+            font-family: 'Poppins', sans-serif;
             background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
             min-height: 100vh;
             display: flex;
@@ -28,19 +29,54 @@
             gap: 0;
             width: 100%;
             max-width: 1200px;
+            min-height: 680px;
             background: white;
             border-radius: 10px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
             overflow: hidden;
         }
 
         .left-section {
-            background: linear-gradient(135deg, #7B1D1D 0%, #8B2525 100%);
+            position: relative;
             color: white;
             padding: 60px 40px;
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
+            justify-content: flex-start;
+            overflow: hidden;
+            min-height: 600px;
+        }
+
+        .left-section img.left-bg {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center center;
+            z-index: 0;
+        }
+
+        .left-section > *:not(img) {
+            position: relative;
+            z-index: 1;
+        }
+
+        .left-section .logo,
+        .left-section .hero-content {
+            text-shadow: 0 2px 8px rgba(0,0,0,0.7), 0 1px 3px rgba(0,0,0,0.9);
+        }
+
+        .left-section .logo-circle {
+            background: rgba(0,0,0,0.3);
+            border: 2px solid rgba(255,255,255,0.6);
+        }
+
+        .right-section-wrap {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            overflow-y: auto;
         }
 
         .logo {
@@ -72,36 +108,20 @@
         }
 
         .hero-content h2 {
-            font-size: 42px;
+            font-size: 26px;
             font-weight: 700;
-            margin-bottom: 20px;
-            line-height: 1.2;
+            margin-bottom: 12px;
+            line-height: 1.3;
         }
 
         .hero-content p {
-            font-size: 16px;
-            opacity: 0.9;
-            margin-bottom: 60px;
+            font-size: 13px;
+            opacity: 0.95;
             line-height: 1.6;
-        }
-
-        .hero-image {
-            text-align: center;
-        }
-
-        .hero-image svg {
-            max-width: 250px;
-            height: auto;
         }
 
         .right-section {
             padding: 40px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            min-height: 600px;
-            max-height: 100vh;
-            overflow-y: auto;
         }
 
         .form-container h3 {
@@ -136,6 +156,7 @@
             border: 1px solid #ddd;
             border-radius: 6px;
             font-size: 14px;
+            font-family: 'Poppins', sans-serif;
             transition: border-color 0.3s;
         }
 
@@ -186,6 +207,7 @@
             border-radius: 6px;
             font-size: 16px;
             font-weight: 600;
+            font-family: 'Poppins', sans-serif;
             cursor: pointer;
             transition: transform 0.2s, box-shadow 0.2s;
         }
@@ -236,6 +258,7 @@
             cursor: pointer;
             font-size: 13px;
             font-weight: 600;
+            font-family: 'Poppins', sans-serif;
             transition: border-color 0.3s;
             display: flex;
             align-items: center;
@@ -284,6 +307,9 @@
                 display: none;
             }
 
+            .right-section-wrap {
+                min-height: auto;
+            }
             .right-section {
                 padding: 40px 20px;
             }
@@ -298,33 +324,11 @@
     <div class="container">
         <!-- Left Section -->
         <div class="left-section">
-            <div>
-                <div class="logo">
-                    <div class="logo-circle">ðŸŽ¯</div>
-                    <div class="logo-text">
-                        <h1>CPACE</h1>
-                        <p>CPA Reviewer</p>
-                    </div>
-                </div>
-
-                <div class="hero-content">
-                    <h2>Master your CPA journey with smart practice.</h2>
-                    <p>Focused quizzes, detailed insights, and personalized learning to help you succeed.</p>
-                </div>
-            </div>
-
-            <div class="hero-image">
-                <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-                    <rect x="30" y="120" width="40" height="50" fill="#4CAF50" rx="4"/>
-                    <rect x="35" y="115" width="30" height="8" fill="#2196F3"/>
-                    <text x="50" y="135" font-size="12" fill="white" text-anchor="middle" font-weight="bold">FAR</text>
-                    <circle cx="130" cy="100" r="40" fill="rgba(255,255,255,0.1)"/>
-                    <circle cx="130" cy="100" r="35" fill="rgba(255,255,255,0.05)"/>
-                </svg>
-            </div>
+            <img src="{{ asset('images/login_bg.png') }}" class="left-bg" alt="">
         </div>
 
         <!-- Right Section -->
+        <div class="right-section-wrap">
         <div class="right-section">
             <div class="form-container">
                 <h3>Welcome back!</h3>
@@ -372,19 +376,34 @@
 
                 <div class="social-login">
                     <button class="social-btn" onclick="alert('Google login coming soon')">
-                        <span>ðŸ”</span> Google
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="18" height="18">
+                            <path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.2l6.7-6.7C35.7 2.3 30.2 0 24 0 14.6 0 6.6 5.4 2.6 13.3l7.8 6.1C12.4 13.2 17.7 9.5 24 9.5z"/>
+                            <path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h12.7c-.6 3-2.4 5.5-4.9 7.2l7.7 6c4.5-4.2 7-10.4 7-17.2z"/>
+                            <path fill="#FBBC05" d="M10.4 28.6c-.5-1.4-.8-2.9-.8-4.6s.3-3.2.8-4.6l-7.8-6.1C1 16.6 0 20.2 0 24s1 7.4 2.6 10.7l7.8-6.1z"/>
+                            <path fill="#34A853" d="M24 48c6.2 0 11.4-2 15.2-5.5l-7.7-6c-2 1.4-4.6 2.2-7.5 2.2-6.3 0-11.6-3.7-13.6-9l-7.8 6.1C6.6 42.6 14.6 48 24 48z"/>
+                        </svg>
+                        Google
                     </button>
                     <button class="social-btn" onclick="alert('Microsoft login coming soon')">
-                        <span>âŠž</span> Microsoft
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 23 23" width="18" height="18">
+                            <rect x="1" y="1" width="10" height="10" fill="#F25022"/>
+                            <rect x="12" y="1" width="10" height="10" fill="#7FBA00"/>
+                            <rect x="1" y="12" width="10" height="10" fill="#00A4EF"/>
+                            <rect x="12" y="12" width="10" height="10" fill="#FFB900"/>
+                        </svg>
+                        Microsoft
                     </button>
                 </div>
 
                 <div class="signup-link">
                     Don't have an account? <a href="{{ route('signup') }}">Sign up</a>
                 </div>
+
             </div>
+        </div>
         </div>
     </div>
 </body>
 </html>
+
 

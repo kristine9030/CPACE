@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign Up - CPACE CPA Reviewer</title>
     <link href='https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap' rel='stylesheet'>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
             margin: 0;
@@ -13,7 +14,7 @@
         }
 
         body {
-            font-family: ''Poppins', sans-serif;
+            font-family: 'Poppins', sans-serif;
             background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
             min-height: 100vh;
             display: flex;
@@ -28,20 +29,53 @@
             gap: 0;
             width: 100%;
             max-width: 1200px;
+            min-height: 680px;
             background: white;
             border-radius: 10px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
             overflow: hidden;
-            max-height: 90vh;
         }
 
         .left-section {
-            background: linear-gradient(135deg, #7B1D1D 0%, #8B2525 100%);
+            position: relative;
             color: white;
             padding: 60px 40px;
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
+            justify-content: flex-start;
+            overflow: hidden;
+        }
+
+        .left-section img.left-bg {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center center;
+            z-index: 0;
+        }
+
+        .left-section > *:not(img) {
+            position: relative;
+            z-index: 1;
+        }
+
+        .left-section .logo,
+        .left-section .hero-content {
+            text-shadow: 0 2px 8px rgba(0,0,0,0.7), 0 1px 3px rgba(0,0,0,0.9);
+        }
+
+        .left-section .logo-circle {
+            background: rgba(0,0,0,0.3);
+            border: 2px solid rgba(255,255,255,0.6);
+        }
+
+        .right-section-wrap {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            overflow-y: auto;
         }
 
         .logo {
@@ -73,35 +107,20 @@
         }
 
         .hero-content h2 {
-            font-size: 42px;
+            font-size: 26px;
             font-weight: 700;
-            margin-bottom: 20px;
-            line-height: 1.2;
+            margin-bottom: 12px;
+            line-height: 1.3;
         }
 
         .hero-content p {
-            font-size: 16px;
-            opacity: 0.9;
-            margin-bottom: 60px;
+            font-size: 13px;
+            opacity: 0.95;
             line-height: 1.6;
-        }
-
-        .hero-image {
-            text-align: center;
-        }
-
-        .hero-image svg {
-            max-width: 250px;
-            height: auto;
         }
 
         .right-section {
             padding: 40px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            max-height: 90vh;
-            overflow-y: auto;
         }
 
         .form-container h3 {
@@ -296,33 +315,11 @@
     <div class="container">
         <!-- Left Section -->
         <div class="left-section">
-            <div>
-                <div class="logo">
-                    <div class="logo-circle">ðŸŽ¯</div>
-                    <div class="logo-text">
-                        <h1>CPACE</h1>
-                        <p>CPA Reviewer</p>
-                    </div>
-                </div>
-
-                <div class="hero-content">
-                    <h2>Master your CPA journey with smart practice.</h2>
-                    <p>Focused quizzes, detailed insights, and personalized learning to help you succeed.</p>
-                </div>
-            </div>
-
-            <div class="hero-image">
-                <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-                    <rect x="30" y="120" width="40" height="50" fill="#4CAF50" rx="4"/>
-                    <rect x="35" y="115" width="30" height="8" fill="#2196F3"/>
-                    <text x="50" y="135" font-size="12" fill="white" text-anchor="middle" font-weight="bold">FAR</text>
-                    <circle cx="130" cy="100" r="40" fill="rgba(255,255,255,0.1)"/>
-                    <circle cx="130" cy="100" r="35" fill="rgba(255,255,255,0.05)"/>
-                </svg>
-            </div>
+            <img src="{{ asset('images/login_bg.png') }}" class="left-bg" alt="">
         </div>
 
         <!-- Right Section -->
+        <div class="right-section-wrap">
         <div class="right-section">
             <div class="form-container">
                 <h3>Create your account</h3>
@@ -396,7 +393,9 @@
                 </div>
             </div>
         </div>
+        </div>
     </div>
 </body>
 </html>
+
 

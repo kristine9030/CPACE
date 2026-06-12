@@ -404,6 +404,28 @@
             background: #6a1818;
         }
 
+        .header-dropdown-wrap { position: relative; }
+        .dropdown-menu {
+            position: absolute; top: calc(100% + 8px); right: 0;
+            background: white; border: 1px solid #e5e7eb; border-radius: 10px;
+            min-width: 185px; box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+            display: none; z-index: 2000;
+        }
+        .dropdown-menu.active { display: block; }
+        .dropdown-menu a, .dropdown-menu button {
+            display: flex; align-items: center; gap: 10px;
+            padding: 11px 16px; font-size: 13px; font-family: 'Poppins', sans-serif;
+            text-decoration: none; color: #333; background: none; border: none;
+            width: 100%; text-align: left; cursor: pointer; transition: background 0.2s;
+            border-bottom: 1px solid #f5f5f5;
+        }
+        .dropdown-menu a:last-child,
+        .dropdown-menu form:last-child button { border-bottom: none; }
+        .dropdown-menu a:hover, .dropdown-menu button:hover { background: #f9f9f9; }
+        .dropdown-menu a i, .dropdown-menu button i { color: #7B1D1D; width: 16px; text-align: center; }
+        .dropdown-menu .logout-btn { color: #e53e3e; }
+        .dropdown-menu .logout-btn i { color: #e53e3e; }
+
         /* STATS CARDS */
         .stats-row {
             display: grid;
@@ -903,7 +925,18 @@
                             <i class="fas fa-bell"></i>
                             <span class="notification-badge">3</span>
                         </button>
-                        <button class="profile-btn">{{ strtoupper(substr(Auth::user()->name, 0, 1)) }}{{ strtoupper(substr(explode(' ', Auth::user()->name)[array_key_last(explode(' ', Auth::user()->name))], 0, 1)) }}</button>
+                        <div class="header-dropdown-wrap">
+                            <button class="profile-btn" id="profileBtn">{{ strtoupper(substr(Auth::user()->name, 0, 1)) }}{{ strtoupper(substr(explode(' ', Auth::user()->name)[array_key_last(explode(' ', Auth::user()->name))], 0, 1)) }}</button>
+                            <div class="dropdown-menu" id="profileDropdown">
+                                <a href="#"><i class="fas fa-user"></i> Profile Settings</a>
+                                <a href="#"><i class="fas fa-chart-line"></i> My Progress</a>
+                                <a href="#"><i class="fas fa-question-circle"></i> Help &amp; Support</a>
+                                <form method="POST" action="{{ route('logout') }}" style="margin:0;padding:0;">
+                                    @csrf
+                                    <button type="submit" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</button>
+                                </form>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1161,6 +1194,18 @@
 
         if (localStorage.getItem('sidebarCollapsed') === 'true') {
             sidebar.classList.add('collapsed');
+        }
+
+        // Profile dropdown
+        const profileBtn = document.getElementById('profileBtn');
+        const profileDrop = document.getElementById('profileDropdown');
+        if (profileBtn && profileDrop) {
+            profileBtn.addEventListener('click', e => {
+                e.stopPropagation();
+                profileDrop.classList.toggle('active');
+            });
+            document.addEventListener('click', () => profileDrop.classList.remove('active'));
+            profileDrop.addEventListener('click', e => e.stopPropagation());
         }
 
         // Tab switching

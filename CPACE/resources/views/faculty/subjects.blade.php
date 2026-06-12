@@ -181,6 +181,14 @@
                 <div class="page-sub">Manage subjects and their topics. Click a subject to expand and edit its topics.</div>
             </div>
         </div>
+        <div style="display:flex;align-items:center;">
+            <form method="POST" action="{{ route('logout') }}" style="margin:0;">
+                @csrf
+                <button type="submit" style="display:flex;align-items:center;gap:7px;padding:9px 16px;border-radius:8px;font-size:13px;font-weight:600;font-family:'Poppins',sans-serif;cursor:pointer;background:white;color:#c0392b;border:1.5px solid #c0392b;transition:all .2s;">
+                    <i class="fas fa-sign-out-alt"></i> Sign Out
+                </button>
+            </form>
+        </div>
     </div>
 
     @php
