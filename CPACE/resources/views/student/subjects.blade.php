@@ -377,6 +377,8 @@
 
 <!-- SIDEBAR -->
 @include('partials.sidebar', ['active' => 'subjects'])
+@include('partials.student-bottom-nav', ['active' => 'subjects'])
+@include('partials.student-mobile-header')
 
 <!-- MAIN -->
 <main class="main-content">
@@ -384,7 +386,6 @@
     <!-- TOP BAR -->
     <div class="top-bar anim" style="animation-delay:0s">
         <div class="top-bar-left">
-            <button class="toggle-btn" id="sidebarToggle"><i class="fas fa-bars"></i></button>
         </div>
         <div class="top-bar-right">
             <div class="search-wrap">
@@ -604,14 +605,6 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    const toggleBtn = document.getElementById('sidebarToggle');
-    const sidebar   = document.getElementById('sidebar');
-    if (toggleBtn) {
-        toggleBtn.addEventListener('click', () => {
-            sidebar.classList.toggle('collapsed');
-            localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
-        });
-    }
     if (localStorage.getItem('sidebarCollapsed') === 'true') {
         sidebar.classList.add('collapsed');
     }

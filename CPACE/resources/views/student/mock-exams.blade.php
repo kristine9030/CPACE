@@ -860,15 +860,14 @@
     <div class="dashboard-container">
         <!-- SIDEBAR -->
         @include('partials.sidebar', ['active' => 'mock-exams'])
+        @include('partials.student-bottom-nav', ['active' => 'mock-exams'])
+        @include('partials.student-mobile-header')
 
         <!-- MAIN CONTENT -->
         <main class="main-content">
             <!-- HEADER -->
             <div class="header">
                 <div class="header-left">
-                    <button class="sidebar-toggle" id="sidebarToggle">
-                        <i class="fas fa-bars"></i>
-                    </button>
                     <div>
                         <div class="header-title">Mock Exams</div>
                         <div class="header-subtitle">Simulate the real CPA Exam and track your readiness.</div>
@@ -1142,15 +1141,6 @@
     </div>
 
     <script>
-        // Sidebar Toggle
-        const sidebarToggle = document.getElementById('sidebarToggle');
-        const sidebar = document.getElementById('sidebar');
-
-        sidebarToggle.addEventListener('click', () => {
-            sidebar.classList.toggle('collapsed');
-            localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
-        });
-
         if (localStorage.getItem('sidebarCollapsed') === 'true') {
             sidebar.classList.add('collapsed');
         }

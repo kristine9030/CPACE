@@ -856,15 +856,14 @@
     <div class="dashboard-container">
         <!-- SIDEBAR -->
         @include('partials.sidebar', ['active' => 'calendar'])
+        @include('partials.student-bottom-nav', ['active' => 'calendar'])
+        @include('partials.student-mobile-header')
 
         <!-- MAIN CONTENT -->
         <main class="main-content">
             <!-- HEADER -->
             <div class="header">
                 <div class="header-left">
-                    <button class="sidebar-toggle" id="sidebarToggle">
-                        <i class="fas fa-bars"></i>
-                    </button>
                     <div>
                         <div class="header-title">Spaced Repetition Calendar</div>
                         <div class="header-subtitle">Plan your reviews and stay consistent.</div>
@@ -1123,15 +1122,6 @@
     </div>
 
     <script>
-        // Sidebar Toggle
-        const sidebarToggle = document.getElementById('sidebarToggle');
-        const sidebar = document.getElementById('sidebar');
-
-        sidebarToggle.addEventListener('click', () => {
-            sidebar.classList.toggle('collapsed');
-            localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
-        });
-
         // Load sidebar state
         if (localStorage.getItem('sidebarCollapsed') === 'true') {
             sidebar.classList.add('collapsed');

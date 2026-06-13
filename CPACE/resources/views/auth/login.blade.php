@@ -15,7 +15,7 @@
 
         body {
             font-family: 'Poppins', sans-serif;
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            background: linear-gradient(135deg, #ffffff 0%, #f5f0f0 50%, #e8d5d5 100%);
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -150,7 +150,8 @@
         }
 
         input[type="email"],
-        input[type="password"] {
+        input[type="password"],
+        input[type="text"] {
             width: 100%;
             padding: 12px 15px;
             border: 1px solid #ddd;
@@ -161,11 +162,37 @@
         }
 
         input[type="email"]:focus,
-        input[type="password"]:focus {
+        input[type="password"]:focus,
+        input[type="text"]:focus {
             outline: none;
             border-color: #7B1D1D;
             box-shadow: 0 0 0 3px rgba(139, 58, 58, 0.1);
         }
+
+        .password-wrapper {
+            position: relative;
+        }
+
+        .password-wrapper input {
+            padding-right: 44px;
+        }
+
+        .toggle-eye {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #999;
+            font-size: 16px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+        }
+
+        .toggle-eye:hover { color: #7B1D1D; }
 
         .remember-forgot {
             display: flex;
@@ -264,6 +291,8 @@
             align-items: center;
             justify-content: center;
             gap: 8px;
+            text-decoration: none;
+            color: #333;
         }
 
         .social-btn:hover {
@@ -355,7 +384,12 @@
 
                     <div class="form-group @error('password') error @enderror">
                         <label for="password">Password</label>
-                        <input type="password" id="password" name="password" required>
+                        <div class="password-wrapper">
+                            <input type="password" id="password" name="password" required>
+                            <button type="button" class="toggle-eye" onclick="togglePassword('password', this)">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
                         @error('password')
                             <div class="error-message">{{ $message }}</div>
                         @enderror
@@ -366,7 +400,7 @@
                             <input type="checkbox" id="remember" name="remember" {{ old('remember') ? 'checked' : '' }}>
                             <label for="remember" style="margin: 0;">Remember me</label>
                         </div>
-                        <a href="#" class="forgot-password">Forgot password?</a>
+                        <a href="{{ route('forgot-password') }}" class="forgot-password">Forgot password?</a>
                     </div>
 
                     <button type="submit" class="btn-login">Log In</button>
@@ -375,7 +409,7 @@
                 <div class="divider">or continue with</div>
 
                 <div class="social-login">
-                    <button class="social-btn" onclick="alert('Google login coming soon')">
+                    <a href="{{ route('auth.google') }}" class="social-btn">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="18" height="18">
                             <path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.2l6.7-6.7C35.7 2.3 30.2 0 24 0 14.6 0 6.6 5.4 2.6 13.3l7.8 6.1C12.4 13.2 17.7 9.5 24 9.5z"/>
                             <path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h12.7c-.6 3-2.4 5.5-4.9 7.2l7.7 6c4.5-4.2 7-10.4 7-17.2z"/>
@@ -383,8 +417,8 @@
                             <path fill="#34A853" d="M24 48c6.2 0 11.4-2 15.2-5.5l-7.7-6c-2 1.4-4.6 2.2-7.5 2.2-6.3 0-11.6-3.7-13.6-9l-7.8 6.1C6.6 42.6 14.6 48 24 48z"/>
                         </svg>
                         Google
-                    </button>
-                    <button class="social-btn" onclick="alert('Microsoft login coming soon')">
+                    </a>
+                    <a href="{{ route('auth.microsoft') }}" class="social-btn">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 23 23" width="18" height="18">
                             <rect x="1" y="1" width="10" height="10" fill="#F25022"/>
                             <rect x="12" y="1" width="10" height="10" fill="#7FBA00"/>
@@ -392,7 +426,7 @@
                             <rect x="12" y="12" width="10" height="10" fill="#FFB900"/>
                         </svg>
                         Microsoft
-                    </button>
+                    </a>
                 </div>
 
                 <div class="signup-link">
@@ -403,6 +437,19 @@
         </div>
         </div>
     </div>
+<script>
+function togglePassword(id, btn) {
+    const input = document.getElementById(id);
+    const icon = btn.querySelector('i');
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.classList.replace('fa-eye', 'fa-eye-slash');
+    } else {
+        input.type = 'password';
+        icon.classList.replace('fa-eye-slash', 'fa-eye');
+    }
+}
+</script>
 </body>
 </html>
 

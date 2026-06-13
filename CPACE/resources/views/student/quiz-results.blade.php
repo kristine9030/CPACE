@@ -60,6 +60,8 @@
 <body>
 
 @include('partials.sidebar', ['active' => 'quizzes'])
+@include('partials.student-bottom-nav', ['active' => 'quizzes'])
+@include('partials.student-mobile-header')
 
 @php
     $score = (int) round($session->score_percent);

@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
+use Laravel\Socialite\Facades\Socialite;
 
 class AuthController extends Controller
 {
@@ -94,6 +95,77 @@ class AuthController extends Controller
         return $user->isFaculty()
             ? route('faculty.dashboard')
             : route('dashboard');
+    }
+
+    // ── Social OAuth ─────────────────────────────────────────────────────────
+
+    public function redirectToGoogle()
+    {
+        return Socialite::driver('google')->redirect();
+    }
+
+    public function handleGoogleCallback()
+    {
+        try {
+            $socialUser = Socialite::driver('google')->user();
+        } catch (\Exception $e) {
+            return redirect()->route('login')->withErrors(['email' => 'Google login failed. Please try again.']);
+        }
+
+        return $this->handleSocialLogin($socialUser, 'Google');
+    }
+
+    public function redirectToMicrosoft()
+    {
+        return Socialite::driver('azure')->redirect();
+    }
+
+    public function handleMicrosoftCallback()
+    {
+        try {
+            $socialUser = Socialite::driver('azure')->user();
+        } catch (\Exception $e) {
+            return redirect()->route('login')->withErrors(['email' => 'Microsoft login failed. Please try again.']);
+        }
+
+        return $this->handleSocialLogin($socialUser, 'Microsoft');
+    }
+
+    protected function handleSocialLogin($socialUser, string $provider)
+    {
+        $user = User::where('email', $socialUser->getEmail())->first();
+
+        if (!$user) {
+            return redirect()->route('login')->withErrors([
+                'email' => "No account found with that {$provider} email. Please contact your school administrator.",
+            ]);
+        }
+
+        Auth::login($user, true);
+        request()->session()->regenerate();
+        $user->forceFill(['last_login_at' => now()])->save();
+
+        return redirect()->intended($this->homeFor($user));
+    }
+
+    /**
+     * Show the forgot password form
+     */
+    public function showForgotPassword()
+    {
+        return view('auth.forgot-password');
+    }
+
+    /**
+     * Handle forgot password submission (school system — show a "contact admin" message)
+     */
+    public function sendResetLink(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+        ]);
+
+        return back()->with('status', 'If an account with that email exists, please contact your school administrator to reset your password.');
     }
 
     /**

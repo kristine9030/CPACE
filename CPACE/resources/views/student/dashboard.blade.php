@@ -749,6 +749,8 @@
 
 <!-- ════════════════════════ SIDEBAR ════════════════════════ -->
 @include('partials.sidebar', ['active' => 'dashboard'])
+@include('partials.student-bottom-nav', ['active' => 'dashboard'])
+@include('partials.student-mobile-header')
 
 <!-- ════════════════════════ MAIN CONTENT ════════════════════════ -->
 <main class="main-content">
@@ -756,7 +758,6 @@
     <!-- HEADER -->
     <div class="page-header anim" style="animation-delay:0s">
         <div class="page-header-left">
-            <button class="toggle-btn" id="sidebarToggle"><i class="fas fa-bars"></i></button>
             <div>
                 <div class="page-title">Dashboard</div>
                 <div class="page-subtitle">Welcome back, {{ Auth::user()->name }}! Let's keep up the momentum.</div>
@@ -804,28 +805,6 @@
                 @else
                     Set your exam target date to start the countdown
                 @endif
-            </div>
-        </div>
-        <div class="welcome-illustration">
-            <div style="display:flex; flex-direction:column; align-items:flex-end; gap:8px;">
-                <div style="display:flex; align-items:flex-end; gap:8px;">
-                    <div style="display:flex; flex-direction:column; gap:4px;">
-                        <div class="illus-book tax">TAX</div>
-                        <div class="illus-book audit" style="height:75px;">AUDIT</div>
-                        <div class="illus-book far" style="height:65px; background:linear-gradient(135deg,#e67e22,#ca6f1e);">FAR</div>
-                    </div>
-                    <div style="display:flex; flex-direction:column; align-items:center; gap:10px;">
-                        <div>&#127807;</div>
-                        <div class="illus-laptop">
-                            <div class="illus-laptop-screen">
-                                <div class="illus-logo-screen">
-                                    <i class="fas fa-shield-alt"></i>
-                                </div>
-                            </div>
-                        </div>
-                        <div style="font-size:28px;">&#9749;</div>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
@@ -1063,21 +1042,6 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    // Sidebar toggle
-    const toggleBtn = document.getElementById('sidebarToggle');
-    const sidebar   = document.getElementById('sidebar');
-
-    if (toggleBtn) {
-        toggleBtn.addEventListener('click', () => {
-            sidebar.classList.toggle('collapsed');
-            localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
-        });
-    }
-
-    if (localStorage.getItem('sidebarCollapsed') === 'true') {
-        sidebar.classList.add('collapsed');
-    }
-
     // Profile dropdown
     const profileBtn = document.getElementById('profileBtn');
     const profileDrop = document.getElementById('profileDropdown');

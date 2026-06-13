@@ -47,6 +47,8 @@
 <body>
 
 @include('partials.sidebar', ['active' => 'quizzes'])
+@include('partials.student-bottom-nav', ['active' => 'quizzes'])
+@include('partials.student-mobile-header')
 
 <main class="main-content">
     <div class="quiz-header">

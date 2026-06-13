@@ -28,6 +28,39 @@
     }
     .sidebar.collapsed { width: 70px; }
 
+    /* ── Collapse toggle button (on sidebar's right edge) ── */
+    .sidebar-collapse-btn {
+        position: absolute;
+        top: 22px;
+        right: -17px;
+        width: 34px; height: 34px;
+        background: #fff;
+        border: 2px solid #e0e0e0;
+        border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        cursor: pointer;
+        font-size: 12px;
+        color: #7B1D1D;
+        z-index: 1010;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+        transition: background 0.2s, border-color 0.2s;
+        flex-shrink: 0;
+    }
+    .sidebar-collapse-btn:hover {
+        background: #f5e8e8;
+        border-color: #7B1D1D;
+    }
+    .sidebar-collapse-btn i {
+        transition: transform 0.3s ease;
+    }
+    .sidebar.collapsed .sidebar-collapse-btn i {
+        transform: rotate(180deg);
+    }
+
+    @media (max-width: 768px) {
+        .sidebar-collapse-btn { display: none !important; }
+    }
+
     .sidebar .sidebar-logo {
         display: flex;
         align-items: center;
@@ -171,9 +204,29 @@
         .sidebar .sidebar-nav li a { padding: 11px 0; justify-content: center; gap: 0; }
         .main-content { margin-left: 70px; }
     }
+
+    /* ── Desktop: hide all mobile-only elements ── */
+    @media (min-width: 769px) {
+        .bottom-nav,
+        .more-drawer,
+        .more-drawer-overlay,
+        .mobile-app-header { display: none !important; }
+    }
+
+    /* ── Mobile: hide sidebar, adjust layout ── */
+    @media (max-width: 768px) {
+        .sidebar { display: none !important; }
+        .main-content {
+            margin-left: 0 !important;
+            padding: 80px 16px 90px !important;
+        }
+    }
 </style>
 
 <aside class="sidebar" id="sidebar">
+    <button class="sidebar-collapse-btn" id="sidebarCollapseBtn" title="Toggle sidebar">
+        <i class="fas fa-chevron-left"></i>
+    </button>
     <div class="sidebar-logo">
         <div class="logo-circle">
             <i class="fas fa-shield-alt"></i>
@@ -219,3 +272,23 @@
         </div>
     </div>
 </aside>
+
+<script>
+(function () {
+    const sidebar = document.getElementById('sidebar');
+    const btn     = document.getElementById('sidebarCollapseBtn');
+    if (!sidebar) return;
+
+    if (localStorage.getItem('sidebarCollapsed') === 'true') {
+        sidebar.classList.add('collapsed');
+    }
+
+    if (btn) {
+        btn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            sidebar.classList.toggle('collapsed');
+            localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
+        });
+    }
+})();
+</script>

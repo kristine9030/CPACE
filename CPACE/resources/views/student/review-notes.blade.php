@@ -946,15 +946,14 @@
     <div class="dashboard-container">
         <!-- SIDEBAR -->
         @include('partials.sidebar', ['active' => 'review-notes'])
+        @include('partials.student-bottom-nav', ['active' => 'review-notes'])
+        @include('partials.student-mobile-header')
 
         <!-- MAIN CONTENT -->
         <main class="main-content">
             <!-- HEADER -->
             <div class="header">
                 <div class="header-left">
-                    <button class="sidebar-toggle" id="sidebarToggle">
-                        <i class="fas fa-bars"></i>
-                    </button>
                     <div>
                         <div class="header-title">Review Notes</div>
                         <div class="header-subtitle">Organize your key learnings and important concepts.</div>
@@ -1293,18 +1292,6 @@
         `;
         document.head.appendChild(style);
 
-        // Sidebar Toggle
-        const sidebarToggle = document.getElementById('sidebarToggle');
-        const sidebar = document.getElementById('sidebar');
-        if (sidebarToggle) {
-            sidebarToggle.addEventListener('click', () => {
-                sidebar.classList.toggle('collapsed');
-                localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
-            });
-        }
-        if (localStorage.getItem('sidebarCollapsed') === 'true') {
-            sidebar.classList.add('collapsed');
-        }
     </script>
 </body>
 </html>

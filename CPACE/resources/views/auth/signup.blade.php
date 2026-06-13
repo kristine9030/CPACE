@@ -8,14 +8,14 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
-            margin: 0;
+            margin: 0.5;
             padding: 0;
             box-sizing: border-box;
         }
 
         body {
             font-family: 'Poppins', sans-serif;
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            background: linear-gradient(135deg, #ffffff 0%, #f5f0f0 50%, #e8d5d5 100%);
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -255,11 +255,14 @@
             cursor: pointer;
             font-size: 13px;
             font-weight: 600;
+            font-family: 'Poppins', sans-serif;
             transition: border-color 0.3s;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
+            text-decoration: none;
+            color: #333;
         }
 
         .social-btn:hover {
@@ -291,6 +294,31 @@
         .form-group.error input {
             border-color: #ef4444;
         }
+
+        .password-wrapper {
+            position: relative;
+        }
+
+        .password-wrapper input {
+            padding-right: 44px;
+        }
+
+        .toggle-eye {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #999;
+            font-size: 16px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+        }
+
+        .toggle-eye:hover { color: #7B1D1D; }
 
         @media (max-width: 768px) {
             .container {
@@ -354,7 +382,12 @@
 
                     <div class="form-group @error('password') error @enderror">
                         <label for="password">Password</label>
-                        <input type="password" id="password" name="password" required>
+                        <div class="password-wrapper">
+                            <input type="password" id="password" name="password" required>
+                            <button type="button" class="toggle-eye" onclick="togglePassword('password', this)">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
                         <div class="password-hint">At least 8 characters, with uppercase, lowercase, and numbers</div>
                         @error('password')
                             <div class="error-message">{{ $message }}</div>
@@ -363,7 +396,12 @@
 
                     <div class="form-group @error('password_confirmation') error @enderror">
                         <label for="password_confirmation">Confirm Password</label>
-                        <input type="password" id="password_confirmation" name="password_confirmation" required>
+                        <div class="password-wrapper">
+                            <input type="password" id="password_confirmation" name="password_confirmation" required>
+                            <button type="button" class="toggle-eye" onclick="togglePassword('password_confirmation', this)">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
                         @error('password_confirmation')
                             <div class="error-message">{{ $message }}</div>
                         @enderror
@@ -380,12 +418,24 @@
                 <div class="divider">or continue with</div>
 
                 <div class="social-login">
-                    <button class="social-btn" onclick="alert('Google signup coming soon')">
-                        <span>ðŸ”</span> Google
-                    </button>
-                    <button class="social-btn" onclick="alert('Microsoft signup coming soon')">
-                        <span>âŠž</span> Microsoft
-                    </button>
+                    <a href="{{ route('auth.google') }}" class="social-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="18" height="18">
+                            <path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.2l6.7-6.7C35.7 2.3 30.2 0 24 0 14.6 0 6.6 5.4 2.6 13.3l7.8 6.1C12.4 13.2 17.7 9.5 24 9.5z"/>
+                            <path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h12.7c-.6 3-2.4 5.5-4.9 7.2l7.7 6c4.5-4.2 7-10.4 7-17.2z"/>
+                            <path fill="#FBBC05" d="M10.4 28.6c-.5-1.4-.8-2.9-.8-4.6s.3-3.2.8-4.6l-7.8-6.1C1 16.6 0 20.2 0 24s1 7.4 2.6 10.7l7.8-6.1z"/>
+                            <path fill="#34A853" d="M24 48c6.2 0 11.4-2 15.2-5.5l-7.7-6c-2 1.4-4.6 2.2-7.5 2.2-6.3 0-11.6-3.7-13.6-9l-7.8 6.1C6.6 42.6 14.6 48 24 48z"/>
+                        </svg>
+                        Google
+                    </a>
+                    <a href="{{ route('auth.microsoft') }}" class="social-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 23 23" width="18" height="18">
+                            <rect x="1" y="1" width="10" height="10" fill="#F25022"/>
+                            <rect x="12" y="1" width="10" height="10" fill="#7FBA00"/>
+                            <rect x="1" y="12" width="10" height="10" fill="#00A4EF"/>
+                            <rect x="12" y="12" width="10" height="10" fill="#FFB900"/>
+                        </svg>
+                        Microsoft
+                    </a>
                 </div>
 
                 <div class="login-link">
@@ -395,7 +445,21 @@
         </div>
         </div>
     </div>
+<script>
+function togglePassword(id, btn) {
+    const input = document.getElementById(id);
+    const icon = btn.querySelector('i');
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.classList.replace('fa-eye', 'fa-eye-slash');
+    } else {
+        input.type = 'password';
+        icon.classList.replace('fa-eye-slash', 'fa-eye');
+    }
+}
+</script>
 </body>
 </html>
+
 
 
