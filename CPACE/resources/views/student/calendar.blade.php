@@ -602,6 +602,66 @@
             color: #888;
         }
 
+        /* Inline-coloured dot (driven by the subject palette from the server) */
+        .event-dot {
+            position: absolute;
+            left: 7px;
+            top: 11px;
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+        }
+
+        .event-meta {
+            font-size: 11px;
+            color: #888;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .event.weak .event-title::after {
+            content: 'Weak';
+            margin-left: 6px;
+            font-size: 9px;
+            font-weight: 700;
+            color: #c0392b;
+            background: #fdeaea;
+            border-radius: 10px;
+            padding: 1px 6px;
+            vertical-align: middle;
+        }
+
+        .day-more {
+            font-size: 11px;
+            color: #999;
+            padding-left: 4px;
+        }
+
+        .empty-mini {
+            font-size: 12.5px;
+            color: #aaa;
+            padding: 10px 0;
+            line-height: 1.6;
+        }
+
+        .priority-pill {
+            font-size: 10.5px;
+            font-weight: 600;
+            padding: 2px 9px;
+            border-radius: 20px;
+        }
+        .priority-pill.high   { background: #fdeaea; color: #c0392b; }
+        .priority-pill.medium { background: #fef3e2; color: #e8910b; }
+        .priority-pill.low    { background: #e8f7ee; color: #21a366; }
+
+        .review-count {
+            font-size: 13px;
+            color: #666;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
         /* Event color variants */
         .event.tax { background: #fdf3e3; }
         .event.tax::before { background: #F39C12; }
@@ -875,16 +935,17 @@
                         <input type="text" placeholder="Search topics, questions, subjects...">
                     </div>
                     <div class="header-icons">
-                        <button class="icon-btn">
+                        <button class="icon-btn" title="{{ $context['due_count'] }} review{{ $context['due_count'] == 1 ? '' : 's' }} due today">
                             <i class="fas fa-bell"></i>
-                            <span class="notification-badge">3</span>
+                            @if($context['due_count'] > 0)
+                                <span class="notification-badge">{{ $context['due_count'] > 9 ? '9+' : $context['due_count'] }}</span>
+                            @endif
                         </button>
                         <div class="header-dropdown-wrap">
-                            <button class="profile-btn" id="profileBtn">{{ strtoupper(substr(Auth::user()->name, 0, 1)) }}{{ strtoupper(substr(explode(' ', Auth::user()->name)[array_key_last(explode(' ', Auth::user()->name))], 0, 1)) }}</button>
+                            <button class="profile-btn" id="profileBtn">{{ strtoupper(substr(Auth::user()->first_name, 0, 1)) }}{{ strtoupper(substr(Auth::user()->last_name, 0, 1)) }}</button>
                             <div class="dropdown-menu" id="profileDropdown">
-                                <a href="#"><i class="fas fa-user"></i> Profile Settings</a>
-                                <a href="#"><i class="fas fa-chart-line"></i> My Progress</a>
-                                <a href="#"><i class="fas fa-question-circle"></i> Help &amp; Support</a>
+                                <a href="{{ route('performance') }}"><i class="fas fa-chart-line"></i> My Progress</a>
+                                <a href="{{ route('achievements') }}"><i class="fas fa-trophy"></i> Achievements</a>
                                 <form method="POST" action="{{ route('logout') }}" style="margin:0;padding:0;">
                                     @csrf
                                     <button type="submit" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</button>
@@ -901,14 +962,15 @@
                 <div class="calendar-card">
                     <div class="calendar-toolbar">
                         <div class="calendar-toolbar-left">
-                            <div class="calendar-month">May 2024</div>
-                            <button class="nav-btn"><i class="fas fa-chevron-left"></i></button>
-                            <button class="nav-btn"><i class="fas fa-chevron-right"></i></button>
-                            <button class="today-btn">Today</button>
+                            <div class="calendar-month">{{ $context['month_label'] }}</div>
+                            <a class="nav-btn" href="{{ route('calendar', ['month' => $context['prev_month']]) }}" title="Previous month"><i class="fas fa-chevron-left"></i></a>
+                            <a class="nav-btn" href="{{ route('calendar', ['month' => $context['next_month']]) }}" title="Next month"><i class="fas fa-chevron-right"></i></a>
+                            <a class="today-btn" href="{{ route('calendar') }}">Today</a>
                         </div>
                         <div class="view-toggle">
-                            <button class="view-btn active"><i class="fas fa-calendar"></i> Calendar View</button>
-                            <button class="view-btn"><i class="fas fa-list"></i> List View</button>
+                            <span class="priority-pill high"><i class="fas fa-circle" style="font-size:7px;"></i> Weak area</span>
+                            <span class="priority-pill medium">Needs work</span>
+                            <span class="priority-pill low">On track</span>
                         </div>
                     </div>
 
@@ -923,122 +985,26 @@
                         <div class="weekday">Sat</div>
                     </div>
 
-                    <!-- GRID -->
+                    <!-- GRID (server-rendered from the student's SM-2 schedule) -->
                     <div class="calendar-grid">
-                        <!-- Week 1 -->
-                        <div class="calendar-day muted"><span class="day-number">28</span></div>
-                        <div class="calendar-day muted"><span class="day-number">29</span></div>
-                        <div class="calendar-day muted"><span class="day-number">30</span></div>
-                        <div class="calendar-day"><span class="day-number">1</span></div>
-                        <div class="calendar-day"><span class="day-number">2</span></div>
-                        <div class="calendar-day"><span class="day-number">3</span></div>
-                        <div class="calendar-day"><span class="day-number">4</span></div>
-
-                        <!-- Week 2 -->
-                        <div class="calendar-day">
-                            <span class="day-number">5</span>
-                            <div class="event tax">
-                                <span class="event-title">Taxation</span>
-                                <span class="event-time">10:00 AM</span>
-                            </div>
-                        </div>
-                        <div class="calendar-day"><span class="day-number">6</span></div>
-                        <div class="calendar-day">
-                            <span class="day-number">7</span>
-                            <div class="event aud">
-                                <span class="event-title">Audit</span>
-                                <span class="event-time">9:00 AM</span>
-                            </div>
-                            <div class="event far">
-                                <span class="event-title">FAR</span>
-                                <span class="event-time">4:00 PM</span>
-                            </div>
-                        </div>
-                        <div class="calendar-day"><span class="day-number">8</span></div>
-                        <div class="calendar-day">
-                            <span class="day-number">9</span>
-                            <div class="event tax">
-                                <span class="event-title">Taxation</span>
-                                <span class="event-time">11:00 AM</span>
-                            </div>
-                        </div>
-                        <div class="calendar-day"><span class="day-number">10</span></div>
-                        <div class="calendar-day"><span class="day-number">11</span></div>
-
-                        <!-- Week 3 -->
-                        <div class="calendar-day"><span class="day-number">12</span></div>
-                        <div class="calendar-day">
-                            <span class="day-number">13</span>
-                            <div class="event far">
-                                <span class="event-title">FAR</span>
-                                <span class="event-time">3:00 PM</span>
-                            </div>
-                        </div>
-                        <div class="calendar-day"><span class="day-number">14</span></div>
-                        <div class="calendar-day">
-                            <span class="day-number">15</span>
-                            <div class="event aud">
-                                <span class="event-title">Audit</span>
-                                <span class="event-time">9:00 AM</span>
-                            </div>
-                        </div>
-                        <div class="calendar-day">
-                            <span class="day-number">16</span>
-                            <div class="event tax">
-                                <span class="event-title">Taxation</span>
-                                <span class="event-time">1:00 PM</span>
-                            </div>
-                        </div>
-                        <div class="calendar-day"><span class="day-number">17</span></div>
-                        <div class="calendar-day"><span class="day-number">18</span></div>
-
-                        <!-- Week 4 -->
-                        <div class="calendar-day"><span class="day-number">19</span></div>
-                        <div class="calendar-day"><span class="day-number">20</span></div>
-                        <div class="calendar-day">
-                            <span class="day-number">21</span>
-                            <div class="event far">
-                                <span class="event-title">FAR</span>
-                                <span class="event-time">4:00 PM</span>
-                            </div>
-                        </div>
-                        <div class="calendar-day"><span class="day-number">22</span></div>
-                        <div class="calendar-day">
-                            <span class="day-number">23</span>
-                            <div class="event aud">
-                                <span class="event-title">Audit</span>
-                                <span class="event-time">10:00 AM</span>
-                            </div>
-                        </div>
-                        <div class="calendar-day"><span class="day-number">24</span></div>
-                        <div class="calendar-day"><span class="day-number">25</span></div>
-
-                        <!-- Week 5 -->
-                        <div class="calendar-day"><span class="day-number">26</span></div>
-                        <div class="calendar-day">
-                            <span class="day-number">27</span>
-                            <div class="event tax">
-                                <span class="event-title">Taxation</span>
-                                <span class="event-time">2:00 PM</span>
-                            </div>
-                        </div>
-                        <div class="calendar-day"><span class="day-number">28</span></div>
-                        <div class="calendar-day">
-                            <span class="day-number">29</span>
-                            <div class="event far">
-                                <span class="event-title">FAR</span>
-                                <span class="event-time">5:00 PM</span>
-                            </div>
-                        </div>
-                        <div class="calendar-day"><span class="day-number">30</span></div>
-                        <div class="calendar-day">
-                            <span class="day-number">31</span>
-                            <div class="event aud">
-                                <span class="event-title">Audit</span>
-                                <span class="event-time">9:00 AM</span>
-                            </div>
-                        </div>
-                        <div class="calendar-day muted"><span class="day-number">1</span></div>
+                        @foreach($weeks as $week)
+                            @foreach($week as $cell)
+                                <div class="calendar-day {{ $cell['muted'] ? 'muted' : '' }}"
+                                     style="{{ $cell['is_today'] ? 'background:#fff8f8;' : '' }}">
+                                    <span class="day-number" style="{{ $cell['is_today'] ? 'color:#c0392b;font-weight:700;' : '' }}">{{ $cell['day'] }}</span>
+                                    @foreach(array_slice($cell['events'], 0, 3) as $event)
+                                        <div class="event {{ $event['is_weak'] ? 'weak' : '' }}" style="background: {{ $event['bg'] }};">
+                                            <span class="event-dot" style="background: {{ $event['dot'] }};"></span>
+                                            <span class="event-title">{{ $event['subject_code'] }}</span>
+                                            <span class="event-meta">{{ \Illuminate\Support\Str::limit($event['topic'], 18) }} &middot; {{ $event['count'] }}</span>
+                                        </div>
+                                    @endforeach
+                                    @if(count($cell['events']) > 3)
+                                        <div class="day-more">+{{ count($cell['events']) - 3 }} more</div>
+                                    @endif
+                                </div>
+                            @endforeach
+                        @endforeach
                     </div>
                 </div>
 
@@ -1049,71 +1015,71 @@
                         <div class="side-card-title">Today's Reviews</div>
                         <div class="today-head">
                             <div class="today-date-badge">
-                                <span class="m">May</span>
-                                <span class="d">7</span>
+                                <span class="m">{{ $context['today']['month'] }}</span>
+                                <span class="d">{{ $context['today']['day'] }}</span>
                             </div>
                             <div>
-                                <div class="today-day-name">Tuesday</div>
-                                <div class="today-day-sub">3 topics scheduled</div>
+                                <div class="today-day-name">{{ $context['today']['weekday'] }}</div>
+                                <div class="today-day-sub">
+                                    {{ $todayReviews->count() }} topic{{ $todayReviews->count() == 1 ? '' : 's' }} due
+                                    @if($context['due_count'] > 0)&middot; {{ $context['due_count'] }} item{{ $context['due_count'] == 1 ? '' : 's' }}@endif
+                                </div>
                             </div>
                         </div>
 
-                        <div class="review-item">
-                            <div class="review-dot" style="background: #c0392b;"></div>
-                            <div class="review-info">
-                                <div class="review-subject">Audit</div>
-                                <div class="review-difficulty">High difficulty</div>
+                        @forelse($todayReviews->take(5) as $review)
+                            <div class="review-item">
+                                <div class="review-dot" style="background: {{ $review['dot'] }};"></div>
+                                <div class="review-info">
+                                    <div class="review-subject">{{ $review['subject_code'] }} &middot; {{ \Illuminate\Support\Str::limit($review['topic'], 22) }}</div>
+                                    <div class="review-difficulty">
+                                        <span class="priority-pill {{ strtolower($review['priority']) }}">{{ $review['priority'] }} priority</span>
+                                    </div>
+                                </div>
+                                <div class="review-count">{{ $review['count'] }} item{{ $review['count'] == 1 ? '' : 's' }}</div>
                             </div>
-                            <div class="review-time">9:00 AM</div>
-                        </div>
-                        <div class="review-item">
-                            <div class="review-dot" style="background: #27AE60;"></div>
-                            <div class="review-info">
-                                <div class="review-subject">FAR</div>
-                                <div class="review-difficulty">Medium difficulty</div>
+                        @empty
+                            <div class="empty-mini">
+                                Nothing due today &mdash; you're all caught up.
+                                @if(! $context['has_data'])<br>Take a quiz to start building your review schedule.@endif
                             </div>
-                            <div class="review-time">4:00 PM</div>
-                        </div>
+                        @endforelse
 
-                        <a href="#" class="card-btn">View All</a>
+                        <a href="{{ route('adaptive-quizzes') }}" class="card-btn">{{ $context['due_count'] > 0 ? 'Start Reviewing' : 'Practice a Quiz' }}</a>
                     </div>
 
                     <!-- UPCOMING -->
                     <div class="side-card">
                         <div class="side-card-title">Upcoming <span>(Next 7 Days)</span></div>
 
-                        <div class="upcoming-item">
-                            <div class="upcoming-date">May 9</div>
-                            <div class="upcoming-info">
-                                <div class="upcoming-subject">Taxation</div>
-                                <div class="upcoming-difficulty">High difficulty</div>
+                        @forelse($upcoming as $item)
+                            <div class="upcoming-item">
+                                <div class="upcoming-date">{{ $item['date_label'] }}</div>
+                                <div class="upcoming-info">
+                                    <div class="upcoming-subject">{{ $item['subject_code'] }} &middot; {{ \Illuminate\Support\Str::limit($item['topic'], 20) }}</div>
+                                    <div class="upcoming-difficulty">
+                                        <span class="priority-pill {{ strtolower($item['priority']) }}">{{ $item['priority'] }} priority</span>
+                                    </div>
+                                </div>
+                                <div class="review-count">{{ $item['count'] }}×</div>
                             </div>
-                            <div class="upcoming-time">11:00 AM</div>
-                        </div>
-                        <div class="upcoming-item">
-                            <div class="upcoming-date">May 13</div>
-                            <div class="upcoming-info">
-                                <div class="upcoming-subject">FAR</div>
-                                <div class="upcoming-difficulty">Medium difficulty</div>
-                            </div>
-                            <div class="upcoming-time">3:00 PM</div>
-                        </div>
-                        <div class="upcoming-item">
-                            <div class="upcoming-date">May 15</div>
-                            <div class="upcoming-info">
-                                <div class="upcoming-subject">Audit</div>
-                                <div class="upcoming-difficulty">High difficulty</div>
-                            </div>
-                            <div class="upcoming-time">9:00 AM</div>
-                        </div>
+                        @empty
+                            <div class="empty-mini">No reviews scheduled in the next 7 days.</div>
+                        @endforelse
 
-                        <a href="#" class="card-btn">View Calendar</a>
+                        <a href="{{ route('calendar', ['month' => $context['next_month']]) }}" class="card-btn">View Next Month</a>
                     </div>
 
                     <!-- FOCUS -->
                     <div class="side-card focus-card">
                         <div class="focus-card-title">Focus on What Matters</div>
-                        <div class="focus-card-text">Topics you find difficult will appear more often. Keep reviewing to strengthen your understanding!</div>
+                        <div class="focus-card-text">
+                            @if($context['weak_count'] > 0)
+                                {{ $context['weak_count'] }} weak {{ $context['weak_count'] == 1 ? 'area is' : 'areas are' }} due now. Weak topics resurface sooner via SM-2 spaced repetition — keep reviewing to strengthen them.
+                            @else
+                                Topics you find difficult appear more often. Keep reviewing to strengthen your weak areas before exam day.
+                            @endif
+                        </div>
                         <div class="focus-card-icon"><i class="fas fa-shield-alt"></i></div>
                     </div>
                 </div>
@@ -1122,9 +1088,11 @@
     </div>
 
     <script>
-        // Load sidebar state
-        if (localStorage.getItem('sidebarCollapsed') === 'true') {
-            sidebar.classList.add('collapsed');
+        // Restore the collapsed sidebar state (the partial may not expose the
+        // element as a global, so look it up defensively).
+        const sidebarEl = document.querySelector('.sidebar');
+        if (sidebarEl && localStorage.getItem('sidebarCollapsed') === 'true') {
+            sidebarEl.classList.add('collapsed');
         }
 
         // Profile dropdown
@@ -1138,14 +1106,6 @@
             document.addEventListener('click', () => profileDrop.classList.remove('active'));
             profileDrop.addEventListener('click', e => e.stopPropagation());
         }
-
-        // View toggle
-        document.querySelectorAll('.view-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-            });
-        });
     </script>
 </body>
 </html>

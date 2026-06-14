@@ -7,6 +7,8 @@ use App\Models\QuizAnswer;
 use App\Models\QuizSession;
 use App\Models\Subject;
 use App\Services\QuestionParaphraser;
+use App\Services\SpacedRepetitionScheduler;
+use App\Services\WeaknessDetector;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -340,8 +342,11 @@ class QuizController extends Controller
         $correctCount = 0;
         // Per-topic tally for performance records: [topic_id => ['attempts'=>, 'correct'=>]]
         $topicTally = [];
+        // Per-question grading captured for the SM-2 scheduler (processed after
+        // the transaction so a scheduling hiccup can never void a graded quiz).
+        $answerResults = [];
 
-        DB::transaction(function () use ($session, $questions, $submitted, &$correctCount, &$topicTally) {
+        DB::transaction(function () use ($session, $questions, $submitted, &$correctCount, &$topicTally, &$answerResults) {
             foreach ($questions as $question) {
                 $correctChoiceId = optional($question->choices->firstWhere('is_correct', true))->id;
                 $selected = $submitted[$question->id] ?? null;
@@ -351,6 +356,12 @@ class QuizController extends Controller
                 if ($isCorrect) {
                     $correctCount++;
                 }
+
+                $answerResults[] = [
+                    'question_id' => $question->id,
+                    'difficulty'  => $question->difficulty,
+                    'correct'     => $isCorrect,
+                ];
 
                 $session->answers()
                     ->where('question_id', $question->id)
@@ -376,6 +387,15 @@ class QuizController extends Controller
             $this->updatePerformanceRecords($session->student_id, $topicTally);
             $this->awardPoints($session->student_id, $correctCount, $session->mode);
         });
+
+        // Update the spaced-repetition schedule and weakness flags AFTER the
+        // grade is committed, so a failure here can never undo a finished quiz.
+        try {
+            app(SpacedRepetitionScheduler::class)->recordAnswers($session->student_id, $answerResults);
+            app(WeaknessDetector::class)->syncMany($session->student_id, array_keys($topicTally));
+        } catch (\Throwable $e) {
+            report($e);
+        }
 
         return redirect()->route('quiz.results', $session->id);
     }

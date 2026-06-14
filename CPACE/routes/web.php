@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProgramChairController;
 use App\Http\Controllers\PerformanceController;
@@ -91,9 +92,7 @@ Route::middleware('auth')->group(function () {
     Route::put('/review-notes/{note}', [ReviewNoteController::class, 'update'])->name('review-notes.update');
     Route::delete('/review-notes/{note}', [ReviewNoteController::class, 'destroy'])->name('review-notes.destroy');
     Route::post('/review-notes/{note}/favorite', [ReviewNoteController::class, 'favorite'])->name('review-notes.favorite');
-    Route::get('/calendar', function () {
-        return view('student.calendar');
-    })->name('calendar');
+    Route::get('/calendar', [CalendarController::class, 'index'])->name('calendar');
     Route::get('/achievements', function () {
         return view('student.achievements');
     })->name('achievements');
