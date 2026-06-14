@@ -6,6 +6,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProgramChairController;
 use App\Http\Controllers\PerformanceController;
 use App\Http\Controllers\QuizController;
+use App\Http\Controllers\ReviewNoteController;
 use App\Http\Controllers\TestBankController;
 
 Route::get('/', function () {
@@ -83,9 +84,13 @@ Route::middleware('auth')->group(function () {
         return view('student.mock-exams');
     })->name('mock-exams');
     Route::get('/performance', [PerformanceController::class, 'index'])->name('performance');
-    Route::get('/review-notes', function () {
-        return view('student.review-notes');
-    })->name('review-notes');
+    // Review Notes (personal study notes, real CRUD backed by the database)
+    Route::get('/review-notes', [ReviewNoteController::class, 'index'])->name('review-notes');
+    Route::post('/review-notes', [ReviewNoteController::class, 'store'])->name('review-notes.store');
+    Route::get('/review-notes/{note}', [ReviewNoteController::class, 'show'])->name('review-notes.show');
+    Route::put('/review-notes/{note}', [ReviewNoteController::class, 'update'])->name('review-notes.update');
+    Route::delete('/review-notes/{note}', [ReviewNoteController::class, 'destroy'])->name('review-notes.destroy');
+    Route::post('/review-notes/{note}/favorite', [ReviewNoteController::class, 'favorite'])->name('review-notes.favorite');
     Route::get('/calendar', function () {
         return view('student.calendar');
     })->name('calendar');

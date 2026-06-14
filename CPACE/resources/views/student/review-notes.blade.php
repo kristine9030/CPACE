@@ -1,8 +1,9 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Review Notes - CPACE CPA Reviewer</title>
 
     <!-- Google Fonts - Poppins -->
@@ -31,206 +32,6 @@
             min-height: 100vh;
         }
 
-        /* SIDEBAR */
-        .sidebar {
-            background: #7B1D1D;
-            color: white;
-            padding: 30px 0;
-            position: fixed;
-            width: 211px;
-            height: 100vh;
-            overflow-y: auto;
-            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
-            transition: width 0.3s ease;
-            z-index: 1000;
-        }
-
-        .sidebar.collapsed {
-            width: 70px;
-        }
-
-        .sidebar-logo {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 0 20px 30px 20px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            margin-bottom: 30px;
-        }
-
-        .sidebar.collapsed .sidebar-logo {
-            padding: 0 10px 30px 10px;
-        }
-
-        .sidebar-logo-icon {
-            font-size: 32px;
-        }
-
-        .sidebar-logo-text {
-            font-size: 14px;
-            line-height: 1.3;
-            font-family: 'Poppins', sans-serif;
-        }
-
-        .sidebar.collapsed .sidebar-logo-text {
-            display: none;
-        }
-
-        .sidebar-logo-text strong {
-            display: block;
-            font-size: 13px;
-            font-weight: 700;
-        }
-
-        .sidebar-nav {
-            list-style: none;
-        }
-
-        .sidebar-nav li {
-            margin: 0;
-        }
-
-        .sidebar-nav a {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 20px;
-            color: rgba(255, 255, 255, 0.8);
-            text-decoration: none;
-            font-size: 13px;
-            transition: all 0.3s;
-            border-left: 3px solid transparent;
-            font-family: 'Poppins', sans-serif;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .sidebar.collapsed .sidebar-nav a {
-            padding: 12px 10px;
-            justify-content: center;
-            gap: 0;
-        }
-
-        .sidebar.collapsed .sidebar-nav a span {
-            display: none;
-        }
-
-        .sidebar-nav a:hover {
-            color: white;
-            background: rgba(255, 255, 255, 0.1);
-        }
-
-        .sidebar-nav a.active {
-            color: white;
-            background: rgba(255, 255, 255, 0.15);
-            border-left-color: white;
-        }
-
-        .sidebar-nav i {
-            margin-right: 8px;
-            width: 18px;
-            text-align: center;
-        }
-
-        .sidebar.collapsed .sidebar-nav i {
-            margin-right: 0;
-        }
-
-        .sidebar-promo {
-            margin: 25px 18px 0 18px;
-            background: rgba(255, 255, 255, 0.08);
-            border-radius: 12px;
-            padding: 16px;
-        }
-
-        .sidebar.collapsed .sidebar-promo {
-            display: none;
-        }
-
-        .sidebar-promo h5 {
-            font-size: 12px;
-            font-weight: 600;
-            margin-bottom: 6px;
-        }
-
-        .sidebar-promo p {
-            font-size: 10.5px;
-            opacity: 0.8;
-            line-height: 1.4;
-            margin-bottom: 12px;
-        }
-
-        .sidebar-promo button {
-            width: 100%;
-            background: #c0392b;
-            color: white;
-            border: none;
-            border-radius: 7px;
-            padding: 9px;
-            font-size: 11px;
-            font-weight: 600;
-            cursor: pointer;
-            font-family: 'Poppins', sans-serif;
-            transition: all 0.3s;
-        }
-
-        .sidebar-promo button:hover {
-            background: #c43d3d;
-        }
-
-        .sidebar-footer {
-            position: absolute;
-            bottom: 20px;
-            left: 0;
-            right: 0;
-            padding: 0 20px;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            padding-top: 20px;
-        }
-
-        .user-avatar {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            color: white;
-            font-size: 13px;
-        }
-
-        .avatar-circle {
-            width: 40px;
-            height: 40px;
-            background: #c0392b;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 600;
-            font-size: 16px;
-        }
-
-        .user-info-sidebar {
-            flex: 1;
-            font-family: 'Poppins', sans-serif;
-        }
-
-        .user-info-sidebar .name {
-            display: block;
-            font-weight: 600;
-            font-size: 13px;
-        }
-
-        .user-info-sidebar .role {
-            display: block;
-            font-size: 11px;
-            opacity: 0.8;
-        }
-
-        .user-info-sidebar .fa-chevron-down {
-            font-size: 11px;
-            opacity: 0.7;
-        }
-
         /* MAIN CONTENT */
         .main-content {
             margin-left: 211px;
@@ -257,25 +58,6 @@
             display: flex;
             align-items: center;
             gap: 20px;
-        }
-
-        .sidebar-toggle {
-            background: white;
-            border: 1px solid #ddd;
-            width: 40px;
-            height: 40px;
-            border-radius: 6px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #7B1D1D;
-            font-size: 18px;
-            transition: all 0.3s;
-        }
-
-        .sidebar-toggle:hover {
-            background: #f0f0f0;
         }
 
         .header-title {
@@ -618,6 +400,12 @@
             border-bottom: 1px solid #f0f0f0;
         }
 
+        .notes-table th a {
+            color: #999;
+            text-decoration: none;
+        }
+        .notes-table th a:hover { color: #7B1D1D; }
+
         .notes-table th .fa-chevron-down {
             font-size: 10px;
             margin-left: 4px;
@@ -673,15 +461,18 @@
         .subject-tag.aud { background: #fdeaea; color: #c0392b; }
         .subject-tag.tax { background: #e8f7ee; color: #21a366; }
         .subject-tag.far { background: #e9f1fd; color: #3b7ddd; }
+        .subject-tag.afar { background: #eaf0fb; color: #2f63c4; }
         .subject-tag.rfbt { background: #f0eafb; color: #8e5bd0; }
         .subject-tag.ms { background: #fef3e2; color: #e8910b; }
+        .subject-tag.none { background: #eee; color: #888; }
 
         .last-reviewed-recent { color: #21a366; font-weight: 500; }
+        .muted-cell { color: #bbb; }
 
         .actions-cell {
             display: flex;
             align-items: center;
-            gap: 16px;
+            gap: 14px;
             color: #aaa;
         }
 
@@ -691,6 +482,18 @@
         }
 
         .actions-cell i:hover { color: #7B1D1D; }
+        .actions-cell i.fav-on { color: #e8910b; }
+        .actions-cell i.del:hover { color: #c0392b; }
+
+        /* EMPTY STATE */
+        .empty-state {
+            text-align: center;
+            padding: 50px 20px;
+            color: #aaa;
+        }
+        .empty-state i { font-size: 42px; margin-bottom: 14px; color: #d8d8d8; }
+        .empty-state p { font-size: 14px; margin-bottom: 4px; color: #888; }
+        .empty-state span { font-size: 12.5px; }
 
         /* PAGINATION */
         .notes-footer {
@@ -699,6 +502,8 @@
             align-items: center;
             margin-top: 20px;
             padding-top: 4px;
+            flex-wrap: wrap;
+            gap: 12px;
         }
 
         .notes-footer .info {
@@ -712,7 +517,7 @@
             gap: 6px;
         }
 
-        .pagination button {
+        .pagination a, .pagination span {
             min-width: 34px;
             height: 34px;
             border: 1px solid #eee;
@@ -723,22 +528,25 @@
             cursor: pointer;
             font-family: 'Poppins', sans-serif;
             transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            padding: 0 8px;
         }
 
-        .pagination button:hover { background: #f6f6f6; }
+        .pagination a:hover { background: #f6f6f6; }
 
-        .pagination button.active {
+        .pagination .active {
             background: #7B1D1D;
             color: white;
             border-color: #7B1D1D;
         }
 
-        .pagination button.dots {
-            border: none;
-            cursor: default;
+        .pagination .disabled {
+            color: #ccc;
+            cursor: not-allowed;
         }
-
-        .pagination button.dots:hover { background: white; }
 
         /* SIDE COLUMN */
         .side-col {
@@ -772,6 +580,7 @@
             border: none;
             font-family: 'Poppins', sans-serif;
             transition: all 0.2s;
+            text-decoration: none;
         }
 
         .quick-btn:hover { transform: translateY(-2px); }
@@ -923,6 +732,114 @@
             color: #999;
         }
 
+        .empty-mini { font-size: 12.5px; color: #aaa; padding: 8px 0; }
+
+        /* MODAL */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.45);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            padding: 20px;
+        }
+        .modal-overlay.open { display: flex; }
+        .modal {
+            background: #fff;
+            border-radius: 14px;
+            width: 100%;
+            max-width: 560px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.25);
+            animation: modalUp 0.25s ease;
+        }
+        @keyframes modalUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .modal-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 24px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .modal-head h3 { font-size: 17px; font-weight: 600; color: #2b2b2b; }
+        .modal-close {
+            background: none; border: none; font-size: 20px; color: #aaa; cursor: pointer; line-height: 1;
+        }
+        .modal-close:hover { color: #c0392b; }
+        .modal-body { padding: 22px 24px; }
+        .form-group { margin-bottom: 16px; }
+        .form-group label {
+            display: block; font-size: 12.5px; font-weight: 600; color: #555; margin-bottom: 7px;
+        }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 10px 13px;
+            border: 1px solid #e2e2e2;
+            border-radius: 8px;
+            font-size: 13px;
+            font-family: 'Poppins', sans-serif;
+            color: #444;
+        }
+        .form-group textarea { resize: vertical; min-height: 120px; }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none; border-color: #7B1D1D;
+        }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+        .form-hint { font-size: 11px; color: #aaa; margin-top: 5px; }
+        .field-error { font-size: 11.5px; color: #c0392b; margin-top: 5px; display: none; }
+        .modal-foot {
+            display: flex; justify-content: flex-end; gap: 12px;
+            padding: 16px 24px; border-top: 1px solid #f0f0f0;
+        }
+        .btn-secondary {
+            padding: 10px 18px; border: 1px solid #ddd; background: #fff; color: #666;
+            border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; font-family: 'Poppins', sans-serif;
+        }
+        .btn-secondary:hover { background: #f6f6f6; }
+        .btn-primary {
+            padding: 10px 20px; border: none; background: #7B1D1D; color: #fff;
+            border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: 'Poppins', sans-serif;
+        }
+        .btn-primary:hover { background: #6a1818; }
+        .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        /* VIEW MODAL */
+        .view-meta { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; align-items: center; }
+        .view-meta .meta-pill { font-size: 11.5px; color: #888; background: #f5f5f5; border-radius: 20px; padding: 4px 11px; }
+        .view-content {
+            font-size: 13.5px; line-height: 1.7; color: #444; white-space: pre-wrap;
+            background: #fafafa; border-radius: 10px; padding: 16px; min-height: 80px;
+        }
+        .view-tags { margin-top: 16px; display: flex; flex-wrap: wrap; gap: 8px; }
+        .view-tags span { font-size: 11px; font-weight: 500; color: #7B1D1D; background: #f6ecec; border-radius: 16px; padding: 4px 11px; }
+
+        /* TOAST */
+        .toast {
+            position: fixed;
+            bottom: 26px;
+            right: 26px;
+            background: #2b2b2b;
+            color: #fff;
+            padding: 13px 20px;
+            border-radius: 10px;
+            font-size: 13px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 3000;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.3s ease;
+            pointer-events: none;
+        }
+        .toast.show { opacity: 1; transform: translateY(0); }
+        .toast.success i { color: #4ade80; }
+        .toast.error { background: #c0392b; }
+
         /* RESPONSIVE */
         @media (max-width: 1300px) {
             .notes-grid { grid-template-columns: 1fr; }
@@ -930,15 +847,10 @@
         }
 
         @media (max-width: 768px) {
-            .sidebar {
-                width: 100%;
-                height: auto;
-                position: relative;
-                padding: 15px 0;
-            }
             .main-content { margin-left: 0; padding: 20px; }
             .stats-row { grid-template-columns: 1fr; }
             .notes-table { display: block; overflow-x: auto; white-space: nowrap; }
+            .form-row { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -960,21 +872,20 @@
                     </div>
                 </div>
                 <div class="header-right">
-                    <div class="search-box">
+                    <form class="search-box" method="GET" action="{{ route('review-notes') }}">
                         <i class="fas fa-search"></i>
-                        <input type="text" placeholder="Search notes, topics, or subjects...">
-                    </div>
+                        <input type="text" name="q" value="{{ $search }}" placeholder="Search notes, topics, or subjects...">
+                        @if($subject) <input type="hidden" name="subject" value="{{ $subject }}"> @endif
+                    </form>
                     <div class="header-icons">
-                        <button class="icon-btn">
-                            <i class="fas fa-bell"></i>
-                            <span class="notification-badge">3</span>
-                        </button>
+                        <a href="{{ route('calendar') }}" class="icon-btn" title="Calendar">
+                            <i class="fas fa-calendar-alt"></i>
+                        </a>
                         <div style="position: relative;">
-                            <button class="profile-btn" id="profileBtn">KD</button>
+                            <button class="profile-btn" id="profileBtn">{{ strtoupper(substr(Auth::user()->first_name, 0, 1)) }}{{ strtoupper(substr(Auth::user()->last_name, 0, 1)) }}</button>
                             <div class="dropdown-menu" id="profileDropdown">
-                                <a href="#"><i class="fas fa-user"></i> Profile Settings</a>
-                                <a href="#"><i class="fas fa-chart-line"></i> My Progress</a>
-                                <a href="#"><i class="fas fa-question-circle"></i> Help & Support</a>
+                                <a href="{{ route('performance') }}"><i class="fas fa-chart-line"></i> My Progress</a>
+                                <a href="{{ route('achievements') }}"><i class="fas fa-trophy"></i> Achievements</a>
                                 <form method="POST" action="{{ route('logout') }}" style="margin: 0; padding: 0;">
                                     @csrf
                                     <button type="submit" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</button>
@@ -991,32 +902,42 @@
                     <div class="stat-icon red"><i class="fas fa-file-lines"></i></div>
                     <div class="stat-info">
                         <div class="label">Total Notes</div>
-                        <div class="value">128</div>
-                        <div class="sub up">+ 12 this week</div>
+                        <div class="value">{{ $stats['total'] }}</div>
+                        @if($stats['this_week'] > 0)
+                            <div class="sub up">+ {{ $stats['this_week'] }} this week</div>
+                        @else
+                            <div class="sub muted">No new notes this week</div>
+                        @endif
                     </div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-icon green"><i class="fas fa-tag"></i></div>
                     <div class="stat-info">
                         <div class="label">Subjects Covered</div>
-                        <div class="value">6</div>
-                        <div class="sub muted">All CPA subject areas</div>
+                        <div class="value">{{ $stats['subjects'] }}</div>
+                        <div class="sub muted">of {{ $stats['subjects_total'] }} CPA subject areas</div>
                     </div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-icon purple"><i class="fas fa-bookmark"></i></div>
                     <div class="stat-info">
                         <div class="label">Top Topic</div>
-                        <div class="value" style="font-size:18px;">Audit Sampling</div>
-                        <div class="sub muted">Reviewed 8 times</div>
+                        <div class="value" style="font-size:18px;">{{ $stats['top_topic'] ?? '—' }}</div>
+                        <div class="sub muted">
+                            @if($stats['top_topic'])
+                                Reviewed {{ $stats['top_topic_count'] }} time{{ $stats['top_topic_count'] == 1 ? '' : 's' }}
+                            @else
+                                Review notes to rank topics
+                            @endif
+                        </div>
                     </div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-icon amber"><i class="fas fa-clock"></i></div>
                     <div class="stat-info">
                         <div class="label">Last Reviewed</div>
-                        <div class="value" style="font-size:18px;">May 16, 2025</div>
-                        <div class="sub muted">2 hours ago</div>
+                        <div class="value" style="font-size:18px;">{{ $stats['last_reviewed'] ? $stats['last_reviewed']->format('M j, Y') : '—' }}</div>
+                        <div class="sub muted">{{ $stats['last_reviewed'] ? $stats['last_reviewed']->diffForHumans() : 'No reviews yet' }}</div>
                     </div>
                 </div>
             </div>
@@ -1027,158 +948,30 @@
                 <div class="card">
                     <div class="notes-card-head">
                         <div class="notes-card-title">Your Notes</div>
-                        <div class="notes-toolbar">
+                        <form class="notes-toolbar" method="GET" action="{{ route('review-notes') }}" id="filterForm" onsubmit="return false;">
                             <div class="notes-search">
                                 <i class="fas fa-search"></i>
-                                <input type="text" placeholder="Search your notes...">
+                                <input type="text" id="notesSearchInput" name="q" value="{{ $search }}" placeholder="Search your notes..." autocomplete="off">
                             </div>
-                            <select class="notes-select">
-                                <option>All Subjects</option>
-                                <option>AUD</option>
-                                <option>TAX</option>
-                                <option>FAR</option>
-                                <option>RFBT</option>
-                                <option>MS</option>
+                            <select class="notes-select" name="subject">
+                                <option value="">All Subjects</option>
+                                @foreach($subjects as $subj)
+                                    <option value="{{ $subj->id }}" {{ (string)$subject === (string)$subj->id ? 'selected' : '' }}>{{ $subj->code }}</option>
+                                @endforeach
                             </select>
-                            <select class="notes-select">
-                                <option>Most Recent</option>
-                                <option>Oldest</option>
-                                <option>A &ndash; Z</option>
+                            <select class="notes-select" name="sort">
+                                <option value="recent" {{ $sort === 'recent' ? 'selected' : '' }}>Most Recent</option>
+                                <option value="oldest" {{ $sort === 'oldest' ? 'selected' : '' }}>Oldest</option>
+                                <option value="az" {{ $sort === 'az' ? 'selected' : '' }}>A &ndash; Z</option>
+                                <option value="reviewed" {{ $sort === 'reviewed' ? 'selected' : '' }}>Recently Reviewed</option>
                             </select>
-                            <button class="new-note-btn"><i class="fas fa-plus"></i> New Note</button>
-                        </div>
+                            <input type="hidden" name="filter" value="{{ $filter }}">
+                            <button type="button" class="new-note-btn" onclick="openCreateModal()"><i class="fas fa-plus"></i> New Note</button>
+                        </form>
                     </div>
 
-                    <table class="notes-table">
-                        <thead>
-                            <tr>
-                                <th>Note Title</th>
-                                <th>Subject</th>
-                                <th>Topics</th>
-                                <th>Last Reviewed</th>
-                                <th>Created On <i class="fas fa-chevron-down"></i></th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>
-                                    <div class="note-title-cell">
-                                        <div class="note-icon red"><i class="fas fa-file-lines"></i></div>
-                                        <span class="note-title-text">Audit Sampling Key Concepts</span>
-                                    </div>
-                                </td>
-                                <td><span class="subject-tag aud">AUD</span></td>
-                                <td>3</td>
-                                <td><span class="last-reviewed-recent">2 hours ago</span></td>
-                                <td>May 16, 2025</td>
-                                <td><div class="actions-cell"><i class="fas fa-eye"></i><i class="fas fa-ellipsis-vertical"></i></div></td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <div class="note-title-cell">
-                                        <div class="note-icon green"><i class="fas fa-file-lines"></i></div>
-                                        <span class="note-title-text">Tax Basis of Property</span>
-                                    </div>
-                                </td>
-                                <td><span class="subject-tag tax">TAX</span></td>
-                                <td>4</td>
-                                <td>Yesterday</td>
-                                <td>May 15, 2025</td>
-                                <td><div class="actions-cell"><i class="fas fa-eye"></i><i class="fas fa-ellipsis-vertical"></i></div></td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <div class="note-title-cell">
-                                        <div class="note-icon blue"><i class="fas fa-file-lines"></i></div>
-                                        <span class="note-title-text">Financial Statement Assertions</span>
-                                    </div>
-                                </td>
-                                <td><span class="subject-tag far">FAR</span></td>
-                                <td>5</td>
-                                <td>May 14, 2025</td>
-                                <td>May 12, 2025</td>
-                                <td><div class="actions-cell"><i class="fas fa-eye"></i><i class="fas fa-ellipsis-vertical"></i></div></td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <div class="note-title-cell">
-                                        <div class="note-icon purple"><i class="fas fa-file-lines"></i></div>
-                                        <span class="note-title-text">PSA 530 &ndash; Audit Sampling</span>
-                                    </div>
-                                </td>
-                                <td><span class="subject-tag aud">AUD</span></td>
-                                <td>6</td>
-                                <td>May 13, 2025</td>
-                                <td>May 10, 2025</td>
-                                <td><div class="actions-cell"><i class="fas fa-eye"></i><i class="fas fa-ellipsis-vertical"></i></div></td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <div class="note-title-cell">
-                                        <div class="note-icon red"><i class="fas fa-file-lines"></i></div>
-                                        <span class="note-title-text">Cash Flow Statement Overview</span>
-                                    </div>
-                                </td>
-                                <td><span class="subject-tag far">FAR</span></td>
-                                <td>2</td>
-                                <td>May 11, 2025</td>
-                                <td>May 8, 2025</td>
-                                <td><div class="actions-cell"><i class="fas fa-eye"></i><i class="fas fa-ellipsis-vertical"></i></div></td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <div class="note-title-cell">
-                                        <div class="note-icon green"><i class="fas fa-file-lines"></i></div>
-                                        <span class="note-title-text">Regulatory Framework Overview</span>
-                                    </div>
-                                </td>
-                                <td><span class="subject-tag rfbt">RFBT</span></td>
-                                <td>4</td>
-                                <td>May 9, 2025</td>
-                                <td>May 7, 2025</td>
-                                <td><div class="actions-cell"><i class="fas fa-eye"></i><i class="fas fa-ellipsis-vertical"></i></div></td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <div class="note-title-cell">
-                                        <div class="note-icon amber"><i class="fas fa-file-lines"></i></div>
-                                        <span class="note-title-text">Management Advisory Services</span>
-                                    </div>
-                                </td>
-                                <td><span class="subject-tag ms">MS</span></td>
-                                <td>3</td>
-                                <td>May 8, 2025</td>
-                                <td>May 6, 2025</td>
-                                <td><div class="actions-cell"><i class="fas fa-eye"></i><i class="fas fa-ellipsis-vertical"></i></div></td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <div class="note-title-cell">
-                                        <div class="note-icon red"><i class="fas fa-file-lines"></i></div>
-                                        <span class="note-title-text">Depreciation Methods in Taxation</span>
-                                    </div>
-                                </td>
-                                <td><span class="subject-tag tax">TAX</span></td>
-                                <td>2</td>
-                                <td>May 6, 2025</td>
-                                <td>May 5, 2025</td>
-                                <td><div class="actions-cell"><i class="fas fa-eye"></i><i class="fas fa-ellipsis-vertical"></i></div></td>
-                            </tr>
-                        </tbody>
-                    </table>
-
-                    <div class="notes-footer">
-                        <div class="info">Showing 1 to 8 of 128 notes</div>
-                        <div class="pagination">
-                            <button><i class="fas fa-chevron-left"></i></button>
-                            <button class="active">1</button>
-                            <button>2</button>
-                            <button>3</button>
-                            <button class="dots">...</button>
-                            <button>16</button>
-                            <button><i class="fas fa-chevron-right"></i></button>
-                        </div>
+                    <div id="notesTableContainer">
+                        @include('student.partials.review-notes-table')
                     </div>
                 </div>
 
@@ -1188,10 +981,10 @@
                     <div class="card">
                         <div class="side-title">Quick Access</div>
                         <div class="quick-grid">
-                            <button class="quick-btn red"><i class="fas fa-clock-rotate-left"></i> Recently Viewed</button>
-                            <button class="quick-btn amber"><i class="fas fa-star"></i> Favorites</button>
-                            <button class="quick-btn green"><i class="fas fa-book"></i> By Subject</button>
-                            <button class="quick-btn blue"><i class="fas fa-tag"></i> By Topic</button>
+                            <a class="quick-btn red" href="{{ route('review-notes', ['filter' => 'recent', 'sort' => 'reviewed']) }}"><i class="fas fa-clock-rotate-left"></i> Recently Viewed</a>
+                            <a class="quick-btn amber" href="{{ route('review-notes', ['filter' => 'favorites']) }}"><i class="fas fa-star"></i> Favorites</a>
+                            <a class="quick-btn green" href="{{ route('review-notes', ['sort' => 'recent']) }}"><i class="fas fa-book"></i> All Notes</a>
+                            <a class="quick-btn blue" href="{{ route('review-notes', ['sort' => 'az']) }}"><i class="fas fa-tag"></i> A &ndash; Z</a>
                         </div>
                     </div>
 
@@ -1202,18 +995,19 @@
                             <span class="title">Review Streak</span>
                         </div>
                         <div class="streak-count-row">
-                            <span class="num">7</span>
-                            <span class="txt">days in a row!</span>
+                            <span class="num">{{ $streakDays }}</span>
+                            <span class="txt">day{{ $streakDays == 1 ? '' : 's' }} in a row!</span>
                         </div>
                         <div class="streak-sub">Keep reviewing to build your streak.</div>
                         <div class="streak-days">
-                            <div class="streak-day"><div class="d">M</div><div class="streak-check done"><i class="fas fa-check"></i></div></div>
-                            <div class="streak-day"><div class="d">T</div><div class="streak-check done"><i class="fas fa-check"></i></div></div>
-                            <div class="streak-day"><div class="d">W</div><div class="streak-check done"><i class="fas fa-check"></i></div></div>
-                            <div class="streak-day"><div class="d">T</div><div class="streak-check done"><i class="fas fa-check"></i></div></div>
-                            <div class="streak-day"><div class="d">F</div><div class="streak-check done"><i class="fas fa-check"></i></div></div>
-                            <div class="streak-day"><div class="d">S</div><div class="streak-check done"><i class="fas fa-check"></i></div></div>
-                            <div class="streak-day"><div class="d">S</div><div class="streak-check empty"></div></div>
+                            @foreach($weekDays as $day)
+                                <div class="streak-day">
+                                    <div class="d">{{ $day['label'] }}</div>
+                                    <div class="streak-check {{ $day['done'] ? 'done' : 'empty' }}">
+                                        @if($day['done'])<i class="fas fa-check"></i>@endif
+                                    </div>
+                                </div>
+                            @endforeach
                         </div>
                     </div>
 
@@ -1221,39 +1015,106 @@
                     <div class="card">
                         <div class="top-head">
                             <span class="title">Top Reviewed Topics</span>
-                            <a href="#">View All</a>
+                            <a href="{{ route('review-notes', ['sort' => 'reviewed']) }}">View All</a>
                         </div>
-                        <div class="top-item">
-                            <div class="top-icon red"><i class="fas fa-file-lines"></i></div>
-                            <span class="name">Audit Sampling</span>
-                            <span class="reviews">8 reviews</span>
-                        </div>
-                        <div class="top-item">
-                            <div class="top-icon green"><i class="fas fa-file-lines"></i></div>
-                            <span class="name">Revenue Recognition</span>
-                            <span class="reviews">7 reviews</span>
-                        </div>
-                        <div class="top-item">
-                            <div class="top-icon purple"><i class="fas fa-file-lines"></i></div>
-                            <span class="name">Tax Computation</span>
-                            <span class="reviews">6 reviews</span>
-                        </div>
-                        <div class="top-item">
-                            <div class="top-icon amber"><i class="fas fa-file-lines"></i></div>
-                            <span class="name">Financial Statements</span>
-                            <span class="reviews">5 reviews</span>
-                        </div>
+                        @php $topColors = ['red','green','purple','amber']; @endphp
+                        @forelse($topReviewed as $i => $item)
+                            <div class="top-item">
+                                <div class="top-icon {{ $topColors[$i % count($topColors)] }}"><i class="fas fa-file-lines"></i></div>
+                                <span class="name">{{ $item['name'] }}</span>
+                                <span class="reviews">{{ $item['reviews'] }} review{{ $item['reviews'] == 1 ? '' : 's' }}</span>
+                            </div>
+                        @empty
+                            <div class="empty-mini">No reviewed topics yet. Open a note to start tracking.</div>
+                        @endforelse
                     </div>
                 </div>
             </div>
         </main>
     </div>
 
+    <!-- CREATE / EDIT MODAL -->
+    <div class="modal-overlay" id="noteModal">
+        <div class="modal">
+            <div class="modal-head">
+                <h3 id="noteModalTitle">New Note</h3>
+                <button class="modal-close" onclick="closeModal('noteModal')">&times;</button>
+            </div>
+            <form id="noteForm">
+                <div class="modal-body">
+                    <input type="hidden" id="noteId" value="">
+                    <div class="form-group">
+                        <label for="f_title">Title <span style="color:#c0392b">*</span></label>
+                        <input type="text" id="f_title" name="title" maxlength="180" placeholder="e.g. Audit Sampling Key Concepts" required>
+                        <div class="field-error" id="err_title"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="f_subject">Subject</label>
+                            <select id="f_subject" name="subject_id" onchange="filterTopicOptions()">
+                                <option value="">— None —</option>
+                                @foreach($subjects as $subj)
+                                    <option value="{{ $subj->id }}">{{ $subj->code }} — {{ $subj->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="f_topic">Topic</label>
+                            <select id="f_topic" name="topic_id">
+                                <option value="">— None —</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="f_tags">Topic Tags</label>
+                        <input type="text" id="f_tags" name="tags" maxlength="255" placeholder="Comma separated, e.g. Sampling, Risk, PSA 530">
+                        <div class="form-hint">Used for the "Topics" count and search.</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="f_content">Content</label>
+                        <textarea id="f_content" name="content" placeholder="Write your note here..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-foot">
+                    <button type="button" class="btn-secondary" onclick="closeModal('noteModal')">Cancel</button>
+                    <button type="submit" class="btn-primary" id="noteSaveBtn">Save Note</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- VIEW MODAL -->
+    <div class="modal-overlay" id="viewModal">
+        <div class="modal">
+            <div class="modal-head">
+                <h3 id="viewTitle">Note</h3>
+                <button class="modal-close" onclick="closeModal('viewModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="view-meta" id="viewMeta"></div>
+                <div class="view-content" id="viewContent"></div>
+                <div class="view-tags" id="viewTags"></div>
+            </div>
+            <div class="modal-foot">
+                <button type="button" class="btn-secondary" onclick="closeModal('viewModal')">Close</button>
+                <button type="button" class="btn-primary" id="viewEditBtn">Edit Note</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"><i class="fas fa-circle-check"></i> <span id="toastMsg"></span></div>
+
     <script>
+        const CSRF = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        const TOPICS = @json($topics);
+        const ROUTES = {
+            store:   "{{ route('review-notes.store') }}",
+            base:    "{{ url('review-notes') }}",
+        };
+
         document.addEventListener('DOMContentLoaded', function () {
             // Fade-in animation
-            const elements = document.querySelectorAll('.card, .stat-card');
-            elements.forEach((el, index) => {
+            document.querySelectorAll('.card, .stat-card').forEach((el, index) => {
                 el.style.animation = `slideUp 0.5s ease ${index * 0.06}s both`;
             });
 
@@ -1265,34 +1126,274 @@
                     e.stopPropagation();
                     profileDropdown.classList.toggle('active');
                 });
-                document.addEventListener('click', function () {
-                    profileDropdown.classList.remove('active');
-                });
-                profileDropdown.addEventListener('click', function (e) {
-                    e.stopPropagation();
-                });
+                document.addEventListener('click', () => profileDropdown.classList.remove('active'));
+                profileDropdown.addEventListener('click', (e) => e.stopPropagation());
             }
 
-            // Pagination
-            document.querySelectorAll('.pagination button:not(.dots)').forEach(btn => {
-                btn.addEventListener('click', function () {
-                    if (this.querySelector('i')) return;
-                    document.querySelectorAll('.pagination button').forEach(b => b.classList.remove('active'));
-                    this.classList.add('active');
+            // Live search / filter / sort — only the table re-renders (no full
+            // page reload). Filtering runs server-side via AJAX so it spans all
+            // pages, not just the visible rows (same pattern as the Test Bank).
+            setupLiveTable();
+
+            // Note form submit
+            document.getElementById('noteForm').addEventListener('submit', saveNote);
+
+            // Close modal on overlay click
+            document.querySelectorAll('.modal-overlay').forEach(ov => {
+                ov.addEventListener('click', function (e) {
+                    if (e.target === ov) closeModal(ov.id);
                 });
+            });
+            document.addEventListener('keydown', e => {
+                if (e.key === 'Escape') document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
             });
         });
 
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes slideUp {
-                from { opacity: 0; transform: translateY(20px); }
-                to { opacity: 1; transform: translateY(0); }
-            }
-        `;
-        document.head.appendChild(style);
+        // ── Toast ──────────────────────────────────────────────────────────
+        let toastTimer;
+        function toast(msg, type = 'success') {
+            const t = document.getElementById('toast');
+            document.getElementById('toastMsg').textContent = msg;
+            t.className = 'toast ' + type;
+            const icon = t.querySelector('i');
+            icon.className = type === 'success' ? 'fas fa-circle-check' : 'fas fa-circle-exclamation';
+            void t.offsetWidth;
+            t.classList.add('show');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
+        }
 
+        // ── Live table (AJAX search / filter / sort / pagination) ──────────
+        function setupLiveTable() {
+            const form      = document.getElementById('filterForm');
+            const search    = document.getElementById('notesSearchInput');
+            const container = document.getElementById('notesTableContainer');
+            if (!form || !search || !container) return;
+
+            let reqToken = 0;
+
+            // Build the request URL from the current filter form state.
+            function filterUrl() {
+                const params = new URLSearchParams(new FormData(form));
+                return form.action + '?' + params.toString();
+            }
+
+            // Fetch the filtered table and swap it into the container.
+            async function loadTable(url) {
+                const token = ++reqToken;
+                container.style.opacity = '.5';
+                container.style.pointerEvents = 'none';
+                try {
+                    const res  = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+                    const html = await res.text();
+                    if (token !== reqToken) return;           // a newer request already won
+                    container.innerHTML = html;
+                    window.history.replaceState({}, '', url);
+                } catch (e) {
+                    window.location = url;                     // network hiccup → normal nav
+                    return;
+                } finally {
+                    if (token === reqToken) { container.style.opacity = ''; container.style.pointerEvents = ''; }
+                }
+            }
+            window.reloadNotesTable = () => loadTable(filterUrl());
+
+            // Debounced live search as the user types.
+            let timer;
+            search.addEventListener('input', () => {
+                clearTimeout(timer);
+                timer = setTimeout(() => loadTable(filterUrl()), 250);
+            });
+
+            // Dropdown filters update the table immediately.
+            form.querySelectorAll('select').forEach(sel => {
+                sel.addEventListener('change', () => loadTable(filterUrl()));
+            });
+
+            // Enter inside the search box → filter (never a full reload).
+            form.addEventListener('submit', (e) => { e.preventDefault(); loadTable(filterUrl()); });
+
+            // Pagination + sort links inside the swapped table → AJAX them too.
+            container.addEventListener('click', (e) => {
+                const link = e.target.closest('a[href]');
+                if (link && link.href.includes('review-notes') && !link.getAttribute('href').startsWith('#')) {
+                    e.preventDefault();
+                    loadTable(link.href);
+                }
+            });
+        }
+
+        // ── Modal helpers ──────────────────────────────────────────────────
+        function openModal(id) { document.getElementById(id).classList.add('open'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+        function filterTopicOptions(selectedTopicId = null) {
+            const subjectId = document.getElementById('f_subject').value;
+            const topicSel = document.getElementById('f_topic');
+            topicSel.innerHTML = '<option value="">— None —</option>';
+            TOPICS.filter(t => String(t.subject_id) === String(subjectId)).forEach(t => {
+                const opt = document.createElement('option');
+                opt.value = t.id;
+                opt.textContent = t.name;
+                if (selectedTopicId && String(selectedTopicId) === String(t.id)) opt.selected = true;
+                topicSel.appendChild(opt);
+            });
+        }
+
+        function clearErrors() {
+            document.querySelectorAll('.field-error').forEach(e => { e.style.display = 'none'; e.textContent = ''; });
+        }
+
+        // ── Create / Edit ──────────────────────────────────────────────────
+        function openCreateModal() {
+            clearErrors();
+            document.getElementById('noteModalTitle').textContent = 'New Note';
+            document.getElementById('noteForm').reset();
+            document.getElementById('noteId').value = '';
+            filterTopicOptions();
+            openModal('noteModal');
+            setTimeout(() => document.getElementById('f_title').focus(), 100);
+        }
+
+        async function editNote(id) {
+            try {
+                const res = await fetch(`${ROUTES.base}/${id}`, { headers: { 'Accept': 'application/json' } });
+                const data = await res.json();
+                if (!data.ok) throw new Error();
+                const n = data.note;
+                clearErrors();
+                document.getElementById('noteModalTitle').textContent = 'Edit Note';
+                document.getElementById('noteId').value = n.id;
+                document.getElementById('f_title').value = n.title || '';
+                document.getElementById('f_subject').value = n.subject_id || '';
+                filterTopicOptions(n.topic_id);
+                document.getElementById('f_tags').value = n.tags || '';
+                document.getElementById('f_content').value = n.content || '';
+                closeModal('viewModal');
+                openModal('noteModal');
+            } catch (e) {
+                toast('Could not load the note.', 'error');
+            }
+        }
+
+        async function saveNote(e) {
+            e.preventDefault();
+            clearErrors();
+            const id = document.getElementById('noteId').value;
+            const btn = document.getElementById('noteSaveBtn');
+            const isEdit = !!id;
+            const url = isEdit ? `${ROUTES.base}/${id}` : ROUTES.store;
+
+            const payload = {
+                title: document.getElementById('f_title').value,
+                subject_id: document.getElementById('f_subject').value || null,
+                topic_id: document.getElementById('f_topic').value || null,
+                tags: document.getElementById('f_tags').value,
+                content: document.getElementById('f_content').value,
+            };
+            if (isEdit) payload._method = 'PUT';
+
+            btn.disabled = true;
+            try {
+                const res = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': CSRF,
+                    },
+                    body: JSON.stringify(payload),
+                });
+
+                if (res.status === 422) {
+                    const data = await res.json();
+                    Object.entries(data.errors || {}).forEach(([field, msgs]) => {
+                        const el = document.getElementById('err_' + field);
+                        if (el) { el.textContent = msgs[0]; el.style.display = 'block'; }
+                    });
+                    btn.disabled = false;
+                    return;
+                }
+                if (!res.ok) throw new Error();
+
+                toast(isEdit ? 'Note updated.' : 'Note created.');
+                setTimeout(() => location.reload(), 500);
+            } catch (err) {
+                btn.disabled = false;
+                toast('Something went wrong. Please try again.', 'error');
+            }
+        }
+
+        // ── View (counts as a review) ──────────────────────────────────────
+        async function viewNote(id) {
+            try {
+                const res = await fetch(`${ROUTES.base}/${id}?read=1`, {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': CSRF },
+                });
+                const data = await res.json();
+                if (!data.ok) throw new Error();
+                const n = data.note;
+
+                document.getElementById('viewTitle').textContent = n.title;
+                const meta = [];
+                if (n.subject_code) meta.push(`<span class="meta-pill">${n.subject_code}</span>`);
+                if (n.topic_name) meta.push(`<span class="meta-pill">${n.topic_name}</span>`);
+                meta.push(`<span class="meta-pill">Created ${n.created_on}</span>`);
+                meta.push(`<span class="meta-pill">Reviewed ${n.review_count}×</span>`);
+                document.getElementById('viewMeta').innerHTML = meta.join('');
+                document.getElementById('viewContent').textContent = n.content || 'This note has no content yet.';
+
+                const tagsEl = document.getElementById('viewTags');
+                tagsEl.innerHTML = (n.tag_list || []).map(t => `<span>${t}</span>`).join('');
+
+                document.getElementById('viewEditBtn').onclick = () => editNote(n.id);
+                openModal('viewModal');
+            } catch (e) {
+                toast('Could not open the note.', 'error');
+            }
+        }
+
+        // ── Favorite ───────────────────────────────────────────────────────
+        async function toggleFavorite(id, el) {
+            try {
+                const res = await fetch(`${ROUTES.base}/${id}/favorite`, {
+                    method: 'POST',
+                    headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': CSRF },
+                });
+                const data = await res.json();
+                if (!data.ok) throw new Error();
+                el.classList.toggle('fav-on', data.is_favorite);
+                toast(data.is_favorite ? 'Added to favorites.' : 'Removed from favorites.');
+            } catch (e) {
+                toast('Could not update favorite.', 'error');
+            }
+        }
+
+        // ── Delete ─────────────────────────────────────────────────────────
+        async function deleteNote(id, title) {
+            if (!confirm(`Delete "${title}"? This cannot be undone.`)) return;
+            try {
+                const res = await fetch(`${ROUTES.base}/${id}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': CSRF,
+                    },
+                    body: JSON.stringify({ _method: 'DELETE' }),
+                });
+                if (!res.ok) throw new Error();
+                toast('Note deleted.');
+                setTimeout(() => location.reload(), 500);
+            } catch (e) {
+                toast('Could not delete the note.', 'error');
+            }
+        }
+
+        const style = document.createElement('style');
+        style.textContent = `@keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }`;
+        document.head.appendChild(style);
     </script>
 </body>
 </html>
-
