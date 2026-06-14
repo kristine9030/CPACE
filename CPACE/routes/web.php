@@ -56,6 +56,13 @@ Route::middleware('auth')->group(function () {
         Route::get('/test-bank/{id}/edit', [TestBankController::class, 'edit'])->name('question.edit');
         Route::put('/test-bank/{id}', [TestBankController::class, 'update'])->name('question.update');
         Route::delete('/test-bank/{id}', [TestBankController::class, 'destroy'])->name('question.destroy');
+
+        // Question variants (alternative wordings)
+        Route::get('/test-bank/{id}/variants', [TestBankController::class, 'variants'])->name('question.variants');
+        Route::post('/test-bank/{id}/variants', [TestBankController::class, 'storeVariant'])->name('question.variants.store');
+        Route::post('/test-bank/{id}/variants/{variantId}/toggle', [TestBankController::class, 'toggleVariant'])->name('question.variants.toggle');
+        Route::delete('/test-bank/{id}/variants/{variantId}', [TestBankController::class, 'destroyVariant'])->name('question.variants.destroy');
+        Route::post('/test-bank/{id}/variants/suggest', [TestBankController::class, 'suggestVariant'])->name('question.variants.suggest');
         Route::get('/subjects', fn() => view('faculty.subjects'))->name('subjects');
         Route::get('/performance', fn() => view('faculty.performance'))->name('performance');
     });
@@ -67,6 +74,7 @@ Route::middleware('auth')->group(function () {
 
     // Quiz engine
     Route::post('/quiz/start', [QuizController::class, 'start'])->name('quiz.start');
+    Route::post('/quiz/{session}/cancel', [QuizController::class, 'cancel'])->name('quiz.cancel');
     Route::get('/quiz/{session}/take', [QuizController::class, 'take'])->name('quiz.take');
     Route::post('/quiz/{session}/submit', [QuizController::class, 'submit'])->name('quiz.submit');
     Route::get('/quiz/{session}/results', [QuizController::class, 'results'])->name('quiz.results');

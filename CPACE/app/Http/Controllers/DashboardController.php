@@ -26,15 +26,20 @@ class DashboardController extends Controller
             ? max(0, (int) ceil((Carbon::parse($examDate)->startOfDay()->timestamp - Carbon::now()->startOfDay()->timestamp) / 86400))
             : null;
 
-        // ── Questions answered (total items across the student's sessions) ─
-        $questionsAnswered = (int) DB::table('quiz_sessions')
-            ->where('student_id', $studentId)
-            ->sum('total_items');
+        // ── Questions answered (questions the student actually answered) ──
+        // Counts only graded answers where a choice was selected, in completed
+        // quizzes - skipped questions and abandoned quizzes are not counted.
+        $answeredBase = fn () => DB::table('quiz_answers')
+            ->join('quiz_sessions', 'quiz_sessions.id', '=', 'quiz_answers.session_id')
+            ->where('quiz_sessions.student_id', $studentId)
+            ->whereNotNull('quiz_sessions.completed_at')
+            ->whereNotNull('quiz_answers.selected_choice');
 
-        $questionsThisWeek = (int) DB::table('quiz_sessions')
-            ->where('student_id', $studentId)
-            ->where('started_at', '>=', Carbon::now()->subDays(7))
-            ->sum('total_items');
+        $questionsAnswered = (int) $answeredBase()->count();
+
+        $questionsThisWeek = (int) $answeredBase()
+            ->where('quiz_sessions.started_at', '>=', Carbon::now()->subDays(7))
+            ->count();
 
         // ── Study time ────────────────────────────────────────────────────
         $studySeconds     = (int) DB::table('quiz_sessions')->where('student_id', $studentId)->sum('duration_secs');

@@ -19,6 +19,12 @@
         .quiz-title { font-size:24px; font-weight:700; color:#1a1a1a; }
         .quiz-sub { font-size:13px; color:var(--gray); margin-top:2px; }
         .quiz-progress-pill { background:white; border-radius:24px; padding:10px 18px; font-size:13px; font-weight:600; color:var(--primary); box-shadow:0 1px 4px rgba(0,0,0,.06); }
+        .quiz-meta { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+        .mode-pill { display:inline-flex; align-items:center; gap:7px; background:var(--primary-light); color:var(--primary); border-radius:24px; padding:10px 16px; font-size:13px; font-weight:600; }
+        .timer-pill { display:inline-flex; align-items:center; gap:7px; background:#fff; border-radius:24px; padding:10px 16px; font-size:14px; font-weight:700; color:#2563eb; box-shadow:0 1px 4px rgba(0,0,0,.06); }
+        .timer-pill.warning { color:#d97706; }
+        .timer-pill.danger { color:var(--accent); animation:pulse 1s infinite; }
+        @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:.55;} }
 
         .progress-track { height:8px; background:#e8e3e3; border-radius:8px; overflow:hidden; margin-bottom:24px; }
         .progress-fill { height:100%; background:var(--primary); width:0; transition:width .3s; }
@@ -51,12 +57,27 @@
 @include('partials.student-mobile-header')
 
 <main class="main-content">
+    @php
+        $modeLabels = [
+            'adaptive'  => ['Adaptive Mode', 'fa-chart-line'],
+            'topic'     => ['Topic Focus', 'fa-book-open'],
+            'timed'     => ['Timed Mode', 'fa-clock'],
+            'challenge' => ['Challenge Mode', 'fa-trophy'],
+        ];
+        [$modeName, $modeIcon] = $modeLabels[$session->mode] ?? $modeLabels['adaptive'];
+    @endphp
     <div class="quiz-header">
         <div>
             <div class="quiz-title">{{ $session->subject->name ?? 'Adaptive Quiz' }}</div>
             <div class="quiz-sub">Answer all {{ $questions->count() }} questions, then submit to see your score.</div>
         </div>
-        <div class="quiz-progress-pill"><span id="answeredCount">0</span> / {{ $questions->count() }} answered</div>
+        <div class="quiz-meta">
+            <span class="mode-pill"><i class="fas {{ $modeIcon }}"></i> {{ $modeName }}</span>
+            @if(!is_null($timeLimit))
+                <span class="timer-pill" id="timerPill"><i class="fas fa-hourglass-half"></i> <span id="timer">--:--</span></span>
+            @endif
+            <span class="quiz-progress-pill"><span id="answeredCount">0</span> / {{ $questions->count() }} answered</span>
+        </div>
     </div>
 
     <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
@@ -87,7 +108,10 @@
         @endforeach
 
         <div class="submit-bar">
-            <a href="{{ route('adaptive-quizzes') }}" class="btn btn-ghost"><i class="fas fa-times"></i> Cancel</a>
+            <button type="submit" id="cancelBtn" class="btn btn-ghost"
+                    formaction="{{ route('quiz.cancel', $session->id) }}" formmethod="post" formnovalidate>
+                <i class="fas fa-times"></i> Cancel
+            </button>
             <button type="submit" class="btn btn-primary"><i class="fas fa-check"></i> Submit Quiz</button>
         </div>
     </form>
@@ -113,12 +137,52 @@
         }
     });
 
+    let timeUp = false;
     form.addEventListener('submit', e => {
+        // Cancel button: re-targets the form to the cancel route - just confirm
+        // the student means to discard the quiz, and skip the "answered" prompt.
+        if (e.submitter && e.submitter.id === 'cancelBtn') {
+            if (!confirm('Cancel this quiz? It will not be saved or counted.')) {
+                e.preventDefault();
+            }
+            return;
+        }
+        if (timeUp) return; // auto-submit: skip the confirm prompt
         const answeredCount = new Set([...form.querySelectorAll('input[type=radio]:checked')].map(r => r.name)).size;
         if (answeredCount < total && !confirm(`You answered ${answeredCount} of ${total}. Submit anyway?`)) {
             e.preventDefault();
         }
     });
+
+    @if(!is_null($timeLimit))
+    // Timed mode: count down from the time still left for this session (based on
+    // the server start time, so reloading the page can't reset the clock).
+    (function () {
+        let remaining = {{ max(0, $timeLimit - (int) $session->started_at->diffInSeconds(now())) }};
+        const pill = document.getElementById('timerPill');
+        const label = document.getElementById('timer');
+
+        function render() {
+            const m = Math.floor(remaining / 60), s = remaining % 60;
+            label.textContent = `${m}:${s.toString().padStart(2, '0')}`;
+            pill.classList.toggle('warning', remaining <= 60 && remaining > 20);
+            pill.classList.toggle('danger', remaining <= 20);
+        }
+
+        function tick() {
+            if (remaining <= 0) {
+                timeUp = true;
+                label.textContent = "0:00";
+                form.submit();
+                return;
+            }
+            render();
+            remaining--;
+            setTimeout(tick, 1000);
+        }
+        tick();
+    })();
+    @endif
 </script>
 </body>
 </html>

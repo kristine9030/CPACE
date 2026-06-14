@@ -501,6 +501,55 @@
             line-height: 1.5;
         }
 
+        /* QUIZ LENGTH SELECTOR */
+        .length-row {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            flex-wrap: wrap;
+            margin-bottom: 40px;
+        }
+
+        .length-options {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .length-chip {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 10px 18px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #555;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .length-chip:hover { border-color: #c0392b; }
+
+        .length-chip.active {
+            border-color: #c0392b;
+            background: #fff9f9;
+            color: #c0392b;
+        }
+
+        .length-custom {
+            width: 92px;
+            padding: 10px 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #555;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .length-custom:focus { outline: none; border-color: #c0392b; }
+
         /* CONTENT WITH SIDEBAR */
         .content-with-sidebar {
             display: grid;
@@ -869,26 +918,43 @@
                 <div class="section-title">Choose Your Mode</div>
                 <div class="section-subtitle">Select how you want to practice today.</div>
                 <div class="choose-mode-grid">
-                    <div class="mode-card active" onclick="selectMode(this)">
+                    <div class="mode-card active" data-mode="adaptive" onclick="selectMode(this)">
                         <div class="mode-icon"><i class="fas fa-chart-line"></i></div>
                         <div class="mode-title">Adaptive Mode</div>
-                        <div class="mode-description">Questions adjust to your performance in real-time.</div>
+                        <div class="mode-description">Focuses more questions on your weak areas.</div>
                     </div>
-                    <div class="mode-card" onclick="selectMode(this)">
+                    <div class="mode-card" data-mode="topic" onclick="selectMode(this)">
                         <div class="mode-icon"><i class="fas fa-book-open"></i></div>
                         <div class="mode-title">Topic Mode</div>
-                        <div class="mode-description">Focus on specific topics or competencies.</div>
+                        <div class="mode-description">Drill one topic at a time to build mastery.</div>
                     </div>
-                    <div class="mode-card" onclick="selectMode(this)">
+                    <div class="mode-card" data-mode="timed" onclick="selectMode(this)">
                         <div class="mode-icon"><i class="fas fa-clock"></i></div>
                         <div class="mode-title">Timed Mode</div>
-                        <div class="mode-description">Test your speed and accuracy.</div>
+                        <div class="mode-description">Beat the clock - auto-submits when time runs out.</div>
                     </div>
-                    <div class="mode-card" onclick="selectMode(this)">
+                    <div class="mode-card" data-mode="challenge" onclick="selectMode(this)">
                         <div class="mode-icon"><i class="fas fa-trophy"></i></div>
                         <div class="mode-title">Challenge Mode</div>
-                        <div class="mode-description">Take on harder questions for a bigger challenge.</div>
+                        <div class="mode-description">Hardest questions first, for 1.5&times; points.</div>
                     </div>
+                </div>
+            </div>
+
+            <!-- HOW MANY QUESTIONS -->
+            <div class="page-section">
+                <div class="section-title">How Many Questions? <span style="color:#c0392b;">*</span></div>
+                <div class="section-subtitle">Pick a length you can finish in one sitting - this is required before you can start.</div>
+                <div class="length-row">
+                    <div class="length-options">
+                        <button type="button" class="length-chip" data-count="5" onclick="selectLength(this, 5)">5</button>
+                        <button type="button" class="length-chip" data-count="10" onclick="selectLength(this, 10)">10</button>
+                        <button type="button" class="length-chip" data-count="20" onclick="selectLength(this, 20)">20</button>
+                        <button type="button" class="length-chip" data-count="30" onclick="selectLength(this, 30)">30</button>
+                        <button type="button" class="length-chip" data-count="50" onclick="selectLength(this, 50)">50</button>
+                    </div>
+                    <input type="number" min="1" max="100" class="length-custom" id="lengthCustom" placeholder="Custom" oninput="customLength(this.value)">
+                    <span id="lengthChosen" style="font-size:13px;font-weight:600;color:#27AE60;display:none;"><i class="fas fa-check-circle"></i> <span id="lengthChosenNum"></span> questions selected</span>
                 </div>
             </div>
 
@@ -898,11 +964,14 @@
                     <div class="page-section">
                         <div class="section-title">Select Subject Area</div>
                         <div class="section-subtitle">Choose a CPALE subject to begin your quiz.</div>
-                        @if(session('error'))
+                        @if(session('error') || $errors->any())
                             <div style="background:#fee2e2;color:#b91c1c;padding:12px 18px;border-radius:10px;margin-bottom:18px;font-size:13px;font-weight:600;">
-                                <i class="fas fa-exclamation-circle"></i> {{ session('error') }}
+                                <i class="fas fa-exclamation-circle"></i> {{ session('error') ?? $errors->first() }}
                             </div>
                         @endif
+                        <div id="lengthHint" style="background:#fff7ed;color:#b45309;padding:12px 18px;border-radius:10px;margin-bottom:18px;font-size:13px;font-weight:600;">
+                            <i class="fas fa-arrow-up"></i> Choose how many questions above to unlock the subjects.
+                        </div>
                         @php
                             $subjectIcons = [
                                 'FAR' => ['fa-chart-line', '#4A90E2'], 'AFAR' => ['fa-coins', '#17A2B8'],
@@ -916,7 +985,9 @@
                                 <form method="POST" action="{{ route('quiz.start') }}">
                                     @csrf
                                     <input type="hidden" name="subject_id" value="{{ $subject->id }}">
-                                    <button type="submit" class="subject-select-card" style="display:block;width:100%;text-align:center;cursor:pointer;{{ $subject->question_count === 0 ? 'opacity:.55;cursor:not-allowed;' : '' }}" {{ $subject->question_count === 0 ? 'disabled' : '' }}>
+                                    <input type="hidden" name="mode" value="adaptive" class="mode-input">
+                                    <input type="hidden" name="count" value="" class="count-input">
+                                    <button type="submit" class="subject-select-card subject-btn" data-qcount="{{ $subject->question_count }}" style="display:block;width:100%;text-align:center;cursor:pointer;{{ $subject->question_count === 0 ? 'opacity:.55;cursor:not-allowed;' : '' }}" {{ $subject->question_count === 0 ? 'disabled' : '' }}>
                                         <div class="subject-select-icon" style="color: {{ $color }};"><i class="fas {{ $icon }}"></i></div>
                                         <div class="subject-select-name">{{ $subject->code }}</div>
                                         <div class="subject-select-full">{{ $subject->name }}</div>
@@ -932,28 +1003,39 @@
                 <div class="stats-sidebar">
                     <div class="stats-sidebar-title">Your Adaptive Stats</div>
 
-                    <div class="mastery-circle">
+                    @php
+                        $masteryGradient = $mastery['has_data']
+                            ? "conic-gradient(#17A2B8 0deg {$mastery['strong_deg']}deg, #F39C12 {$mastery['strong_deg']}deg {$mastery['medium_deg']}deg, #c0392b {$mastery['medium_deg']}deg 360deg)"
+                            : 'conic-gradient(#e5e7eb 0deg 360deg)';
+                    @endphp
+                    <div class="mastery-circle" style="background: {{ $masteryGradient }};">
                         <div class="mastery-circle-inner">
                             <div class="mastery-percentage">{{ $accuracy }}%</div>
                             <div class="mastery-label">Overall Mastery</div>
                         </div>
                     </div>
 
-                    <div class="stat-item">
-                        <div class="stat-dot" style="background: #17A2B8;"></div>
-                        <span class="stat-label">Strong</span>
-                        <span class="stat-value">42%</span>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-dot" style="background: #F39C12;"></div>
-                        <span class="stat-label">Medium</span>
-                        <span class="stat-value">30%</span>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-dot" style="background: #c0392b;"></div>
-                        <span class="stat-label">Weak</span>
-                        <span class="stat-value">28%</span>
-                    </div>
+                    @if($mastery['has_data'])
+                        <div class="stat-item">
+                            <div class="stat-dot" style="background: #17A2B8;"></div>
+                            <span class="stat-label">Strong</span>
+                            <span class="stat-value">{{ $mastery['strong'] }}%</span>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-dot" style="background: #F39C12;"></div>
+                            <span class="stat-label">Medium</span>
+                            <span class="stat-value">{{ $mastery['medium'] }}%</span>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-dot" style="background: #c0392b;"></div>
+                            <span class="stat-label">Weak</span>
+                            <span class="stat-value">{{ $mastery['weak'] }}%</span>
+                        </div>
+                    @else
+                        <div style="text-align:center;color:#aaa;font-size:12px;padding:6px 0 4px;">
+                            <i class="fas fa-chart-pie"></i> Take a quiz to see your strong, medium, and weak areas.
+                        </div>
+                    @endif
 
                     <div class="stats-grid-sidebar">
                         <div class="stat-box">
@@ -1047,13 +1129,73 @@
             profileDrop.addEventListener('click', e => e.stopPropagation());
         }
 
-        // Select Mode
-        function selectMode(element) {
+        // Select Mode — highlight the card and push the choice into every
+        // subject form so the right mode is submitted when a subject is picked.
+        function applyMode(mode) {
             document.querySelectorAll('.mode-card').forEach(card => {
-                card.classList.remove('active');
+                card.classList.toggle('active', card.dataset.mode === mode);
             });
-            element.classList.add('active');
+            document.querySelectorAll('.mode-input').forEach(input => {
+                input.value = mode;
+            });
+            localStorage.setItem('quizMode', mode);
         }
+
+        function selectMode(element) {
+            applyMode(element.dataset.mode || 'adaptive');
+        }
+
+        // Restore the last-used mode (default: adaptive).
+        applyMode(localStorage.getItem('quizMode') || 'adaptive');
+
+        // Quiz length — the student MUST pick a length before any subject can
+        // start. The choice is intentionally NOT remembered between visits, so
+        // they consciously choose every time.
+        function applyLength(count) {
+            count = Math.max(1, Math.min(parseInt(count, 10) || 0, 100));
+            if (!count) return;
+            document.querySelectorAll('.count-input').forEach(input => {
+                input.value = count;
+            });
+            // Highlight the matching preset chip (clear all if it's a custom value).
+            let matched = false;
+            document.querySelectorAll('.length-chip').forEach(chip => {
+                const on = parseInt(chip.dataset.count, 10) === count;
+                chip.classList.toggle('active', on);
+                if (on) matched = true;
+            });
+            const custom = document.getElementById('lengthCustom');
+            if (matched && document.activeElement !== custom) custom.value = '';
+            // Confirmation text + unlock the subjects.
+            document.getElementById('lengthChosenNum').textContent = count;
+            document.getElementById('lengthChosen').style.display = 'inline';
+            updateSubjectsEnabled(count);
+        }
+
+        // Enable a subject only when a length is chosen AND it has questions.
+        function updateSubjectsEnabled(count) {
+            const hasCount = !!count;
+            document.getElementById('lengthHint').style.display = hasCount ? 'none' : 'block';
+            document.querySelectorAll('.subject-btn').forEach(btn => {
+                const hasQuestions = parseInt(btn.dataset.qcount, 10) > 0;
+                const enabled = hasCount && hasQuestions;
+                btn.disabled = !enabled;
+                btn.style.opacity = enabled ? '1' : '.55';
+                btn.style.cursor = enabled ? 'pointer' : 'not-allowed';
+            });
+        }
+
+        function selectLength(element, count) {
+            document.getElementById('lengthCustom').value = '';
+            applyLength(count);
+        }
+
+        function customLength(value) {
+            if (value !== '') applyLength(value);
+        }
+
+        // Start locked: no length chosen yet, so subjects are disabled.
+        updateSubjectsEnabled(0);
     </script>
 </body>
 </html>

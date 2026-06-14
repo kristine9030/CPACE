@@ -30,6 +30,16 @@ class Question extends Model
         return $this->hasMany(QuestionChoice::class);
     }
 
+    public function variants()
+    {
+        return $this->hasMany(QuestionVariant::class);
+    }
+
+    public function activeVariants()
+    {
+        return $this->variants()->where('is_active', true);
+    }
+
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');

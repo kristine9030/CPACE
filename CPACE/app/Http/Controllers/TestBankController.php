@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Question;
+use App\Models\QuestionVariant;
 use App\Models\Subject;
 use App\Models\Topic;
+use App\Services\QuestionParaphraser;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -23,6 +25,7 @@ class TestBankController extends Controller
     {
         $query = Question::query()
             ->select('questions.*', 'topics.name as topic_name', 'subjects.code as subject_code', 'subjects.id as subject_id')
+            ->withCount('variants')
             ->join('topics', 'topics.id', '=', 'questions.topic_id')
             ->join('subjects', 'subjects.id', '=', 'topics.subject_id');
 
@@ -43,6 +46,11 @@ class TestBankController extends Controller
         }
 
         $questions = $query->orderByDesc('questions.id')->paginate(15)->withQueryString();
+
+        // Live search / filter / pagination requests only need the table markup.
+        if ($request->ajax()) {
+            return view('faculty.partials.test-bank-table', ['questions' => $questions]);
+        }
 
         $stats = [
             'total'     => Question::count(),
@@ -142,6 +150,84 @@ class TestBankController extends Controller
         Question::findOrFail($id)->delete();
 
         return redirect()->route('faculty.test-bank')->with('status', 'Question deleted.');
+    }
+
+    /**
+     * Manage the alternative wordings (variants) of a question. These are shown
+     * to students in place of the original to discourage memorisation, without
+     * ever changing the stored question or its correct answer.
+     */
+    public function variants(int $id)
+    {
+        $question = Question::with(['choices', 'topic.subject', 'variants' => fn ($q) => $q->orderByDesc('id')])
+            ->findOrFail($id);
+
+        return view('faculty.question-variants', [
+            'question'   => $question,
+            'vocabulary' => QuestionParaphraser::vocabulary(),
+        ]);
+    }
+
+    /**
+     * Save a new faculty-written variant for a question.
+     */
+    public function storeVariant(Request $request, int $id)
+    {
+        $question = Question::findOrFail($id);
+
+        $data = $request->validate([
+            'variant_text' => 'required|string|min:5|max:1000',
+        ]);
+
+        $question->variants()->create([
+            'variant_text' => trim($data['variant_text']),
+            'source'       => 'faculty',
+            'is_active'    => true,
+        ]);
+
+        return redirect()
+            ->route('faculty.question.variants', $id)
+            ->with('status', 'Variant added. Students will now see this wording too.');
+    }
+
+    /**
+     * Toggle a variant active/inactive without deleting it.
+     */
+    public function toggleVariant(int $id, int $variantId)
+    {
+        $variant = QuestionVariant::where('question_id', $id)->findOrFail($variantId);
+        $variant->update(['is_active' => ! $variant->is_active]);
+
+        return redirect()->route('faculty.question.variants', $id);
+    }
+
+    /**
+     * Delete a variant.
+     */
+    public function destroyVariant(int $id, int $variantId)
+    {
+        QuestionVariant::where('question_id', $id)->where('id', $variantId)->delete();
+
+        return redirect()
+            ->route('faculty.question.variants', $id)
+            ->with('status', 'Variant removed.');
+    }
+
+    /**
+     * Return a rule-based draft variant the faculty can edit (the "intelligent"
+     * starting point). A fresh seed each call gives a different draft.
+     */
+    public function suggestVariant(int $id)
+    {
+        $question = Question::findOrFail($id);
+
+        $draft = QuestionParaphraser::rephrase(
+            $question->question_text,
+            random_int(1, 2_000_000_000),
+            $question->question_type
+        );
+
+        return response()->json(['draft' => $draft]);
     }
 
     /**

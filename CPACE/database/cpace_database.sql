@@ -128,6 +128,21 @@ CREATE TABLE question_choices (
     CONSTRAINT fk_qc_question FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE
 );
 
+-- Alternative phrasings of a question, shown to students in place of the
+-- original to discourage memorisation (same meaning, same correct answer).
+-- source: faculty (human-written) | ai (model-generated) | rule (engine)
+CREATE TABLE question_variants (
+    id              BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    question_id     INT UNSIGNED NOT NULL,
+    variant_text    TEXT NOT NULL,
+    source          VARCHAR(20) NOT NULL DEFAULT 'faculty',
+    is_active       BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at      DATETIME NULL,
+    updated_at      DATETIME NULL,
+    INDEX idx_qv_question (question_id, is_active),
+    CONSTRAINT fk_qv_question FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE
+);
+
 -- =============================================================
 -- 4. QUIZ SESSIONS
 -- Training Mode  = immediate feedback, no timer
@@ -139,6 +154,7 @@ CREATE TABLE quiz_sessions (
     id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     student_id      INT UNSIGNED NOT NULL,
     session_type    ENUM('training','testing','mock_exam','spaced_review') NOT NULL,
+    mode            VARCHAR(20) NOT NULL DEFAULT 'adaptive', -- student-facing practice mode
     subject_id      TINYINT UNSIGNED NULL,             -- NULL = mock exam (all subjects)
     topic_id        SMALLINT UNSIGNED NULL,            -- NULL = full-subject or mock
     started_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,

@@ -94,6 +94,9 @@
         .sp-draft  { background:#f3f4f6; color:#9ca3af; }
 
         .action-btn { width:28px; height:28px; border:none; border-radius:6px; cursor:pointer; font-size:12px; display:inline-flex; align-items:center; justify-content:center; transition:all .2s; }
+        .ab-var { background:#ede9fe; color:#7c3aed; position:relative; text-decoration:none; width:auto; min-width:28px; padding:0 7px; gap:4px; }
+        .ab-var:hover { background:#ddd6fe; }
+        .var-count { font-size:11px; font-weight:700; }
         .ab-edit { background:#dbeafe; color:var(--blue); }
         .ab-dup  { background:#d1fae5; color:#059669; }
         .ab-del  { background:#fde8e8; color:var(--accent); }
@@ -169,12 +172,12 @@
     <form method="GET" action="{{ route('faculty.test-bank') }}" class="filter-bar a1" id="filterForm">
         <div class="search-wrap-tb">
             <i class="fas fa-search"></i>
-            <input class="search-inp" type="text" name="search" value="{{ $filters['search'] ?? '' }}" placeholder="Search questions...">
+            <input class="search-inp" id="searchInput" type="text" name="search" value="{{ $filters['search'] ?? '' }}" placeholder="Search questions..." autocomplete="off">
         </div>
         <div class="filter-divider"></div>
         <div class="filter-group">
             <span class="filter-label">Subject</span>
-            <select name="subject" onchange="document.getElementById('filterForm').submit()">
+            <select name="subject">
                 <option value="">All Subjects</option>
                 @foreach($subjects as $subject)
                     <option value="{{ $subject->id }}" {{ ($filters['subject'] ?? '') == $subject->id ? 'selected' : '' }}>{{ $subject->code }}</option>
@@ -183,7 +186,7 @@
         </div>
         <div class="filter-group">
             <span class="filter-label">Type</span>
-            <select name="type" onchange="document.getElementById('filterForm').submit()">
+            <select name="type">
                 <option value="">All Types</option>
                 <option value="mcq" {{ ($filters['type'] ?? '') === 'mcq' ? 'selected' : '' }}>Multiple Choice</option>
                 <option value="true_false" {{ ($filters['type'] ?? '') === 'true_false' ? 'selected' : '' }}>True / False</option>
@@ -191,7 +194,7 @@
         </div>
         <div class="filter-group">
             <span class="filter-label">Difficulty</span>
-            <select name="difficulty" onchange="document.getElementById('filterForm').submit()">
+            <select name="difficulty">
                 <option value="">All Levels</option>
                 <option value="easy" {{ ($filters['difficulty'] ?? '') === 'easy' ? 'selected' : '' }}>Easy</option>
                 <option value="moderate" {{ ($filters['difficulty'] ?? '') === 'moderate' ? 'selected' : '' }}>Medium</option>
@@ -200,7 +203,7 @@
         </div>
         <div class="filter-group">
             <span class="filter-label">Status</span>
-            <select name="status" onchange="document.getElementById('filterForm').submit()">
+            <select name="status">
                 <option value="">All Status</option>
                 <option value="active" {{ ($filters['status'] ?? '') === 'active' ? 'selected' : '' }}>Active</option>
                 <option value="draft" {{ ($filters['status'] ?? '') === 'draft' ? 'selected' : '' }}>Draft</option>
@@ -209,83 +212,8 @@
     </form>
 
     <!-- TABLE -->
-    <div class="table-card a2">
-        <div class="table-head-bar">
-            <span class="count">Showing {{ $questions->firstItem() ?? 0 }}–{{ $questions->lastItem() ?? 0 }} of <strong>{{ number_format($questions->total()) }}</strong> questions</span>
-        </div>
-        <table>
-            <thead>
-                <tr>
-                    <th>#</th>
-                    <th>Question</th>
-                    <th>Subject</th>
-                    <th>Topic</th>
-                    <th>Type</th>
-                    <th>Difficulty</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                @php
-                $subjectClass = ['FAR'=>'b-far','AUD'=>'b-aud','TAX'=>'b-tax','MS'=>'b-ms','RFBT'=>'b-rfbt','AFAR'=>'b-afar'];
-                $diffClass = ['easy'=>'d-easy','moderate'=>'d-medium','difficult'=>'d-hard'];
-                $diffLabel = ['easy'=>'Easy','moderate'=>'Medium','difficult'=>'Hard'];
-                $typeLabel = ['mcq'=>'Multiple Choice','true_false'=>'True / False'];
-                @endphp
-
-                @forelse($questions as $q)
-                <tr>
-                    <td style="color:#aaa;font-size:12px;">{{ $q->id }}</td>
-                    <td>
-                        <div class="q-text">{{ \Illuminate\Support\Str::limit($q->question_text, 70) }}</div>
-                        <div class="q-meta">{{ $diffLabel[$q->difficulty] }} difficulty</div>
-                    </td>
-                    <td><span class="subj-badge {{ $subjectClass[$q->subject_code] ?? 'b-far' }}">{{ $q->subject_code }}</span></td>
-                    <td style="font-size:12px;color:#666;">{{ $q->topic_name }}</td>
-                    <td><span class="type-badge">{{ $typeLabel[$q->question_type] ?? $q->question_type }}</span></td>
-                    <td><span class="diff-badge {{ $diffClass[$q->difficulty] }}">{{ $diffLabel[$q->difficulty] }}</span></td>
-                    <td>
-                        @if($q->is_active)
-                            <span class="status-pill sp-active"><i class="fas fa-circle" style="font-size:6px;"></i> Active</span>
-                        @else
-                            <span class="status-pill sp-draft"><i class="fas fa-circle" style="font-size:6px;"></i> Draft</span>
-                        @endif
-                    </td>
-                    <td style="white-space:nowrap;">
-                        <a href="{{ route('faculty.question.edit', $q->id) }}" class="action-btn ab-edit" title="Edit"><i class="fas fa-pen"></i></a>
-                        <form method="POST" action="{{ route('faculty.question.destroy', $q->id) }}" style="display:inline;" onsubmit="return confirm('Delete this question?');">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="action-btn ab-del" style="margin-left:4px;" title="Delete"><i class="fas fa-trash"></i></button>
-                        </form>
-                    </td>
-                </tr>
-                @empty
-                <tr>
-                    <td colspan="8" style="text-align:center;color:#aaa;padding:40px;">
-                        No questions yet. <a href="{{ route('faculty.question.create') }}" style="color:var(--accent);font-weight:600;">Add the first one</a>.
-                    </td>
-                </tr>
-                @endforelse
-            </tbody>
-        </table>
-        <div class="pagination">
-            <span class="pag-info">Showing {{ $questions->firstItem() ?? 0 }}–{{ $questions->lastItem() ?? 0 }} of {{ number_format($questions->total()) }} results</span>
-            <div class="pag-btns">
-                @if($questions->onFirstPage())
-                    <span class="pag-btn" style="opacity:.4;"><i class="fas fa-chevron-left"></i></span>
-                @else
-                    <a href="{{ $questions->previousPageUrl() }}" class="pag-btn"><i class="fas fa-chevron-left"></i></a>
-                @endif
-                <span class="pag-btn active">{{ $questions->currentPage() }}</span>
-                @if($questions->hasMorePages())
-                    <a href="{{ $questions->nextPageUrl() }}" class="pag-btn"><i class="fas fa-chevron-right"></i></a>
-                @else
-                    <span class="pag-btn" style="opacity:.4;"><i class="fas fa-chevron-right"></i></span>
-                @endif
-            </div>
-        </div>
+    <div class="table-card a2" id="tableCard">
+        @include('faculty.partials.test-bank-table')
     </div>
 </main>
 
@@ -295,6 +223,62 @@ document.addEventListener('DOMContentLoaded', () => {
     const sb  = document.getElementById('sidebar');
     if (btn) btn.addEventListener('click', () => { sb.classList.toggle('collapsed'); localStorage.setItem('facultySidebar', sb.classList.contains('collapsed')); });
     if (localStorage.getItem('facultySidebar') === 'true') sb.classList.add('collapsed');
+
+    // Live search — only the table re-renders (no full-page reload). Filtering
+    // runs server-side via AJAX so it spans all pages, not just the visible rows.
+    const search = document.getElementById('searchInput');
+    const form   = document.getElementById('filterForm');
+    const card   = document.getElementById('tableCard');
+    if (!search || !form || !card) return;
+
+    let reqToken = 0;
+
+    // Fetch the filtered table for the given URL and swap it into the card.
+    async function loadTable(url, { push = true } = {}) {
+        const token = ++reqToken;
+        card.style.opacity = '.5';
+        card.style.pointerEvents = 'none';
+        try {
+            const res  = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+            const html = await res.text();
+            if (token !== reqToken) return; // a newer request already won
+            card.innerHTML = html;
+            if (push) window.history.replaceState({}, '', url);
+        } catch (e) {
+            // Network hiccup — fall back to a normal navigation.
+            window.location = url;
+            return;
+        } finally {
+            if (token === reqToken) { card.style.opacity = ''; card.style.pointerEvents = ''; }
+        }
+    }
+
+    // Build the request URL from the current filter form state.
+    function filterUrl() {
+        const params = new URLSearchParams(new FormData(form));
+        return form.action + '?' + params.toString();
+    }
+
+    // Debounced live search as the user types.
+    let timer;
+    search.addEventListener('input', () => {
+        clearTimeout(timer);
+        timer = setTimeout(() => loadTable(filterUrl()), 300);
+    });
+
+    // Dropdown filters update the table immediately (replaces the old submit).
+    form.querySelectorAll('select').forEach(sel => {
+        sel.addEventListener('change', () => loadTable(filterUrl()));
+    });
+
+    // Don't full-reload when the search box's Enter key submits the form.
+    form.addEventListener('submit', (e) => { e.preventDefault(); loadTable(filterUrl()); });
+
+    // Pagination links inside the swapped-in table — intercept and AJAX them.
+    card.addEventListener('click', (e) => {
+        const link = e.target.closest('a.pag-btn');
+        if (link && link.getAttribute('href')) { e.preventDefault(); loadTable(link.href); }
+    });
 });
 </script>
 </body>
