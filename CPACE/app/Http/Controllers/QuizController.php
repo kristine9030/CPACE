@@ -50,15 +50,13 @@ class QuizController extends Controller
         // Real Strong / Medium / Weak breakdown from per-topic performance.
         $mastery = $this->masteryBreakdown($studentId);
 
-        // "Questions Answered" = questions the student actually answered. A
-        // skipped question (no choice selected) and cancelled quizzes are not
-        // counted, even though the quiz itself was completed.
-        $totalAnswered = (int) DB::table('quiz_answers')
-            ->join('quiz_sessions', 'quiz_sessions.id', '=', 'quiz_answers.session_id')
-            ->where('quiz_sessions.student_id', $studentId)
-            ->whereNotNull('quiz_sessions.completed_at')
-            ->whereNotNull('quiz_answers.selected_choice')
-            ->count();
+        // "Questions Attempted" = every question served across the student's
+        // completed quizzes (total_items), so a skipped question still counts.
+        // Matches the Dashboard and Performance pages.
+        $totalAttempted = (int) DB::table('quiz_sessions')
+            ->where('student_id', $studentId)
+            ->whereNotNull('completed_at')
+            ->sum('total_items');
 
         $recentSessions = QuizSession::with('subject')
             ->where('student_id', $studentId)
@@ -67,7 +65,7 @@ class QuizController extends Controller
             ->limit(4)
             ->get();
 
-        return view('student.adaptive-quizzes', compact('subjects', 'accuracy', 'totalAnswered', 'recentSessions', 'mastery'));
+        return view('student.adaptive-quizzes', compact('subjects', 'accuracy', 'totalAttempted', 'recentSessions', 'mastery'));
     }
 
     /**
@@ -481,6 +479,9 @@ class QuizController extends Controller
                 // Reset the wrong-streak on a clean session, otherwise extend it.
                 $consecutiveWrong = $wrong === 0 ? 0 : $record->consecutive_wrong + $wrong;
 
+                // Note: accuracy_rate is a STORED generated column in the
+                // database (computed from correct_count / total_attempts), so it
+                // is never written here - the DB keeps it in sync automatically.
                 DB::table('performance_records')
                     ->where('id', $record->id)
                     ->update([

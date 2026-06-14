@@ -833,13 +833,13 @@
             </div>
         </div>
 
-        <!-- Questions Answered -->
+        <!-- Questions Attempted -->
         <div class="metric-card">
             <div class="metric-top">
                 <div class="metric-icon-wrap green"><i class="fas fa-clipboard-check"></i></div>
             </div>
-            <div class="metric-label">Questions Answered</div>
-            <div class="metric-number">{{ number_format($questionsAnswered) }}</div>
+            <div class="metric-label">Questions Attempted</div>
+            <div class="metric-number">{{ number_format($questionsAttempted) }}</div>
             <div class="metric-change {{ $questionsThisWeek > 0 ? '' : 'neutral' }}">
                 @if($questionsThisWeek > 0)<i class="fas fa-arrow-up"></i> {{ $questionsThisWeek }} this week @else No activity this week @endif
             </div>

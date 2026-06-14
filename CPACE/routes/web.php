@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProgramChairController;
+use App\Http\Controllers\PerformanceController;
 use App\Http\Controllers\QuizController;
 use App\Http\Controllers\TestBankController;
 
@@ -81,9 +82,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/mock-exams', function () {
         return view('student.mock-exams');
     })->name('mock-exams');
-    Route::get('/performance', function () {
-        return view('student.performance');
-    })->name('performance');
+    Route::get('/performance', [PerformanceController::class, 'index'])->name('performance');
     Route::get('/review-notes', function () {
         return view('student.review-notes');
     })->name('review-notes');

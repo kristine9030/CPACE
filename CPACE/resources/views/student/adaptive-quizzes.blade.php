@@ -1039,8 +1039,8 @@
 
                     <div class="stats-grid-sidebar">
                         <div class="stat-box">
-                            <div class="stat-box-value">{{ number_format($totalAnswered) }}</div>
-                            <div class="stat-box-label">Questions Answered</div>
+                            <div class="stat-box-value">{{ number_format($totalAttempted) }}</div>
+                            <div class="stat-box-label">Questions Attempted</div>
                         </div>
                         <div class="stat-box">
                             <div class="stat-box-value">{{ $accuracy }}%</div>

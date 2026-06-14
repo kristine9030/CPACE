@@ -1037,6 +1037,35 @@
 
         .consistency-btn:hover { background: #6a1818; }
 
+        /* TAB PANELS + TABLES */
+        .perf-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .perf-table th {
+            text-align: left;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            color: #999;
+            font-weight: 600;
+            padding: 0 12px 12px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .perf-table td {
+            padding: 13px 12px 13px 0;
+            border-bottom: 1px solid #f5f5f5;
+            color: #444;
+            vertical-align: middle;
+        }
+
+        .perf-table tbody tr:last-child td { border-bottom: none; }
+        .perf-table tbody tr:hover { background: #fafafa; }
+        .perf-table .accuracy-bar { margin: 0; }
+
         /* RESPONSIVE */
         @media (max-width: 1500px) {
             .perf-grid { grid-template-columns: 1fr; }
@@ -1089,7 +1118,11 @@
                             <span class="notification-badge">3</span>
                         </button>
                         <div style="position: relative;">
-                            <button class="profile-btn" id="profileBtn">KD</button>
+                            @php
+                                $nameParts = preg_split('/\s+/', trim(Auth::user()->name)) ?: [''];
+                                $initials = strtoupper(substr($nameParts[0], 0, 1) . substr(end($nameParts), 0, 1));
+                            @endphp
+                            <button class="profile-btn" id="profileBtn">{{ $initials }}</button>
                             <div class="dropdown-menu" id="profileDropdown">
                                 <a href="#"><i class="fas fa-user"></i> Profile Settings</a>
                                 <a href="#"><i class="fas fa-chart-line"></i> My Progress</a>
@@ -1107,37 +1140,56 @@
             <!-- TABS + DATE RANGE -->
             <div class="controls-row">
                 <div class="tabs">
-                    <button class="tab active"><i class="fas fa-th-large"></i> Overview</button>
-                    <button class="tab"><i class="fas fa-book"></i> By Subject</button>
-                    <button class="tab"><i class="fas fa-tag"></i> By Topic</button>
-                    <button class="tab"><i class="fas fa-clipboard"></i> By Quiz Type</button>
-                    <button class="tab"><i class="fas fa-clock"></i> By Time</button>
+                    <button class="tab active" data-tab="overview"><i class="fas fa-th-large"></i> Overview</button>
+                    <button class="tab" data-tab="subject"><i class="fas fa-book"></i> By Subject</button>
+                    <button class="tab" data-tab="topic"><i class="fas fa-tag"></i> By Topic</button>
+                    <button class="tab" data-tab="quiztype"><i class="fas fa-clipboard"></i> By Quiz Type</button>
+                    <button class="tab" data-tab="time"><i class="fas fa-clock"></i> By Time</button>
                 </div>
                 <div class="date-range">
                     <i class="fas fa-calendar"></i>
-                    <span>May 12 &ndash; May 18, 2025</span>
+                    <span>{{ \Illuminate\Support\Carbon::now()->subDays(7)->format('M j') }} &ndash; {{ \Illuminate\Support\Carbon::now()->format('M j, Y') }}</span>
                     <i class="fas fa-chevron-down"></i>
                 </div>
             </div>
+
+            <!-- ============ OVERVIEW TAB ============ -->
+            <div class="tab-panel" data-panel="overview">
 
             <!-- MAIN GRID -->
             <div class="perf-grid">
                 <!-- LEFT / MAIN COLUMN -->
                 <div class="perf-main">
                     <!-- STAT CARDS -->
+                    @php
+                        // Render the "+/- N from last week" line for a delta value.
+                        $deltaLine = function ($delta, $suffix) {
+                            if ($delta > 0) {
+                                return ['up', 'fa-arrow-up', "+{$delta}{$suffix}"];
+                            }
+                            if ($delta < 0) {
+                                return ['down', 'fa-arrow-down', "{$delta}{$suffix}"];
+                            }
+                            return ['muted', 'fa-minus', 'No change'];
+                        };
+                        // For avg time, a DOWN (faster) is the good direction.
+                        $timeDelta = $stats['avg_delta_secs'];
+                    @endphp
                     <div class="stats-grid">
                         <div class="stat-card">
                             <div class="stat-head">
                                 <span class="stat-label">Overall Accuracy</span>
                                 <span class="stat-badge red"><i class="fas fa-shield-alt"></i></span>
                             </div>
-                            <div class="stat-number">68%</div>
-                            <div class="stat-change up"><i class="fas fa-arrow-up"></i> 8% from last week</div>
+                            <div class="stat-number">{{ $stats['accuracy'] }}%</div>
+                            @php [$cls, $ic, $txt] = $deltaLine($stats['accuracy_delta'], '% from last week'); @endphp
+                            <div class="stat-change {{ $cls }}"><i class="fas {{ $ic }}"></i> {{ $txt }}</div>
                             <div class="stat-spark">
-                                <svg viewBox="0 0 100 40" preserveAspectRatio="none">
-                                    <polyline fill="none" stroke="#c0392b" stroke-width="2"
-                                        points="0,32 14,28 28,30 42,20 56,24 70,14 84,16 100,8" />
-                                </svg>
+                                <div class="spark-bars">
+                                    @foreach($spark['accuracy'] as $h)
+                                        <span style="height:{{ max(4, $h) }}%;background:#e58a8a"></span>
+                                    @endforeach
+                                </div>
                             </div>
                         </div>
 
@@ -1146,18 +1198,14 @@
                                 <span class="stat-label">Questions Attempted</span>
                                 <span class="stat-badge red"><i class="fas fa-list-ol"></i></span>
                             </div>
-                            <div class="stat-number">1,247</div>
-                            <div class="stat-change up"><i class="fas fa-arrow-up"></i> 215 from last week</div>
+                            <div class="stat-number">{{ number_format($stats['attempted']) }}</div>
+                            @php [$cls, $ic, $txt] = $deltaLine($stats['attempted_delta'], ' from last week'); @endphp
+                            <div class="stat-change {{ $cls }}"><i class="fas {{ $ic }}"></i> {{ $txt }}</div>
                             <div class="stat-spark">
                                 <div class="spark-bars">
-                                    <span style="height:35%;background:#f2b8b8"></span>
-                                    <span style="height:45%;background:#eea3a3"></span>
-                                    <span style="height:40%;background:#f2b8b8"></span>
-                                    <span style="height:60%;background:#e58a8a"></span>
-                                    <span style="height:55%;background:#eea3a3"></span>
-                                    <span style="height:75%;background:#dd6d6d"></span>
-                                    <span style="height:70%;background:#e58a8a"></span>
-                                    <span style="height:100%;background:#c0392b"></span>
+                                    @foreach($spark['attempted'] as $h)
+                                        <span style="height:{{ $h }}%;background:#e58a8a"></span>
+                                    @endforeach
                                 </div>
                             </div>
                         </div>
@@ -1167,18 +1215,14 @@
                                 <span class="stat-label">Correct Answers</span>
                                 <span class="stat-badge green"><i class="fas fa-check"></i></span>
                             </div>
-                            <div class="stat-number">848</div>
-                            <div class="stat-change up"><i class="fas fa-arrow-up"></i> 142 from last week</div>
+                            <div class="stat-number">{{ number_format($stats['correct']) }}</div>
+                            @php [$cls, $ic, $txt] = $deltaLine($stats['correct_delta'], ' from last week'); @endphp
+                            <div class="stat-change {{ $cls }}"><i class="fas {{ $ic }}"></i> {{ $txt }}</div>
                             <div class="stat-spark">
                                 <div class="spark-bars">
-                                    <span style="height:30%;background:#b6e6c8"></span>
-                                    <span style="height:42%;background:#9bdcb4"></span>
-                                    <span style="height:38%;background:#b6e6c8"></span>
-                                    <span style="height:58%;background:#7fd2a0"></span>
-                                    <span style="height:52%;background:#9bdcb4"></span>
-                                    <span style="height:72%;background:#4cbd81"></span>
-                                    <span style="height:66%;background:#7fd2a0"></span>
-                                    <span style="height:100%;background:#21a366"></span>
+                                    @foreach($spark['correct'] as $h)
+                                        <span style="height:{{ $h }}%;background:#7fd2a0"></span>
+                                    @endforeach
                                 </div>
                             </div>
                         </div>
@@ -1188,31 +1232,32 @@
                                 <span class="stat-label">Average Time / Question</span>
                                 <span class="stat-badge blue"><i class="fas fa-clock"></i></span>
                             </div>
-                            <div class="stat-number">1m 24s</div>
-                            <div class="stat-change down"><i class="fas fa-arrow-down"></i> 12s from last week</div>
+                            <div class="stat-number">{{ $stats['avg_time'] }}</div>
+                            @if($timeDelta < 0)
+                                <div class="stat-change up"><i class="fas fa-arrow-down"></i> {{ abs($timeDelta) }}s faster</div>
+                            @elseif($timeDelta > 0)
+                                <div class="stat-change down"><i class="fas fa-arrow-up"></i> {{ $timeDelta }}s slower</div>
+                            @else
+                                <div class="stat-change muted"><i class="fas fa-minus"></i> No change</div>
+                            @endif
                             <div class="stat-spark">
                                 <div class="spark-bars">
-                                    <span style="height:55%;background:#bcd4f5"></span>
-                                    <span style="height:40%;background:#a8c6f1"></span>
-                                    <span style="height:60%;background:#bcd4f5"></span>
-                                    <span style="height:35%;background:#8db5ec"></span>
-                                    <span style="height:50%;background:#a8c6f1"></span>
-                                    <span style="height:30%;background:#6699e0"></span>
-                                    <span style="height:70%;background:#8db5ec"></span>
-                                    <span style="height:90%;background:#3b7ddd"></span>
+                                    @foreach($spark['time'] as $h)
+                                        <span style="height:{{ $h }}%;background:#8db5ec"></span>
+                                    @endforeach
                                 </div>
                             </div>
                         </div>
 
                         <div class="stat-card">
                             <div class="stat-head">
-                                <span class="stat-label">Best Streak</span>
+                                <span class="stat-label">Current Streak</span>
                                 <span class="stat-badge red"><i class="fas fa-fire"></i></span>
                             </div>
-                            <div class="stat-number">14 <small>days</small></div>
-                            <div class="stat-change muted">Keep it up!</div>
+                            <div class="stat-number">{{ $streakDays }} <small>{{ \Illuminate\Support\Str::plural('day', $streakDays) }}</small></div>
+                            <div class="stat-change muted">{{ $streakDays > 0 ? 'Keep it up!' : 'Start a streak today!' }}</div>
                             <div class="stat-spark" style="display:flex;align-items:flex-end;">
-                                <i class="fas fa-fire" style="font-size:30px;color:#f0c9c9;margin:0 auto;"></i>
+                                <i class="fas fa-fire" style="font-size:30px;color:{{ $streakDays > 0 ? '#c0392b' : '#f0c9c9' }};margin:0 auto;"></i>
                             </div>
                         </div>
                     </div>
@@ -1250,134 +1295,99 @@
                                     <line x1="0" y1="173" x2="700" y2="173" stroke="#f3f3f3"/>
                                     <line x1="0" y1="228" x2="700" y2="228" stroke="#f3f3f3"/>
                                     <!-- area -->
-                                    <path d="M0,180 L100,118 L200,128 L300,108 L400,86 L500,64 L600,70 L700,58 L700,228 L0,228 Z"
-                                        fill="url(#areaFill)"/>
+                                    <path d="{{ $chart['area'] }}" fill="url(#areaFill)"/>
                                     <!-- line -->
                                     <polyline fill="none" stroke="#c0392b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
-                                        points="0,180 100,118 200,128 300,108 400,86 500,64 600,70 700,58"/>
-                                    <!-- highlighted point -->
-                                    <circle cx="400" cy="86" r="6" fill="#c0392b" stroke="white" stroke-width="2.5"/>
+                                        points="{{ $chart['points'] }}"/>
+                                    <!-- highlighted point (latest day) -->
+                                    <circle cx="{{ $chart['highlight']['x'] }}" cy="{{ $chart['highlight']['y'] }}" r="6" fill="#c0392b" stroke="white" stroke-width="2.5"/>
                                 </svg>
-                                <div class="chart-tooltip">
-                                    May 16, 2025<br>Accuracy: <strong>72%</strong>
-                                </div>
+                                @if($chart['has_data'])
+                                    <div class="chart-tooltip">
+                                        {{ $chart['highlight']['label'] }}<br>Accuracy: <strong>{{ $chart['highlight']['accuracy'] }}%</strong>
+                                    </div>
+                                @else
+                                    <div class="chart-tooltip">No quiz activity yet</div>
+                                @endif
                             </div>
                         </div>
                         <div class="x-axis" style="margin-left:48px;">
-                            <span>May 12</span>
-                            <span>May 13</span>
-                            <span>May 14</span>
-                            <span>May 15</span>
-                            <span>May 16</span>
-                            <span>May 17</span>
-                            <span>May 18</span>
+                            @foreach($chart['labels'] as $label)
+                                <span>{{ $label }}</span>
+                            @endforeach
                         </div>
                     </div>
 
                     <!-- BOTTOM 3 COLUMNS -->
+                    @php
+                        $modeIcons = [
+                            'adaptive' => ['fa-brain', 'green'],
+                            'topic'    => ['fa-tag', 'amber'],
+                            'timed'    => ['fa-clock', 'blue'],
+                            'challenge'=> ['fa-trophy', 'red'],
+                        ];
+                        $modeLabels = [
+                            'adaptive' => 'Adaptive Quiz', 'topic' => 'Topic Quiz',
+                            'timed' => 'Timed Quiz', 'challenge' => 'Challenge Quiz',
+                        ];
+                    @endphp
                     <div class="bottom-grid">
                         <!-- STRENGTHS -->
                         <div class="card">
                             <div class="card-head">
                                 <span class="card-title">Your Strengths</span>
-                                <a href="#" class="card-link">View All</a>
                             </div>
-                            <div class="list-item">
-                                <div class="list-icon green"><i class="fas fa-clipboard-check"></i></div>
-                                <div class="list-content">
-                                    <div class="list-title">Audit Planning</div>
-                                    <div class="list-sub">AUD</div>
+                            @forelse($strengths as $s)
+                                <div class="list-item">
+                                    <div class="list-icon green"><i class="fas fa-clipboard-check"></i></div>
+                                    <div class="list-content">
+                                        <div class="list-title">{{ $s->topic }}</div>
+                                        <div class="list-sub">{{ $s->subject_code }}</div>
+                                    </div>
+                                    <div class="list-value green">{{ $s->accuracy }}%</div>
                                 </div>
-                                <div class="list-value green">85%</div>
-                            </div>
-                            <div class="list-item">
-                                <div class="list-icon green"><i class="fas fa-calculator"></i></div>
-                                <div class="list-content">
-                                    <div class="list-title">Tax Computation</div>
-                                    <div class="list-sub">TAX</div>
-                                </div>
-                                <div class="list-value green">82%</div>
-                            </div>
-                            <div class="list-item">
-                                <div class="list-icon green"><i class="fas fa-file-invoice-dollar"></i></div>
-                                <div class="list-content">
-                                    <div class="list-title">Financial Statements</div>
-                                    <div class="list-sub">FAR</div>
-                                </div>
-                                <div class="list-value green">78%</div>
-                            </div>
+                            @empty
+                                <div style="color:#999;font-size:12px;padding:14px 0;">Take a few quizzes to reveal your strongest topics.</div>
+                            @endforelse
                         </div>
 
                         <!-- WEAKNESSES -->
                         <div class="card">
                             <div class="card-head">
                                 <span class="card-title">Your Weaknesses</span>
-                                <a href="#" class="card-link">View All</a>
                             </div>
-                            <div class="list-item">
-                                <div class="list-icon red"><i class="fas fa-chart-pie"></i></div>
-                                <div class="list-content">
-                                    <div class="list-title">Consolidated FS</div>
-                                    <div class="list-sub">AFAR</div>
+                            @forelse($weaknesses as $w)
+                                <div class="list-item">
+                                    <div class="list-icon red"><i class="fas fa-triangle-exclamation"></i></div>
+                                    <div class="list-content">
+                                        <div class="list-title">{{ $w->topic }}</div>
+                                        <div class="list-sub">{{ $w->subject_code }}</div>
+                                    </div>
+                                    <div class="list-value red">{{ $w->accuracy }}%</div>
                                 </div>
-                                <div class="list-value red">38%</div>
-                            </div>
-                            <div class="list-item">
-                                <div class="list-icon red"><i class="fas fa-handshake"></i></div>
-                                <div class="list-content">
-                                    <div class="list-title">RFBT - Partnerships</div>
-                                    <div class="list-sub">RFBT</div>
-                                </div>
-                                <div class="list-value red">42%</div>
-                            </div>
-                            <div class="list-item">
-                                <div class="list-icon red"><i class="fas fa-cogs"></i></div>
-                                <div class="list-content">
-                                    <div class="list-title">Management Advisory Services</div>
-                                    <div class="list-sub">MS</div>
-                                </div>
-                                <div class="list-value red">45%</div>
-                            </div>
+                            @empty
+                                <div style="color:#999;font-size:12px;padding:14px 0;">No weak topics yet - keep practising to keep it that way!</div>
+                            @endforelse
                         </div>
 
                         <!-- RECENT ACTIVITY -->
                         <div class="card">
                             <div class="card-head">
                                 <span class="card-title">Recent Activity</span>
-                                <a href="#" class="card-link">View All</a>
                             </div>
-                            <div class="list-item">
-                                <div class="list-icon green"><i class="fas fa-brain"></i></div>
-                                <div class="list-content">
-                                    <div class="list-title">Adaptive Quiz &ndash; FAR</div>
-                                    <div class="list-sub">Scored 85%</div>
+                            @forelse($recentActivity as $a)
+                                @php [$icon, $tone] = $modeIcons[$a->mode] ?? ['fa-file-alt', 'grey']; @endphp
+                                <div class="list-item">
+                                    <div class="list-icon {{ $tone }}"><i class="fas {{ $icon }}"></i></div>
+                                    <div class="list-content">
+                                        <div class="list-title">{{ $modeLabels[$a->mode] ?? 'Quiz' }} &ndash; {{ $a->subject_code ?? 'General' }}</div>
+                                        <div class="list-sub">Scored {{ (int) round($a->score_percent) }}%</div>
+                                    </div>
+                                    <div class="list-meta">{{ \Illuminate\Support\Carbon::parse($a->completed_at)->diffForHumans(null, true) }} ago</div>
                                 </div>
-                                <div class="list-meta">2h ago</div>
-                            </div>
-                            <div class="list-item">
-                                <div class="list-icon amber"><i class="fas fa-tag"></i></div>
-                                <div class="list-content">
-                                    <div class="list-title">Topic Quiz &ndash; TAX</div>
-                                    <div class="list-sub">Scored 72%</div>
-                                </div>
-                                <div class="list-meta">1d ago</div>
-                            </div>
-                            <div class="list-item">
-                                <div class="list-icon blue"><i class="fas fa-clock"></i></div>
-                                <div class="list-content">
-                                    <div class="list-title">Mock Exam &ndash; AUD</div>
-                                    <div class="list-sub">Scored 68%</div>
-                                </div>
-                                <div class="list-meta">2d ago</div>
-                            </div>
-                            <div class="list-item">
-                                <div class="list-icon green"><i class="fas fa-brain"></i></div>
-                                <div class="list-content">
-                                    <div class="list-title">Adaptive Quiz &ndash; MS</div>
-                                    <div class="list-sub">Scored 80%</div>
-                                </div>
-                                <div class="list-meta">3d ago</div>
-                            </div>
+                            @empty
+                                <div style="color:#999;font-size:12px;padding:14px 0;">No quizzes completed yet.</div>
+                            @endforelse
                         </div>
                     </div>
                 </div>
@@ -1393,30 +1403,44 @@
                             <div class="donut">
                                 <svg viewBox="0 0 36 36">
                                     <circle cx="18" cy="18" r="15.9" fill="none" stroke="#f0f0f0" stroke-width="3.2"/>
-                                    <!-- Strong 42% green -->
-                                    <circle cx="18" cy="18" r="15.9" fill="none" stroke="#21a366" stroke-width="3.2"
-                                        stroke-dasharray="42 58" stroke-dashoffset="0" stroke-linecap="round"/>
-                                    <!-- Medium 30% amber -->
-                                    <circle cx="18" cy="18" r="15.9" fill="none" stroke="#f0b429" stroke-width="3.2"
-                                        stroke-dasharray="30 70" stroke-dashoffset="-42" stroke-linecap="round"/>
-                                    <!-- Weak 28% red -->
-                                    <circle cx="18" cy="18" r="15.9" fill="none" stroke="#c0392b" stroke-width="3.2"
-                                        stroke-dasharray="28 72" stroke-dashoffset="-72" stroke-linecap="round"/>
+                                    @if($mastery['has_data'])
+                                        <!-- Strong (green) -->
+                                        @if($mastery['strong'] > 0)
+                                        <circle cx="18" cy="18" r="15.9" fill="none" stroke="#21a366" stroke-width="3.2"
+                                            stroke-dasharray="{{ $mastery['strong_dash'] }} {{ 100 - $mastery['strong_dash'] }}" stroke-dashoffset="0"/>
+                                        @endif
+                                        <!-- Medium (amber) -->
+                                        @if($mastery['medium'] > 0)
+                                        <circle cx="18" cy="18" r="15.9" fill="none" stroke="#f0b429" stroke-width="3.2"
+                                            stroke-dasharray="{{ $mastery['medium_dash'] }} {{ 100 - $mastery['medium_dash'] }}" stroke-dashoffset="{{ $mastery['medium_offset'] }}"/>
+                                        @endif
+                                        <!-- Weak (red) -->
+                                        @if($mastery['weak'] > 0)
+                                        <circle cx="18" cy="18" r="15.9" fill="none" stroke="#c0392b" stroke-width="3.2"
+                                            stroke-dasharray="{{ $mastery['weak_dash'] }} {{ 100 - $mastery['weak_dash'] }}" stroke-dashoffset="{{ $mastery['weak_offset'] }}"/>
+                                        @endif
+                                    @endif
                                 </svg>
                                 <div class="donut-center">
-                                    <span class="num">72%</span>
+                                    <span class="num">{{ $mastery['level'] }}%</span>
                                     <span class="lbl">Mastery Level</span>
                                 </div>
                             </div>
                             <div class="mastery-legend">
-                                <div class="row"><span class="dot strong"></span> Strong <span class="pct">42%</span></div>
-                                <div class="row"><span class="dot medium"></span> Medium <span class="pct">30%</span></div>
-                                <div class="row"><span class="dot weak"></span> Weak <span class="pct">28%</span></div>
+                                <div class="row"><span class="dot strong"></span> Strong <span class="pct">{{ $mastery['strong'] }}%</span></div>
+                                <div class="row"><span class="dot medium"></span> Medium <span class="pct">{{ $mastery['medium'] }}%</span></div>
+                                <div class="row"><span class="dot weak"></span> Weak <span class="pct">{{ $mastery['weak'] }}%</span></div>
                             </div>
                         </div>
                         <div class="mastery-note">
                             <i class="fas fa-shield-alt"></i>
-                            <span>You're doing great! Focus on your weak topics to level up your mastery.</span>
+                            @if(! $mastery['has_data'])
+                                <span>Take a quiz to start building your mastery profile.</span>
+                            @elseif($mastery['level'] >= 75)
+                                <span>You're doing great! Keep practising your weak topics to stay sharp.</span>
+                            @else
+                                <span>Focus on your weak topics to level up your overall mastery.</span>
+                            @endif
                         </div>
                     </div>
 
@@ -1424,32 +1448,13 @@
                     <div class="card">
                         <div class="card-head">
                             <span class="card-title">Accuracy by Subject Area</span>
-                            <a href="#" class="card-link">View All</a>
                         </div>
-                        <div class="accuracy-item">
-                            <div class="accuracy-top"><span>Auditing (AUD)</span><span class="val">78%</span></div>
-                            <div class="accuracy-bar"><span style="width:78%;background:#c0392b"></span></div>
-                        </div>
-                        <div class="accuracy-item">
-                            <div class="accuracy-top"><span>Taxation (TAX)</span><span class="val">65%</span></div>
-                            <div class="accuracy-bar"><span style="width:65%;background:#e8910b"></span></div>
-                        </div>
-                        <div class="accuracy-item">
-                            <div class="accuracy-top"><span>Management Services (MS)</span><span class="val">71%</span></div>
-                            <div class="accuracy-bar"><span style="width:71%;background:#21a366"></span></div>
-                        </div>
-                        <div class="accuracy-item">
-                            <div class="accuracy-top"><span>Financial Accounting &amp; Reporting (FAR)</span><span class="val">69%</span></div>
-                            <div class="accuracy-bar"><span style="width:69%;background:#3b7ddd"></span></div>
-                        </div>
-                        <div class="accuracy-item">
-                            <div class="accuracy-top"><span>Regulatory Framework (RFBT)</span><span class="val">62%</span></div>
-                            <div class="accuracy-bar"><span style="width:62%;background:#8e5bd0"></span></div>
-                        </div>
-                        <div class="accuracy-item">
-                            <div class="accuracy-top"><span>Advanced FAR (AFAR)</span><span class="val">58%</span></div>
-                            <div class="accuracy-bar"><span style="width:58%;background:#e8910b"></span></div>
-                        </div>
+                        @foreach($subjectAccuracy as $subj)
+                            <div class="accuracy-item">
+                                <div class="accuracy-top"><span>{{ $subj->name }} ({{ $subj->code }})</span><span class="val">{{ $subj->accuracy }}%</span></div>
+                                <div class="accuracy-bar"><span style="width:{{ $subj->accuracy }}%;background:{{ $subj->color }}"></span></div>
+                            </div>
+                        @endforeach
                     </div>
 
                     <!-- INSIGHTS & RECOMMENDATIONS -->
@@ -1457,30 +1462,16 @@
                         <div class="card-head">
                             <span class="card-title">Insights &amp; Recommendations</span>
                         </div>
-                        <div class="insight-item red">
-                            <div class="insight-icon"><i class="fas fa-chart-line"></i></div>
-                            <div class="insight-content">
-                                <div class="insight-title">Focus on weak topics</div>
-                                <div class="insight-desc">Spend more time on Consolidated FS and RFBT - Partnerships.</div>
-                            </div>
-                            <i class="fas fa-arrow-right insight-arrow"></i>
-                        </div>
-                        <div class="insight-item green">
-                            <div class="insight-icon"><i class="fas fa-book-open"></i></div>
-                            <div class="insight-content">
-                                <div class="insight-title">Review your mistakes</div>
-                                <div class="insight-desc">You got 27 questions wrong. Review them to improve.</div>
-                            </div>
-                            <i class="fas fa-arrow-right insight-arrow"></i>
-                        </div>
-                        <div class="insight-item blue">
-                            <div class="insight-icon"><i class="fas fa-clock"></i></div>
-                            <div class="insight-content">
-                                <div class="insight-title">Practice more timed quizzes</div>
-                                <div class="insight-desc">Improve your speed. Try Timed Mode quizzes.</div>
-                            </div>
-                            <i class="fas fa-arrow-right insight-arrow"></i>
-                        </div>
+                        @foreach($insights as $insight)
+                            <a href="{{ route('adaptive-quizzes') }}" class="insight-item {{ $insight['tone'] }}" style="text-decoration:none;">
+                                <div class="insight-icon"><i class="fas {{ $insight['icon'] }}"></i></div>
+                                <div class="insight-content">
+                                    <div class="insight-title">{{ $insight['title'] }}</div>
+                                    <div class="insight-desc">{{ $insight['desc'] }}</div>
+                                </div>
+                                <i class="fas fa-arrow-right insight-arrow"></i>
+                            </a>
+                        @endforeach
                     </div>
                 </div>
             </div>
@@ -1490,22 +1481,158 @@
                 <div class="consistency-icon"><i class="fas fa-shield-alt"></i></div>
                 <div class="consistency-text">
                     <h4>Consistency is the key!</h4>
-                    <p>You've been consistent for 7 days in a row.<br>Keep it up and achieve your goals!</p>
+                    @if($streakDays > 0)
+                        <p>You've been consistent for {{ $streakDays }} {{ \Illuminate\Support\Str::plural('day', $streakDays) }} in a row.<br>Keep it up and achieve your goals!</p>
+                    @else
+                        <p>Practise a little every day to build a streak.<br>Start a quiz today to get going!</p>
+                    @endif
                 </div>
                 <div class="streak-count">
-                    <div class="num">7</div>
+                    <div class="num">{{ $streakDays }}</div>
                     <div class="lbl">Current Streak days</div>
                 </div>
                 <div class="streak-days">
-                    <div class="streak-day"><div class="d">M</div><div class="streak-check done"><i class="fas fa-check"></i></div></div>
-                    <div class="streak-day"><div class="d">T</div><div class="streak-check done"><i class="fas fa-check"></i></div></div>
-                    <div class="streak-day"><div class="d">W</div><div class="streak-check done"><i class="fas fa-check"></i></div></div>
-                    <div class="streak-day"><div class="d">T</div><div class="streak-check done"><i class="fas fa-check"></i></div></div>
-                    <div class="streak-day"><div class="d">F</div><div class="streak-check done"><i class="fas fa-check"></i></div></div>
-                    <div class="streak-day"><div class="d">S</div><div class="streak-check done"><i class="fas fa-check"></i></div></div>
-                    <div class="streak-day"><div class="d">S</div><div class="streak-check empty"></div></div>
+                    @foreach($weekActivity['days'] as $day)
+                        <div class="streak-day">
+                            <div class="d">{{ $day['label'] }}</div>
+                            <div class="streak-check {{ $day['done'] ? 'done' : 'empty' }}">
+                                @if($day['done'])<i class="fas fa-check"></i>@endif
+                            </div>
+                        </div>
+                    @endforeach
                 </div>
-                <button class="consistency-btn">View Calendar</button>
+                <a href="{{ route('calendar') }}" class="consistency-btn" style="text-decoration:none;display:inline-flex;align-items:center;">View Calendar</a>
+            </div>
+
+            </div><!-- /overview panel -->
+
+            <!-- ============ BY SUBJECT TAB ============ -->
+            <div class="tab-panel" data-panel="subject" style="display:none;">
+                <div class="card">
+                    <div class="card-head"><span class="card-title">Accuracy by Subject Area</span></div>
+                    <table class="perf-table">
+                        <thead>
+                            <tr><th>Subject</th><th>Questions</th><th>Correct</th><th>Accuracy</th><th style="width:30%;">Progress</th></tr>
+                        </thead>
+                        <tbody>
+                            @foreach($subjectAccuracy as $subj)
+                                <tr>
+                                    <td><strong>{{ $subj->code }}</strong> <span style="color:#999;">{{ $subj->name }}</span></td>
+                                    <td>{{ number_format($subj->attempts) }}</td>
+                                    <td>{{ number_format($subj->correct) }}</td>
+                                    <td style="font-weight:700;color:{{ $subj->color }};">{{ $subj->accuracy }}%</td>
+                                    <td>
+                                        <div class="accuracy-bar"><span style="width:{{ $subj->accuracy }}%;background:{{ $subj->color }}"></span></div>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ============ BY TOPIC TAB ============ -->
+            <div class="tab-panel" data-panel="topic" style="display:none;">
+                <div class="card">
+                    <div class="card-head"><span class="card-title">Accuracy by Topic</span></div>
+                    @if($byTopic->isEmpty())
+                        <div style="color:#999;font-size:13px;padding:20px 0;text-align:center;">
+                            No topic data yet. Complete a few quizzes to see your per-topic performance.
+                        </div>
+                    @else
+                        <table class="perf-table">
+                            <thead>
+                                <tr><th>Topic</th><th>Subject</th><th>Questions</th><th>Correct</th><th>Accuracy</th><th style="width:25%;">Progress</th></tr>
+                            </thead>
+                            <tbody>
+                                @foreach($byTopic as $t)
+                                    @php $tc = $t->accuracy >= 75 ? '#21a366' : ($t->accuracy >= 60 ? '#3b7ddd' : ($t->accuracy >= 45 ? '#e8910b' : '#c0392b')); @endphp
+                                    <tr>
+                                        <td><strong>{{ $t->topic }}</strong></td>
+                                        <td><span style="color:#999;">{{ $t->subject_code }}</span></td>
+                                        <td>{{ number_format($t->attempts) }}</td>
+                                        <td>{{ number_format($t->correct) }}</td>
+                                        <td style="font-weight:700;color:{{ $tc }};">{{ $t->accuracy }}%</td>
+                                        <td><div class="accuracy-bar"><span style="width:{{ $t->accuracy }}%;background:{{ $tc }}"></span></div></td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    @endif
+                </div>
+            </div>
+
+            <!-- ============ BY QUIZ TYPE TAB ============ -->
+            <div class="tab-panel" data-panel="quiztype" style="display:none;">
+                <div class="bottom-grid" style="grid-template-columns:repeat(4,1fr);">
+                    @foreach($byQuizType as $q)
+                        <div class="card">
+                            <div class="card-head">
+                                <span class="card-title" style="display:flex;align-items:center;gap:10px;">
+                                    <span class="list-icon {{ $q['tone'] }}" style="width:32px;height:32px;"><i class="fas {{ $q['icon'] }}"></i></span>
+                                    {{ $q['label'] }}
+                                </span>
+                            </div>
+                            <div style="font-size:34px;font-weight:700;color:{{ $q['color'] }};line-height:1;">{{ $q['accuracy'] }}%</div>
+                            <div style="font-size:11px;color:#999;margin-bottom:16px;">Accuracy</div>
+                            <div class="accuracy-bar" style="margin-bottom:18px;"><span style="width:{{ $q['accuracy'] }}%;background:{{ $q['color'] }}"></span></div>
+                            <div style="display:flex;justify-content:space-between;font-size:12px;color:#666;margin-bottom:8px;">
+                                <span>Quizzes taken</span><strong>{{ $q['sessions'] }}</strong>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;font-size:12px;color:#666;margin-bottom:8px;">
+                                <span>Questions</span><strong>{{ number_format($q['attempted']) }}</strong>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;font-size:12px;color:#666;">
+                                <span>Correct</span><strong>{{ number_format($q['correct']) }}</strong>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+
+            <!-- ============ BY TIME TAB ============ -->
+            <div class="tab-panel" data-panel="time" style="display:none;">
+                <div class="perf-grid">
+                    <div class="perf-main">
+                        <div class="card">
+                            <div class="card-head">
+                                <span class="card-title">Accuracy by Day of Week</span>
+                                @if($byTime['best_day'])
+                                    <span class="card-link" style="cursor:default;">Best: {{ $byTime['best_day'] }}</span>
+                                @endif
+                            </div>
+                            @foreach($byTime['weekday'] as $wd)
+                                <div class="accuracy-item">
+                                    <div class="accuracy-top">
+                                        <span>{{ $wd['label'] }} <span style="color:#bbb;">({{ $wd['attempted'] }} q)</span></span>
+                                        <span class="val">{{ $wd['accuracy'] }}%</span>
+                                    </div>
+                                    <div class="accuracy-bar"><span style="width:{{ $wd['accuracy'] }}%;background:{{ $wd['color'] }}"></span></div>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                    <div class="perf-side">
+                        <div class="card">
+                            <div class="card-head"><span class="card-title">Last 14 Days</span></div>
+                            @if(! $byTime['has_data'])
+                                <div style="color:#999;font-size:13px;padding:14px 0;text-align:center;">No activity in this period.</div>
+                            @else
+                                @foreach(array_reverse($byTime['daily']) as $d)
+                                    <div class="list-item">
+                                        <div class="list-content">
+                                            <div class="list-title">{{ $d['date'] }}</div>
+                                            <div class="list-sub">{{ $d['attempted'] }} answered &bull; {{ $d['correct'] }} correct</div>
+                                        </div>
+                                        <div class="list-value" style="color:{{ $d['attempted'] > 0 ? $d['color'] : '#ccc' }};">
+                                            {{ $d['attempted'] > 0 ? $d['accuracy'].'%' : '—' }}
+                                        </div>
+                                    </div>
+                                @endforeach
+                            @endif
+                        </div>
+                    </div>
+                </div>
             </div>
         </main>
     </div>
@@ -1534,11 +1661,23 @@
                 });
             }
 
-            // Tabs
+            // Tabs — switch the active button AND show the matching panel.
+            const panels = document.querySelectorAll('.tab-panel');
             document.querySelectorAll('.tab').forEach(tab => {
                 tab.addEventListener('click', function () {
                     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
                     this.classList.add('active');
+
+                    const target = this.dataset.tab;
+                    panels.forEach(p => {
+                        const show = p.dataset.panel === target;
+                        p.style.display = show ? '' : 'none';
+                        if (show) {
+                            p.querySelectorAll('.card, .stats-grid, .consistency').forEach((el, i) => {
+                                el.style.animation = `slideUp 0.4s ease ${i * 0.05}s both`;
+                            });
+                        }
+                    });
                 });
             });
         });

@@ -26,20 +26,18 @@ class DashboardController extends Controller
             ? max(0, (int) ceil((Carbon::parse($examDate)->startOfDay()->timestamp - Carbon::now()->startOfDay()->timestamp) / 86400))
             : null;
 
-        // ── Questions answered (questions the student actually answered) ──
-        // Counts only graded answers where a choice was selected, in completed
-        // quizzes - skipped questions and abandoned quizzes are not counted.
-        $answeredBase = fn () => DB::table('quiz_answers')
-            ->join('quiz_sessions', 'quiz_sessions.id', '=', 'quiz_answers.session_id')
-            ->where('quiz_sessions.student_id', $studentId)
-            ->whereNotNull('quiz_sessions.completed_at')
-            ->whereNotNull('quiz_answers.selected_choice');
+        // ── Questions attempted (every question served in completed quizzes) ──
+        // Counts all served questions (total_items) so a skipped question still
+        // counts as attempted. This matches the Performance and Quizzes pages.
+        $attemptedBase = fn () => DB::table('quiz_sessions')
+            ->where('student_id', $studentId)
+            ->whereNotNull('completed_at');
 
-        $questionsAnswered = (int) $answeredBase()->count();
+        $questionsAttempted = (int) $attemptedBase()->sum('total_items');
 
-        $questionsThisWeek = (int) $answeredBase()
-            ->where('quiz_sessions.started_at', '>=', Carbon::now()->subDays(7))
-            ->count();
+        $questionsThisWeek = (int) $attemptedBase()
+            ->where('started_at', '>=', Carbon::now()->subDays(7))
+            ->sum('total_items');
 
         // ── Study time ────────────────────────────────────────────────────
         $studySeconds     = (int) DB::table('quiz_sessions')->where('student_id', $studentId)->sum('duration_secs');
@@ -123,7 +121,7 @@ class DashboardController extends Controller
             'streak',
             'points',
             'daysToExam',
-            'questionsAnswered',
+            'questionsAttempted',
             'questionsThisWeek',
             'studyHours',
             'studyHoursWeek',
