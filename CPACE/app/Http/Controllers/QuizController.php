@@ -26,7 +26,7 @@ class QuizController extends Controller
     private const MODES = ['adaptive', 'topic', 'timed', 'challenge'];
 
     /** Seconds the student gets per question in Timed mode. */
-    private const TIMED_SECONDS_PER_QUESTION = 45;
+    private const TIMED_SECONDS_PER_QUESTION = 60;
 
     /**
      * Adaptive quiz landing page with live per-subject question counts.
