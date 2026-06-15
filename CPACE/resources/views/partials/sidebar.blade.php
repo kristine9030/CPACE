@@ -14,6 +14,8 @@
         color: #fff;
         position: fixed;
         top: 0; left: 0;
+        padding: 0;
+        margin: 0;
         width: 230px;
         height: 100vh;
         display: flex;
@@ -52,6 +54,7 @@
         display: flex;
         align-items: center;
         gap: 8px;
+        margin: 0;
         padding: 14px 20px 14px;
         border-bottom: 1px solid rgba(255,255,255,0.1);
         flex-shrink: 0;
@@ -106,6 +109,7 @@
         gap: 11px;
         margin: 1px 10px;
         padding: 9px 12px;
+        border: 0;
         border-radius: 8px;
         color: rgba(255,255,255,0.65);
         text-decoration: none;
@@ -128,6 +132,7 @@
     }
     .sidebar .sidebar-nav li a i {
         width: 17px;
+        margin: 0;
         text-align: center;
         font-size: 14px;
         flex-shrink: 0;
@@ -147,6 +152,8 @@
 
     /* ── Footer / user ── */
     .sidebar .sidebar-footer {
+        position: static;
+        margin: 0;
         border-top: 1px solid rgba(255,255,255,0.1);
         padding: 14px 12px;
         flex-shrink: 0;
@@ -225,7 +232,12 @@
     }
 
     /* ── Layout ── */
-    .main-content { margin-left: 230px; }
+    .main-content {
+        margin-left: 230px;
+        padding: 30px 40px;
+        min-height: 100vh;
+        transition: margin-left 0.28s cubic-bezier(.4,0,.2,1);
+    }
     .sidebar.collapsed ~ .main-content { margin-left: 68px; }
 
     @media (max-width: 900px) {
