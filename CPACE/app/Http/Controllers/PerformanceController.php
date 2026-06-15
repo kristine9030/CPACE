@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\WeaknessDetector;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class PerformanceController extends Controller
 {
+    public function __construct(private WeaknessDetector $weakness) {}
+
     /**
      * Student performance dashboard - every figure on the page is computed live
      * from the student's own quiz history (quiz_sessions / quiz_answers) and the
@@ -105,17 +108,37 @@ class PerformanceController extends Controller
             ->select(
                 'topics.name as topic',
                 'subjects.code as subject_code',
-                'performance_records.correct_count as correct',
-                'performance_records.total_attempts as attempts'
+                'performance_records.correct_count',
+                'performance_records.total_attempts',
+                'performance_records.consecutive_wrong'
             )
             ->get()
             ->map(function ($r) {
+                // Flag weak areas with the SAME rule the Spaced Repetition
+                // Calendar uses (WeaknessDetector): accuracy < 60% over >= 5
+                // attempts, or 3 wrong in a row. This keeps the two pages in
+                // agreement so a topic the calendar treats as High priority is
+                // the same topic shown here under Weaknesses.
+                [$isWeak] = $this->weakness->evaluate($r);
+                $r->correct  = (int) $r->correct_count;
+                $r->attempts = (int) $r->total_attempts;
                 $r->accuracy = (int) round($r->correct / max($r->attempts, 1) * 100);
+                $r->is_weak  = $isWeak;
                 return $r;
             });
 
-        $strengths  = $topicStats->sortByDesc('accuracy')->take(3)->values();
-        $weaknesses = $topicStats->sortBy('accuracy')->take(3)->values();
+        // Strengths / weaknesses, classified to match the calendar page:
+        //   - Weakness: flagged by WeaknessDetector (same as the calendar's
+        //     High-priority reviews).
+        //   - Strength: at/above the calendar's mastery line (>= 75%) with
+        //     enough evidence (>= MIN_ATTEMPTS) so one lucky question can't
+        //     label a topic strong.
+        // Every qualifying topic is listed - not capped at 3.
+        $strengths  = $topicStats
+            ->where('attempts', '>=', WeaknessDetector::MIN_ATTEMPTS)
+            ->where('accuracy', '>=', 75)
+            ->sortByDesc('accuracy')->values();
+        $weaknesses = $topicStats->where('is_weak', true)->sortBy('accuracy')->values();
 
         // ── Recent activity (latest completed sessions) ────────────────────
         $recentActivity = DB::table('quiz_sessions')

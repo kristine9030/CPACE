@@ -890,6 +890,19 @@
 
         .list-item:last-child { border-bottom: none; }
 
+        /* Scrollable list for cards that may hold many topics (strengths/weaknesses) */
+        .list-scroll { max-height: 280px; overflow-y: auto; }
+        .list-scroll::-webkit-scrollbar { width: 6px; }
+        .list-scroll::-webkit-scrollbar-thumb { background: #e0e0e0; border-radius: 3px; }
+        .count-badge {
+            font-size: 11px;
+            font-weight: 600;
+            color: #777;
+            background: #f1f1f1;
+            border-radius: 10px;
+            padding: 2px 9px;
+        }
+
         .list-icon {
             width: 36px;
             height: 36px;
@@ -1332,38 +1345,48 @@
                         <div class="card">
                             <div class="card-head">
                                 <span class="card-title">Your Strengths</span>
+                                @if($strengths->isNotEmpty())
+                                    <span class="count-badge">{{ $strengths->count() }} topic{{ $strengths->count() === 1 ? '' : 's' }} &middot; 75%+</span>
+                                @endif
                             </div>
-                            @forelse($strengths as $s)
-                                <div class="list-item">
-                                    <div class="list-icon green"><i class="fas fa-clipboard-check"></i></div>
-                                    <div class="list-content">
-                                        <div class="list-title">{{ $s->topic }}</div>
-                                        <div class="list-sub">{{ $s->subject_code }}</div>
+                            <div class="list-scroll">
+                                @forelse($strengths as $s)
+                                    <div class="list-item">
+                                        <div class="list-icon green"><i class="fas fa-clipboard-check"></i></div>
+                                        <div class="list-content">
+                                            <div class="list-title">{{ $s->topic }}</div>
+                                            <div class="list-sub">{{ $s->subject_code }}</div>
+                                        </div>
+                                        <div class="list-value green">{{ $s->accuracy }}%</div>
                                     </div>
-                                    <div class="list-value green">{{ $s->accuracy }}%</div>
-                                </div>
-                            @empty
-                                <div style="color:#999;font-size:12px;padding:14px 0;">Take a few quizzes to reveal your strongest topics.</div>
-                            @endforelse
+                                @empty
+                                    <div style="color:#999;font-size:12px;padding:14px 0;">No mastered topics yet &ndash; reach 75%+ over a few quizzes to build your strengths.</div>
+                                @endforelse
+                            </div>
                         </div>
 
                         <!-- WEAKNESSES -->
                         <div class="card">
                             <div class="card-head">
                                 <span class="card-title">Your Weaknesses</span>
+                                @if($weaknesses->isNotEmpty())
+                                    <span class="count-badge">{{ $weaknesses->count() }} topic{{ $weaknesses->count() === 1 ? '' : 's' }} &middot; needs review</span>
+                                @endif
                             </div>
-                            @forelse($weaknesses as $w)
-                                <div class="list-item">
-                                    <div class="list-icon red"><i class="fas fa-triangle-exclamation"></i></div>
-                                    <div class="list-content">
-                                        <div class="list-title">{{ $w->topic }}</div>
-                                        <div class="list-sub">{{ $w->subject_code }}</div>
+                            <div class="list-scroll">
+                                @forelse($weaknesses as $w)
+                                    <div class="list-item">
+                                        <div class="list-icon red"><i class="fas fa-triangle-exclamation"></i></div>
+                                        <div class="list-content">
+                                            <div class="list-title">{{ $w->topic }}</div>
+                                            <div class="list-sub">{{ $w->subject_code }}</div>
+                                        </div>
+                                        <div class="list-value red">{{ $w->accuracy }}%</div>
                                     </div>
-                                    <div class="list-value red">{{ $w->accuracy }}%</div>
-                                </div>
-                            @empty
-                                <div style="color:#999;font-size:12px;padding:14px 0;">No weak topics yet - keep practising to keep it that way!</div>
-                            @endforelse
+                                @empty
+                                    <div style="color:#999;font-size:12px;padding:14px 0;">No weak topics flagged &ndash; keep practising to keep it that way!</div>
+                                @endforelse
+                            </div>
                         </div>
 
                         <!-- RECENT ACTIVITY -->
