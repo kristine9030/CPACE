@@ -318,9 +318,9 @@
 
         /* ─── WELCOME BANNER ─── */
         .welcome-banner {
-            background: white;
+            background: linear-gradient(to right, #f9e5e5 0%, #fdf0f0 50%, #ffffff 100%);
             border-radius: 16px;
-            padding: 32px 36px;
+            padding: 20px 28px;
             margin-bottom: 22px;
             display: grid;
             grid-template-columns: 1fr auto;
@@ -350,6 +350,18 @@
             font-size: 14px;
             font-weight: 600;
             color: var(--accent-red);
+        }
+
+        .welcome-banner-video {
+            height: 220px;
+            width: auto;
+            object-fit: contain;
+            flex-shrink: 0;
+            align-self: center;
+        }
+
+        @media (max-width: 768px) {
+            .welcome-banner-video { display: none; }
         }
 
         .welcome-illustration {
@@ -775,11 +787,7 @@
                 @endif
             </button>
             <div class="header-dropdown-wrap">
-                @php
-                    $nameParts = preg_split('/\s+/', trim(Auth::user()->name));
-                    $initials = strtoupper(substr($nameParts[0], 0, 1) . (count($nameParts) > 1 ? substr(end($nameParts), 0, 1) : ''));
-                @endphp
-                <button class="profile-avatar" id="profileBtn">{{ $initials }}</button>
+                <button class="profile-avatar" id="profileBtn">@include('partials.avatar-content')</button>
                 <div class="dropdown-menu" id="profileDropdown">
                     <a href="#"><i class="fas fa-user"></i> Profile Settings</a>
                     <a href="#"><i class="fas fa-chart-line"></i> My Progress</a>
@@ -807,6 +815,9 @@
                 @endif
             </div>
         </div>
+        <video class="welcome-banner-video" autoplay loop muted playsinline>
+            <source src="{{ asset('images/GIF HEADER.mp4') }}" type="video/mp4">
+        </video>
     </div>
 
     <!-- METRICS -->
@@ -918,7 +929,7 @@
             @endphp
             @foreach($subjectMastery as $i => $subject)
                 <a href="{{ route('subjects') }}" class="subject-item" style="text-decoration:none;">
-                    <div class="subject-icon s{{ ($i % 5) + 1 }}"><i class="fas {{ $subjectIcons[$subject->code] ?? 'fa-book' }}"></i></div>
+                    <div class="subject-icon s{{ $i % 5 + 1 }}"><i class="fas {{ $subjectIcons[$subject->code] ?? 'fa-book' }}"></i></div>
                     <span class="subject-name">{{ $subject->name }}</span>
                     <span style="font-size:13px; font-weight:600; color:var(--gray-700); margin-right:10px;">{{ $subject->mastery }}%</span>
                     <i class="fas fa-chevron-right subject-arrow"></i>

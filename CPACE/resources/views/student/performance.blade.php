@@ -1118,11 +1118,7 @@
                             <span class="notification-badge">3</span>
                         </button>
                         <div style="position: relative;">
-                            @php
-                                $nameParts = preg_split('/\s+/', trim(Auth::user()->name)) ?: [''];
-                                $initials = strtoupper(substr($nameParts[0], 0, 1) . substr(end($nameParts), 0, 1));
-                            @endphp
-                            <button class="profile-btn" id="profileBtn">{{ $initials }}</button>
+                            <button class="profile-btn" id="profileBtn">@include('partials.avatar-content')</button>
                             <div class="dropdown-menu" id="profileDropdown">
                                 <a href="#"><i class="fas fa-user"></i> Profile Settings</a>
                                 <a href="#"><i class="fas fa-chart-line"></i> My Progress</a>

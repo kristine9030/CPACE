@@ -270,6 +270,7 @@
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 22px;
+            margin-top: 40px;
         }
 
         .subject-card {
@@ -386,6 +387,10 @@
     <!-- TOP BAR -->
     <div class="top-bar anim" style="animation-delay:0s">
         <div class="top-bar-left">
+            <div>
+                <div class="page-title">Subjects</div>
+                <div class="page-subtitle">Review by subject area and strengthen your knowledge.</div>
+            </div>
         </div>
         <div class="top-bar-right">
             <div class="search-wrap">
@@ -397,7 +402,7 @@
                 <span class="badge">3</span>
             </button>
             <div class="header-dropdown-wrap">
-                <button class="profile-avatar" id="profileBtn">{{ strtoupper(substr(Auth::user()->name, 0, 1)) }}{{ strtoupper(substr(explode(' ', Auth::user()->name)[array_key_last(explode(' ', Auth::user()->name))], 0, 1)) }}</button>
+                <button class="profile-avatar" id="profileBtn">@include('partials.avatar-content')</button>
                 <div class="dropdown-menu" id="profileDropdown">
                     <a href="#"><i class="fas fa-user"></i> Profile Settings</a>
                     <a href="#"><i class="fas fa-chart-line"></i> My Progress</a>
@@ -408,24 +413,6 @@
                     </form>
                 </div>
             </div>
-        </div>
-    </div>
-
-    <!-- PAGE HEADER -->
-    <div class="page-header-row anim" style="animation-delay:0.06s">
-        <div>
-            <div class="page-title">Subjects</div>
-            <div class="page-subtitle">Review by subject area and strengthen your knowledge.</div>
-        </div>
-        <div class="page-header-illus">
-            <div class="illus-circle-bg"></div>
-            <div class="illus-plant">&#127807;</div>
-            <div class="illus-books">
-                <div class="illus-book b1">FAR</div>
-                <div class="illus-book b2">AUD</div>
-                <div class="illus-book b3">TAX</div>
-            </div>
-            <div class="illus-mug">&#9749;</div>
         </div>
     </div>
 

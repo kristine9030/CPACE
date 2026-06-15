@@ -882,7 +882,7 @@
                             <i class="fas fa-calendar-alt"></i>
                         </a>
                         <div style="position: relative;">
-                            <button class="profile-btn" id="profileBtn">{{ strtoupper(substr(Auth::user()->first_name, 0, 1)) }}{{ strtoupper(substr(Auth::user()->last_name, 0, 1)) }}</button>
+                            <button class="profile-btn" id="profileBtn">@include('partials.avatar-content')</button>
                             <div class="dropdown-menu" id="profileDropdown">
                                 <a href="{{ route('performance') }}"><i class="fas fa-chart-line"></i> My Progress</a>
                                 <a href="{{ route('achievements') }}"><i class="fas fa-trophy"></i> Achievements</a>

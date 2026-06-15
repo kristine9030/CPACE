@@ -1039,7 +1039,7 @@
                             <span class="notification-badge">3</span>
                         </button>
                         <div class="header-dropdown-wrap">
-                            <button class="profile-btn" id="profileBtn">{{ strtoupper(substr(Auth::user()->name, 0, 1)) }}{{ strtoupper(substr(explode(' ', Auth::user()->name)[array_key_last(explode(' ', Auth::user()->name))], 0, 1)) }}</button>
+                            <button class="profile-btn" id="profileBtn">@include('partials.avatar-content')</button>
                             <div class="dropdown-menu" id="profileDropdown">
                                 <a href="#"><i class="fas fa-user"></i> Profile Settings</a>
                                 <a href="#"><i class="fas fa-chart-line"></i> My Progress</a>
