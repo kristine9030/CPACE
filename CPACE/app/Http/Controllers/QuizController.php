@@ -120,15 +120,19 @@ class QuizController extends Controller
     public function start(Request $request)
     {
         $data = $request->validate([
-            'subject_id' => 'required|exists:subjects,id',
-            'mode'       => 'nullable|string',
-            'count'      => 'required|integer|min:1',
+            'subject_id'   => 'required|exists:subjects,id',
+            'mode'         => 'nullable|string',
+            'count'        => 'required|integer|min:1',
+            'session_type' => 'nullable|string',
         ], [
             'count.required' => 'Please choose how many questions before starting a quiz.',
             'count.min'      => 'Please choose at least 1 question.',
         ]);
 
-        $mode = in_array($data['mode'] ?? null, self::MODES, true) ? $data['mode'] : 'adaptive';
+        $mode        = in_array($data['mode'] ?? null, self::MODES, true) ? $data['mode'] : 'adaptive';
+        $sessionType = in_array($data['session_type'] ?? null, ['training', 'testing'], true)
+            ? $data['session_type']
+            : 'testing';
 
         // How many questions the student wants this sitting (capped to the max).
         $count = max(1, min((int) $data['count'], self::MAX_QUIZ_LENGTH));
@@ -144,7 +148,7 @@ class QuizController extends Controller
 
         $session = QuizSession::create([
             'student_id'      => Auth::id(),
-            'session_type'    => 'testing',
+            'session_type'    => $sessionType,
             'mode'            => $mode,
             'subject_id'      => $data['subject_id'],
             'topic_id'        => $focusTopicId,

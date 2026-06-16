@@ -421,6 +421,56 @@
         }
 
         /* CHOOSE MODE GRID */
+        /* ── Session-type toggle ── */
+        .session-type-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            margin-bottom: 0;
+        }
+        .stype-card {
+            background: #fff;
+            border: 2px solid #e5e7eb;
+            border-radius: 14px;
+            padding: 18px 20px;
+            cursor: pointer;
+            transition: all .2s;
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            position: relative;
+            font-family: 'Poppins', sans-serif;
+        }
+        .stype-card:hover { border-color: #c0392b; box-shadow: 0 4px 12px rgba(0,0,0,.08); }
+        .stype-card.active { border-color: #c0392b; background: #fff9f9; }
+        .stype-card.active::after {
+            content: '\2713';
+            position: absolute; top: 12px; right: 14px;
+            width: 22px; height: 22px;
+            background: #c0392b; color: #fff;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 11px; font-weight: 700;
+        }
+        .stype-icon {
+            width: 42px; height: 42px;
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px; flex-shrink: 0;
+        }
+        .stype-icon.training { background: #d1fae5; color: #059669; }
+        .stype-icon.testing  { background: #dbeafe; color: #2563eb; }
+        .stype-body {}
+        .stype-title { font-size: 14px; font-weight: 700; color: #1a1a1a; margin-bottom: 3px; }
+        .stype-desc  { font-size: 12px; color: #6b7280; line-height: 1.5; }
+        .stype-badge {
+            display: inline-block; margin-top: 6px;
+            font-size: 10px; font-weight: 700;
+            padding: 2px 8px; border-radius: 20px;
+        }
+        .stype-badge.training { background: #d1fae5; color: #065f46; }
+        .stype-badge.testing  { background: #dbeafe; color: #1e40af; }
+
         .choose-mode-grid {
             display: grid;
             grid-template-columns: 1fr 1fr 1fr 1fr;
@@ -941,6 +991,30 @@
                 </div>
             </div>
 
+            <!-- SESSION TYPE -->
+            <div class="page-section" style="margin-bottom:28px;">
+                <div class="section-title">Session Type</div>
+                <div class="section-subtitle">Choose how you want to experience the quiz.</div>
+                <div class="session-type-row">
+                    <div class="stype-card active" data-stype="training" onclick="selectStype(this)">
+                        <div class="stype-icon training"><i class="fas fa-brain"></i></div>
+                        <div class="stype-body">
+                            <div class="stype-title">Training Mode</div>
+                            <div class="stype-desc">See the correct answer immediately after each question. Great for learning.</div>
+                            <span class="stype-badge training">Instant Feedback</span>
+                        </div>
+                    </div>
+                    <div class="stype-card" data-stype="testing" onclick="selectStype(this)">
+                        <div class="stype-icon testing"><i class="fas fa-file-alt"></i></div>
+                        <div class="stype-body">
+                            <div class="stype-title">Testing Mode</div>
+                            <div class="stype-desc">Answer all questions first, then review results at the end. Simulates real exam.</div>
+                            <span class="stype-badge testing">Exam Simulation</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- HOW MANY QUESTIONS -->
             <div class="page-section">
                 <div class="section-title">How Many Questions? <span style="color:#c0392b;">*</span></div>
@@ -987,6 +1061,7 @@
                                     <input type="hidden" name="subject_id" value="{{ $subject->id }}">
                                     <input type="hidden" name="mode" value="adaptive" class="mode-input">
                                     <input type="hidden" name="count" value="" class="count-input">
+                                    <input type="hidden" name="session_type" value="training" class="stype-input">
                                     <button type="submit" class="subject-select-card subject-btn" data-qcount="{{ $subject->question_count }}" style="display:block;width:100%;text-align:center;cursor:pointer;{{ $subject->question_count === 0 ? 'opacity:.55;cursor:not-allowed;' : '' }}" {{ $subject->question_count === 0 ? 'disabled' : '' }}>
                                         <div class="subject-select-icon" style="color: {{ $color }};"><i class="fas {{ $icon }}"></i></div>
                                         <div class="subject-select-name">{{ $subject->code }}</div>
@@ -1128,6 +1203,17 @@
             document.addEventListener('click', () => profileDrop.classList.remove('active'));
             profileDrop.addEventListener('click', e => e.stopPropagation());
         }
+
+        // Session type (training / testing)
+        function applyStype(stype) {
+            document.querySelectorAll('.stype-card').forEach(c => {
+                c.classList.toggle('active', c.dataset.stype === stype);
+            });
+            document.querySelectorAll('.stype-input').forEach(i => { i.value = stype; });
+            localStorage.setItem('quizStype', stype);
+        }
+        function selectStype(el) { applyStype(el.dataset.stype); }
+        applyStype(localStorage.getItem('quizStype') || 'training');
 
         // Select Mode — highlight the card and push the choice into every
         // subject form so the right mode is submitted when a subject is picked.
