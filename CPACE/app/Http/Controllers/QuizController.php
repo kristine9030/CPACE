@@ -179,6 +179,10 @@ class QuizController extends Controller
             $session->delete();
         }
 
+        if (request()->wantsJson() || request()->header('X-CSRF-TOKEN')) {
+            return response()->json(['ok' => true]);
+        }
+
         return redirect()->route('adaptive-quizzes');
     }
 

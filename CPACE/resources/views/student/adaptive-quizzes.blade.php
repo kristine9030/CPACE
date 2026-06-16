@@ -982,7 +982,7 @@
                         <div class="subject-grid">
                             @foreach($subjects as $subject)
                                 @php [$icon, $color] = $subjectIcons[$subject->code] ?? ['fa-book', '#7B1D1D']; @endphp
-                                <form method="POST" action="{{ route('quiz.start') }}">
+                                <form method="POST" action="{{ route('quiz.start') }}" target="_blank">
                                     @csrf
                                     <input type="hidden" name="subject_id" value="{{ $subject->id }}">
                                     <input type="hidden" name="mode" value="adaptive" class="mode-input">

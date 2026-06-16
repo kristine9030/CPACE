@@ -28,28 +28,7 @@
     }
     .sidebar.collapsed { width: 68px; }
 
-    /* ── Collapse button ── */
-    .sidebar-collapse-btn {
-        position: absolute;
-        top: 24px; right: -14px;
-        width: 28px; height: 28px;
-        background: #fff;
-        border: 1.5px solid #e0e0e0;
-        border-radius: 50%;
-        display: flex; align-items: center; justify-content: center;
-        cursor: pointer;
-        font-size: 11px;
-        color: #7B1D1D;
-        z-index: 1010;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.12);
-        transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
-        flex-shrink: 0;
-    }
-    .sidebar-collapse-btn:hover { background: #f5e8e8; border-color: #7B1D1D; box-shadow: 0 4px 12px rgba(0,0,0,0.18); }
-    .sidebar-collapse-btn i { transition: transform 0.28s ease; }
-    .sidebar.collapsed .sidebar-collapse-btn i { transform: rotate(180deg); }
-
-    /* ── Logo ── */
+    /* ── Logo (doubles as collapse toggle) ── */
     .sidebar .sidebar-logo {
         display: flex;
         align-items: center;
@@ -58,7 +37,11 @@
         padding: 14px 20px 14px;
         border-bottom: 1px solid rgba(255,255,255,0.1);
         flex-shrink: 0;
+        cursor: pointer;
+        user-select: none;
+        transition: opacity 0.15s;
     }
+    .sidebar .sidebar-logo:hover { opacity: 0.85; }
     .sidebar .logo-icon {
         width: 52px; height: 52px;
         border-radius: 12px;
@@ -253,10 +236,6 @@
         .main-content { margin-left: 68px; }
     }
 
-    @media (max-width: 768px) {
-        .sidebar-collapse-btn { display: none !important; }
-    }
-
     @media (min-width: 769px) {
         .bottom-nav,
         .more-drawer,
@@ -271,11 +250,7 @@
 </style>
 
 <aside class="sidebar" id="sidebar">
-    <button class="sidebar-collapse-btn" id="sidebarCollapseBtn" title="Toggle sidebar">
-        <i class="fas fa-chevron-left"></i>
-    </button>
-
-    <div class="sidebar-logo">
+    <div class="sidebar-logo" id="sidebarCollapseBtn" title="Toggle sidebar">
         <div class="logo-icon">
             <img src="{{ asset('images/cpace_logo.png') }}" alt="CPACE Logo">
         </div>
