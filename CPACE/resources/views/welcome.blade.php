@@ -10,6 +10,68 @@
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600" rel="stylesheet" />
 
+        <style>
+            /* ── Tablet: 640px – 1024px ── */
+            @media (max-width: 1024px) {
+                /* Keep two-column layout but cap the decorative panel width */
+                main {
+                    max-width: 100% !important;
+                }
+                /* Decorative SVG panels: scale them down a bit */
+                .w-\[448px\] {
+                    width: 100% !important;
+                    max-width: 100% !important;
+                }
+            }
+
+            /* ── Mobile: < 640px ── */
+            @media (max-width: 639px) {
+                body {
+                    padding: 16px !important;
+                    align-items: flex-start !important;
+                }
+
+                header {
+                    max-width: 100% !important;
+                    margin-bottom: 16px !important;
+                }
+
+                /* Stack the two panels vertically (already done by flex-col-reverse on main,
+                   but ensure full width on small screens) */
+                main {
+                    max-width: 100% !important;
+                    flex-direction: column-reverse !important;
+                }
+
+                /* Content panel: reduce padding */
+                main > div:first-child {
+                    padding: 20px 16px 32px !important;
+                }
+
+                /* Decorative panel: auto aspect ratio, no overflow clip issues */
+                main > div:last-child {
+                    width: 100% !important;
+                    max-width: 100% !important;
+                }
+
+                /* Prevent the wide SVGs from causing horizontal scroll */
+                .w-\[448px\] {
+                    width: 100% !important;
+                    max-width: 100% !important;
+                }
+
+                /* Nav auth links */
+                nav {
+                    gap: 8px !important;
+                }
+
+                nav a {
+                    font-size: 12px !important;
+                    padding: 4px 10px !important;
+                }
+            }
+        </style>
+
         <!-- Styles / Scripts -->
         @if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
             @vite(['resources/css/app.css', 'resources/js/app.js'])

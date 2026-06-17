@@ -111,6 +111,30 @@
 
         @keyframes fadeUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
         .a0{animation:fadeUp .4s ease both} .a1{animation:fadeUp .4s .07s ease both}
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 768px) {
+            /* form layout: content+sidebar → single column */
+            .form-layout { grid-template-columns: 1fr !important; }
+            /* 2-col form row → stack */
+            .form-row { grid-template-columns: 1fr !important; }
+            /* 3-col form row → stack */
+            .form-row-3 { grid-template-columns: 1fr !important; }
+            /* choice items: ensure they wrap properly */
+            .choice-item { flex-wrap: wrap; gap: 8px; }
+            .correct-label { font-size: 10px; }
+            /* topbar right */
+            .topbar-right { flex-wrap: wrap; gap: 8px; }
+        }
+
+        @media (max-width: 480px) {
+            .card { padding: 16px; }
+            .side-card { padding: 14px; }
+            .card-title { font-size: 13px; }
+            /* choice letter and text */
+            .choice-letter { width: 28px; height: 28px; font-size: 11px; }
+            input[type=text], textarea, select { font-size: 12px; }
+        }
     </style>
 </head>
 <body>

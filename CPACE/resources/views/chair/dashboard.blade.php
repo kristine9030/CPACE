@@ -7,6 +7,18 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* ── Dashboard-specific responsive ── */
+        @media (max-width: 768px) {
+            .dash-content-grid {
+                grid-template-columns: 1fr !important;
+            }
+            .dash-table-wrap {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+        }
+    </style>
 </head>
 <body>
 @include('partials.chair-sidebar', ['active' => 'dashboard'])
@@ -56,12 +68,13 @@
         </div>
     </div>
 
-    <div style="display:grid; grid-template-columns:1fr 340px; gap:18px;">
+    <div class="dash-content-grid" style="display:grid; grid-template-columns:1fr 340px; gap:18px;">
         <div class="card">
             <div class="card-head">
                 <span class="card-title">Subject Coverage</span>
                 <a href="{{ route('chair.subjects') }}" class="card-link">Manage Assignments</a>
             </div>
+            <div class="dash-table-wrap">
             <table>
                 <thead><tr><th>Subject</th><th>Faculty Assigned</th><th>Status</th></tr></thead>
                 <tbody>
@@ -83,6 +96,7 @@
                 @endforeach
                 </tbody>
             </table>
+            </div>{{-- /.dash-table-wrap --}}
         </div>
 
         <div class="card">

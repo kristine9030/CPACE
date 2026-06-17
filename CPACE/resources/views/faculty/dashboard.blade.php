@@ -213,6 +213,25 @@
         .a1 { animation:fadeUp .4s .07s ease both; }
         .a2 { animation:fadeUp .4s .14s ease both; }
         .a3 { animation:fadeUp .4s .21s ease both; }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 768px) {
+            /* table overflow */
+            .card { overflow-x: auto; }
+            table { min-width: 520px; }
+            /* bottom 3-col → 1-col */
+            .bottom-row { grid-template-columns: 1fr !important; }
+            /* right column stacks under left */
+            .right-col { flex-direction: column; }
+            /* stat numbers */
+            .stat-num { font-size: 22px; }
+        }
+
+        @media (max-width: 480px) {
+            .stat-num { font-size: 20px; }
+            .card-title { font-size: 13px; }
+            .qa-btn { padding: 10px 12px; }
+        }
     </style>
 </head>
 <body>

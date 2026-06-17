@@ -105,6 +105,26 @@
 
         @keyframes fadeUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
         .a0{animation:fadeUp .4s ease both} .a1{animation:fadeUp .4s .07s ease both}
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 768px) {
+            /* 2-col grid → 1-col */
+            .subjects-grid { grid-template-columns: 1fr !important; }
+            /* subject card header: reduce icon size */
+            .subject-icon { width: 42px; height: 42px; font-size: 18px; border-radius: 10px; }
+            /* add-topic row: stack button below input */
+            .add-topic-row { flex-direction: column; align-items: stretch; }
+            .add-topic-btn { text-align: center; }
+            /* topbar right */
+            .topbar-right { flex-wrap: wrap; gap: 8px; }
+        }
+
+        @media (max-width: 480px) {
+            .subject-abbr { font-size: 14px; }
+            .subject-name { font-size: 11px; }
+            .subject-stats { flex-wrap: wrap; gap: 8px; }
+            .subject-card-head { flex-wrap: wrap; gap: 10px; }
+        }
     </style>
 </head>
 <body>

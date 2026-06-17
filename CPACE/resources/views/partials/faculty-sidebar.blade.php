@@ -163,6 +163,18 @@
 
     @media (max-width: 768px) {
         .sidebar { display: none !important; }
+        .main { margin-left: 0 !important; padding: 16px !important; }
+        .topbar { flex-direction: column; align-items: flex-start; gap: 10px; }
+        .topbar-right { width: 100%; justify-content: flex-end; flex-wrap: wrap; gap: 8px; }
+        .topbar-search input { width: 160px; }
+        .page-title { font-size: 20px !important; }
+        .stats-row { grid-template-columns: repeat(2, 1fr) !important; }
+        .main-grid { grid-template-columns: 1fr !important; }
+    }
+
+    @media (max-width: 480px) {
+        .stats-row { grid-template-columns: 1fr !important; }
+        .page-sub { display: none; }
     }
 
     /* ── Topbar search + avatar ── */

@@ -325,6 +325,22 @@
             border-color: #ef4444;
         }
 
+        /* ── Tablet: 640px – 1024px ── */
+        @media (max-width: 1024px) {
+            .container {
+                max-width: 100%;
+            }
+
+            .left-section {
+                padding: 40px 30px;
+            }
+
+            .right-section {
+                padding: 32px 32px;
+            }
+        }
+
+        /* ── Small tablet / large mobile: 641px – 768px ── */
         @media (max-width: 768px) {
             .container {
                 grid-template-columns: 1fr;
@@ -339,12 +355,86 @@
             .right-section-wrap {
                 min-height: auto;
             }
+
             .right-section {
-                padding: 40px 20px;
+                padding: 32px 24px;
             }
 
             .form-container h3 {
                 font-size: 24px;
+            }
+
+            .social-login {
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+            }
+        }
+
+        /* ── Mobile: < 640px ── */
+        @media (max-width: 639px) {
+            body {
+                padding: 16px;
+                align-items: flex-start;
+            }
+
+            .container {
+                grid-template-columns: 1fr;
+                min-height: auto;
+                border-radius: 8px;
+            }
+
+            .right-section {
+                padding: 24px 16px;
+            }
+
+            .form-container h3 {
+                font-size: 22px;
+            }
+
+            .form-container p {
+                font-size: 13px;
+                margin-bottom: 20px;
+            }
+
+            .form-group {
+                margin-bottom: 16px;
+            }
+
+            input[type="email"],
+            input[type="password"],
+            input[type="text"] {
+                font-size: 16px; /* prevents iOS zoom */
+                padding: 11px 13px;
+            }
+
+            .remember-forgot {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+                margin-bottom: 20px;
+            }
+
+            .btn-login {
+                font-size: 15px;
+                padding: 13px;
+            }
+
+            .divider {
+                margin: 18px 0;
+            }
+
+            .social-login {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+
+            .social-btn {
+                font-size: 14px;
+                padding: 11px;
+            }
+
+            .signup-link {
+                font-size: 13px;
             }
         }
     </style>

@@ -1009,6 +1009,30 @@
                 flex-direction: column;
             }
         }
+
+        /* ─── RESPONSIVE (added) ─── */
+        @media (max-width: 768px) {
+            .main-content { padding: 20px 16px; }
+            .header { flex-direction: column; align-items: flex-start; gap: 12px; }
+            .header-right { width: 100%; flex-wrap: wrap; }
+            .search-box { flex: 1; min-width: 0; }
+            .header-title { font-size: 22px; }
+            .status-banner { padding: 20px; gap: 18px; }
+            .banner-stats { flex-direction: column; gap: 12px; }
+            .stat-box { min-width: unset; width: 100%; }
+            .badge-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+            .progress-grid { grid-template-columns: repeat(2, 1fr); gap: 16px; }
+        }
+
+        @media (max-width: 480px) {
+            .main-content { padding: 16px 12px; }
+            .header-title { font-size: 20px; }
+            .badge-grid { grid-template-columns: 1fr; }
+            .progress-grid { grid-template-columns: 1fr; }
+            .panel { padding: 18px; }
+            .badge-tabs { gap: 6px; }
+            .badge-tab { padding: 6px 12px; font-size: 12px; }
+        }
     </style>
 </head>
 <body>

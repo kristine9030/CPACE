@@ -108,6 +108,22 @@
         .tip-link:hover { text-decoration: underline; }
 
         @media (max-width: 900px) { .subj-grid { grid-template-columns: 1fr; } }
+
+        /* ── Subjects page responsive ── */
+        @media (max-width: 768px) {
+            .summary-row { gap: 10px; }
+            .sum-card { min-width: 0; padding: 12px 14px; }
+            .sum-num { font-size: 18px; }
+            .tip-card { flex-direction: column; gap: 10px; }
+            .sc-top { padding: 14px 14px 10px; }
+            .sc-body { padding: 10px 14px 14px; }
+        }
+        @media (max-width: 480px) {
+            .summary-row { flex-direction: column; }
+            .sum-card { width: 100%; }
+            .sc-code { font-size: 16px; }
+            .fac-chip { font-size: 11px; padding: 5px 10px; }
+        }
     </style>
 </head>
 <body>

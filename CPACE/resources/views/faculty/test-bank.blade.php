@@ -113,6 +113,33 @@
 
         @keyframes fadeUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
         .a0{animation:fadeUp .4s ease both} .a1{animation:fadeUp .4s .07s ease both} .a2{animation:fadeUp .4s .14s ease both}
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 768px) {
+            /* stats: 4-col → 2-col */
+            .stats-row { grid-template-columns: repeat(2, 1fr) !important; }
+            /* filter bar: wrap all items vertically */
+            .filter-bar { flex-direction: column; align-items: stretch; gap: 10px; }
+            .filter-group { flex-wrap: wrap; }
+            .filter-divider { display: none; }
+            .search-inp { width: 100%; }
+            .search-wrap-tb { width: 100%; }
+            /* table: horizontal scroll */
+            .table-card { overflow-x: auto; }
+            table { min-width: 640px; }
+            /* topbar buttons: wrap */
+            .topbar-right { flex-wrap: wrap; gap: 8px; }
+            /* bulk action bar: stack */
+            .table-head-bar { flex-direction: column; align-items: flex-start; gap: 8px; }
+            /* pagination: wrap */
+            .pagination { flex-direction: column; gap: 10px; align-items: flex-start; }
+        }
+
+        @media (max-width: 480px) {
+            .stats-row { grid-template-columns: 1fr !important; }
+            .chip-num { font-size: 18px; }
+            .btn { padding: 8px 12px; font-size: 12px; }
+        }
     </style>
 </head>
 <body>

@@ -1101,6 +1101,40 @@
             .main-content { margin-left: 0; padding: 20px; }
             .stats-grid { grid-template-columns: 1fr; }
         }
+
+        /* ─── RESPONSIVE (added) ─── */
+        @media (max-width: 1100px) {
+            .perf-grid { grid-template-columns: 1fr; }
+            .stats-grid { grid-template-columns: repeat(3, 1fr); }
+        }
+
+        @media (max-width: 768px) {
+            .main-content { padding: 20px 16px; }
+            .header { flex-direction: column; align-items: flex-start; gap: 12px; }
+            .header-right { width: 100%; flex-wrap: wrap; }
+            .search-box { flex: 1; min-width: 0; }
+            .header-title { font-size: 22px; }
+            .controls-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+            .tabs { flex-wrap: wrap; gap: 4px; }
+            .tab { padding: 7px 10px; font-size: 12px; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); padding: 16px; gap: 12px; }
+            .stat-card + .stat-card { border-left: none; padding-left: 0; }
+            .bottom-grid { grid-template-columns: 1fr; }
+            .consistency { flex-direction: column; gap: 14px; align-items: flex-start; }
+            .streak-count { border: none; padding: 0; }
+            .perf-table { display: block; overflow-x: auto; }
+        }
+
+        @media (max-width: 480px) {
+            .main-content { padding: 16px 12px; }
+            .header-title { font-size: 20px; }
+            .stats-grid { grid-template-columns: 1fr; }
+            .tabs { gap: 2px; }
+            .tab span { display: none; }
+            .tab i { font-size: 16px; }
+            .card { padding: 16px; }
+            .streak-days { gap: 8px; flex-wrap: wrap; }
+        }
     </style>
 </head>
 <body>

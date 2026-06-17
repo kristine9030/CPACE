@@ -7,6 +7,18 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* ── Faculty-form responsive ── */
+        @media (max-width: 768px) {
+            .form-grid { grid-template-columns: 1fr !important; }
+            .form-grid .form-group.full { grid-column: 1 !important; }
+            .check-grid { grid-template-columns: 1fr !important; }
+        }
+        @media (max-width: 480px) {
+            .form-submit-row { flex-direction: column-reverse; gap: 8px; }
+            .form-submit-row .btn { width: 100%; justify-content: center; }
+        }
+    </style>
 </head>
 <body>
 @include('partials.chair-sidebar', ['active' => 'faculty'])
@@ -107,7 +119,7 @@
             </div>
         @endif
 
-        <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:6px;">
+        <div class="form-submit-row" style="display:flex; gap:10px; justify-content:flex-end; margin-top:6px;">
             <a href="{{ route('chair.faculty') }}" class="btn btn-ghost">Cancel</a>
             <button type="submit" class="btn btn-primary"><i class="fas fa-{{ $editMode ? 'save' : 'user-plus' }}"></i> {{ $editMode ? 'Save Changes' : 'Create Account' }}</button>
         </div>

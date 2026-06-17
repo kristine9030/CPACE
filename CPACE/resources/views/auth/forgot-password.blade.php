@@ -191,15 +191,96 @@
 
         .info-box i { margin-top: 2px; flex-shrink: 0; color: #f59e0b; }
 
+        /* ── Tablet: 640px – 1024px ── */
+        @media (max-width: 1024px) {
+            .container {
+                max-width: 100%;
+            }
+
+            .right-section {
+                padding: 48px 32px;
+            }
+        }
+
+        /* ── Small tablet / large mobile: 641px – 768px ── */
         @media (max-width: 768px) {
             .container {
                 grid-template-columns: 1fr;
+                min-height: auto;
             }
+
             .left-section {
                 display: none;
             }
+
+            .right-section-wrap {
+                min-height: auto;
+            }
+
             .right-section {
-                padding: 40px 20px;
+                padding: 32px 24px;
+            }
+
+            .form-container h3 {
+                font-size: 24px;
+            }
+        }
+
+        /* ── Mobile: < 640px ── */
+        @media (max-width: 639px) {
+            body {
+                padding: 16px;
+                align-items: flex-start;
+            }
+
+            .container {
+                grid-template-columns: 1fr;
+                min-height: auto;
+                border-radius: 8px;
+            }
+
+            .right-section {
+                padding: 24px 16px;
+            }
+
+            .form-container h3 {
+                font-size: 22px;
+            }
+
+            .form-container .subtitle {
+                font-size: 13px;
+                margin-bottom: 20px;
+            }
+
+            .icon-circle {
+                width: 52px;
+                height: 52px;
+                font-size: 22px;
+                margin-bottom: 18px;
+            }
+
+            .form-group {
+                margin-bottom: 16px;
+            }
+
+            input[type="email"] {
+                font-size: 16px; /* prevents iOS zoom */
+                padding: 11px 13px;
+            }
+
+            .btn-submit {
+                font-size: 15px;
+                padding: 13px;
+            }
+
+            .info-box,
+            .status-message {
+                font-size: 12px;
+            }
+
+            .back-link {
+                font-size: 13px;
+                margin-bottom: 20px;
             }
         }
     </style>

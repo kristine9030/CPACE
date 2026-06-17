@@ -854,6 +854,30 @@
                 white-space: nowrap;
             }
         }
+
+        /* ─── RESPONSIVE (added) ─── */
+        @media (max-width: 1100px) {
+            .main-grid { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 768px) {
+            .main-content { padding: 20px 16px; }
+            .header { flex-direction: column; align-items: flex-start; gap: 12px; }
+            .header-right { width: 100%; flex-wrap: wrap; }
+            .search-box { flex: 1; min-width: 0; }
+            .header-title { font-size: 22px; }
+            .stats-row { grid-template-columns: repeat(2, 1fr); gap: 14px; }
+            .card { padding: 18px; }
+        }
+
+        @media (max-width: 480px) {
+            .main-content { padding: 16px 12px; }
+            .stats-row { grid-template-columns: 1fr; }
+            .header-title { font-size: 20px; }
+            .card-head { flex-direction: column; align-items: flex-start; gap: 10px; }
+            .btn-primary { width: 100%; justify-content: center; }
+            .tabs { gap: 14px; overflow-x: auto; white-space: nowrap; padding-bottom: 2px; }
+        }
     </style>
 </head>
 <body>

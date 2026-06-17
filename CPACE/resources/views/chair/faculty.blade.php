@@ -21,6 +21,19 @@
         .ab-assign:hover { background:#ddd6fe; }
         .ab-toggle { background:#fef3c7; color:#d97706; }
         .ab-toggle:hover { background:#fde68a; }
+
+        /* ── Faculty page responsive ── */
+        .faculty-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        @media (max-width: 768px) {
+            .faculty-table-wrap { overflow-x: auto; }
+            .faculty-table-wrap table { min-width: 540px; }
+            .modal { padding: 18px 16px; }
+            .check-grid { grid-template-columns: 1fr !important; }
+        }
+        @media (max-width: 480px) {
+            .modal-actions { flex-direction: column-reverse; }
+            .modal-actions .btn { width: 100%; justify-content: center; }
+        }
     </style>
 </head>
 <body>
@@ -46,6 +59,7 @@
 
     <div class="card">
         <div class="card-head"><span class="card-title">All Faculty ({{ $faculty->count() }})</span></div>
+        <div class="faculty-table-wrap">
         <table>
             <thead>
                 <tr><th>Name</th><th>Email</th><th>Assigned Subjects</th><th>Status</th><th style="text-align:right;">Actions</th></tr>
@@ -93,6 +107,7 @@
             @endforelse
             </tbody>
         </table>
+        </div>{{-- /.faculty-table-wrap --}}
     </div>
 </main>
 

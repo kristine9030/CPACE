@@ -367,6 +367,26 @@
             .search-wrap input { width: 160px; }
         }
 
+        /* ─── RESPONSIVE (added) ─── */
+        @media (max-width: 768px) {
+            .main-content { padding: 20px 16px; }
+            .top-bar { flex-direction: column; align-items: flex-start; gap: 12px; }
+            .top-bar-right { width: 100%; flex-wrap: wrap; }
+            .search-wrap { flex: 1; }
+            .search-wrap input { width: 100%; }
+            .page-title { font-size: 22px; }
+            .page-header-illus { display: none; }
+        }
+
+        @media (max-width: 480px) {
+            .main-content { padding: 16px 12px; }
+            .subjects-grid { grid-template-columns: 1fr; gap: 14px; }
+            .subject-card { padding: 18px; }
+            .subject-icon-circle { width: 56px; height: 56px; font-size: 22px; }
+            .subject-abbr { font-size: 18px; }
+            .page-title { font-size: 20px; }
+        }
+
         @keyframes fadeUp {
             from { opacity: 0; transform: translateY(14px); }
             to { opacity: 1; transform: translateY(0); }

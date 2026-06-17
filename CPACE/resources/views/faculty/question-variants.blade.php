@@ -89,6 +89,32 @@
         .helper-scroll .sg-group:last-child { margin-bottom:0; }
 
         @media (max-width: 1050px) { .grid { grid-template-columns:1fr; } .helper-card { max-height:none; } }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 768px) {
+            /* grid already collapses at 1050px; ensure no horizontal overflow */
+            .grid { gap: 14px; }
+            /* variant item: wrap actions below text on very narrow */
+            .vitem { flex-wrap: wrap; gap: 8px; }
+            .vacts { width: 100%; justify-content: flex-end; }
+            /* form row in add-variant: stack */
+            .form-row { flex-direction: column; align-items: stretch; gap: 10px; }
+            .form-row > div { justify-content: flex-end; }
+            /* topbar right */
+            .topbar-right { flex-wrap: wrap; gap: 8px; }
+            /* helper card: don't stick on mobile */
+            .helper-card { position: static !important; top: auto !important; }
+            /* chip wrapping */
+            .chips { gap: 5px; }
+        }
+
+        @media (max-width: 480px) {
+            .card { padding: 14px 16px; }
+            .page-title { font-size: 20px; }
+            .btn { padding: 8px 12px; font-size: 12px; }
+            .orig-text { font-size: 13px; }
+            .chip { font-size: 11px; padding: 5px 9px; }
+        }
     </style>
 </head>
 <body>

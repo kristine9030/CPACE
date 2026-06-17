@@ -910,6 +910,33 @@
                 min-height: 80px;
             }
         }
+
+        /* ─── RESPONSIVE (added) ─── */
+        @media (max-width: 768px) {
+            .main-content { padding: 20px 16px; }
+            .header { flex-direction: column; align-items: flex-start; gap: 12px; }
+            .header-right { width: 100%; flex-wrap: wrap; }
+            .search-box { flex: 1; min-width: 0; }
+            .header-title { font-size: 22px; }
+            .calendar-toolbar { flex-direction: column; align-items: flex-start; gap: 10px; }
+            .view-toggle { flex-wrap: wrap; gap: 6px; }
+            .calendar-day { min-height: 70px; padding: 6px 4px; }
+            .event { font-size: 10px; padding: 4px 6px 4px 14px; }
+            .event-title { font-size: 10px; }
+            .event-meta { display: none; }
+            .weekday { font-size: 11px; padding: 6px 4px; }
+        }
+
+        @media (max-width: 480px) {
+            .main-content { padding: 16px 10px; }
+            .header-title { font-size: 18px; }
+            .calendar-month { font-size: 18px; }
+            .calendar-day { min-height: 56px; padding: 4px 2px; }
+            .day-number { font-size: 11px; }
+            .event { display: none; }
+            .day-more { font-size: 9px; }
+            .calendar-card { padding: 14px 10px; }
+        }
     </style>
 </head>
 <body>
