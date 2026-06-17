@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\StreakService;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -19,7 +20,9 @@ class DashboardController extends Controller
         // ── Gamification / profile (streak, points, exam target) ──────────
         $profile = DB::table('student_profiles')->where('user_id', $studentId)->first();
 
-        $streak    = (int) ($profile->streak_days ?? 0);
+        // Computed live so the day-streak card is always current - it reflects
+        // a broken streak immediately, not only after the next quiz.
+        $streak    = app(StreakService::class)->current($studentId);
         $points    = (int) ($profile->total_points ?? 0);
         $examDate  = $profile->exam_target_date ?? null;
         $daysToExam = $examDate
@@ -29,8 +32,11 @@ class DashboardController extends Controller
         // ── Questions attempted (every question served in completed quizzes) ──
         // Counts all served questions (total_items) so a skipped question still
         // counts as attempted. This matches the Performance and Quizzes pages.
+        // Training is a no-stakes practice mode, so it is excluded from every
+        // figure on the dashboard (it is still saved for the results review).
         $attemptedBase = fn () => DB::table('quiz_sessions')
             ->where('student_id', $studentId)
+            ->where('session_type', '!=', 'training')
             ->whereNotNull('completed_at');
 
         $questionsAttempted = (int) $attemptedBase()->sum('total_items');
@@ -40,9 +46,13 @@ class DashboardController extends Controller
             ->sum('total_items');
 
         // ── Study time ────────────────────────────────────────────────────
-        $studySeconds     = (int) DB::table('quiz_sessions')->where('student_id', $studentId)->sum('duration_secs');
+        $studySeconds     = (int) DB::table('quiz_sessions')
+            ->where('student_id', $studentId)
+            ->where('session_type', '!=', 'training')
+            ->sum('duration_secs');
         $studySecondsWeek  = (int) DB::table('quiz_sessions')
             ->where('student_id', $studentId)
+            ->where('session_type', '!=', 'training')
             ->where('started_at', '>=', Carbon::now()->subDays(7))
             ->sum('duration_secs');
         $studyHours     = (int) round($studySeconds / 3600);
@@ -98,6 +108,7 @@ class DashboardController extends Controller
         $recentActivity = DB::table('quiz_sessions')
             ->leftJoin('subjects', 'subjects.id', '=', 'quiz_sessions.subject_id')
             ->where('quiz_sessions.student_id', $studentId)
+            ->where('quiz_sessions.session_type', '!=', 'training')
             ->orderByDesc('quiz_sessions.started_at')
             ->limit(5)
             ->select(

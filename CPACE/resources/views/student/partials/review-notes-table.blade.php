@@ -32,7 +32,7 @@
             $preview = mb_strimwidth(strip_tags($note->content ?? ''), 0, 110, '…');
         @endphp
 
-        <div class="note-card" style="--nc-border:{{ $accent['border'] }};">
+        <div class="note-card" style="--nc-border:{{ $accent['border'] }};" data-note-id="{{ $note->id }}">
 
             <div class="nc-body">
                 {{-- Subject + topic badges --}}
@@ -77,11 +77,11 @@
                     <div class="nc-meta">
                         <span title="Created"><i class="far fa-calendar-alt"></i> {{ $note->created_at->format('M j, Y') }}</span>
                         @if($note->last_reviewed_at)
-                            <span class="{{ $note->last_reviewed_at->gt(now()->subDay()) ? 'nc-meta--recent' : '' }}" title="Last reviewed">
+                            <span class="nc-meta-reviewed {{ $note->last_reviewed_at->gt(now()->subDay()) ? 'nc-meta--recent' : '' }}" title="Last reviewed">
                                 <i class="fas fa-eye"></i> {{ $note->last_reviewed_at->diffForHumans() }}
                             </span>
                         @else
-                            <span class="nc-meta--muted"><i class="fas fa-eye-slash"></i> Not reviewed</span>
+                            <span class="nc-meta-reviewed nc-meta--muted" title="Not reviewed"><i class="fas fa-eye-slash"></i> Not reviewed</span>
                         @endif
                     </div>
                     <div class="nc-actions">

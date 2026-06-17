@@ -1388,9 +1388,25 @@
 
                 document.getElementById('viewEditBtn').onclick = () => editNote(n.id);
                 openModal('viewModal');
+
+                // Reflect the just-now review on the card without a page refresh.
+                updateCardReviewed(n);
             } catch (e) {
                 toast('Could not open the note.', 'error');
             }
+        }
+
+        // Live-update the card's "last reviewed" line after a note is opened,
+        // so the timestamp reflects the view immediately (no refresh needed).
+        function updateCardReviewed(n) {
+            const card = document.querySelector(`.note-card[data-note-id="${n.id}"]`);
+            if (!card) return;
+            const rev = card.querySelector('.nc-meta-reviewed');
+            if (!rev) return;
+            rev.classList.remove('nc-meta--muted');
+            rev.classList.add('nc-meta--recent');
+            rev.title = 'Last reviewed';
+            rev.innerHTML = '<i class="fas fa-eye"></i> ' + (n.last_reviewed || 'just now');
         }
 
         // ── Favorite ───────────────────────────────────────────────────────

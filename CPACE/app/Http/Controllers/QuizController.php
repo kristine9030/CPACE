@@ -8,6 +8,7 @@ use App\Models\QuizSession;
 use App\Models\Subject;
 use App\Services\QuestionParaphraser;
 use App\Services\SpacedRepetitionScheduler;
+use App\Services\StreakService;
 use App\Services\WeaknessDetector;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -58,16 +59,35 @@ class QuizController extends Controller
         $totalAttempted = (int) DB::table('quiz_sessions')
             ->where('student_id', $studentId)
             ->whereNotNull('completed_at')
+            ->where('session_type', '!=', 'training')
             ->sum('total_items');
 
         $recentSessions = QuizSession::with('subject')
             ->where('student_id', $studentId)
             ->whereNotNull('completed_at')
+            ->where('session_type', '!=', 'training')
             ->orderByDesc('completed_at')
             ->limit(4)
             ->get();
 
         return view('student.adaptive-quizzes', compact('subjects', 'accuracy', 'totalAttempted', 'recentSessions', 'mastery'));
+    }
+
+    /**
+     * Quiz history: every completed sitting the student has taken, newest first,
+     * so they can revisit any past session and review its answers.
+     */
+    public function history()
+    {
+        $studentId = Auth::id();
+
+        $sessions = QuizSession::with('subject')
+            ->where('student_id', $studentId)
+            ->whereNotNull('completed_at')
+            ->orderByDesc('completed_at')
+            ->paginate(15);
+
+        return view('student.quiz-history', compact('sessions'));
     }
 
     /**
@@ -347,6 +367,11 @@ class QuizController extends Controller
             ->get()
             ->keyBy('id');
 
+        // Training is a no-stakes practice sandbox: the session and its answers
+        // are still saved (so the student can review the results), but it must
+        // not touch performance analytics, gamification or the review schedule.
+        $countsTowardProgress = $session->session_type !== 'training';
+
         $correctCount = 0;
         // Per-topic tally for performance records: [topic_id => ['attempts'=>, 'correct'=>]]
         $topicTally = [];
@@ -354,7 +379,7 @@ class QuizController extends Controller
         // the transaction so a scheduling hiccup can never void a graded quiz).
         $answerResults = [];
 
-        DB::transaction(function () use ($session, $questions, $submitted, &$correctCount, &$topicTally, &$answerResults) {
+        DB::transaction(function () use ($session, $questions, $submitted, $countsTowardProgress, &$correctCount, &$topicTally, &$answerResults) {
             foreach ($questions as $question) {
                 $correctChoiceId = optional($question->choices->firstWhere('is_correct', true))->id;
                 $selected = $submitted[$question->id] ?? null;
@@ -392,17 +417,28 @@ class QuizController extends Controller
                 'duration_secs'   => max(0, (int) $session->started_at->diffInSeconds(now())),
             ]);
 
-            $this->updatePerformanceRecords($session->student_id, $topicTally);
-            $this->awardPoints($session->student_id, $correctCount, $session->mode);
+            // Training runs are excluded from all progress analytics & points.
+            if ($countsTowardProgress) {
+                $this->updatePerformanceRecords($session->student_id, $topicTally);
+                $this->awardPoints($session->student_id, $correctCount, $session->mode);
+            }
         });
+
+        // Daily activity streak: EVERY completed quiz keeps it alive - training
+        // or testing, any mode - because simply showing up to practise counts.
+        // (This is deliberately outside the training gate above.)
+        app(StreakService::class)->refresh($session->student_id);
 
         // Update the spaced-repetition schedule and weakness flags AFTER the
         // grade is committed, so a failure here can never undo a finished quiz.
-        try {
-            app(SpacedRepetitionScheduler::class)->recordAnswers($session->student_id, $answerResults);
-            app(WeaknessDetector::class)->syncMany($session->student_id, array_keys($topicTally));
-        } catch (\Throwable $e) {
-            report($e);
+        // Skipped for training, which must not affect the review schedule.
+        if ($countsTowardProgress) {
+            try {
+                app(SpacedRepetitionScheduler::class)->recordAnswers($session->student_id, $answerResults);
+                app(WeaknessDetector::class)->syncMany($session->student_id, array_keys($topicTally));
+            } catch (\Throwable $e) {
+                report($e);
+            }
         }
 
         return redirect()->route('quiz.results', $session->id);
@@ -493,6 +529,13 @@ class QuizController extends Controller
      */
     private function updatePerformanceRecords(int $studentId, array $topicTally): void
     {
+        // Single source of truth for "is this topic weak?": the same rule the
+        // Spaced Repetition Calendar and Performance page use (accuracy < 60%
+        // over >= 5 attempts, or 3 wrong in a row). Keeping is_weak_area in
+        // step with the detector means Adaptive mode targets exactly the topics
+        // the rest of the app calls weak.
+        $weakness = app(WeaknessDetector::class);
+
         foreach ($topicTally as $topicId => $tally) {
             $record = DB::table('performance_records')
                 ->where('student_id', $studentId)
@@ -507,6 +550,12 @@ class QuizController extends Controller
                 // Reset the wrong-streak on a clean session, otherwise extend it.
                 $consecutiveWrong = $wrong === 0 ? 0 : $record->consecutive_wrong + $wrong;
 
+                [$isWeak] = $weakness->evaluate((object) [
+                    'total_attempts'    => $totalAttempts,
+                    'correct_count'     => $correctCount,
+                    'consecutive_wrong' => $consecutiveWrong,
+                ]);
+
                 // Note: accuracy_rate is a STORED generated column in the
                 // database (computed from correct_count / total_attempts), so it
                 // is never written here - the DB keeps it in sync automatically.
@@ -516,17 +565,23 @@ class QuizController extends Controller
                         'total_attempts'    => $totalAttempts,
                         'correct_count'     => $correctCount,
                         'consecutive_wrong' => $consecutiveWrong,
-                        'is_weak_area'      => ($correctCount / max($totalAttempts, 1)) < 0.6 || $consecutiveWrong >= 3,
+                        'is_weak_area'      => $isWeak,
                         'last_attempted'    => now(),
                     ]);
             } else {
+                [$isWeak] = $weakness->evaluate((object) [
+                    'total_attempts'    => $tally['attempts'],
+                    'correct_count'     => $tally['correct'],
+                    'consecutive_wrong' => $wrong,
+                ]);
+
                 DB::table('performance_records')->insert([
                     'student_id'        => $studentId,
                     'topic_id'          => $topicId,
                     'total_attempts'    => $tally['attempts'],
                     'correct_count'     => $tally['correct'],
                     'consecutive_wrong' => $wrong,
-                    'is_weak_area'      => ($tally['correct'] / max($tally['attempts'], 1)) < 0.6 || $wrong >= 3,
+                    'is_weak_area'      => $isWeak,
                     'last_attempted'    => now(),
                 ]);
             }

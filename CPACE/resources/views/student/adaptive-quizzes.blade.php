@@ -1091,7 +1091,7 @@
                         <div class="subject-grid">
                             @foreach($subjects as $subject)
                                 @php [$icon, $color] = $subjectIcons[$subject->code] ?? ['fa-book', '#7B1D1D']; @endphp
-                                <form method="POST" action="{{ route('quiz.start') }}" target="_blank">
+                                <form method="POST" action="{{ route('quiz.start') }}">
                                     @csrf
                                     <input type="hidden" name="subject_id" value="{{ $subject->id }}">
                                     <input type="hidden" name="mode" value="adaptive" class="mode-input">
@@ -1162,11 +1162,14 @@
 
             <!-- CONTINUE WHERE YOU LEFT OFF -->
             <div class="page-section">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; gap: 16px; flex-wrap: wrap;">
                     <div>
                         <div class="section-title">Your Recent Quizzes</div>
                         <div class="section-subtitle">Review the quizzes you have completed.</div>
                     </div>
+                    <a href="{{ route('quiz.history') }}" style="display:inline-flex;align-items:center;gap:8px;background:#7B1D1D;color:#fff;text-decoration:none;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:600;font-family:'Poppins',sans-serif;transition:background .2s;" onmouseover="this.style.background='#6a1818'" onmouseout="this.style.background='#7B1D1D'">
+                        <i class="fas fa-clock-rotate-left"></i> View Full History
+                    </a>
                 </div>
                 <div class="continue-grid">
                     @forelse($recentSessions as $rs)
@@ -1221,6 +1224,13 @@
     </div>
 
     <script>
+
+        // Always show fresh stats: if this page is restored from the browser's
+        // back/forward cache (e.g. the student finished a quiz and navigated
+        // back), force a reload so the server re-renders the latest numbers.
+        window.addEventListener('pageshow', function(e) {
+            if (e.persisted) location.reload();
+        });
 
         // Load sidebar state
         if (localStorage.getItem('sidebarCollapsed') === 'true') {

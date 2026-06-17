@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\StreakService;
 use App\Services\WeaknessDetector;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -31,8 +32,11 @@ class PerformanceController extends Controller
         //    pages. total_items counts every question served, so a skipped
         //    question is included and counts against accuracy - exactly like the
         //    score shown at the end of a quiz. ──────────────────────────────
+        // Training is a no-stakes practice mode and is excluded from every
+        // figure on this page (it is still saved for the results review).
         $sessions = fn () => DB::table('quiz_sessions')
             ->where('student_id', $studentId)
+            ->where('session_type', '!=', 'training')
             ->whereNotNull('completed_at');
 
         // Sum the session summaries over an optional date window (by started_at).
@@ -89,9 +93,10 @@ class PerformanceController extends Controller
             'avg_delta_secs'  => $avgThisWeek - $avgPrevWeek,
         ];
 
-        // ── Streak (gamification profile) ──────────────────────────────────
-        $profile = DB::table('student_profiles')->where('user_id', $studentId)->first();
-        $streakDays = (int) ($profile->streak_days ?? 0);
+        // ── Streak ─────────────────────────────────────────────────────────
+        // Computed live (training and testing, any mode, all count) so the
+        // current-streak card is always up to date, not only after a quiz.
+        $streakDays = app(StreakService::class)->current($studentId);
 
         // ── Performance-over-time line chart (last 7 days, daily accuracy) ──
         $chart = $this->dailyAccuracySeries($sessions, $now);
@@ -144,6 +149,7 @@ class PerformanceController extends Controller
         $recentActivity = DB::table('quiz_sessions')
             ->leftJoin('subjects', 'subjects.id', '=', 'quiz_sessions.subject_id')
             ->where('quiz_sessions.student_id', $studentId)
+            ->where('quiz_sessions.session_type', '!=', 'training')
             ->whereNotNull('quiz_sessions.completed_at')
             ->orderByDesc('quiz_sessions.completed_at')
             ->limit(5)
@@ -220,6 +226,7 @@ class PerformanceController extends Controller
         // how many questions served (total_items) and how many correct.
         $byMode = DB::table('quiz_sessions')
             ->where('student_id', $studentId)
+            ->where('session_type', '!=', 'training')
             ->whereNotNull('completed_at')
             ->groupBy('mode')
             ->select('mode',
@@ -529,6 +536,7 @@ class PerformanceController extends Controller
         // Encourage timed practice when the student rarely uses Timed mode.
         $timedCount = (int) DB::table('quiz_sessions')
             ->where('student_id', $studentId)
+            ->where('session_type', '!=', 'training')
             ->whereNotNull('completed_at')
             ->where('mode', 'timed')
             ->count();
@@ -554,35 +562,39 @@ class PerformanceController extends Controller
     }
 
     /**
-     * Work out, for the current Monday-Sunday week, which days the student took
-     * at least one quiz - used by the consistency banner.
+     * The LAST 7 DAYS (rolling window ending today) for the consistency banner.
+     * A day is ticked only when it is part of the CURRENT STREAK run - the same
+     * dates StreakService counts - so the ticks always equal the streak number
+     * beside them (an N-day streak shows as the N right-most days ticked). Each
+     * dot is labelled with its real weekday, with two letters where a single
+     * one would be ambiguous (Su/Sa, T/Th), so the row reads clearly even
+     * though it does not always begin on a Sunday.
      */
     private function weeklyActivity(int $studentId, Carbon $now): array
     {
-        $weekStart = $now->copy()->startOfWeek(Carbon::MONDAY);
+        // Set of dates that form the current streak (training + testing count).
+        $streakDates = array_flip(app(StreakService::class)->streakDates($studentId));
 
-        $activeDates = DB::table('quiz_sessions')
-            ->where('student_id', $studentId)
-            ->whereNotNull('completed_at')
-            ->where('completed_at', '>=', $weekStart)
-            ->get(['completed_at'])
-            ->map(fn ($r) => Carbon::parse($r->completed_at)->toDateString())
-            ->unique()
-            ->all();
+        // Unambiguous weekday labels, indexed by Carbon dayOfWeek (0=Sun..6=Sat).
+        $weekdayLabels = ['Su', 'M', 'T', 'W', 'Th', 'F', 'Sa'];
 
-        $labels = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
         $days = [];
-        foreach ($labels as $i => $label) {
-            $date = $weekStart->copy()->addDays($i);
+        $activeCount = 0;
+        for ($i = 6; $i >= 0; $i--) {
+            $date = $now->copy()->subDays($i);
+            $done = isset($streakDates[$date->toDateString()]);
+            if ($done) {
+                $activeCount++;
+            }
             $days[] = [
-                'label' => $label,
-                'done'  => in_array($date->toDateString(), $activeDates, true),
+                'label' => $weekdayLabels[$date->dayOfWeek],
+                'done'  => $done,
             ];
         }
 
         return [
-            'days'        => $days,
-            'active_count' => count($activeDates),
+            'days'         => $days,
+            'active_count' => $activeCount,
         ];
     }
 

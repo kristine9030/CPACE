@@ -76,6 +76,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/adaptive-quizzes', [QuizController::class, 'index'])->name('adaptive-quizzes');
 
     // Quiz engine
+    Route::get('/quiz/history', [QuizController::class, 'history'])->name('quiz.history');
     Route::post('/quiz/start', [QuizController::class, 'start'])->name('quiz.start');
     Route::post('/quiz/{session}/cancel', [QuizController::class, 'cancel'])->name('quiz.cancel');
     Route::get('/quiz/{session}/take', [QuizController::class, 'take'])->name('quiz.take');

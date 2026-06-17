@@ -374,6 +374,15 @@
         .modal-btn.primary { background:var(--primary); color:#fff; }
         .modal-btn.ghost   { background:#f3f4f6; color:#374151; }
 
+        /* ══════════ START GATE OVERLAY ══════════ */
+        .start-overlay {
+            display:flex; position:fixed; inset:0; z-index:10000;
+            align-items:center; justify-content:center;
+            background:rgba(10,5,5,.92);
+            backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+        }
+        .start-overlay.hidden { display:none; }
+
         /* ══════════ ANTI-CHEAT OVERLAY ══════════ */
         .tab-overlay {
             display:none; position:fixed; inset:0; z-index:9999;
@@ -739,6 +748,22 @@
 
     </div><!-- /quiz-content-row -->
 
+    <!-- Start gate: clicking Start enters fullscreen and begins the quiz -->
+    <div class="start-overlay" id="startOverlay">
+        <div class="tab-overlay-box">
+            <div class="tab-overlay-icon warn" style="background:var(--primary-light);color:var(--primary);">
+                <i class="fas fa-expand"></i>
+            </div>
+            <h2>Ready to Begin?</h2>
+            <p>This quiz runs in <strong>fullscreen</strong>. Leaving fullscreen or switching tabs will be flagged as a violation. Click start when you're ready.</p>
+            <div class="tab-overlay-actions">
+                <button class="btn-resume" onclick="startQuiz()">
+                    <i class="fas fa-play"></i> Start Quiz
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Anti-cheat overlay (inside quiz-wrap so blur scope works) -->
     <div class="tab-overlay" id="tabOverlay">
         <div class="tab-overlay-box">
@@ -868,6 +893,17 @@ document.getElementById('quizForm').addEventListener('change', function(e) {
     const chosen = e.target.closest('.choice');
     chosen.classList.add('selected');
     answered.add(current);
+
+    // Once a flagged question is answered correctly there's no need to keep it
+    // marked for review, so clear its flag automatically. In testing mode the
+    // correctness isn't revealed, so answering at all clears the flag.
+    const answeredCorrectly = chosen.dataset.correct === '1';
+    if (flagged.has(current) && (SESSION_TYPE !== 'training' || answeredCorrectly)) {
+        flagged.delete(current);
+        document.getElementById('flagBtn').classList.remove('active');
+        document.getElementById('flagBanner-' + current)?.classList.remove('visible');
+    }
+
     refreshNav();
     refreshStats();
 
@@ -956,8 +992,11 @@ function closeModal() { document.getElementById('endModal').classList.remove('op
 document.getElementById('endQuizBtn').addEventListener('click', openModal);
 
 let timeUp = false;
+/* Set true on every intentional submit so the beforeunload guard below stands
+   down — otherwise the "Leave site?" prompt blocks timed/anti-cheat auto-submit. */
+let submitting = false;
 function submitQuiz() {
-    window.onbeforeunload = null;
+    submitting = true;
     document.getElementById('quizForm').submit();
 }
 
@@ -977,7 +1016,48 @@ function unfreeze() {
     document.body.classList.remove('quiz-frozen');
     document.getElementById('tabOverlay').classList.remove('show');
 }
-function resumeQuiz() { unfreeze(); }
+function resumeQuiz() { enterFullscreen(); unfreeze(); }
+
+/* ══════════ FULLSCREEN LOCKDOWN ══════════ */
+/* The quiz locks to the whole screen. Entering fullscreen needs a user
+   gesture, so we kick it off on the first interaction and re-enter on resume.
+   Leaving fullscreen (e.g. pressing Esc) is treated as a violation, exactly
+   like switching tabs. */
+function isFullscreen() {
+    return !!(document.fullscreenElement || document.webkitFullscreenElement);
+}
+function enterFullscreen() {
+    if (isFullscreen()) return;
+    const el = document.documentElement;
+    const req = el.requestFullscreen || el.webkitRequestFullscreen;
+    if (req) { try { Promise.resolve(req.call(el)).catch(function(){}); } catch (e) {} }
+}
+function exitFullscreen() {
+    if (!isFullscreen()) return;
+    const ex = document.exitFullscreen || document.webkitExitFullscreen;
+    if (ex) { try { Promise.resolve(ex.call(document)).catch(function(){}); } catch (e) {} }
+}
+
+/* The quiz sits behind a "Start Quiz" gate so the student's first action
+   enters fullscreen — the quiz is fullscreen from the start, not only after
+   they interact. Anti-cheat watchers stay off until the quiz has started. */
+let started = false;
+function startQuiz() {
+    if (started) return;
+    started = true;
+    enterFullscreen();
+    document.getElementById('startOverlay').classList.add('hidden');
+}
+
+/* Treat exiting fullscreen as leaving the quiz. */
+function handleFullscreenChange() {
+    if (started && !isFullscreen() && !submitting && !timeUp && !frozen) {
+        freeze();
+        showViolationOverlay();
+    }
+}
+document.addEventListener('fullscreenchange', handleFullscreenChange);
+document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
 
 function showViolationOverlay() {
     violations++;
@@ -1002,7 +1082,7 @@ function showViolationOverlay() {
         label.textContent = 'Maximum violations reached';
         document.getElementById('resumeBtn').style.display = 'none';
         document.getElementById('tabOverlay').classList.add('show');
-        setTimeout(function() { window.onbeforeunload = null; document.getElementById('quizForm').submit(); }, 3000);
+        setTimeout(function() { submitting = true; document.getElementById('quizForm').submit(); }, 3000);
         return;
     }
     icon.className  = 'tab-overlay-icon warn';
@@ -1018,16 +1098,18 @@ function showViolationOverlay() {
 
 function confirmLeave() {
     if (!confirm('Leave the quiz? Your current answers will be submitted.')) return;
-    window.onbeforeunload = null;
+    submitting = true;
     document.getElementById('quizForm').submit();
 }
 
 document.addEventListener('visibilitychange', function() {
+    if (!started) return;
     if (document.hidden) { freeze(); }
     else { showViolationOverlay(); }
 });
 let blurTimer = null;
 window.addEventListener('blur', function() {
+    if (!started) return;
     blurTimer = setTimeout(function() { if (!document.hidden) { freeze(); showViolationOverlay(); } }, 300);
 });
 window.addEventListener('focus', function() { clearTimeout(blurTimer); });
@@ -1037,6 +1119,7 @@ document.addEventListener('keydown', function(e) {
     if ((ctrl && ['t','w','n'].includes(e.key)) || e.key === 'F12') e.preventDefault();
 });
 window.addEventListener('beforeunload', function(e) {
+    if (submitting) return;            // intentional submit — don't nag or block it
     e.preventDefault(); e.returnValue = 'Your quiz is still in progress.'; return e.returnValue;
 });
 
@@ -1056,7 +1139,7 @@ window.addEventListener('beforeunload', function(e) {
         if (!timerRunning) { setTimeout(tick, 500); return; }
         if (remaining <= 0) {
             timeUp = true; label.textContent = '0:00';
-            window.onbeforeunload = null;
+            submitting = true;
             document.getElementById('quizForm').submit(); return;
         }
         render(); remaining--; setTimeout(tick, 1000);
