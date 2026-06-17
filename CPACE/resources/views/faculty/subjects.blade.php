@@ -20,7 +20,6 @@
         /* TOPBAR */
         .topbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; }
         .topbar-left { display:flex; align-items:center; gap:12px; }
-        .toggle-btn { width:36px; height:36px; border:1px solid #ddd; background:white; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center; color:var(--primary); font-size:15px; }
         .page-title { font-size:26px; font-weight:700; color:#1a1a1a; }
         .page-sub { font-size:12px; color:#999; margin-top:2px; }
         .btn { display:inline-flex; align-items:center; gap:7px; padding:9px 18px; border-radius:8px; font-size:13px; font-weight:600; font-family:'Poppins',sans-serif; cursor:pointer; border:none; text-decoration:none; transition:all .2s; }
@@ -115,19 +114,13 @@
 <main class="main">
     <div class="topbar a0">
         <div class="topbar-left">
-            <button class="toggle-btn" id="sidebarToggle"><i class="fas fa-bars"></i></button>
             <div>
                 <div class="page-title">Subjects &amp; Topics</div>
                 <div class="page-sub">Manage subjects and their topics. Click a subject to expand and edit its topics.</div>
             </div>
         </div>
-        <div style="display:flex;align-items:center;">
-            <form method="POST" action="{{ route('logout') }}" style="margin:0;">
-                @csrf
-                <button type="submit" style="display:flex;align-items:center;gap:7px;padding:9px 16px;border-radius:8px;font-size:13px;font-weight:600;font-family:'Poppins',sans-serif;cursor:pointer;background:white;color:#c0392b;border:1.5px solid #c0392b;transition:all .2s;">
-                    <i class="fas fa-sign-out-alt"></i> Sign Out
-                </button>
-            </form>
+        <div class="topbar-right">
+            @include('partials.topbar-actions')
         </div>
     </div>
 
@@ -189,12 +182,6 @@
 </main>
 
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-    const btn = document.getElementById('sidebarToggle');
-    const sb  = document.getElementById('sidebar');
-    if (btn) btn.addEventListener('click', () => { sb.classList.toggle('collapsed'); localStorage.setItem('facultySidebar', sb.classList.contains('collapsed')); });
-    if (localStorage.getItem('facultySidebar') === 'true') sb.classList.add('collapsed');
-});
 
 function toggleTopics(btn, id) {
     const list = document.getElementById(id);

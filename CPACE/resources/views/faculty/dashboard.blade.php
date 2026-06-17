@@ -32,12 +32,6 @@
             margin-bottom:24px; gap:16px;
         }
         .topbar-left { display:flex; align-items:center; gap:12px; }
-        .toggle-btn {
-            width:36px; height:36px;
-            border:1px solid #ddd; background:white; border-radius:8px;
-            cursor:pointer; display:flex; align-items:center; justify-content:center;
-            color:var(--primary); font-size:15px;
-        }
         .page-title { font-size:26px; font-weight:700; color:#1a1a1a; }
         .page-sub { font-size:12px; color:#999; margin-top:2px; }
         .topbar-right { display:flex; align-items:center; gap:12px; }
@@ -232,7 +226,6 @@
     <!-- TOPBAR -->
     <div class="topbar a0">
         <div class="topbar-left">
-            <button class="toggle-btn" id="sidebarToggle"><i class="fas fa-bars"></i></button>
             <div>
                 <div class="page-title">Faculty Dashboard</div>
                 <div class="page-sub">Welcome back, {{ Auth::user()->name }}. Here's your overview.</div>
@@ -241,12 +234,7 @@
         <div class="topbar-right">
             <a href="{{ route('faculty.question.create') }}" class="btn btn-primary"><i class="fas fa-plus"></i> Add Question</a>
             <a href="{{ route('faculty.test-bank') }}" class="btn btn-outline"><i class="fas fa-database"></i> Test Bank</a>
-            <form method="POST" action="{{ route('logout') }}" style="margin:0;">
-                @csrf
-                <button type="submit" class="btn btn-outline" style="color:#c0392b;border-color:#c0392b;">
-                    <i class="fas fa-sign-out-alt"></i> Sign Out
-                </button>
-            </form>
+            @include('partials.topbar-actions')
         </div>
     </div>
 
@@ -567,15 +555,6 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-    const btn = document.getElementById('sidebarToggle');
-    const sb  = document.getElementById('sidebar');
-    if (btn) {
-        btn.addEventListener('click', () => {
-            sb.classList.toggle('collapsed');
-            localStorage.setItem('facultySidebar', sb.classList.contains('collapsed'));
-        });
-    }
-    if (localStorage.getItem('facultySidebar') === 'true') sb.classList.add('collapsed');
 });
 </script>
 </body>

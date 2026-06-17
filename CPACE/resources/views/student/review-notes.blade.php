@@ -384,106 +384,93 @@
 
         .new-note-btn:hover { background: #6a1818; }
 
-        /* TABLE */
-        .notes-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 8px;
+        /* NOTES CARD GRID */
+        .notes-cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 16px;
+            margin-top: 4px;
         }
 
-        .notes-table th {
-            text-align: left;
-            font-size: 12px;
-            font-weight: 600;
-            color: #999;
-            padding: 14px 10px;
-            border-bottom: 1px solid #f0f0f0;
-        }
-
-        .notes-table th a {
-            color: #999;
-            text-decoration: none;
-        }
-        .notes-table th a:hover { color: #7B1D1D; }
-
-        .notes-table th .fa-chevron-down {
-            font-size: 10px;
-            margin-left: 4px;
-        }
-
-        .notes-table td {
-            padding: 14px 10px;
-            border-bottom: 1px solid #f4f4f4;
-            font-size: 13px;
-            color: #555;
-            vertical-align: middle;
-        }
-
-        .notes-table tr:last-child td { border-bottom: none; }
-
-        .note-title-cell {
+        .note-card {
+            background: #fff;
+            border-radius: 14px;
+            border-left: 4px solid var(--nc-border, #ccc);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            transition: box-shadow 0.2s, transform 0.2s;
             display: flex;
-            align-items: center;
-            gap: 12px;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .note-card:hover {
+            box-shadow: 0 6px 20px rgba(0,0,0,0.11);
+            transform: translateY(-2px);
         }
 
-        .note-icon {
-            width: 34px;
-            height: 34px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 14px;
-            flex-shrink: 0;
+        .nc-body { padding: 14px 15px 13px; display: flex; flex-direction: column; gap: 9px; flex: 1; }
+
+        .nc-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+        .nc-badges { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+
+        .nc-subject-badge {
+            display: inline-block; padding: 3px 10px;
+            border-radius: 20px; font-size: 10px;
+            font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;
+        }
+        .nc-topic-badge {
+            display: inline-block; padding: 3px 10px;
+            border-radius: 20px; font-size: 10px;
+            background: #f0f0f0; color: #777; font-weight: 500;
         }
 
-        .note-icon.red { background: #fdeaea; color: #c0392b; }
-        .note-icon.green { background: #e8f7ee; color: #21a366; }
-        .note-icon.blue { background: #e9f1fd; color: #3b7ddd; }
-        .note-icon.purple { background: #f0eafb; color: #8e5bd0; }
-        .note-icon.amber { background: #fef3e2; color: #e8910b; }
-
-        .note-title-text {
-            font-size: 13px;
-            font-weight: 600;
-            color: #2b2b2b;
+        .nc-fav {
+            background: none; border: none; cursor: pointer;
+            font-size: 15px; color: #d4d4d4; padding: 2px 4px;
+            transition: color 0.2s, transform 0.15s; flex-shrink: 0;
         }
+        .nc-fav:hover { color: #e8910b; transform: scale(1.15); }
+        .nc-fav.active { color: #e8910b; }
 
-        .subject-tag {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 11px;
-            font-weight: 600;
+        .nc-title {
+            font-size: 14px; font-weight: 600; color: #1a1a1a;
+            line-height: 1.35; cursor: pointer; transition: color 0.15s;
         }
+        .nc-title:hover { color: #7B1D1D; }
 
-        .subject-tag.aud { background: #fdeaea; color: #c0392b; }
-        .subject-tag.tax { background: #e8f7ee; color: #21a366; }
-        .subject-tag.far { background: #e9f1fd; color: #3b7ddd; }
-        .subject-tag.afar { background: #eaf0fb; color: #2f63c4; }
-        .subject-tag.rfbt { background: #f0eafb; color: #8e5bd0; }
-        .subject-tag.ms { background: #fef3e2; color: #e8910b; }
-        .subject-tag.none { background: #eee; color: #888; }
+        .nc-preview { font-size: 12px; color: #999; line-height: 1.6; cursor: pointer; }
+        .nc-preview--empty { font-style: italic; color: #ccc; }
 
-        .last-reviewed-recent { color: #21a366; font-weight: 500; }
-        .muted-cell { color: #bbb; }
-
-        .actions-cell {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            color: #aaa;
+        .nc-tags { display: flex; flex-wrap: wrap; gap: 5px; }
+        .nc-tag {
+            padding: 2px 9px; background: #f3eef9;
+            color: #7a4fc7; border-radius: 20px;
+            font-size: 10px; font-weight: 500;
         }
+        .nc-tag--more { background: #eee; color: #999; }
 
-        .actions-cell i {
-            cursor: pointer;
-            transition: color 0.2s;
+        .nc-footer {
+            display: flex; align-items: center;
+            justify-content: space-between; gap: 8px;
+            padding-top: 10px; border-top: 1px solid #f5f5f5; margin-top: auto;
         }
+        .nc-meta { display: flex; flex-direction: column; gap: 2px; }
+        .nc-meta span {
+            font-size: 10.5px; color: #bbb;
+            display: flex; align-items: center; gap: 4px;
+        }
+        .nc-meta span i { width: 11px; text-align: center; }
+        .nc-meta--recent { color: #21a366 !important; }
+        .nc-meta--muted { color: #d0d0d0 !important; }
 
-        .actions-cell i:hover { color: #7B1D1D; }
-        .actions-cell i.fav-on { color: #e8910b; }
-        .actions-cell i.del:hover { color: #c0392b; }
+        .nc-actions { display: flex; gap: 4px; }
+        .nca-btn {
+            width: 28px; height: 28px; border: none; border-radius: 7px;
+            background: #f5f5f5; color: #999; font-size: 11px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: background 0.15s, color 0.15s;
+        }
+        .nca-btn:hover { background: #7B1D1D; color: #fff; }
+        .nca-btn--del:hover { background: #e53e3e; color: #fff; }
 
         /* EMPTY STATE */
         .empty-state {
@@ -807,14 +794,35 @@
         .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
 
         /* VIEW MODAL */
-        .view-meta { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; align-items: center; }
-        .view-meta .meta-pill { font-size: 11.5px; color: #888; background: #f5f5f5; border-radius: 20px; padding: 4px 11px; }
-        .view-content {
-            font-size: 13.5px; line-height: 1.7; color: #444; white-space: pre-wrap;
-            background: #fafafa; border-radius: 10px; padding: 16px; min-height: 80px;
+        .view-note-banner {
+            height: 8px;
+            border-radius: 14px 14px 0 0;
+            background: var(--view-accent, #7B1D1D);
         }
-        .view-tags { margin-top: 16px; display: flex; flex-wrap: wrap; gap: 8px; }
-        .view-tags span { font-size: 11px; font-weight: 500; color: #7B1D1D; background: #f6ecec; border-radius: 16px; padding: 4px 11px; }
+        .view-note-banner + .modal-head { border-radius: 0; }
+        .view-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; align-items: center; }
+        .view-meta .meta-pill {
+            font-size: 11px; color: #777; background: #f5f5f5;
+            border-radius: 20px; padding: 4px 12px;
+            display: flex; align-items: center; gap: 5px;
+        }
+        .view-meta .meta-pill i { font-size: 10px; color: #aaa; }
+        .view-meta .meta-subject {
+            font-weight: 700; font-size: 11px;
+            background: var(--view-accent-bg, #f6ecec);
+            color: var(--view-accent, #7B1D1D);
+        }
+        .view-content {
+            font-size: 14px; line-height: 1.75; color: #333; white-space: pre-wrap;
+            background: #fafbfc; border: 1px solid #f0f0f0;
+            border-radius: 10px; padding: 18px 20px; min-height: 100px;
+        }
+        .view-tags { margin-top: 16px; display: flex; flex-wrap: wrap; gap: 7px; }
+        .view-tags span {
+            font-size: 11px; font-weight: 500;
+            color: #7a4fc7; background: #f3eef9;
+            border-radius: 20px; padding: 4px 12px;
+        }
 
         /* TOAST */
         .toast {
@@ -1086,6 +1094,7 @@
     <!-- VIEW MODAL -->
     <div class="modal-overlay" id="viewModal">
         <div class="modal">
+            <div class="view-note-banner" id="viewBanner"></div>
             <div class="modal-head">
                 <h3 id="viewTitle">Note</h3>
                 <button class="modal-close" onclick="closeModal('viewModal')">&times;</button>
@@ -1325,6 +1334,15 @@
         }
 
         // ── View (counts as a review) ──────────────────────────────────────
+        const SUBJECT_ACCENTS = {
+            aud:  { border: '#e05a5a', bg: '#fdeaea', text: '#c0392b' },
+            tax:  { border: '#3aac6b', bg: '#e8f7ee', text: '#1e7e4e' },
+            far:  { border: '#5491e8', bg: '#e9f1fd', text: '#2861c4' },
+            afar: { border: '#4a7fd6', bg: '#eaf0fb', text: '#2f63c4' },
+            rfbt: { border: '#9970d8', bg: '#f0eafb', text: '#7a4fc7' },
+            ms:   { border: '#e8a23a', bg: '#fef3e2', text: '#c07e0a' },
+        };
+
         async function viewNote(id) {
             try {
                 const res = await fetch(`${ROUTES.base}/${id}?read=1`, {
@@ -1335,13 +1353,34 @@
                 if (!data.ok) throw new Error();
                 const n = data.note;
 
+                const accent = SUBJECT_ACCENTS[(n.subject_code || '').toLowerCase()] || { border: '#7B1D1D', bg: '#f6ecec', text: '#7B1D1D' };
+
+                // Colour the top banner
+                const banner = document.getElementById('viewBanner');
+                if (banner) banner.style.background = accent.border;
+
+                // Apply accent CSS vars on modal for meta pills
+                const modal = document.querySelector('#viewModal .modal');
+                if (modal) {
+                    modal.style.setProperty('--view-accent', accent.text);
+                    modal.style.setProperty('--view-accent-bg', accent.bg);
+                }
+
                 document.getElementById('viewTitle').textContent = n.title;
+
                 const meta = [];
-                if (n.subject_code) meta.push(`<span class="meta-pill">${n.subject_code}</span>`);
-                if (n.topic_name) meta.push(`<span class="meta-pill">${n.topic_name}</span>`);
-                meta.push(`<span class="meta-pill">Created ${n.created_on}</span>`);
-                meta.push(`<span class="meta-pill">Reviewed ${n.review_count}×</span>`);
+                if (n.subject_code) {
+                    meta.push(`<span class="meta-pill meta-subject" style="background:${accent.bg};color:${accent.text};">
+                        <i class="fas fa-book"></i> ${n.subject_code}
+                    </span>`);
+                }
+                if (n.topic_name) {
+                    meta.push(`<span class="meta-pill"><i class="fas fa-tag"></i> ${n.topic_name}</span>`);
+                }
+                meta.push(`<span class="meta-pill"><i class="far fa-calendar-alt"></i> ${n.created_on}</span>`);
+                meta.push(`<span class="meta-pill"><i class="fas fa-eye"></i> Reviewed ${n.review_count}×</span>`);
                 document.getElementById('viewMeta').innerHTML = meta.join('');
+
                 document.getElementById('viewContent').textContent = n.content || 'This note has no content yet.';
 
                 const tagsEl = document.getElementById('viewTags');
@@ -1363,7 +1402,11 @@
                 });
                 const data = await res.json();
                 if (!data.ok) throw new Error();
-                el.classList.toggle('fav-on', data.is_favorite);
+                el.classList.toggle('active', data.is_favorite);
+                const icon = el.querySelector('i');
+                if (icon) {
+                    icon.className = data.is_favorite ? 'fas fa-star' : 'far fa-star';
+                }
                 toast(data.is_favorite ? 'Added to favorites.' : 'Removed from favorites.');
             } catch (e) {
                 toast('Could not update favorite.', 'error');

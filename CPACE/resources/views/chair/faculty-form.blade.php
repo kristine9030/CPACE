@@ -19,7 +19,6 @@
 <main class="main">
     <div class="topbar">
         <div class="topbar-left">
-            <button class="toggle-btn" id="sidebarToggle"><i class="fas fa-bars"></i></button>
             <div>
                 <div class="page-title">{{ $editMode ? 'Edit Faculty Account' : 'Add Faculty Account' }}</div>
                 <div class="page-sub">{{ $editMode ? 'Update details, reset password, and reassign subjects.' : 'Create a login and assign CPALE subjects to a faculty member.' }}</div>
@@ -27,6 +26,7 @@
         </div>
         <div class="topbar-right">
             <a href="{{ route('chair.faculty') }}" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Back</a>
+            @include('partials.topbar-actions')
         </div>
     </div>
 

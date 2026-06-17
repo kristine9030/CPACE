@@ -14,7 +14,6 @@
 <main class="main">
     <div class="topbar">
         <div class="topbar-left">
-            <button class="toggle-btn" id="sidebarToggle"><i class="fas fa-bars"></i></button>
             <div>
                 <div class="page-title">Program Chair Dashboard</div>
                 <div class="page-sub">Welcome back, {{ Auth::user()->name }}. Manage faculty and subject assignments here.</div>
@@ -22,6 +21,7 @@
         </div>
         <div class="topbar-right">
             <a href="{{ route('chair.faculty.create') }}" class="btn btn-primary"><i class="fas fa-user-plus"></i> Add Faculty</a>
+            @include('partials.topbar-actions')
         </div>
     </div>
 

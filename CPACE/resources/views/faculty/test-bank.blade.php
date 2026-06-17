@@ -22,7 +22,6 @@
         /* TOPBAR */
         .topbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:22px; gap:16px; }
         .topbar-left { display:flex; align-items:center; gap:12px; }
-        .toggle-btn { width:36px; height:36px; border:1px solid #ddd; background:white; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center; color:var(--primary); font-size:15px; }
         .page-title { font-size:26px; font-weight:700; color:#1a1a1a; }
         .page-sub { font-size:12px; color:#999; margin-top:2px; }
         .topbar-right { display:flex; align-items:center; gap:10px; }
@@ -123,7 +122,6 @@
 <main class="main">
     <div class="topbar a0">
         <div class="topbar-left">
-            <button class="toggle-btn" id="sidebarToggle"><i class="fas fa-bars"></i></button>
             <div>
                 <div class="page-title">Test Bank</div>
                 <div class="page-sub">Manage all questions across all subjects.</div>
@@ -133,12 +131,7 @@
             <button class="btn btn-ghost"><i class="fas fa-file-import"></i> Import</button>
             <button class="btn btn-ghost"><i class="fas fa-file-export"></i> Export</button>
             <a href="{{ route('faculty.question.create') }}" class="btn btn-primary"><i class="fas fa-plus"></i> Add Question</a>
-            <form method="POST" action="{{ route('logout') }}" style="margin:0;">
-                @csrf
-                <button type="submit" class="btn btn-ghost" style="color:#c0392b;border-color:#c0392b;">
-                    <i class="fas fa-sign-out-alt"></i> Sign Out
-                </button>
-            </form>
+            @include('partials.topbar-actions')
         </div>
     </div>
 
@@ -219,10 +212,6 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-    const btn = document.getElementById('sidebarToggle');
-    const sb  = document.getElementById('sidebar');
-    if (btn) btn.addEventListener('click', () => { sb.classList.toggle('collapsed'); localStorage.setItem('facultySidebar', sb.classList.contains('collapsed')); });
-    if (localStorage.getItem('facultySidebar') === 'true') sb.classList.add('collapsed');
 
     // Live search — only the table re-renders (no full-page reload). Filtering
     // runs server-side via AJAX so it spans all pages, not just the visible rows.
