@@ -1191,7 +1191,7 @@
                 </div>
                 <div class="date-range">
                     <i class="fas fa-calendar"></i>
-                    <span>{{ \Illuminate\Support\Carbon::now()->subDays(7)->format('M j') }} &ndash; {{ \Illuminate\Support\Carbon::now()->format('M j, Y') }}</span>
+                    <span id="dateRangeText">{{ $chartSeries['daily']['range'] }}</span>
                     <i class="fas fa-chevron-down"></i>
                 </div>
             </div>
@@ -1309,10 +1309,10 @@
                     <div class="card">
                         <div class="card-head">
                             <span class="card-title">Performance Over Time</span>
-                            <select class="chart-select">
-                                <option>Daily</option>
-                                <option>Weekly</option>
-                                <option>Monthly</option>
+                            <select class="chart-select" id="chartGranularity">
+                                <option value="daily">Daily</option>
+                                <option value="weekly">Weekly</option>
+                                <option value="monthly">Monthly</option>
                             </select>
                         </div>
                         <div class="line-chart-wrap">
@@ -1338,23 +1338,23 @@
                                     <line x1="0" y1="173" x2="700" y2="173" stroke="#f3f3f3"/>
                                     <line x1="0" y1="228" x2="700" y2="228" stroke="#f3f3f3"/>
                                     <!-- area -->
-                                    <path d="{{ $chart['area'] }}" fill="url(#areaFill)"/>
+                                    <path id="chartArea" d="{{ $chart['area'] }}" fill="url(#areaFill)"/>
                                     <!-- line -->
-                                    <polyline fill="none" stroke="#c0392b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
+                                    <polyline id="chartLine" fill="none" stroke="#c0392b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
                                         points="{{ $chart['points'] }}"/>
                                     <!-- highlighted point (latest day) -->
-                                    <circle cx="{{ $chart['highlight']['x'] }}" cy="{{ $chart['highlight']['y'] }}" r="6" fill="#c0392b" stroke="white" stroke-width="2.5"/>
+                                    <circle id="chartPoint" cx="{{ $chart['highlight']['x'] }}" cy="{{ $chart['highlight']['y'] }}" r="6" fill="#c0392b" stroke="white" stroke-width="2.5"/>
                                 </svg>
                                 @if($chart['has_data'])
-                                    <div class="chart-tooltip">
+                                    <div class="chart-tooltip" id="chartTooltip">
                                         {{ $chart['highlight']['label'] }}<br>Accuracy: <strong>{{ $chart['highlight']['accuracy'] }}%</strong>
                                     </div>
                                 @else
-                                    <div class="chart-tooltip">No quiz activity yet</div>
+                                    <div class="chart-tooltip" id="chartTooltip">No quiz activity yet</div>
                                 @endif
                             </div>
                         </div>
-                        <div class="x-axis" style="margin-left:48px;">
+                        <div class="x-axis" id="chartXAxis" style="margin-left:48px;">
                             @foreach($chart['labels'] as $label)
                                 <span>{{ $label }}</span>
                             @endforeach
@@ -1711,6 +1711,63 @@
                 });
                 profileDropdown.addEventListener('click', function (e) {
                     e.stopPropagation();
+                });
+            }
+
+            // Performance Over Time — Daily / Weekly / Monthly granularity.
+            // The SVG geometry is rebuilt from the raw series so the dropdown
+            // switches the curve (and the date-range chip) without a reload.
+            const chartSeries = @json($chartSeries);
+            const chartEls = {
+                line:    document.getElementById('chartLine'),
+                area:    document.getElementById('chartArea'),
+                point:   document.getElementById('chartPoint'),
+                tooltip: document.getElementById('chartTooltip'),
+                xAxis:   document.getElementById('chartXAxis'),
+                range:   document.getElementById('dateRangeText'),
+            };
+
+            function renderPerfChart(series) {
+                if (!series || !chartEls.line) return;
+                const W = 700, top = 2, bottom = 228;
+
+                // Carry the last known accuracy across empty buckets so the line
+                // stays continuous (matches the server-side daily render).
+                let last = 0;
+                const acc = series.values.map(v => (v === null ? last : (last = v)));
+                const n = acc.length;
+
+                const pts = acc.map((v, i) => {
+                    const x = n > 1 ? +(i * (W / (n - 1))).toFixed(1) : 0;
+                    const y = +(bottom - (v / 100) * (bottom - top)).toFixed(1);
+                    return [x, y];
+                });
+
+                const pointsStr = pts.map(p => p.join(',')).join(' ');
+                const firstX = pts[0][0], lastX = pts[n - 1][0];
+
+                chartEls.line.setAttribute('points', pointsStr);
+                chartEls.area.setAttribute('d',
+                    'M' + pts.map(p => p.join(',')).join(' L') + ` L${lastX},${bottom} L${firstX},${bottom} Z`);
+                chartEls.point.setAttribute('cx', lastX);
+                chartEls.point.setAttribute('cy', pts[n - 1][1]);
+
+                chartEls.xAxis.innerHTML = series.labels.map(l => `<span>${l}</span>`).join('');
+
+                if (series.has_data) {
+                    chartEls.tooltip.innerHTML =
+                        `${series.labels[n - 1]}<br>Accuracy: <strong>${acc[n - 1]}%</strong>`;
+                } else {
+                    chartEls.tooltip.textContent = 'No quiz activity yet';
+                }
+
+                if (chartEls.range) chartEls.range.textContent = series.range;
+            }
+
+            const granularity = document.getElementById('chartGranularity');
+            if (granularity) {
+                granularity.addEventListener('change', function () {
+                    renderPerfChart(chartSeries[this.value]);
                 });
             }
 

@@ -101,6 +101,11 @@ class PerformanceController extends Controller
         // ── Performance-over-time line chart (last 7 days, daily accuracy) ──
         $chart = $this->dailyAccuracySeries($sessions, $now);
 
+        // Daily / Weekly / Monthly series for the chart's granularity filter.
+        // The SVG geometry is rebuilt client-side from these raw points so the
+        // dropdown can switch the curve without a page reload.
+        $chartSeries = $this->accuracySeries($sessions, $now);
+
         // ── Spark series for the stat cards (last 8 days) ──────────────────
         $spark = $this->sparkSeries($sessions, $now);
 
@@ -202,6 +207,7 @@ class PerformanceController extends Controller
             'stats',
             'streakDays',
             'chart',
+            'chartSeries',
             'spark',
             'strengths',
             'weaknesses',
@@ -397,6 +403,70 @@ class PerformanceController extends Controller
             'area'       => $areaPath,
             'labels'     => array_column($days, 'short'),
             'highlight'  => ['x' => $hx, 'y' => $hy, 'label' => $lastDay['label'], 'accuracy' => $lastDay['accuracy']],
+        ];
+    }
+
+    /**
+     * Raw accuracy points for the Performance-over-time chart at three
+     * granularities (Daily / Weekly / Monthly). Each series is a list of
+     * labels and per-bucket accuracy (null where the student had no activity
+     * in that bucket) plus the human date range it covers - the chart's
+     * dropdown switches between these client-side. A bucket's accuracy is the
+     * correct/attempted ratio over the SAME completed, non-training sessions
+     * used everywhere else on the page.
+     */
+    private function accuracySeries(callable $sessions, Carbon $now): array
+    {
+        // Accuracy over a single [start, end) window.
+        $bucket = function (Carbon $start, Carbon $end) use ($sessions) {
+            $att = (int) $sessions()->whereBetween('started_at', [$start, $end])->sum('total_items');
+            $cor = (int) $sessions()->whereBetween('started_at', [$start, $end])->sum('correct_answers');
+
+            return [
+                'attempted' => $att,
+                'accuracy'  => $att > 0 ? (int) round($cor / $att * 100) : null,
+            ];
+        };
+
+        // Turn a list of buckets into the {labels, values, has_data, range} the
+        // view embeds as JSON.
+        $pack = function (array $buckets, string $range): array {
+            return [
+                'labels'   => array_column($buckets, 'label'),
+                'values'   => array_column($buckets, 'accuracy'),
+                'has_data' => collect($buckets)->contains(fn ($b) => $b['attempted'] > 0),
+                'range'    => $range,
+            ];
+        };
+
+        // Daily — last 7 days.
+        $daily = [];
+        $dailyStart = $now->copy()->subDays(6)->startOfDay();
+        for ($i = 6; $i >= 0; $i--) {
+            $d = $now->copy()->subDays($i)->startOfDay();
+            $daily[] = ['label' => $d->format('M j')] + $bucket($d, $d->copy()->addDay());
+        }
+
+        // Weekly — last 8 weeks (label = the week's Monday).
+        $weekly = [];
+        $weeklyStart = $now->copy()->subWeeks(7)->startOfWeek();
+        for ($i = 7; $i >= 0; $i--) {
+            $start = $now->copy()->subWeeks($i)->startOfWeek();
+            $weekly[] = ['label' => $start->format('M j')] + $bucket($start, $start->copy()->addWeek());
+        }
+
+        // Monthly — last 6 months.
+        $monthly = [];
+        $monthlyStart = $now->copy()->subMonths(5)->startOfMonth();
+        for ($i = 5; $i >= 0; $i--) {
+            $start = $now->copy()->subMonths($i)->startOfMonth();
+            $monthly[] = ['label' => $start->format('M')] + $bucket($start, $start->copy()->addMonth());
+        }
+
+        return [
+            'daily'   => $pack($daily,   $dailyStart->format('M j') . ' – ' . $now->format('M j, Y')),
+            'weekly'  => $pack($weekly,  $weeklyStart->format('M j') . ' – ' . $now->format('M j, Y')),
+            'monthly' => $pack($monthly, $monthlyStart->format('M Y') . ' – ' . $now->format('M Y')),
         ];
     }
 
