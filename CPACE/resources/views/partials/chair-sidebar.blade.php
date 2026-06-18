@@ -205,6 +205,14 @@
     .pill-on  { background:#d1fae5; color:#059669; }
     .pill-off { background:#f3f4f6; color:#9ca3af; }
 
+    /* USER AVATAR (initials) */
+    .user-av {
+        width:38px; height:38px; flex-shrink:0; border-radius:50%;
+        display:inline-flex; align-items:center; justify-content:center;
+        background:var(--primary); color:#fff; font-size:13px; font-weight:700;
+        line-height:1; text-transform:uppercase; letter-spacing:.3px;
+    }
+
     /* FORMS */
     .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
     .form-group { margin-bottom:16px; }
