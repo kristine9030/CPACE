@@ -937,6 +937,140 @@
             .day-more { font-size: 9px; }
             .calendar-card { padding: 14px 10px; }
         }
+
+        /* ─── CLICKABLE DAYS + DAY MODAL ─── */
+        .calendar-day.has-events {
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .calendar-day.has-events:hover {
+            background: #f7f9fc !important;
+        }
+        .calendar-day.has-events:focus-visible {
+            outline: 2px solid #c0392b;
+            outline-offset: -2px;
+        }
+
+        .day-modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.45);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 3000;
+            padding: 20px;
+        }
+        .day-modal-overlay.active {
+            display: flex;
+        }
+
+        .day-modal {
+            background: white;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 460px;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+            animation: dayModalIn 0.18s ease;
+        }
+        @keyframes dayModalIn {
+            from { opacity: 0; transform: translateY(12px) scale(0.98); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .day-modal-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 22px 24px 16px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .day-modal-title {
+            font-size: 17px;
+            font-weight: 700;
+            color: #222;
+        }
+        .day-modal-sub {
+            font-size: 12.5px;
+            color: #999;
+            margin-top: 3px;
+        }
+        .day-modal-close {
+            background: #f5f5f5;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            cursor: pointer;
+            color: #666;
+            font-size: 15px;
+            flex-shrink: 0;
+            transition: all 0.2s;
+        }
+        .day-modal-close:hover {
+            background: #fdeaea;
+            color: #c0392b;
+        }
+
+        .day-modal-body {
+            padding: 8px 24px 22px;
+            overflow-y: auto;
+        }
+
+        .day-modal-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 13px 0;
+            border-bottom: 1px solid #f2f2f2;
+        }
+        .day-modal-item:last-child {
+            border-bottom: none;
+        }
+        .day-modal-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .day-modal-info {
+            flex: 1;
+            min-width: 0;
+        }
+        .day-modal-subject {
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+        }
+        .day-modal-topic {
+            font-size: 12.5px;
+            color: #777;
+            margin-top: 1px;
+        }
+        .day-modal-tags {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 6px;
+        }
+        .day-modal-weak {
+            font-size: 9px;
+            font-weight: 700;
+            color: #c0392b;
+            background: #fdeaea;
+            border-radius: 10px;
+            padding: 2px 7px;
+        }
+        .day-modal-count {
+            font-size: 13px;
+            color: #666;
+            font-weight: 600;
+            white-space: nowrap;
+        }
     </style>
 </head>
 <body>
@@ -1016,8 +1150,14 @@
                     <div class="calendar-grid">
                         @foreach($weeks as $week)
                             @foreach($week as $cell)
-                                <div class="calendar-day {{ $cell['muted'] ? 'muted' : '' }}"
-                                     style="{{ $cell['is_today'] ? 'background:#fff8f8;' : '' }}">
+                                @php $hasEvents = count($cell['events']) > 0; @endphp
+                                <div class="calendar-day {{ $cell['muted'] ? 'muted' : '' }} {{ $hasEvents ? 'has-events' : '' }}"
+                                     style="{{ $cell['is_today'] ? 'background:#fff8f8;' : '' }}"
+                                     @if($hasEvents)
+                                         role="button" tabindex="0"
+                                         data-date-label="{{ $cell['date_label'] }}"
+                                         data-events='@json($cell['events'])'
+                                     @endif>
                                     <span class="day-number" style="{{ $cell['is_today'] ? 'color:#c0392b;font-weight:700;' : '' }}">{{ $cell['day'] }}</span>
                                     @foreach(array_slice($cell['events'], 0, 3) as $event)
                                         <div class="event {{ $event['is_weak'] ? 'weak' : '' }}" style="background: {{ $event['bg'] }};">
@@ -1114,6 +1254,22 @@
         </main>
     </div>
 
+    <!-- DAY DETAIL MODAL -->
+    <div class="day-modal-overlay" id="dayModalOverlay">
+        <div class="day-modal" role="dialog" aria-modal="true" aria-labelledby="dayModalTitle">
+            <div class="day-modal-header">
+                <div>
+                    <div class="day-modal-title" id="dayModalTitle">Reviews</div>
+                    <div class="day-modal-sub" id="dayModalSub"></div>
+                </div>
+                <button class="day-modal-close" id="dayModalClose" aria-label="Close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="day-modal-body" id="dayModalBody"></div>
+        </div>
+    </div>
+
     <script>
         // Restore the collapsed sidebar state (the partial may not expose the
         // element as a global, so look it up defensively).
@@ -1133,6 +1289,78 @@
             document.addEventListener('click', () => profileDrop.classList.remove('active'));
             profileDrop.addEventListener('click', e => e.stopPropagation());
         }
+
+        // ─── Day detail modal ───
+        const dayOverlay = document.getElementById('dayModalOverlay');
+        const dayTitle   = document.getElementById('dayModalTitle');
+        const daySub     = document.getElementById('dayModalSub');
+        const dayBody    = document.getElementById('dayModalBody');
+        const dayClose   = document.getElementById('dayModalClose');
+
+        const escapeHtml = (str) => String(str ?? '').replace(/[&<>"']/g, c => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        }[c]));
+
+        function openDayModal(cell) {
+            let events;
+            try {
+                events = JSON.parse(cell.getAttribute('data-events') || '[]');
+            } catch (e) {
+                return;
+            }
+            if (!events.length) return;
+
+            const totalItems = events.reduce((sum, e) => sum + (e.count || 0), 0);
+            dayTitle.textContent = cell.getAttribute('data-date-label') || 'Reviews';
+            daySub.textContent =
+                `${events.length} topic${events.length === 1 ? '' : 's'} · ` +
+                `${totalItems} item${totalItems === 1 ? '' : 's'} to review`;
+
+            dayBody.innerHTML = events.map(ev => {
+                const prio = (ev.priority || '').toLowerCase();
+                const weak = ev.is_weak
+                    ? '<span class="day-modal-weak">Weak area</span>' : '';
+                return `
+                    <div class="day-modal-item">
+                        <span class="day-modal-dot" style="background:${escapeHtml(ev.dot)}"></span>
+                        <div class="day-modal-info">
+                            <div class="day-modal-subject">${escapeHtml(ev.subject_code)}</div>
+                            <div class="day-modal-topic">${escapeHtml(ev.topic)}</div>
+                            <div class="day-modal-tags">
+                                <span class="priority-pill ${escapeHtml(prio)}">${escapeHtml(ev.priority)} priority</span>
+                                ${weak}
+                            </div>
+                        </div>
+                        <div class="day-modal-count">${ev.count} item${ev.count === 1 ? '' : 's'}</div>
+                    </div>`;
+            }).join('');
+
+            dayOverlay.classList.add('active');
+        }
+
+        function closeDayModal() {
+            dayOverlay.classList.remove('active');
+        }
+
+        document.querySelectorAll('.calendar-day.has-events').forEach(cell => {
+            cell.addEventListener('click', () => openDayModal(cell));
+            cell.addEventListener('keydown', e => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    openDayModal(cell);
+                }
+            });
+        });
+
+        dayClose.addEventListener('click', closeDayModal);
+        dayOverlay.addEventListener('click', e => {
+            if (e.target === dayOverlay) closeDayModal();
+        });
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape' && dayOverlay.classList.contains('active')) {
+                closeDayModal();
+            }
+        });
     </script>
 </body>
 </html>

@@ -92,10 +92,11 @@ class CalendarController extends Controller
                     ->all();
 
                 $week[] = [
-                    'day'      => $day->day,
-                    'muted'    => $day->month !== $cursor->month,
-                    'is_today' => $day->isSameDay($today),
-                    'events'   => $events,
+                    'day'        => $day->day,
+                    'date_label' => $day->format('l, F j, Y'),
+                    'muted'      => $day->month !== $cursor->month,
+                    'is_today'   => $day->isSameDay($today),
+                    'events'     => $events,
                 ];
                 $day->addDay();
             }
