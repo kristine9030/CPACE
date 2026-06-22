@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AchievementController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\DashboardController;
@@ -95,7 +96,5 @@ Route::middleware('auth')->group(function () {
     Route::delete('/review-notes/{note}', [ReviewNoteController::class, 'destroy'])->name('review-notes.destroy');
     Route::post('/review-notes/{note}/favorite', [ReviewNoteController::class, 'favorite'])->name('review-notes.favorite');
     Route::get('/calendar', [CalendarController::class, 'index'])->name('calendar');
-    Route::get('/achievements', function () {
-        return view('student.achievements');
-    })->name('achievements');
+    Route::get('/achievements', [AchievementController::class, 'index'])->name('achievements');
 });

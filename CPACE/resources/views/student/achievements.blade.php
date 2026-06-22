@@ -721,6 +721,23 @@
             color: #aaa;
         }
 
+        .badge-progress-track {
+            height: 6px;
+            background: #f0f0f0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+
+        .badge-progress-track span {
+            display: block;
+            height: 100%;
+            border-radius: 10px;
+            background: #c0392b;
+        }
+
+        .badge-card.locked .badge-name { color: #888; }
+
         /* BADGE PROGRESS */
         .progress-head {
             display: flex;
@@ -1079,11 +1096,12 @@
             </div>
 
             <!-- STATUS BANNER -->
+            @php $status = $leaderboard['status']; @endphp
             <div class="status-banner">
                 <div class="banner-profile">
-                    <div class="banner-avatar">KD</div>
+                    <div class="banner-avatar">{{ strtoupper(substr($user->first_name,0,1) . substr($user->last_name,0,1)) }}</div>
                     <div>
-                        <div class="banner-name">Kristine D.</div>
+                        <div class="banner-name">{{ $user->name }}</div>
                         <div class="banner-role">Reviewer</div>
                         <span class="banner-tag">CPALE Aspirant</span>
                     </div>
@@ -1093,8 +1111,13 @@
                     <i class="fas fa-leaf banner-laurel" style="transform: scaleX(-1);"></i>
                     <div>
                         <div class="banner-status-label">Your Status</div>
-                        <div class="banner-status-value">Top 8</div>
-                        <div class="banner-status-sub">Keep it up! You're on your way to the top.</div>
+                        @if($status['ranked'])
+                            <div class="banner-status-value">#{{ $status['rank'] }}</div>
+                            <div class="banner-status-sub">You're in the top {{ $status['percentile'] }}% of {{ $status['total'] }} active reviewers.</div>
+                        @else
+                            <div class="banner-status-value">Unranked</div>
+                            <div class="banner-status-sub">Complete a quiz to join the leaderboard.</div>
+                        @endif
                     </div>
                     <i class="fas fa-leaf banner-laurel"></i>
                 </div>
@@ -1104,16 +1127,24 @@
                         <div class="stat-icon star"><i class="fas fa-star"></i></div>
                         <div>
                             <div class="stat-label">Badges Earned</div>
-                            <div class="stat-value">18</div>
-                            <div class="stat-extra">+2 this month</div>
+                            <div class="stat-value">{{ $earnedCount }}</div>
+                            @if($earnedMonth > 0)
+                                <div class="stat-extra">+{{ $earnedMonth }} this month</div>
+                            @else
+                                <div class="stat-extra muted">of {{ $totalCount }} total</div>
+                            @endif
                         </div>
                     </div>
                     <div class="stat-box days">
                         <div class="stat-icon flame"><i class="fas fa-fire"></i></div>
                         <div>
                             <div class="stat-label">Days Active</div>
-                            <div class="stat-value">34</div>
-                            <div class="stat-extra muted">Keep the streak going!</div>
+                            <div class="stat-value">{{ $activeDays }}</div>
+                            @if($streak > 0)
+                                <div class="stat-extra">{{ $streak }}-day streak going!</div>
+                            @else
+                                <div class="stat-extra muted">Study today to start a streak!</div>
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -1127,118 +1158,57 @@
                     <div class="panel">
                         <div class="panel-head">
                             <div class="panel-title">Your Badges</div>
-                            <a href="#" class="panel-link">View All Badges <i class="fas fa-arrow-right"></i></a>
+                            <span class="panel-link" style="cursor:default;">{{ $earnedCount }} of {{ $totalCount }} unlocked</span>
                         </div>
 
                         <div class="badge-tabs">
-                            <button class="badge-tab active">All</button>
-                            <button class="badge-tab">Milestone</button>
-                            <button class="badge-tab">Performance</button>
-                            <button class="badge-tab">Consistency</button>
-                            <button class="badge-tab">Special</button>
+                            @foreach($categories as $key => $label)
+                                <button class="badge-tab {{ $loop->first ? 'active' : '' }}" data-filter="{{ $key }}">{{ $label }}</button>
+                            @endforeach
                         </div>
 
                         <div class="badge-grid">
-                            <div class="badge-card">
-                                <div class="badge-icon red"><i class="fas fa-shield-alt"></i></div>
-                                <div class="badge-name">First Step</div>
-                                <div class="badge-desc">Complete your first adaptive quiz.</div>
-                                <div class="badge-earned">Earned on May 1, 2025</div>
-                            </div>
-                            <div class="badge-card">
-                                <div class="badge-icon green"><i class="fas fa-chart-line"></i></div>
-                                <div class="badge-name">Consistent Learner</div>
-                                <div class="badge-desc">Study for 7 days in a row.</div>
-                                <div class="badge-earned">Earned on May 6, 2025</div>
-                            </div>
-                            <div class="badge-card">
-                                <div class="badge-icon blue"><i class="fas fa-book-open"></i></div>
-                                <div class="badge-name">Topic Explorer</div>
-                                <div class="badge-desc">Complete quizzes in 10 different topics.</div>
-                                <div class="badge-earned">Earned on May 10, 2025</div>
-                            </div>
-                            <div class="badge-card">
-                                <div class="badge-icon yellow"><i class="fas fa-bolt"></i></div>
-                                <div class="badge-name">Quick Thinker</div>
-                                <div class="badge-desc">Answer 20 questions in under 10 minutes.</div>
-                                <div class="badge-earned">Earned on May 12, 2025</div>
-                            </div>
-                            <div class="badge-card">
-                                <div class="badge-icon purple"><i class="fas fa-chart-area"></i></div>
-                                <div class="badge-name">Score Booster</div>
-                                <div class="badge-desc">Improve accuracy by 10% in a week.</div>
-                                <div class="badge-earned">Earned on May 15, 2025</div>
-                            </div>
-                            <div class="badge-card">
-                                <div class="badge-icon pink"><i class="fas fa-trophy"></i></div>
-                                <div class="badge-name">Mock Master</div>
-                                <div class="badge-desc">Complete 5 mock exams.</div>
-                                <div class="badge-earned">Earned on May 18, 2025</div>
-                            </div>
-                            <div class="badge-card">
-                                <div class="badge-icon teal"><i class="fas fa-clock"></i></div>
-                                <div class="badge-name">Time Manager</div>
-                                <div class="badge-desc">Finish 10 timed quizzes with 70%+ accuracy.</div>
-                                <div class="badge-earned">Earned on May 20, 2025</div>
-                            </div>
-                            <div class="badge-card locked">
-                                <div class="badge-icon gray"><i class="fas fa-lock"></i></div>
-                                <div class="badge-name">Perfectionist</div>
-                                <div class="badge-desc">Achieve 90% or higher in any mock exam.</div>
-                                <div class="badge-earned">Earned on May 22, 2025</div>
-                            </div>
+                            @foreach($badges as $badge)
+                                <div class="badge-card {{ $badge['earned'] ? '' : 'locked' }}" data-category="{{ $badge['category'] }}">
+                                    <div class="badge-icon {{ $badge['colour'] }}">
+                                        <i class="fas {{ $badge['earned'] ? $badge['icon'] : 'fa-lock' }}"></i>
+                                    </div>
+                                    <div class="badge-name">{{ $badge['name'] }}</div>
+                                    <div class="badge-desc">{{ $badge['desc'] }}</div>
+                                    @if($badge['earned'])
+                                        <div class="badge-earned"><i class="fas fa-check-circle" style="color:#27AE60;"></i> Earned {{ $badge['earned_at'] }}</div>
+                                    @else
+                                        <div class="badge-progress-track"><span style="width: {{ $badge['percent'] }}%;"></span></div>
+                                        <div class="badge-earned">{{ $badge['progress'] }}</div>
+                                    @endif
+                                </div>
+                            @endforeach
                         </div>
+
+                        <div class="badge-empty" style="display:none;">No badges in this category yet.</div>
                     </div>
 
                     <!-- BADGE PROGRESS -->
                     <div class="panel">
                         <div class="progress-head">
                             <div class="panel-title">Badge Progress</div>
-                            <div class="progress-count"><strong>18</strong> / 30 badges earned</div>
+                            <div class="progress-count"><strong>{{ $earnedCount }}</strong> / {{ $totalCount }} badges earned</div>
                         </div>
                         <div class="progress-sub">Keep earning badges and unlock more achievements!</div>
 
                         <div class="progress-grid">
-                            <div class="progress-item">
-                                <div class="progress-item-head">
-                                    <i class="fas fa-seedling progress-tier-icon beginner"></i>
-                                    <div>
-                                        <div class="progress-tier-name">Beginner</div>
-                                        <div class="progress-tier-count">5 / 6</div>
+                            @foreach($tierProgress as $tier)
+                                <div class="progress-item">
+                                    <div class="progress-item-head">
+                                        <i class="fas {{ $tier['icon'] }} progress-tier-icon {{ $tier['key'] }}"></i>
+                                        <div>
+                                            <div class="progress-tier-name">{{ $tier['label'] }}</div>
+                                            <div class="progress-tier-count">{{ $tier['earned'] }} / {{ $tier['total'] }}</div>
+                                        </div>
                                     </div>
+                                    <div class="progress-bar"><span class="{{ $tier['key'] }}" style="width: {{ $tier['percent'] }}%;"></span></div>
                                 </div>
-                                <div class="progress-bar"><span class="beginner" style="width: 83%;"></span></div>
-                            </div>
-                            <div class="progress-item">
-                                <div class="progress-item-head">
-                                    <i class="fas fa-spa progress-tier-icon intermediate"></i>
-                                    <div>
-                                        <div class="progress-tier-name">Intermediate</div>
-                                        <div class="progress-tier-count">7 / 10</div>
-                                    </div>
-                                </div>
-                                <div class="progress-bar"><span class="intermediate" style="width: 70%;"></span></div>
-                            </div>
-                            <div class="progress-item">
-                                <div class="progress-item-head">
-                                    <i class="fas fa-tree progress-tier-icon advanced"></i>
-                                    <div>
-                                        <div class="progress-tier-name">Advanced</div>
-                                        <div class="progress-tier-count">4 / 8</div>
-                                    </div>
-                                </div>
-                                <div class="progress-bar"><span class="advanced" style="width: 50%;"></span></div>
-                            </div>
-                            <div class="progress-item">
-                                <div class="progress-item-head">
-                                    <i class="fas fa-crown progress-tier-icon legend"></i>
-                                    <div>
-                                        <div class="progress-tier-name">Legend</div>
-                                        <div class="progress-tier-count">2 / 6</div>
-                                    </div>
-                                </div>
-                                <div class="progress-bar"><span class="legend" style="width: 33%;"></span></div>
-                            </div>
+                            @endforeach
                         </div>
                     </div>
                 </div>
@@ -1249,64 +1219,44 @@
                     <div class="panel">
                         <div class="leaderboard-head">
                             <div class="panel-title">Leaderboard</div>
-                            <select class="leaderboard-select">
-                                <option>This Month</option>
-                                <option>This Week</option>
-                                <option>All Time</option>
+                            <select class="leaderboard-select" id="leaderboardPeriod">
+                                <option value="month">This Month</option>
+                                <option value="week">This Week</option>
+                                <option value="all">All Time</option>
                             </select>
                         </div>
 
                         <div class="leaderboard-cols">
                             <span>Rank</span>
                             <span style="flex: 1; margin-left: 38px;">Learner</span>
+                            <span>Correct</span>
                         </div>
 
-                        <div class="leaderboard-row">
-                            <div class="rank-badge gold">1</div>
-                            <div class="leaderboard-learner">Learner 1</div>
-                        </div>
-                        <div class="leaderboard-row">
-                            <div class="rank-badge silver">2</div>
-                            <div class="leaderboard-learner">Learner 2</div>
-                        </div>
-                        <div class="leaderboard-row">
-                            <div class="rank-badge bronze">3</div>
-                            <div class="leaderboard-learner">Learner 3</div>
-                        </div>
-                        <div class="leaderboard-row">
-                            <div class="rank">4</div>
-                            <div class="leaderboard-learner">Learner 4</div>
-                        </div>
-                        <div class="leaderboard-row">
-                            <div class="rank">5</div>
-                            <div class="leaderboard-learner">Learner 5</div>
-                        </div>
-                        <div class="leaderboard-row">
-                            <div class="rank">6</div>
-                            <div class="leaderboard-learner">Learner 6</div>
-                        </div>
-                        <div class="leaderboard-row">
-                            <div class="rank">7</div>
-                            <div class="leaderboard-learner">Learner 7</div>
-                        </div>
-                        <div class="leaderboard-row me">
-                            <div class="rank">8</div>
-                            <div class="leaderboard-learner">
-                                <span class="me-avatar">KD</span>
-                                Kristine D.
-                            </div>
+                        <div id="leaderboardBody">
+                            <!-- rendered by JS from the data below -->
                         </div>
 
-                        <a href="#" class="leaderboard-btn"><i class="fas fa-trophy"></i> View Full Leaderboard <i class="fas fa-arrow-right"></i></a>
+                        <div class="leaderboard-empty" id="leaderboardEmpty" style="display:none; text-align:center; color:#999; font-size:13px; padding:24px 0;">
+                            No quiz activity in this period yet.
+                        </div>
                     </div>
 
                     <!-- YOUR STATUS -->
                     <div class="panel status-card">
                         <div class="status-card-laurel"><i class="fas fa-medal"></i></div>
                         <div class="status-card-label">Your Status</div>
-                        <div class="status-card-value">Top 8</div>
-                        <div class="status-card-text">You are currently in the <strong>top 8%</strong> of all CPALE aspirants.</div>
-                        <div class="status-card-pill"><i class="fas fa-arrow-trend-up"></i> Up 3 spots from last month</div>
+                        @if($status['ranked'])
+                            <div class="status-card-value">#{{ $status['rank'] }}</div>
+                            <div class="status-card-text">You are currently in the <strong>top {{ $status['percentile'] }}%</strong> of {{ $status['total'] }} active reviewers.</div>
+                            <div class="status-card-pill" style="{{ $status['delta_tone'] === 'down' ? 'background:#fdeaea;color:#c0392b;' : ($status['delta_tone'] === 'flat' ? 'background:#eef2f6;color:#5a6b7b;' : '') }}">
+                                <i class="fas {{ $status['delta_tone'] === 'up' ? 'fa-arrow-trend-up' : ($status['delta_tone'] === 'down' ? 'fa-arrow-trend-down' : 'fa-minus') }}"></i>
+                                {{ $status['delta_label'] }}
+                            </div>
+                        @else
+                            <div class="status-card-value">Unranked</div>
+                            <div class="status-card-text">Complete a quiz to earn your place on the leaderboard.</div>
+                            <div class="status-card-pill" style="background:#eef2f6;color:#5a6b7b;"><i class="fas fa-flag-checkered"></i> Take your first quiz</div>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -1315,10 +1265,7 @@
 
     <script>
 
-        // Load sidebar state
-        if (localStorage.getItem('sidebarCollapsed') === 'true') {
-            sidebar.classList.add('collapsed');
-        }
+        // (Sidebar collapse state is handled by the sidebar partial itself.)
 
         // Profile dropdown
         const profileBtn = document.getElementById('profileBtn');
@@ -1332,13 +1279,67 @@
             profileDrop.addEventListener('click', e => e.stopPropagation());
         }
 
-        // Badge filter tabs
+        // Badge filter tabs — actually filter the grid by category
+        const badgeCards = Array.from(document.querySelectorAll('.badge-card'));
+        const badgeEmpty = document.querySelector('.badge-empty');
         document.querySelectorAll('.badge-tab').forEach(tab => {
             tab.addEventListener('click', () => {
                 document.querySelectorAll('.badge-tab').forEach(t => t.classList.remove('active'));
                 tab.classList.add('active');
+
+                const filter = tab.dataset.filter;
+                let visible = 0;
+                badgeCards.forEach(card => {
+                    const show = filter === 'all' || card.dataset.category === filter;
+                    card.style.display = show ? '' : 'none';
+                    if (show) visible++;
+                });
+                if (badgeEmpty) badgeEmpty.style.display = visible === 0 ? 'block' : 'none';
             });
         });
+
+        // ── Leaderboard (real data, switchable by period) ──────────────
+        const leaderboardData = @json($leaderboard);
+        const lbBody   = document.getElementById('leaderboardBody');
+        const lbEmpty  = document.getElementById('leaderboardEmpty');
+        const lbSelect = document.getElementById('leaderboardPeriod');
+
+        function escapeHtml(s) {
+            const d = document.createElement('div');
+            d.textContent = s;
+            return d.innerHTML;
+        }
+
+        function renderLeaderboard(period) {
+            const rows = leaderboardData[period] || [];
+            if (!rows.length) {
+                lbBody.innerHTML = '';
+                lbEmpty.style.display = 'block';
+                return;
+            }
+            lbEmpty.style.display = 'none';
+
+            lbBody.innerHTML = rows.map(r => {
+                let rankCell;
+                if (r.rank === 1)      rankCell = '<div class="rank-badge gold">1</div>';
+                else if (r.rank === 2) rankCell = '<div class="rank-badge silver">2</div>';
+                else if (r.rank === 3) rankCell = '<div class="rank-badge bronze">3</div>';
+                else                   rankCell = '<div class="rank">' + r.rank + '</div>';
+
+                const learner = r.is_me
+                    ? '<div class="leaderboard-learner"><span class="me-avatar">' + escapeHtml(r.initials) + '</span>' + escapeHtml(r.name) + '</div>'
+                    : '<div class="leaderboard-learner">' + escapeHtml(r.name) + '</div>';
+
+                const score = '<div class="rank" style="width:auto;min-width:40px;font-weight:700;color:#c0392b;">' + r.score + '</div>';
+
+                return '<div class="leaderboard-row' + (r.is_me ? ' me' : '') + '">' + rankCell + learner + score + '</div>';
+            }).join('');
+        }
+
+        if (lbSelect) {
+            lbSelect.addEventListener('change', () => renderLeaderboard(lbSelect.value));
+        }
+        renderLeaderboard('month');
     </script>
 </body>
 </html>
