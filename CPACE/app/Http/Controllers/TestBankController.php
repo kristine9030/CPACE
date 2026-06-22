@@ -23,6 +23,34 @@ class TestBankController extends Controller
      */
     public function index(Request $request)
     {
+        $questions = $this->filteredQuery($request)->paginate(15)->withQueryString();
+
+        // Live search / filter / pagination requests only need the table markup.
+        if ($request->ajax()) {
+            return view('faculty.partials.test-bank-table', ['questions' => $questions]);
+        }
+
+        $stats = [
+            'total'     => Question::count(),
+            'active'    => Question::where('is_active', true)->count(),
+            'draft'     => Question::where('is_active', false)->count(),
+            'this_week' => Question::where('created_at', '>=', now()->subDays(7))->count(),
+        ];
+
+        return view('faculty.test-bank', [
+            'questions' => $questions,
+            'stats'     => $stats,
+            'subjects'  => Subject::orderBy('id')->get(),
+            'filters'   => $request->only(['search', 'subject', 'type', 'difficulty', 'status']),
+        ]);
+    }
+
+    /**
+     * Build the Test Bank question query with all the active filters applied.
+     * Shared by the listing and the export so both honour the same filters.
+     */
+    private function filteredQuery(Request $request)
+    {
         $query = Question::query()
             ->select('questions.*', 'topics.name as topic_name', 'subjects.code as subject_code', 'subjects.id as subject_id')
             ->withCount('variants')
@@ -45,26 +73,112 @@ class TestBankController extends Controller
             $query->where('questions.is_active', $status === 'active');
         }
 
-        $questions = $query->orderByDesc('questions.id')->paginate(15)->withQueryString();
+        return $query->orderByDesc('questions.id');
+    }
 
-        // Live search / filter / pagination requests only need the table markup.
-        if ($request->ajax()) {
-            return view('faculty.partials.test-bank-table', ['questions' => $questions]);
-        }
+    /**
+     * Export the currently filtered questions as CSV, JSON, or a printable PDF.
+     * The same filters the faculty has applied on the listing are re-applied here
+     * (passed through as query-string params), so the export matches what they see.
+     */
+    public function export(Request $request)
+    {
+        $format = $request->input('format', 'csv');
 
-        $stats = [
-            'total'     => Question::count(),
-            'active'    => Question::where('is_active', true)->count(),
-            'draft'     => Question::where('is_active', false)->count(),
-            'this_week' => Question::where('created_at', '>=', now()->subDays(7))->count(),
+        $questions = $this->filteredQuery($request)->with('choices')->get();
+        $filename  = 'test-bank-' . now()->format('Y-m-d_His');
+
+        return match ($format) {
+            'json'  => $this->exportJson($questions, $filename),
+            'pdf'   => view('faculty.test-bank-export', ['questions' => $questions, 'filters' => $request->only(['search', 'subject', 'type', 'difficulty', 'status'])]),
+            default => $this->exportCsv($questions, $filename),
+        };
+    }
+
+    /** Human-readable labels for the stored difficulty enum. */
+    private const DIFFICULTY_LABELS = [
+        'easy' => 'Easy', 'moderate' => 'Medium', 'difficult' => 'Hard',
+    ];
+
+    /** Flatten a question's choices into "A. text (correct)" style strings. */
+    private function choiceLines(Question $question): array
+    {
+        return $question->choices
+            ->sortBy('choice_label')
+            ->map(fn ($c) => trim($c->choice_label . '. ' . $c->choice_text . ($c->is_correct ? '  [correct]' : '')))
+            ->values()
+            ->all();
+    }
+
+    /** The single correct answer for a question, as "A. text". */
+    private function correctAnswer(Question $question): string
+    {
+        $correct = $question->choices->firstWhere('is_correct', true);
+
+        return $correct ? trim($correct->choice_label . '. ' . $correct->choice_text) : '';
+    }
+
+    /** Stream the questions as a CSV file (opens directly in Excel / Sheets). */
+    private function exportCsv($questions, string $filename)
+    {
+        $headers = [
+            'Content-Type'        => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => "attachment; filename=\"{$filename}.csv\"",
         ];
 
-        return view('faculty.test-bank', [
-            'questions' => $questions,
-            'stats'     => $stats,
-            'subjects'  => Subject::orderBy('id')->get(),
-            'filters'   => $request->only(['search', 'subject', 'type', 'difficulty', 'status']),
+        return response()->stream(function () use ($questions) {
+            $out = fopen('php://output', 'w');
+            // UTF-8 BOM so Excel renders accented characters correctly.
+            fwrite($out, "\xEF\xBB\xBF");
+
+            fputcsv($out, [
+                'ID', 'Subject', 'Topic', 'Type', 'Difficulty', 'Status',
+                'Question', 'Choices', 'Correct Answer', 'Explanation', 'Variants',
+            ]);
+
+            foreach ($questions as $q) {
+                fputcsv($out, [
+                    $q->id,
+                    $q->subject_code,
+                    $q->topic_name,
+                    $q->question_type === 'mcq' ? 'Multiple Choice' : 'True / False',
+                    self::DIFFICULTY_LABELS[$q->difficulty] ?? $q->difficulty,
+                    $q->is_active ? 'Active' : 'Draft',
+                    $q->question_text,
+                    implode("\n", $this->choiceLines($q)),
+                    $this->correctAnswer($q),
+                    $q->explanation,
+                    $q->variants_count,
+                ]);
+            }
+
+            fclose($out);
+        }, 200, $headers);
+    }
+
+    /** Download the questions as a structured JSON file. */
+    private function exportJson($questions, string $filename)
+    {
+        $payload = $questions->map(fn (Question $q) => [
+            'id'             => $q->id,
+            'subject'        => $q->subject_code,
+            'topic'          => $q->topic_name,
+            'type'           => $q->question_type,
+            'difficulty'     => self::DIFFICULTY_LABELS[$q->difficulty] ?? $q->difficulty,
+            'status'         => $q->is_active ? 'active' : 'draft',
+            'question_text'  => $q->question_text,
+            'choices'        => $q->choices->sortBy('choice_label')->map(fn ($c) => [
+                'label'      => $c->choice_label,
+                'text'       => $c->choice_text,
+                'is_correct' => (bool) $c->is_correct,
+            ])->values(),
+            'explanation'    => $q->explanation,
+            'variants_count' => $q->variants_count,
         ]);
+
+        return response()->json($payload, 200, [
+            'Content-Disposition' => "attachment; filename=\"{$filename}.json\"",
+        ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
     }
 
     /**

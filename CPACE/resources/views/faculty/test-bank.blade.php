@@ -20,7 +20,7 @@
         .sidebar.collapsed ~ .main { margin-left:70px; }
 
         /* TOPBAR */
-        .topbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:22px; gap:16px; }
+        .topbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:22px; gap:16px; position:relative; z-index:100; }
         .topbar-left { display:flex; align-items:center; gap:12px; }
         .page-title { font-size:26px; font-weight:700; color:#1a1a1a; }
         .page-sub { font-size:12px; color:#999; margin-top:2px; }
@@ -32,6 +32,13 @@
         .btn-outline:hover { background:var(--primary-light); }
         .btn-ghost { background:white; color:#555; border:1px solid #e0e0e0; }
         .btn-ghost:hover { background:#f5f5f5; }
+
+        /* EXPORT DROPDOWN */
+        .export-wrap { position:relative; }
+        .export-menu { position:absolute; top:calc(100% + 6px); right:0; background:white; border:1px solid #ececec; border-radius:10px; box-shadow:0 8px 24px rgba(0,0,0,.12); padding:6px; min-width:210px; z-index:50; display:none; }
+        .export-menu.open { display:block; }
+        .export-menu a { display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:7px; font-size:13px; color:#444; text-decoration:none; transition:background .15s; }
+        .export-menu a:hover { background:#f5f5f5; }
 
         /* STATS */
         .stats-row { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:20px; }
@@ -156,7 +163,16 @@
         </div>
         <div class="topbar-right">
             <button class="btn btn-ghost"><i class="fas fa-file-import"></i> Import</button>
-            <button class="btn btn-ghost"><i class="fas fa-file-export"></i> Export</button>
+            <div class="export-wrap">
+                <button class="btn btn-ghost" id="exportBtn" type="button">
+                    <i class="fas fa-file-export"></i> Export <i class="fas fa-chevron-down" style="font-size:10px;"></i>
+                </button>
+                <div class="export-menu" id="exportMenu">
+                    <a href="#" data-format="csv"><i class="fas fa-file-csv" style="color:#059669;"></i> Export as CSV (Excel)</a>
+                    <a href="#" data-format="json"><i class="fas fa-file-code" style="color:#2563eb;"></i> Export as JSON</a>
+                    <a href="#" data-format="pdf" target="_blank"><i class="fas fa-file-pdf" style="color:#c0392b;"></i> Export as PDF</a>
+                </div>
+            </div>
             <a href="{{ route('faculty.question.create') }}" class="btn btn-primary"><i class="fas fa-plus"></i> Add Question</a>
             @include('partials.topbar-actions')
         </div>
@@ -295,6 +311,39 @@ document.addEventListener('DOMContentLoaded', () => {
         const link = e.target.closest('a.pag-btn');
         if (link && link.getAttribute('href')) { e.preventDefault(); loadTable(link.href); }
     });
+
+    // ── EXPORT DROPDOWN ──
+    // Each option exports the questions matching the *currently applied* filters
+    // by reusing the live filter form state, just pointed at the export route.
+    const exportBtn  = document.getElementById('exportBtn');
+    const exportMenu = document.getElementById('exportMenu');
+    const exportBase = @json(route('faculty.test-bank.export'));
+
+    if (exportBtn && exportMenu) {
+        exportBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            exportMenu.classList.toggle('open');
+        });
+
+        // Close the menu when clicking anywhere else.
+        document.addEventListener('click', () => exportMenu.classList.remove('open'));
+
+        // Build the export URL from the current filters + chosen format.
+        exportMenu.querySelectorAll('a[data-format]').forEach(opt => {
+            opt.addEventListener('click', (e) => {
+                e.preventDefault();
+                const params = new URLSearchParams(new FormData(form));
+                params.set('format', opt.dataset.format);
+                const url = exportBase + '?' + params.toString();
+                if (opt.dataset.format === 'pdf') {
+                    window.open(url, '_blank');     // printable view in a new tab
+                } else {
+                    window.location = url;          // triggers the file download
+                }
+                exportMenu.classList.remove('open');
+            });
+        });
+    }
 });
 </script>
 </body>
