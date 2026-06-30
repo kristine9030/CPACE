@@ -13,24 +13,30 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
-        // Student accounts
+        // Student accounts (role_id 2 = Role::STUDENT)
         User::updateOrCreate(['email' => 'test@cpace.com'], [
-            'name' => 'Test User',
-            'role' => 'student',
-            'password' => Hash::make('Password123'),
+            'role_id'    => 2,
+            'first_name' => 'Test',
+            'last_name'  => 'User',
+            'password'   => Hash::make('Password123'),
+            'is_active'  => true,
         ]);
 
         User::updateOrCreate(['email' => 'john@cpace.com'], [
-            'name' => 'John Doe',
-            'role' => 'student',
-            'password' => Hash::make('Password123'),
+            'role_id'    => 2,
+            'first_name' => 'John',
+            'last_name'  => 'Doe',
+            'password'   => Hash::make('Password123'),
+            'is_active'  => true,
         ]);
 
-        // Faculty account
+        // Faculty account (role_id 3 = Role::FACULTY)
         User::updateOrCreate(['email' => 'faculty@cpace.com'], [
-            'name' => 'Faculty Admin',
-            'role' => 'faculty',
-            'password' => Hash::make('Faculty123'),
+            'role_id'    => 3,
+            'first_name' => 'Faculty',
+            'last_name'  => 'Admin',
+            'password'   => Hash::make('Faculty123'),
+            'is_active'  => true,
         ]);
     }
 }
