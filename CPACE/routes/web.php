@@ -70,6 +70,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/test-bank/{id}/variants/suggest', [TestBankController::class, 'suggestVariant'])->name('question.variants.suggest');
         Route::get('/subjects', fn() => view('faculty.subjects'))->name('subjects');
         Route::get('/performance', fn() => view('faculty.performance'))->name('performance');
+        Route::get('/reports', fn() => view('faculty.reports'))->name('reports');
     });
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/subjects', function () {

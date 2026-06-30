@@ -1,7 +1,7 @@
 {{--
     Faculty portal sidebar + shared sidebar CSS for all faculty pages.
     Usage: @include('partials.faculty-sidebar', ['active' => 'dashboard'])
-    Valid $active keys: dashboard, test-bank, add-question, subjects, performance
+    Valid $active keys: dashboard, test-bank, add-question, subjects, performance, reports
 --}}
 @php $active = $active ?? ''; @endphp
 
@@ -255,7 +255,7 @@
 
         <li class="nav-label">Analytics</li>
         <li><a href="{{ route('faculty.performance') }}" class="{{ $active === 'performance' ? 'active' : '' }}"><i class="fas fa-users"></i><span>Student Performance</span></a></li>
-        <li><a href="#"><i class="fas fa-chart-line"></i><span>Reports</span></a></li>
+        <li><a href="{{ route('faculty.reports') }}" class="{{ $active === 'reports' ? 'active' : '' }}"><i class="fas fa-chart-line"></i><span>Reports</span></a></li>
 
         <li class="nav-label">System</li>
         <li><a href="#"><i class="fas fa-cog"></i><span>Settings</span></a></li>
