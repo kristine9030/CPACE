@@ -5,6 +5,7 @@ use App\Http\Controllers\AchievementController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\FacultyPerformanceController;
 use App\Http\Controllers\ProgramChairController;
 use App\Http\Controllers\PerformanceController;
 use App\Http\Controllers\QuizController;
@@ -69,7 +70,9 @@ Route::middleware('auth')->group(function () {
         Route::delete('/test-bank/{id}/variants/{variantId}', [TestBankController::class, 'destroyVariant'])->name('question.variants.destroy');
         Route::post('/test-bank/{id}/variants/suggest', [TestBankController::class, 'suggestVariant'])->name('question.variants.suggest');
         Route::get('/subjects', fn() => view('faculty.subjects'))->name('subjects');
-        Route::get('/performance', fn() => view('faculty.performance'))->name('performance');
+        Route::get('/performance', [FacultyPerformanceController::class, 'index'])->name('performance');
+        Route::get('/performance/export', [FacultyPerformanceController::class, 'export'])->name('performance.export');
+        Route::post('/performance/remind', [FacultyPerformanceController::class, 'sendReminder'])->name('performance.remind');
     });
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/subjects', function () {
