@@ -34,7 +34,7 @@ class DashboardController extends Controller
         // counts as attempted. This matches the Performance and Quizzes pages.
         // Training is a no-stakes practice mode, so it is excluded from every
         // figure on the dashboard (it is still saved for the results review).
-        $attemptedBase = fn () => DB::table('quiz_sessions')
+        $attemptedBase = fn() => DB::table('quiz_sessions')
             ->where('student_id', $studentId)
             ->where('session_type', '!=', 'training')
             ->whereNotNull('completed_at');
@@ -58,10 +58,12 @@ class DashboardController extends Controller
         $studyHours     = (int) round($studySeconds / 3600);
         $studyHoursWeek = (int) round($studySecondsWeek / 3600);
 
-        // ── Board readiness = overall accuracy across all topics ──────────
-        $agg = DB::table('performance_records')
-            ->where('student_id', $studentId)
-            ->selectRaw('COALESCE(SUM(correct_count),0) c, COALESCE(SUM(total_attempts),0) t')
+        // ── Board readiness = overall accuracy ────────────────────────────
+        // Uses the SAME source as the Performance page (completed, non-training
+        // quiz_sessions: correct_answers / total_items) so the two pages always
+        // agree.
+        $agg = $attemptedBase()
+            ->selectRaw('COALESCE(SUM(correct_answers),0) c, COALESCE(SUM(total_items),0) t')
             ->first();
         $readiness = ($agg && $agg->t > 0) ? (int) round($agg->c / $agg->t * 100) : 0;
 
@@ -70,7 +72,7 @@ class DashboardController extends Controller
             ->leftJoin('topics', 'topics.subject_id', '=', 'subjects.id')
             ->leftJoin('performance_records', function ($join) use ($studentId) {
                 $join->on('performance_records.topic_id', '=', 'topics.id')
-                     ->where('performance_records.student_id', '=', $studentId);
+                    ->where('performance_records.student_id', '=', $studentId);
             })
             ->groupBy('subjects.id', 'subjects.code', 'subjects.name')
             ->orderBy('subjects.id')
