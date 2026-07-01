@@ -5,6 +5,7 @@ use App\Http\Controllers\AchievementController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\FacultyDashboardController;
 use App\Http\Controllers\FacultyPerformanceController;
 use App\Http\Controllers\FacultyReportController;
 use App\Http\Controllers\ProgramChairController;
@@ -55,7 +56,7 @@ Route::middleware('auth')->group(function () {
 
     // Faculty Routes
     Route::prefix('faculty')->name('faculty.')->middleware('faculty')->group(function () {
-        Route::get('/dashboard', fn() => view('faculty.dashboard'))->name('dashboard');
+        Route::get('/dashboard', [FacultyDashboardController::class, 'index'])->name('dashboard');
         Route::get('/test-bank', [TestBankController::class, 'index'])->name('test-bank');
         Route::get('/test-bank/export', [TestBankController::class, 'export'])->name('test-bank.export');
         Route::get('/test-bank/create', [TestBankController::class, 'create'])->name('question.create');
