@@ -6,6 +6,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FacultyPerformanceController;
+use App\Http\Controllers\FacultyReportController;
 use App\Http\Controllers\ProgramChairController;
 use App\Http\Controllers\PerformanceController;
 use App\Http\Controllers\QuizController;
@@ -73,7 +74,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/performance', [FacultyPerformanceController::class, 'index'])->name('performance');
         Route::get('/performance/export', [FacultyPerformanceController::class, 'export'])->name('performance.export');
         Route::post('/performance/remind', [FacultyPerformanceController::class, 'sendReminder'])->name('performance.remind');
-        Route::get('/reports', fn() => view('faculty.reports'))->name('reports');
+        Route::get('/reports', [FacultyReportController::class, 'index'])->name('reports');
+        Route::get('/reports/export', [FacultyReportController::class, 'export'])->name('reports.export');
     });
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/subjects', function () {
