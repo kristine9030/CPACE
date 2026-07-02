@@ -534,6 +534,7 @@
             gap: 8px;
             transition: all 0.3s;
             white-space: nowrap;
+            text-decoration: none;
         }
 
         .btn-primary:hover {
@@ -685,6 +686,10 @@
             cursor: pointer;
             font-family: 'Poppins', sans-serif;
             transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
         }
 
         .btn-take:hover {
@@ -974,7 +979,7 @@
                             <div class="card-title">Mock Exams</div>
                             <div class="card-subtitle">Take a full-length exam or practice by subject area.</div>
                         </div>
-                        <button class="btn-primary"><i class="fas fa-plus"></i> Take New Exam</button>
+                        <a href="{{ route('mock-exams.simulation', ['exam' => 'Full CPALE Mock Exam']) }}" class="btn-primary"><i class="fas fa-plus"></i> Take New Exam</a>
                     </div>
 
                     <div class="tabs">
@@ -1098,7 +1103,7 @@
                                     <span class="date-value">â€”</span>
                                 </td>
                                 <td><span class="status not-taken">Not Taken</span></td>
-                                <td><button class="btn-take">Take Exam</button></td>
+                                <td><a href="{{ route('mock-exams.simulation', ['exam' => 'FAR Mock Exam 2']) }}" class="btn-take">Take Exam</a></td>
                             </tr>
                         </tbody>
                     </table>
@@ -1189,4 +1194,3 @@
     </script>
 </body>
 </html>
-

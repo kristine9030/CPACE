@@ -94,6 +94,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/mock-exams', function () {
         return view('student.mock-exams');
     })->name('mock-exams');
+    Route::get('/mock-exams/simulation', function () {
+        return view('student.mock-exam-simulation');
+    })->name('mock-exams.simulation');
     Route::get('/performance', [PerformanceController::class, 'index'])->name('performance');
     // Review Notes (personal study notes, real CRUD backed by the database)
     Route::get('/review-notes', [ReviewNoteController::class, 'index'])->name('review-notes');
