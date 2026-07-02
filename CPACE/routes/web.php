@@ -104,4 +104,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/review-notes/{note}/favorite', [ReviewNoteController::class, 'favorite'])->name('review-notes.favorite');
     Route::get('/calendar', [CalendarController::class, 'index'])->name('calendar');
     Route::get('/achievements', [AchievementController::class, 'index'])->name('achievements');
+    Route::get('/settings', function () {
+        return view('student.settings');
+    })->name('settings');
 });
