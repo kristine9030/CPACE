@@ -1,6 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Student;
+
+use App\Http\Controllers\Controller;
 
 use App\Services\StreakService;
 use App\Services\WeaknessDetector;

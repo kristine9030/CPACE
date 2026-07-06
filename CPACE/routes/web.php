@@ -1,18 +1,18 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\AchievementController;
-use App\Http\Controllers\AuthController;
-use App\Http\Controllers\CalendarController;
-use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\FacultyDashboardController;
-use App\Http\Controllers\FacultyPerformanceController;
-use App\Http\Controllers\FacultyReportController;
-use App\Http\Controllers\ProgramChairController;
-use App\Http\Controllers\PerformanceController;
-use App\Http\Controllers\QuizController;
-use App\Http\Controllers\ReviewNoteController;
-use App\Http\Controllers\TestBankController;
+use App\Http\Controllers\Student\AchievementController;
+use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\Student\CalendarController;
+use App\Http\Controllers\Student\DashboardController;
+use App\Http\Controllers\Faculty\FacultyDashboardController;
+use App\Http\Controllers\Faculty\FacultyPerformanceController;
+use App\Http\Controllers\Faculty\FacultyReportController;
+use App\Http\Controllers\Chair\ProgramChairController;
+use App\Http\Controllers\Student\PerformanceController;
+use App\Http\Controllers\Student\QuizController;
+use App\Http\Controllers\Student\ReviewNoteController;
+use App\Http\Controllers\Faculty\TestBankController;
 
 Route::get('/', function () {
     return view('welcome');
