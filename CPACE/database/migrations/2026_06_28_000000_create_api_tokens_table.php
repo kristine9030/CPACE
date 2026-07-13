@@ -10,7 +10,6 @@ return new class extends Migration
     {
         Schema::create('api_tokens', function (Blueprint $table) {
             $table->id();
-            // users.id is int unsigned in the deployed schema, so foreignId() (bigint) cannot reference it
             $table->unsignedInteger('user_id');
             $table->foreign('user_id')->references('id')->on('users')->cascadeOnDelete();
             $table->string('token', 128)->unique();

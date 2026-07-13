@@ -190,7 +190,7 @@
             </a>
         </div>
         <div class="more-drawer-item">
-            <a href="#">
+            <a href="{{ route('settings') }}">
                 <i class="fas fa-cog"></i>
                 Settings
             </a>

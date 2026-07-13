@@ -1,6 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Faculty;
+
+use App\Http\Controllers\Controller;
 
 use App\Models\Question;
 use App\Models\QuestionVariant;

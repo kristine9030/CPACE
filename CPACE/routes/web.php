@@ -1,16 +1,18 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\AchievementController;
-use App\Http\Controllers\AuthController;
-use App\Http\Controllers\CalendarController;
-use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\FacultyPerformanceController;
-use App\Http\Controllers\ProgramChairController;
-use App\Http\Controllers\PerformanceController;
-use App\Http\Controllers\QuizController;
-use App\Http\Controllers\ReviewNoteController;
-use App\Http\Controllers\TestBankController;
+use App\Http\Controllers\Student\AchievementController;
+use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\Student\CalendarController;
+use App\Http\Controllers\Student\DashboardController;
+use App\Http\Controllers\Faculty\FacultyDashboardController;
+use App\Http\Controllers\Faculty\FacultyPerformanceController;
+use App\Http\Controllers\Faculty\FacultyReportController;
+use App\Http\Controllers\Chair\ProgramChairController;
+use App\Http\Controllers\Student\PerformanceController;
+use App\Http\Controllers\Student\QuizController;
+use App\Http\Controllers\Student\ReviewNoteController;
+use App\Http\Controllers\Faculty\TestBankController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -54,7 +56,7 @@ Route::middleware('auth')->group(function () {
 
     // Faculty Routes
     Route::prefix('faculty')->name('faculty.')->middleware('faculty')->group(function () {
-        Route::get('/dashboard', fn() => view('faculty.dashboard'))->name('dashboard');
+        Route::get('/dashboard', [FacultyDashboardController::class, 'index'])->name('dashboard');
         Route::get('/test-bank', [TestBankController::class, 'index'])->name('test-bank');
         Route::get('/test-bank/export', [TestBankController::class, 'export'])->name('test-bank.export');
         Route::get('/test-bank/create', [TestBankController::class, 'create'])->name('question.create');
@@ -73,7 +75,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/performance', [FacultyPerformanceController::class, 'index'])->name('performance');
         Route::get('/performance/export', [FacultyPerformanceController::class, 'export'])->name('performance.export');
         Route::post('/performance/remind', [FacultyPerformanceController::class, 'sendReminder'])->name('performance.remind');
-        Route::get('/reports', fn() => view('faculty.reports'))->name('reports');
+        Route::get('/reports', [FacultyReportController::class, 'index'])->name('reports');
+        Route::get('/reports/export', [FacultyReportController::class, 'export'])->name('reports.export');
     });
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/subjects', function () {
@@ -91,6 +94,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/mock-exams', function () {
         return view('student.mock-exams');
     })->name('mock-exams');
+    Route::get('/mock-exams/simulation', function () {
+        return view('student.mock-exam-simulation');
+    })->name('mock-exams.simulation');
     Route::get('/performance', [PerformanceController::class, 'index'])->name('performance');
     // Review Notes (personal study notes, real CRUD backed by the database)
     Route::get('/review-notes', [ReviewNoteController::class, 'index'])->name('review-notes');
@@ -101,4 +107,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/review-notes/{note}/favorite', [ReviewNoteController::class, 'favorite'])->name('review-notes.favorite');
     Route::get('/calendar', [CalendarController::class, 'index'])->name('calendar');
     Route::get('/achievements', [AchievementController::class, 'index'])->name('achievements');
+    Route::get('/settings', function () {
+        return view('student.settings');
+    })->name('settings');
 });

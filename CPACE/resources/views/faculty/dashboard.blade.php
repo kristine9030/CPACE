@@ -263,8 +263,12 @@
             <div class="stat-top">
                 <div>
                     <div class="stat-lbl">Total Questions</div>
-                    <div class="stat-num">1,543</div>
-                    <div class="stat-chg"><i class="fas fa-arrow-up"></i> 24 this week</div>
+                    <div class="stat-num">{{ number_format($stats['total_questions']) }}</div>
+                    @if($stats['added_this_week'] > 0)
+                        <div class="stat-chg"><i class="fas fa-arrow-up"></i> {{ $stats['added_this_week'] }} this week</div>
+                    @else
+                        <div class="stat-chg neutral">No new this week</div>
+                    @endif
                 </div>
                 <div class="stat-icon si-red"><i class="fas fa-database"></i></div>
             </div>
@@ -273,8 +277,12 @@
             <div class="stat-top">
                 <div>
                     <div class="stat-lbl">Active Students</div>
-                    <div class="stat-num">48</div>
-                    <div class="stat-chg"><i class="fas fa-arrow-up"></i> 5 new this month</div>
+                    <div class="stat-num">{{ number_format($stats['active_students']) }}</div>
+                    @if($stats['new_this_month'] > 0)
+                        <div class="stat-chg"><i class="fas fa-arrow-up"></i> {{ $stats['new_this_month'] }} new this month</div>
+                    @else
+                        <div class="stat-chg neutral">With graded activity</div>
+                    @endif
                 </div>
                 <div class="stat-icon si-green"><i class="fas fa-users"></i></div>
             </div>
@@ -283,8 +291,14 @@
             <div class="stat-top">
                 <div>
                     <div class="stat-lbl">Avg. Student Score</div>
-                    <div class="stat-num">72%</div>
-                    <div class="stat-chg"><i class="fas fa-arrow-up"></i> 3% from last month</div>
+                    <div class="stat-num">{{ $stats['avg_score'] }}%</div>
+                    @if($stats['avg_delta'] === null)
+                        <div class="stat-chg neutral">Across all quizzes</div>
+                    @elseif($stats['avg_delta'] >= 0)
+                        <div class="stat-chg"><i class="fas fa-arrow-up"></i> {{ $stats['avg_delta'] }}% from last month</div>
+                    @else
+                        <div class="stat-chg" style="color:var(--accent);"><i class="fas fa-arrow-down"></i> {{ abs($stats['avg_delta']) }}% from last month</div>
+                    @endif
                 </div>
                 <div class="stat-icon si-blue"><i class="fas fa-chart-bar"></i></div>
             </div>
@@ -293,7 +307,7 @@
             <div class="stat-top">
                 <div>
                     <div class="stat-lbl">Questions Added</div>
-                    <div class="stat-num">24</div>
+                    <div class="stat-num">{{ number_format($stats['added_this_week']) }}</div>
                     <div class="stat-chg neutral">This week</div>
                 </div>
                 <div class="stat-icon si-orange"><i class="fas fa-pen"></i></div>
@@ -311,6 +325,13 @@
                     <span class="card-title">Recently Added Questions</span>
                     <a href="{{ route('faculty.test-bank') }}" class="card-link">View All</a>
                 </div>
+                @php
+                    $badgeClass = [
+                        'FAR' => 'b-far', 'AUD' => 'b-aud', 'TAX' => 'b-tax',
+                        'MS' => 'b-ms', 'RFBT' => 'b-rfbt', 'AFAR' => 'b-afar',
+                    ];
+                    $diffClass = ['Easy' => 'd-easy', 'Medium' => 'd-medium', 'Hard' => 'd-hard'];
+                @endphp
                 <table>
                     <thead>
                         <tr>
@@ -323,62 +344,33 @@
                         </tr>
                     </thead>
                     <tbody>
+                        @forelse($recentQuestions as $q)
                         <tr>
                             <td style="max-width:260px;">
-                                <div style="font-weight:600;color:#1a1a1a;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:250px;">Under PFRS 15, revenue is recognized when...</div>
-                                <div style="font-size:11px;color:#aaa;">Multiple Choice</div>
+                                <div style="font-weight:600;color:#1a1a1a;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:250px;">{{ $q['text'] }}</div>
+                                <div style="font-size:11px;color:#aaa;">{{ $q['type_label'] }}</div>
                             </td>
-                            <td><span class="subj-badge b-far">FAR</span></td>
-                            <td><span class="diff-badge d-medium">Medium</span></td>
-                            <td><span class="status-dot dot-active"></span><span style="font-size:12px;">Active</span></td>
-                            <td style="font-size:11px;color:#aaa;">2h ago</td>
+                            <td><span class="subj-badge {{ $badgeClass[$q['subject']] ?? 'b-far' }}">{{ $q['subject'] }}</span></td>
+                            <td><span class="diff-badge {{ $diffClass[$q['difficulty']] ?? 'd-medium' }}">{{ $q['difficulty'] }}</span></td>
                             <td>
-                                <button class="action-btn ab-edit"><i class="fas fa-pen"></i></button>
-                                <button class="action-btn ab-del" style="margin-left:4px;"><i class="fas fa-trash"></i></button>
+                                @if($q['active'])
+                                    <span class="status-dot dot-active"></span><span style="font-size:12px;">Active</span>
+                                @else
+                                    <span class="status-dot dot-draft"></span><span style="font-size:12px;color:#aaa;">Draft</span>
+                                @endif
+                            </td>
+                            <td style="font-size:11px;color:#aaa;">{{ $q['ago'] }}</td>
+                            <td style="white-space:nowrap;">
+                                <a href="{{ route('faculty.question.edit', $q['id']) }}" class="action-btn ab-edit"><i class="fas fa-pen"></i></a>
+                                <form method="POST" action="{{ route('faculty.question.destroy', $q['id']) }}" style="display:inline;" onsubmit="return confirm('Delete this question?');">
+                                    @csrf @method('DELETE')
+                                    <button type="submit" class="action-btn ab-del" style="margin-left:4px;"><i class="fas fa-trash"></i></button>
+                                </form>
                             </td>
                         </tr>
-                        <tr>
-                            <td>
-                                <div style="font-weight:600;color:#1a1a1a;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:250px;">Which of the following best describes audit risk?</div>
-                                <div style="font-size:11px;color:#aaa;">Multiple Choice</div>
-                            </td>
-                            <td><span class="subj-badge b-aud">AUD</span></td>
-                            <td><span class="diff-badge d-hard">Hard</span></td>
-                            <td><span class="status-dot dot-active"></span><span style="font-size:12px;">Active</span></td>
-                            <td style="font-size:11px;color:#aaa;">5h ago</td>
-                            <td>
-                                <button class="action-btn ab-edit"><i class="fas fa-pen"></i></button>
-                                <button class="action-btn ab-del" style="margin-left:4px;"><i class="fas fa-trash"></i></button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>
-                                <div style="font-weight:600;color:#1a1a1a;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:250px;">The estate tax rate in the Philippines is...</div>
-                                <div style="font-size:11px;color:#aaa;">Multiple Choice</div>
-                            </td>
-                            <td><span class="subj-badge b-tax">TAX</span></td>
-                            <td><span class="diff-badge d-easy">Easy</span></td>
-                            <td><span class="status-dot dot-draft"></span><span style="font-size:12px;color:#aaa;">Draft</span></td>
-                            <td style="font-size:11px;color:#aaa;">1d ago</td>
-                            <td>
-                                <button class="action-btn ab-edit"><i class="fas fa-pen"></i></button>
-                                <button class="action-btn ab-del" style="margin-left:4px;"><i class="fas fa-trash"></i></button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>
-                                <div style="font-weight:600;color:#1a1a1a;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:250px;">Balance of payments (BOP) refers to...</div>
-                                <div style="font-size:11px;color:#aaa;">True / False</div>
-                            </td>
-                            <td><span class="subj-badge b-ms">MS</span></td>
-                            <td><span class="diff-badge d-medium">Medium</span></td>
-                            <td><span class="status-dot dot-active"></span><span style="font-size:12px;">Active</span></td>
-                            <td style="font-size:11px;color:#aaa;">2d ago</td>
-                            <td>
-                                <button class="action-btn ab-edit"><i class="fas fa-pen"></i></button>
-                                <button class="action-btn ab-del" style="margin-left:4px;"><i class="fas fa-trash"></i></button>
-                            </td>
-                        </tr>
+                        @empty
+                        <tr><td colspan="6" style="text-align:center;color:#aaa;padding:26px;">No questions in your subjects yet.</td></tr>
+                        @endforelse
                     </tbody>
                 </table>
             </div>
@@ -389,38 +381,18 @@
                     <span class="card-title">Recent Student Activity</span>
                     <a href="{{ route('faculty.performance') }}" class="card-link">View All</a>
                 </div>
+                @forelse($recentActivity as $act)
                 <div class="activity-item">
-                    <div class="act-icon" style="background:#d1fae5;color:#059669;"><i class="fas fa-check-circle"></i></div>
+                    <div class="act-icon" style="background:{{ $act['tone']['bg'] }};color:{{ $act['tone']['fg'] }};"><i class="fas {{ $act['tone']['icon'] }}"></i></div>
                     <div style="flex:1">
-                        <div class="act-name">Maria Santos</div>
-                        <div class="act-sub">Completed FAR Mock Exam &bull; Score: 85%</div>
+                        <div class="act-name">{{ $act['name'] }}</div>
+                        <div class="act-sub">{!! $act['detail'] !!}</div>
                     </div>
-                    <div class="act-time">2h ago</div>
+                    <div class="act-time">{{ $act['ago'] }}</div>
                 </div>
-                <div class="activity-item">
-                    <div class="act-icon" style="background:#dbeafe;color:#2563eb;"><i class="fas fa-brain"></i></div>
-                    <div style="flex:1">
-                        <div class="act-name">Juan dela Cruz</div>
-                        <div class="act-sub">Finished Adaptive Quiz – AUD &bull; Score: 71%</div>
-                    </div>
-                    <div class="act-time">4h ago</div>
-                </div>
-                <div class="activity-item">
-                    <div class="act-icon" style="background:#fef3c7;color:#d97706;"><i class="fas fa-star"></i></div>
-                    <div style="flex:1">
-                        <div class="act-name">Ana Reyes</div>
-                        <div class="act-sub">Earned Achievement: 10-Day Streak</div>
-                    </div>
-                    <div class="act-time">6h ago</div>
-                </div>
-                <div class="activity-item">
-                    <div class="act-icon" style="background:#fde8e8;color:var(--accent);"><i class="fas fa-exclamation-circle"></i></div>
-                    <div style="flex:1">
-                        <div class="act-name">Carlo Mendoza</div>
-                        <div class="act-sub">Low score alert – TAX Quiz &bull; Score: 42%</div>
-                    </div>
-                    <div class="act-time">1d ago</div>
-                </div>
+                @empty
+                <div style="text-align:center;color:#aaa;padding:24px;font-size:13px;">No recent student activity in your subjects.</div>
+                @endforelse
             </div>
         </div>
 
@@ -451,7 +423,7 @@
                             <span class="qa-sub">Monitor performance</span>
                         </div>
                     </a>
-                    <a href="#" class="qa-btn secondary-qa">
+                    <a href="{{ route('faculty.reports') }}" class="qa-btn secondary-qa">
                         <div class="qa-icon" style="background:#fef3c7;color:#d97706;"><i class="fas fa-file-export"></i></div>
                         <div>
                             <span class="qa-title">Export Report</span>
@@ -464,30 +436,14 @@
             <!-- QUESTION DISTRIBUTION -->
             <div class="card">
                 <div class="card-head"><span class="card-title">Questions by Subject</span></div>
+                @forelse($bySubject as $s)
                 <div class="subj-dist-item">
-                    <div class="subj-dist-top"><span>FAR</span><span class="val">342</span></div>
-                    <div class="bar-bg"><div class="bar-fill" style="width:88%;background:#3b82f6;"></div></div>
+                    <div class="subj-dist-top"><span>{{ $s['code'] }}</span><span class="val">{{ number_format($s['total']) }}</span></div>
+                    <div class="bar-bg"><div class="bar-fill" style="width:{{ $s['width'] }}%;background:{{ $s['color'] }};"></div></div>
                 </div>
-                <div class="subj-dist-item">
-                    <div class="subj-dist-top"><span>AUD</span><span class="val">289</span></div>
-                    <div class="bar-bg"><div class="bar-fill" style="width:74%;background:#e8567d;"></div></div>
-                </div>
-                <div class="subj-dist-item">
-                    <div class="subj-dist-top"><span>TAX</span><span class="val">310</span></div>
-                    <div class="bar-bg"><div class="bar-fill" style="width:80%;background:#27ae60;"></div></div>
-                </div>
-                <div class="subj-dist-item">
-                    <div class="subj-dist-top"><span>MS</span><span class="val">198</span></div>
-                    <div class="bar-bg"><div class="bar-fill" style="width:51%;background:#8b5cf6;"></div></div>
-                </div>
-                <div class="subj-dist-item">
-                    <div class="subj-dist-top"><span>RFBT</span><span class="val">220</span></div>
-                    <div class="bar-bg"><div class="bar-fill" style="width:57%;background:#f59e0b;"></div></div>
-                </div>
-                <div class="subj-dist-item">
-                    <div class="subj-dist-top"><span>AFAR</span><span class="val">184</span></div>
-                    <div class="bar-bg"><div class="bar-fill" style="width:47%;background:#17a2b8;"></div></div>
-                </div>
+                @empty
+                <div style="text-align:center;color:#aaa;padding:16px;font-size:13px;">No subjects assigned.</div>
+                @endforelse
             </div>
         </div>
     </div>
@@ -500,21 +456,21 @@
                 <div class="mini-icon" style="background:#dbeafe;color:#2563eb;"><i class="fas fa-list-ul"></i></div>
                 <div>
                     <div class="mini-label">Multiple Choice</div>
-                    <div class="mini-val">1,120 <span style="font-size:11px;color:#aaa;font-weight:400;">(72.6%)</span></div>
+                    <div class="mini-val">{{ number_format($byType['mcq']['count']) }} <span style="font-size:11px;color:#aaa;font-weight:400;">({{ $byType['mcq']['pct'] }}%)</span></div>
                 </div>
             </div>
             <div class="mini-stat">
                 <div class="mini-icon" style="background:#d1fae5;color:#059669;"><i class="fas fa-check-square"></i></div>
                 <div>
                     <div class="mini-label">True / False</div>
-                    <div class="mini-val">280 <span style="font-size:11px;color:#aaa;font-weight:400;">(18.1%)</span></div>
+                    <div class="mini-val">{{ number_format($byType['tf']['count']) }} <span style="font-size:11px;color:#aaa;font-weight:400;">({{ $byType['tf']['pct'] }}%)</span></div>
                 </div>
             </div>
             <div class="mini-stat">
-                <div class="mini-icon" style="background:#fef3c7;color:#d97706;"><i class="fas fa-pen"></i></div>
+                <div class="mini-icon" style="background:#ede9fe;color:#7c3aed;"><i class="fas fa-layer-group"></i></div>
                 <div>
-                    <div class="mini-label">Identification</div>
-                    <div class="mini-val">143 <span style="font-size:11px;color:#aaa;font-weight:400;">(9.3%)</span></div>
+                    <div class="mini-label">Total Questions</div>
+                    <div class="mini-val">{{ number_format($byType['total']) }}</div>
                 </div>
             </div>
         </div>
@@ -525,48 +481,39 @@
                 <div class="mini-icon" style="background:#d1fae5;color:#059669;"><i class="fas fa-smile"></i></div>
                 <div>
                     <div class="mini-label">Easy</div>
-                    <div class="mini-val">502 <span style="font-size:11px;color:#aaa;font-weight:400;">(32.5%)</span></div>
+                    <div class="mini-val">{{ number_format($byDifficulty['easy']['count']) }} <span style="font-size:11px;color:#aaa;font-weight:400;">({{ $byDifficulty['easy']['pct'] }}%)</span></div>
                 </div>
             </div>
             <div class="mini-stat">
                 <div class="mini-icon" style="background:#fef3c7;color:#d97706;"><i class="fas fa-meh"></i></div>
                 <div>
                     <div class="mini-label">Medium</div>
-                    <div class="mini-val">741 <span style="font-size:11px;color:#aaa;font-weight:400;">(48.0%)</span></div>
+                    <div class="mini-val">{{ number_format($byDifficulty['medium']['count']) }} <span style="font-size:11px;color:#aaa;font-weight:400;">({{ $byDifficulty['medium']['pct'] }}%)</span></div>
                 </div>
             </div>
             <div class="mini-stat">
                 <div class="mini-icon" style="background:#fde8e8;color:var(--accent);"><i class="fas fa-frown"></i></div>
                 <div>
                     <div class="mini-label">Hard</div>
-                    <div class="mini-val">300 <span style="font-size:11px;color:#aaa;font-weight:400;">(19.5%)</span></div>
+                    <div class="mini-val">{{ number_format($byDifficulty['hard']['count']) }} <span style="font-size:11px;color:#aaa;font-weight:400;">({{ $byDifficulty['hard']['pct'] }}%)</span></div>
                 </div>
             </div>
         </div>
 
         <div class="card">
             <div class="card-head"><span class="card-title">Top Performing Students</span></div>
+            @php $rankStyles = [['#fde8e8','var(--accent)'],['#dbeafe','#2563eb'],['#d1fae5','#059669']]; @endphp
+            @forelse($topStudents as $i => $st)
             <div class="mini-stat">
-                <div class="mini-icon" style="background:#fde8e8;color:var(--accent);font-weight:700;font-size:14px;">1</div>
+                <div class="mini-icon" style="background:{{ $rankStyles[$i][0] ?? '#f1f5f9' }};color:{{ $rankStyles[$i][1] ?? '#64748b' }};font-weight:700;font-size:14px;">{{ $i + 1 }}</div>
                 <div style="flex:1">
-                    <div class="mini-label">Maria Santos</div>
-                    <div class="mini-val" style="font-size:13px;">92% avg</div>
+                    <div class="mini-label">{{ $st['name'] }}</div>
+                    <div class="mini-val" style="font-size:13px;">{{ $st['score'] }}% avg</div>
                 </div>
             </div>
-            <div class="mini-stat">
-                <div class="mini-icon" style="background:#dbeafe;color:#2563eb;font-weight:700;font-size:14px;">2</div>
-                <div style="flex:1">
-                    <div class="mini-label">Ana Reyes</div>
-                    <div class="mini-val" style="font-size:13px;">88% avg</div>
-                </div>
-            </div>
-            <div class="mini-stat">
-                <div class="mini-icon" style="background:#d1fae5;color:#059669;font-weight:700;font-size:14px;">3</div>
-                <div style="flex:1">
-                    <div class="mini-label">Juan dela Cruz</div>
-                    <div class="mini-val" style="font-size:13px;">85% avg</div>
-                </div>
-            </div>
+            @empty
+            <div style="text-align:center;color:#aaa;padding:24px;font-size:13px;">Not enough graded activity yet.</div>
+            @endforelse
         </div>
     </div>
 

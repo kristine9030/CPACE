@@ -6,6 +6,8 @@
 --}}
 @php $active = $active ?? ''; @endphp
 
+@include('partials.student-theme')
+
 <style>
     /* ─── SHARED SIDEBAR ─── */
     .sidebar {
@@ -276,7 +278,7 @@
         <li><a href="{{ route('achievements') }}" class="{{ $active === 'achievements' ? 'active' : '' }}"><i class="fas fa-trophy"></i><span>Achievements</span></a></li>
 
         <li class="nav-label">Account</li>
-        <li><a href="#"><i class="fas fa-cog"></i><span>Settings</span></a></li>
+        <li><a href="{{ route('settings') }}" class="{{ $active === 'settings' ? 'active' : '' }}"><i class="fas fa-cog"></i><span>Settings</span></a></li>
     </ul>
 
     <div class="sidebar-footer">
