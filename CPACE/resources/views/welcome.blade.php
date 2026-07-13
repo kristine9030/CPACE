@@ -89,12 +89,32 @@
         /* ─── HERO ────────────────────────────────────────────── */
         .hero {
             min-height: 100vh;
-            display: grid;
-            grid-template-columns: 48fr 52fr;
-            padding-top: 68px;
-            background: linear-gradient(150deg, #ffffff 0%, #fdf5f5 50%, #f5e8e8 100%);
+            display: flex;
+            align-items: center;
+            padding: 118px 6% 140px;
+            background:
+                radial-gradient(ellipse 50% 42% at 92% 8%, rgba(123,29,29,.08), transparent 65%),
+                radial-gradient(ellipse 42% 38% at 0% 100%, rgba(123,29,29,.06), transparent 60%),
+                linear-gradient(160deg, #ffffff 0%, #fdf6f6 55%, #f6eaea 100%);
             position: relative;
             overflow: hidden;
+        }
+
+        /* dotted grid accent, top-right */
+        .hero::before {
+            content: ''; position: absolute; z-index: 1; pointer-events: none;
+            top: 98px; right: 3%; width: 220px; height: 160px;
+            background-image: radial-gradient(rgba(123,29,29,.2) 1.5px, transparent 1.6px);
+            background-size: 19px 19px;
+            -webkit-mask-image: radial-gradient(ellipse at top right, #000 25%, transparent 78%);
+                    mask-image: radial-gradient(ellipse at top right, #000 25%, transparent 78%);
+        }
+
+        .hero-inner {
+            width: 100%; max-width: 1280px; margin: 0 auto;
+            display: grid; grid-template-columns: 47fr 53fr;
+            gap: 3.5rem; align-items: center;
+            position: relative; z-index: 2;
         }
 
         /* decorative + marks matching the illustration style */
@@ -103,19 +123,19 @@
             color: var(--maroon); opacity: .18; font-weight: 300;
             line-height: 1; user-select: none;
         }
-        .hp1 { top: 18%; left: 3%;  font-size: 1.6rem; }
-        .hp2 { top: 38%; left: 44%; font-size: 1rem;   opacity: .12; }
-        .hp3 { bottom: 32%; left: 6%; font-size: 1rem; opacity: .12; }
-        .hp4 { top: 14%; right: 2%; font-size: 1.4rem; }
-        .hp5 { bottom: 24%; right: 5%; font-size: 1rem; opacity: .1; }
+        .hp1 { top: 17%; left: 3%;  font-size: 1.6rem; }
+        .hp2 { top: 12%; left: 44%; font-size: 1.1rem; opacity: .12; }
+        .hp3 { bottom: 30%; left: 6%; font-size: 1rem; opacity: .12; }
+        .hp4 { top: 48%; right: 2%; font-size: 1.4rem; }
+        .hp5 { bottom: 22%; right: 5%; font-size: 1rem; opacity: .1; }
 
         /* decorative clock ring (like in the illustration bg) */
         .hero-deco-ring {
             position: absolute; pointer-events: none; z-index: 1;
-            border: 2px solid rgba(123,29,29,.1);
+            border: 2px solid rgba(123,29,29,.12);
             border-radius: 50%;
         }
-        .ring-sm { width: 52px; height: 52px; bottom: 30%; left: 2%; }
+        .ring-sm { width: 52px; height: 52px; bottom: 32%; left: 2%; }
         .ring-sm::after {
             content: ''; position: absolute; top: 50%; left: 50%;
             transform: translate(-50%,-50%);
@@ -123,92 +143,178 @@
             background: rgba(123,29,29,.15);
         }
 
-        /* LEFT — text content */
-        .hero-left {
-            display: flex; flex-direction: column; justify-content: center;
-            padding: 60px 4% 100px 7%;
-            position: relative; z-index: 2;
-        }
+        /* LEFT — copy */
+        .hero-copy { max-width: 560px; }
 
         .hero-eyebrow {
-            display: inline-flex; align-items: center; gap: .45rem;
-            background: var(--maroon-pale); border: 1px solid var(--maroon-border);
+            display: inline-flex; align-items: center; gap: .55rem;
+            background: #fff; border: 1px solid var(--maroon-border);
             color: var(--maroon); font-size: .75rem; font-weight: 600;
-            padding: .3rem 1rem; border-radius: 50px; margin-bottom: 1.5rem;
+            padding: .4rem 1.05rem .4rem .85rem; border-radius: 50px; margin-bottom: 1.6rem;
             width: fit-content;
+            box-shadow: 0 4px 18px rgba(123,29,29,.1);
+        }
+        .pulse-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--maroon); position: relative; flex-shrink: 0; }
+        .pulse-dot::after {
+            content: ''; position: absolute; inset: -4px; border-radius: 50%;
+            background: rgba(123,29,29,.35);
+            animation: pulseDot 2s ease-out infinite;
+        }
+        @keyframes pulseDot { 0% { transform: scale(.4); opacity: .9 } 70%,100% { transform: scale(1.3); opacity: 0 } }
+
+        .hero-copy h1 {
+            font-size: clamp(2.4rem, 4.3vw, 3.7rem);
+            font-weight: 800; line-height: 1.1; color: var(--dark);
+            margin-bottom: 1.2rem; letter-spacing: -1px;
+        }
+        .hero-copy h1 .h1-light { font-weight: 500; color: #3d3d3d; }
+        .h1-accent { color: var(--maroon); position: relative; display: inline-block; }
+        .h1-accent svg {
+            position: absolute; left: 0; bottom: -.26em;
+            width: 100%; height: .3em; overflow: visible;
+        }
+        .h1-accent svg path {
+            fill: none; stroke: var(--maroon); stroke-width: 6; stroke-linecap: round;
+            stroke-dasharray: 140; stroke-dashoffset: 140; opacity: .85;
+            animation: drawStroke .8s ease forwards .7s;
+        }
+        @keyframes drawStroke { to { stroke-dashoffset: 0 } }
+
+        .hero-copy > p {
+            font-size: .97rem; color: var(--gray); line-height: 1.78;
+            margin-bottom: 2.3rem; max-width: 460px;
         }
 
-        .hero-left h1 {
-            font-size: clamp(2.1rem, 3.8vw, 3.4rem);
-            font-weight: 800; line-height: 1.12; color: var(--dark);
-            margin-bottom: 1.1rem; letter-spacing: -.5px;
-        }
-        .hero-left h1 .line-accent { color: var(--maroon); }
-        .hero-left h1 .line-light { font-weight: 400; color: #444; }
-
-        .hero-left > p {
-            font-size: .96rem; color: var(--gray); line-height: 1.78;
-            margin-bottom: 2.2rem; max-width: 420px;
-        }
-
-        .hero-cta { display: flex; gap: .9rem; flex-wrap: wrap; margin-bottom: 2.8rem; }
+        .hero-cta { display: flex; gap: .9rem; flex-wrap: wrap; margin-bottom: 2.6rem; }
 
         .cta-primary {
-            display: inline-flex; align-items: center; gap: .55rem;
-            padding: .88rem 1.9rem;
+            display: inline-flex; align-items: center; gap: .6rem;
+            padding: .95rem 2rem;
             background: linear-gradient(135deg, var(--maroon) 0%, var(--maroon-mid) 100%);
-            color: #fff; border-radius: 8px; font-weight: 700; font-size: .92rem;
+            color: #fff; border-radius: 10px; font-weight: 700; font-size: .92rem;
             text-decoration: none; border: none; cursor: pointer;
             box-shadow: 0 6px 24px rgba(123,29,29,.32);
             transition: transform .2s, box-shadow .2s;
         }
+        .cta-primary i { transition: transform .25s; }
         .cta-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 32px rgba(123,29,29,.42); }
+        .cta-primary:hover i { transform: translateX(4px); }
 
         .cta-secondary {
-            display: inline-flex; align-items: center; gap: .55rem;
-            padding: .88rem 1.9rem;
+            display: inline-flex; align-items: center; gap: .6rem;
+            padding: .95rem 2rem;
             background: #fff; color: var(--maroon);
-            border: 1.5px solid var(--maroon-border); border-radius: 8px;
+            border: 1.5px solid var(--maroon-border); border-radius: 10px;
             font-weight: 600; font-size: .92rem; text-decoration: none;
             box-shadow: 0 2px 10px rgba(0,0,0,.05);
             transition: all .2s;
         }
         .cta-secondary:hover { border-color: var(--maroon); box-shadow: 0 4px 16px rgba(123,29,29,.15); }
 
-        /* hero mini stats */
-        .hero-stats {
-            display: flex; gap: 2.2rem; padding-top: 2rem;
-            border-top: 1px solid var(--maroon-border);
+        /* social proof row */
+        .hero-proof {
+            display: flex; align-items: center; gap: 1.1rem;
+            padding-top: 1.9rem; border-top: 1px solid var(--maroon-border);
         }
-        .hero-stat-val {
-            font-size: 1.55rem; font-weight: 800; color: var(--maroon); line-height: 1;
+        .proof-avatars { display: flex; flex-shrink: 0; }
+        .pav {
+            width: 40px; height: 40px; border-radius: 50%;
+            border: 2.5px solid #fff; margin-left: -12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: .68rem; font-weight: 700; color: #fff;
+            box-shadow: 0 2px 8px rgba(0,0,0,.12);
         }
-        .hero-stat-lbl {
-            font-size: .71rem; color: var(--gray); font-weight: 500; margin-top: 4px;
+        .proof-avatars .pav:first-child { margin-left: 0; }
+        .pav1 { background: linear-gradient(135deg, #7B1D1D, #a03030); }
+        .pav2 { background: linear-gradient(135deg, #8B2525, #b54545); }
+        .pav3 { background: linear-gradient(135deg, #5a1414, #7B1D1D); }
+        .pav4 { background: linear-gradient(135deg, #3d3d3d, #1a1a1a); }
+        .pav-more { background: var(--maroon-pale); color: var(--maroon); }
+        .proof-stars { color: #f59e0b; font-size: .72rem; letter-spacing: 1.5px; }
+        .proof-stars b { color: var(--dark); font-size: .8rem; margin-left: .35rem; letter-spacing: 0; }
+        .proof-label { font-size: .78rem; color: var(--gray); margin-top: 3px; }
+        .proof-label strong { color: var(--dark); font-weight: 600; }
+
+        /* RIGHT — layered illustration visual */
+        .hero-visual { position: relative; }
+
+        /* offset gradient panel peeking behind the frame */
+        .hero-visual-back {
+            position: absolute; z-index: 0;
+            top: 28px; left: 30px; right: -22px; bottom: -22px;
+            border-radius: 30px;
+            transform: rotate(2.4deg);
+            background:
+                radial-gradient(circle at 20% 15%, rgba(255,255,255,.14), transparent 45%),
+                linear-gradient(135deg, var(--maroon-mid) 0%, var(--maroon-dark) 100%);
         }
 
-        /* RIGHT — illustration panel */
-        .hero-right {
-            position: relative; z-index: 2;
-            display: flex; align-items: flex-end; justify-content: center;
-            padding-top: 20px;
-            overflow: hidden;
+        /* slowly spinning dashed ring, bottom-left */
+        .hero-ring-spin {
+            position: absolute; z-index: 1; pointer-events: none;
+            width: 120px; height: 120px; bottom: -30px; left: -36px;
+            border: 1.5px dashed rgba(123,29,29,.3);
+            border-radius: 50%;
+            animation: spinSlow 30s linear infinite;
         }
-        .hero-right img.hero-illustration {
-            width: 100%;
-            max-height: calc(100vh - 68px);
-            object-fit: contain;
-            object-position: center bottom;
+        @keyframes spinSlow { to { transform: rotate(360deg) } }
+
+        .hero-visual-frame {
+            position: relative; z-index: 2;
+            aspect-ratio: 4 / 3;
+            border-radius: 26px; overflow: hidden;
+            background: #fdf3f3;
+            border: 5px solid #fff;
+            box-shadow: 0 35px 90px -25px rgba(90,20,20,.45);
+        }
+        .hero-visual-frame img {
+            width: 100%; height: 100%;
+            object-fit: cover; object-position: center;
             display: block;
-            position: relative; z-index: 2;
         }
 
-        /* maroon wave that sits at the bottom of hero, matching illustration */
-        .hero-wave {
-            position: absolute; bottom: 0; left: -2px; right: -2px; z-index: 3;
-            line-height: 0;
+        /* floating product-UI chips */
+        .float-card {
+            position: absolute; z-index: 3;
+            background: rgba(255,255,255,.93);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid var(--maroon-border);
+            border-radius: 14px;
+            box-shadow: 0 12px 34px rgba(90,20,20,.18);
+            display: flex; align-items: center; gap: .7rem;
+            padding: .75rem .95rem;
+            animation: chipFloat 6s ease-in-out infinite;
         }
-        .hero-wave svg { display: block; width: 100%; }
+        .float-card strong { display: block; font-size: .78rem; font-weight: 700; color: var(--dark); line-height: 1.25; white-space: nowrap; }
+        .float-card small { display: block; font-size: .66rem; color: var(--gray); white-space: nowrap; }
+
+        .fc-readiness { top: -24px; left: -34px; }
+        .fc-streak { top: 42%; right: -26px; animation-delay: 1.6s; }
+        .fc-exam { bottom: -22px; left: 10%; animation-delay: .8s; animation-duration: 7s; }
+
+        .fc-ring {
+            width: 46px; height: 46px; border-radius: 50%; flex-shrink: 0;
+            background: conic-gradient(var(--maroon) 0 81%, #f0dede 81% 100%);
+            display: flex; align-items: center; justify-content: center;
+            position: relative;
+        }
+        .fc-ring::before { content: ''; position: absolute; inset: 6px; background: #fff; border-radius: 50%; }
+        .fc-ring span { position: relative; font-size: .68rem; font-weight: 800; color: var(--maroon); }
+
+        .fc-ico {
+            width: 40px; height: 40px; border-radius: 11px; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center; font-size: .95rem;
+        }
+        .fc-ico.flame { background: linear-gradient(135deg, #7B1D1D, #a53232); color: #ffd9a0; }
+        .fc-ico.check { background: #e8f7ee; color: #16a34a; border: 1px solid #c9ecd6; }
+
+        /* maroon wave transition into the subjects bar */
+        .hero-wave {
+            position: absolute; bottom: -2px; left: 0; right: 0; z-index: 4;
+            line-height: 0; pointer-events: none;
+        }
+        .hero-wave svg { display: block; width: 100%; height: 96px; }
 
         @keyframes chipFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
 
@@ -503,14 +609,14 @@
 
         /* ─── RESPONSIVE ──────────────────────────────────────── */
         @media (max-width: 1024px) {
-            .hero { grid-template-columns: 1fr; }
-            .hero-left { padding: 56px 6% 40px; text-align: center; }
+            .hero { padding: 104px 6% 150px; }
+            .hero-inner { grid-template-columns: 1fr; gap: 4rem; }
+            .hero-copy { margin: 0 auto; text-align: center; }
             .hero-eyebrow { margin-left: auto; margin-right: auto; }
-            .hero-left > p { margin-left: auto; margin-right: auto; }
+            .hero-copy > p { margin-left: auto; margin-right: auto; }
             .hero-cta { justify-content: center; }
-            .hero-stats { justify-content: center; }
-            .hero-right { min-height: 380px; }
-            .hero-right img.hero-illustration { max-height: 420px; }
+            .hero-proof { justify-content: center; }
+            .hero-visual { max-width: 560px; width: 100%; margin: 0 auto; }
             .section-sub { margin-left: auto; margin-right: auto; }
             .features-grid { grid-template-columns: 1fr 1fr; }
             .how-grid { grid-template-columns: 1fr; gap: 2.5rem; }
@@ -526,8 +632,20 @@
             .stats-grid { grid-template-columns: 1fr 1fr; }
             .footer-grid { grid-template-columns: 1fr; }
             .footer-bottom { flex-direction: column; text-align: center; }
-            .hero-right img.hero-illustration { max-height: 320px; }
-            .hero-plus, .hero-deco-ring { display: none; }
+            .hero { padding-bottom: 120px; }
+            .hero-proof { flex-direction: column; gap: .8rem; }
+            .float-card { padding: .55rem .7rem; border-radius: 12px; }
+            .float-card strong { font-size: .7rem; }
+            .float-card small { font-size: .6rem; }
+            .fc-readiness { top: -16px; left: -6px; }
+            .fc-streak { right: -6px; }
+            .fc-exam { bottom: -16px; left: 6%; }
+            .fc-ring { width: 38px; height: 38px; }
+            .fc-ring::before { inset: 5px; }
+            .fc-ico { width: 34px; height: 34px; font-size: .85rem; }
+            .hero-wave svg { height: 64px; }
+            .hero-plus, .hero-deco-ring, .hero-ring-spin { display: none; }
+            .hero::before { display: none; }
         }
     </style>
 </head>
@@ -564,62 +682,94 @@
 <div class="hero">
 
     <!-- decorative plus marks (matching illustration style) -->
-    <span class="hero-plus hp1">+</span>
-    <span class="hero-plus hp2">+</span>
-    <span class="hero-plus hp3">+</span>
-    <span class="hero-plus hp4">+</span>
-    <span class="hero-plus hp5">+</span>
-    <div class="hero-deco-ring ring-sm"></div>
+    <span class="hero-plus hp1" aria-hidden="true">+</span>
+    <span class="hero-plus hp2" aria-hidden="true">+</span>
+    <span class="hero-plus hp3" aria-hidden="true">+</span>
+    <span class="hero-plus hp4" aria-hidden="true">+</span>
+    <span class="hero-plus hp5" aria-hidden="true">+</span>
+    <div class="hero-deco-ring ring-sm" aria-hidden="true"></div>
 
-    <!-- LEFT: content -->
-    <div class="hero-left">
-        <div class="hero-eyebrow reveal">
-            <i class="fas fa-graduation-cap"></i>&nbsp; CPA Licensure Exam Reviewer
-        </div>
-        <h1 class="reveal">
-            <span class="line-light">Master your</span><br>
-            CPA journey<br>
-            with <span class="line-accent">smart practice</span>
-        </h1>
-        <p class="reveal">
-            CPAce is your all-in-one CPALE reviewer — adaptive quizzes, real-time performance analytics, and intelligent study tools built for serious CPA candidates.
-        </p>
-        <div class="hero-cta reveal">
-            <a href="{{ route('signup') }}" class="cta-primary">
-                <i class="fas fa-rocket"></i> Start Reviewing Free
-            </a>
-            <a href="#download" class="cta-secondary">
-                <i class="fab fa-android"></i> Download APK
-            </a>
-        </div>
-        <div class="hero-stats reveal">
-            <div>
-                <div class="hero-stat-val">5,000+</div>
-                <div class="hero-stat-lbl">Practice Questions</div>
+    <div class="hero-inner">
+
+        <!-- LEFT: copy -->
+        <div class="hero-copy">
+            <div class="hero-eyebrow reveal">
+                <span class="pulse-dot"></span>
+                CPA Licensure Exam Reviewer
             </div>
-            <div>
-                <div class="hero-stat-val">98%</div>
-                <div class="hero-stat-lbl">Pass Rate</div>
+            <h1 class="reveal">
+                <span class="h1-light">Your edge to</span><br>
+                <span class="h1-accent">ace<svg viewBox="0 0 130 14" preserveAspectRatio="none" aria-hidden="true"><path d="M4 10 C 35 4, 95 3, 126 7"/></svg></span> the CPA<br>
+                board exam
+            </h1>
+            <p class="reveal">
+                CPAce is your all-in-one CPALE reviewer — adaptive quizzes, mock exams, real-time analytics, and smart study tools built for serious CPA candidates.
+            </p>
+            <div class="hero-cta reveal">
+                <a href="{{ route('signup') }}" class="cta-primary">
+                    Start Reviewing Free <i class="fas fa-arrow-right"></i>
+                </a>
+                <a href="#download" class="cta-secondary">
+                    <i class="fab fa-android"></i> Download APK
+                </a>
             </div>
-            <div>
-                <div class="hero-stat-val">6</div>
-                <div class="hero-stat-lbl">CPA Subjects</div>
+            <div class="hero-proof reveal">
+                <div class="proof-avatars" aria-hidden="true">
+                    <span class="pav pav1">AM</span>
+                    <span class="pav pav2">RD</span>
+                    <span class="pav pav3">KC</span>
+                    <span class="pav pav4">JT</span>
+                    <span class="pav pav-more">2k+</span>
+                </div>
+                <div>
+                    <div class="proof-stars">
+                        <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+                        <b>4.9</b>
+                    </div>
+                    <div class="proof-label">Trusted by <strong>2,000+ reviewees</strong> nationwide</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT: layered illustration + floating UI chips -->
+        <div class="hero-visual reveal">
+            <div class="hero-visual-back" aria-hidden="true"></div>
+            <div class="hero-ring-spin" aria-hidden="true"></div>
+            <div class="hero-visual-frame">
+                <img src="{{ asset('images/hero_section.png') }}"
+                     alt="CPAce students — FAR, MAS, Taxation, Auditing">
+            </div>
+
+            <div class="float-card fc-readiness">
+                <div class="fc-ring"><span>81%</span></div>
+                <div>
+                    <strong>Overall Readiness</strong>
+                    <small>+6% this week</small>
+                </div>
+            </div>
+            <div class="float-card fc-streak">
+                <div class="fc-ico flame"><i class="fas fa-fire"></i></div>
+                <div>
+                    <strong>7-day streak</strong>
+                    <small>Keep it going!</small>
+                </div>
+            </div>
+            <div class="float-card fc-exam">
+                <div class="fc-ico check"><i class="fas fa-check"></i></div>
+                <div>
+                    <strong>Mock Exam — FAR</strong>
+                    <small>Scored 88% · Passed</small>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- RIGHT: illustration -->
-    <div class="hero-right">
-        <img src="{{ asset('images/login_bg.png') }}"
-             alt="CPAce Students — FAR, MAS, Taxation, Auditing"
-             class="hero-illustration">
-
-        <!-- maroon wave matching the illustration's bottom wave -->
-        <div class="hero-wave">
-            <svg viewBox="0 0 1440 90" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M0,60 C240,100 480,20 720,55 C960,90 1200,20 1440,50 L1440,90 L0,90 Z" fill="#7B1D1D"/>
-            </svg>
-        </div>
+    <!-- maroon wave transition into the subjects bar -->
+    <div class="hero-wave" aria-hidden="true">
+        <svg viewBox="0 0 1440 100" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M0,64 C180,94 400,34 640,54 C880,74 1080,26 1260,44 C1340,52 1400,50 1440,54 L1440,100 L0,100 Z" fill="rgba(123,29,29,.10)"/>
+            <path d="M0,76 C240,104 480,46 720,68 C960,90 1200,42 1440,66 L1440,100 L0,100 Z" fill="#7B1D1D"/>
+        </svg>
     </div>
 </div>
 
