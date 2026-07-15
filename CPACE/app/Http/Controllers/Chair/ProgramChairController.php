@@ -7,7 +7,9 @@ use App\Http\Controllers\Controller;
 use App\Models\Role;
 use App\Models\Subject;
 use App\Models\User;
+use App\Services\WeaknessDetector;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -16,12 +18,15 @@ use Illuminate\Validation\Rules\Password;
 
 class ProgramChairController extends Controller
 {
+    private const INACTIVITY_DAYS = 7;
+
     /**
      * Program Chair overview: faculty count, subject coverage, assignments.
      */
     public function dashboard()
     {
         $subjects = Subject::withCount('faculty')->orderBy('id')->get();
+        $atRiskStudents = $this->atRiskStudents();
 
         $stats = [
             'faculty'    => User::where('role_id', Role::FACULTY)->count(),
@@ -38,7 +43,90 @@ class ProgramChairController extends Controller
                 ->orderByDesc('id')
                 ->take(5)
                 ->get(),
+            'atRiskStudents' => $atRiskStudents,
         ]);
+    }
+
+    /**
+     * System-wide intervention list. The readiness rule matches the faculty
+     * performance page; inactivity is based on the latest quiz/login activity.
+     */
+    private function atRiskStudents()
+    {
+        $quizActivity = DB::table('quiz_sessions')
+            ->where('session_type', '!=', 'training')
+            ->whereNotNull('completed_at')
+            ->groupBy('student_id')
+            ->select(
+                'student_id',
+                DB::raw('COALESCE(SUM(total_items), 0) as attempted'),
+                DB::raw('COALESCE(SUM(correct_answers), 0) as correct'),
+                DB::raw('COUNT(*) as quizzes'),
+                DB::raw('MAX(completed_at) as last_quiz_at')
+            )
+            ->get()
+            ->keyBy('student_id');
+
+        return User::where('role_id', Role::STUDENT)
+            ->where('is_active', true)
+            ->orderBy('first_name')
+            ->get()
+            ->map(function (User $student) use ($quizActivity) {
+                $activity = $quizActivity->get($student->id);
+                $attempted = (int) ($activity->attempted ?? 0);
+                $correct = (int) ($activity->correct ?? 0);
+                $score = $attempted > 0 ? (int) round($correct / $attempted * 100) : null;
+
+                $dates = collect([
+                    $activity?->last_quiz_at,
+                    $student->last_login_at,
+                    $student->created_at,
+                ])->filter()->map(fn ($date) => Carbon::parse($date));
+
+                $lastActive = $dates->sortDesc()->first();
+                $daysIdle = $lastActive ? (int) $lastActive->diffInDays(now()) : self::INACTIVITY_DAYS;
+                $lowReadiness = $attempted >= WeaknessDetector::MIN_ATTEMPTS
+                    && $score < (int) (WeaknessDetector::ACCURACY_THRESHOLD * 100);
+                $inactive = $daysIdle >= self::INACTIVITY_DAYS;
+
+                if (! $lowReadiness && ! $inactive) {
+                    return null;
+                }
+
+                $reasons = [];
+                if ($lowReadiness) {
+                    $reasons[] = 'Low readiness';
+                }
+                if ($inactive) {
+                    $reasons[] = $attempted === 0 ? 'No learning activity' : 'Inactive';
+                }
+
+                $name = $student->name;
+                $initials = strtoupper(substr($student->first_name, 0, 1).substr($student->last_name, 0, 1));
+                $isHigh = ($lowReadiness && $inactive) || ($score !== null && $score < 45) || $daysIdle >= 14;
+
+                return [
+                    'id'          => $student->id,
+                    'name'        => $name,
+                    'email'       => $student->email,
+                    'initials'    => $initials,
+                    'score'       => $score,
+                    'attempted'   => $attempted,
+                    'quizzes'     => (int) ($activity->quizzes ?? 0),
+                    'last_active' => $lastActive,
+                    'days_idle'   => $daysIdle,
+                    'reasons'     => $reasons,
+                    'priority'    => $isHigh ? 'high' : 'watch',
+                ];
+            })
+            ->filter()
+            ->sort(function (array $a, array $b) {
+                $aRank = [$a['priority'] === 'high' ? 0 : 1, $a['score'] ?? -1, -$a['days_idle']];
+                $bRank = [$b['priority'] === 'high' ? 0 : 1, $b['score'] ?? -1, -$b['days_idle']];
+
+                return $aRank <=> $bRank;
+            })
+            ->values();
     }
 
     /**

@@ -17,6 +17,36 @@
                 overflow-x: auto;
                 -webkit-overflow-scrolling: touch;
             }
+            .risk-meta { display:none; }
+        }
+        .risk-summary { display:flex; align-items:center; gap:8px; }
+        .risk-count { min-width:24px; height:24px; padding:0 7px; border-radius:12px; display:inline-flex; align-items:center; justify-content:center; background:#fde8e8; color:var(--accent); font-size:11px; font-weight:700; }
+        .risk-list { display:flex; flex-direction:column; }
+        .risk-row { display:grid; grid-template-columns:minmax(190px, 1.4fr) minmax(160px, 1fr) 100px 120px 78px; gap:14px; align-items:center; padding:13px 10px; border-top:1px solid #f5f5f5; }
+        .risk-row:hover { background:#fafafa; }
+        .risk-student { display:flex; align-items:center; gap:11px; min-width:0; }
+        .risk-name { font-size:13px; font-weight:600; color:#1a1a1a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .risk-email, .risk-meta { font-size:10.5px; color:#aaa; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .risk-reasons { display:flex; flex-wrap:wrap; gap:5px; }
+        .risk-reason { display:inline-flex; align-items:center; gap:4px; padding:3px 8px; border-radius:12px; background:#fef3c7; color:#b45309; font-size:10px; font-weight:600; }
+        .risk-reason.low { background:#fde8e8; color:#b91c1c; }
+        .risk-score { font-size:13px; font-weight:700; color:var(--accent); }
+        .risk-score.na { color:#aaa; font-weight:500; }
+        .risk-priority { display:inline-flex; align-items:center; justify-content:center; padding:4px 9px; border-radius:20px; font-size:10px; font-weight:700; }
+        .risk-priority.high { background:#fde8e8; color:#b91c1c; }
+        .risk-priority.watch { background:#fef3c7; color:#b45309; }
+        .risk-head { color:#aaa; font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.4px; padding-top:0; border-top:0; }
+        .risk-empty { padding:24px 10px 8px; text-align:center; color:#999; font-size:12px; }
+        .risk-empty i { color:var(--green); margin-right:6px; }
+        @media (max-width: 980px) {
+            .risk-row { grid-template-columns:minmax(180px, 1.3fr) minmax(145px, 1fr) 85px 70px; }
+            .risk-last { display:none; }
+        }
+        @media (max-width: 620px) {
+            .risk-row { grid-template-columns:1fr auto; gap:9px; }
+            .risk-head { display:none; }
+            .risk-reasons { grid-column:1 / -1; padding-left:49px; }
+            .risk-score, .risk-last { display:none; }
         }
     </style>
 </head>
@@ -119,6 +149,53 @@
             @endforelse
             <a href="{{ route('chair.faculty.create') }}" class="btn btn-outline btn-sm" style="margin-top:14px; width:100%; justify-content:center;"><i class="fas fa-user-plus"></i> Create Faculty Account</a>
         </div>
+    </div>
+
+    <div class="card" style="margin-top:18px;">
+        <div class="card-head">
+            <div class="risk-summary">
+                <span class="card-title"><i class="fas fa-triangle-exclamation" style="color:var(--accent);margin-right:7px;"></i>At-Risk Student Alerts</span>
+                <span class="risk-count">{{ $atRiskStudents->count() }}</span>
+            </div>
+            <span class="risk-meta">Low readiness (&lt;60% after 5+ items) or inactive for 7+ days</span>
+        </div>
+
+        @if($atRiskStudents->isNotEmpty())
+            <div class="risk-list">
+                <div class="risk-row risk-head" aria-hidden="true">
+                    <span>Student</span><span>Alert reason</span><span>Readiness</span><span class="risk-last">Last active</span><span>Priority</span>
+                </div>
+                @foreach($atRiskStudents as $student)
+                    <div class="risk-row">
+                        <div class="risk-student">
+                            <div class="user-av" style="background:var(--primary);">{{ $student['initials'] }}</div>
+                            <div style="min-width:0;">
+                                <div class="risk-name">{{ $student['name'] }}</div>
+                                <div class="risk-email">{{ $student['email'] }}</div>
+                            </div>
+                        </div>
+                        <div class="risk-reasons">
+                            @foreach($student['reasons'] as $reason)
+                                <span class="risk-reason {{ $reason === 'Low readiness' ? 'low' : '' }}">
+                                    <i class="fas {{ $reason === 'Low readiness' ? 'fa-chart-line' : 'fa-clock' }}"></i>{{ $reason }}
+                                </span>
+                            @endforeach
+                        </div>
+                        <div class="risk-score {{ $student['score'] === null ? 'na' : '' }}">
+                            {{ $student['score'] === null ? 'Not rated' : $student['score'].'%' }}
+                            <div class="risk-meta">{{ $student['attempted'] }} items</div>
+                        </div>
+                        <div class="risk-last">
+                            <div style="font-size:12px;color:#555;">{{ $student['last_active'] ? $student['last_active']->diffForHumans() : 'Never' }}</div>
+                            <div class="risk-meta">{{ $student['quizzes'] }} completed quiz{{ $student['quizzes'] === 1 ? '' : 'zes' }}</div>
+                        </div>
+                        <span class="risk-priority {{ $student['priority'] }}">{{ $student['priority'] === 'high' ? 'High' : 'Watch' }}</span>
+                    </div>
+                @endforeach
+            </div>
+        @else
+            <div class="risk-empty"><i class="fas fa-circle-check"></i>No students currently need intervention.</div>
+        @endif
     </div>
 </main>
 </body>

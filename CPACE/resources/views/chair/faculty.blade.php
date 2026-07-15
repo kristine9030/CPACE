@@ -21,6 +21,8 @@
         .ab-assign:hover { background:#ddd6fe; }
         .ab-toggle { background:#fef3c7; color:#d97706; }
         .ab-toggle:hover { background:#fde68a; }
+        .ab-activity { background:#d1fae5; color:#059669; }
+        .ab-activity:hover { background:#a7f3d0; }
 
         /* ── Faculty page responsive ── */
         .faculty-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
@@ -48,6 +50,7 @@
             </div>
         </div>
         <div class="topbar-right">
+            <a href="{{ route('chair.faculty.performance') }}" class="btn btn-outline"><i class="fas fa-chart-column"></i> Performance Report</a>
             <a href="{{ route('chair.faculty.create') }}" class="btn btn-primary"><i class="fas fa-user-plus"></i> Add Faculty</a>
             @include('partials.topbar-actions')
         </div>
@@ -89,6 +92,7 @@
                         @endif
                     </td>
                     <td style="text-align:right; white-space:nowrap;">
+                        <a href="{{ route('chair.faculty.activity', $f->id) }}" class="action-btn ab-activity" title="View activity log"><i class="fas fa-clock-rotate-left"></i></a>
                         <button class="action-btn ab-assign" title="Assign subjects"
                             onclick="openAssign({{ $f->id }}, '{{ addslashes($f->name) }}', {{ $f->assignedSubjects->pluck('id')->toJson() }})">
                             <i class="fas fa-layer-group"></i>

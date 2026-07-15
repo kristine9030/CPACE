@@ -9,6 +9,7 @@ use App\Http\Controllers\Faculty\FacultyDashboardController;
 use App\Http\Controllers\Faculty\FacultyPerformanceController;
 use App\Http\Controllers\Faculty\FacultyReportController;
 use App\Http\Controllers\Chair\ProgramChairController;
+use App\Http\Controllers\Chair\FacultyOversightController;
 use App\Http\Controllers\Student\PerformanceController;
 use App\Http\Controllers\Student\QuizController;
 use App\Http\Controllers\Student\ReviewNoteController;
@@ -49,6 +50,8 @@ Route::middleware('auth')->group(function () {
         Route::put('/faculty/{id}', [ProgramChairController::class, 'updateFaculty'])->name('faculty.update');
         Route::post('/faculty/{id}/assign', [ProgramChairController::class, 'assignSubjects'])->name('faculty.assign');
         Route::post('/faculty/{id}/toggle', [ProgramChairController::class, 'toggleFaculty'])->name('faculty.toggle');
+        Route::get('/faculty-performance', [FacultyOversightController::class, 'performance'])->name('faculty.performance');
+        Route::get('/faculty/{id}/activity', [FacultyOversightController::class, 'activity'])->name('faculty.activity');
 
         // Subject assignment overview
         Route::get('/subjects', [ProgramChairController::class, 'subjects'])->name('subjects');
