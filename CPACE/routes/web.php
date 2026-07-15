@@ -11,6 +11,7 @@ use App\Http\Controllers\Faculty\FacultyReportController;
 use App\Http\Controllers\Chair\ProgramChairController;
 use App\Http\Controllers\Chair\FacultyOversightController;
 use App\Http\Controllers\Chair\SubjectManagementController;
+use App\Http\Controllers\Chair\StudentManagementController;
 use App\Http\Controllers\Student\PerformanceController;
 use App\Http\Controllers\Student\QuizController;
 use App\Http\Controllers\Student\ReviewNoteController;
@@ -42,6 +43,19 @@ Route::middleware('auth')->group(function () {
     // Program Chair Routes (Admin role)
     Route::prefix('chair')->name('chair.')->middleware('chair')->group(function () {
         Route::get('/dashboard', [ProgramChairController::class, 'dashboard'])->name('dashboard');
+
+        // Student enrollment, monitoring and reporting
+        Route::get('/students', [StudentManagementController::class, 'index'])->name('students');
+        Route::get('/students/create', [StudentManagementController::class, 'create'])->name('students.create');
+        Route::post('/students', [StudentManagementController::class, 'store'])->name('students.store');
+        Route::post('/students/import', [StudentManagementController::class, 'import'])->name('students.import');
+        Route::get('/students/import-template', [StudentManagementController::class, 'template'])->name('students.template');
+        Route::get('/students/export/csv', [StudentManagementController::class, 'exportCsv'])->name('students.export.csv');
+        Route::get('/students/export/pdf', [StudentManagementController::class, 'exportPdf'])->name('students.export.pdf');
+        Route::get('/students/{id}', [StudentManagementController::class, 'show'])->name('students.show');
+        Route::get('/students/{id}/edit', [StudentManagementController::class, 'edit'])->name('students.edit');
+        Route::put('/students/{id}', [StudentManagementController::class, 'update'])->name('students.update');
+        Route::post('/students/{id}/toggle', [StudentManagementController::class, 'toggle'])->name('students.toggle');
 
         // Faculty account management
         Route::get('/faculty', [ProgramChairController::class, 'faculty'])->name('faculty');
