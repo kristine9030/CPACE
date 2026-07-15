@@ -10,6 +10,7 @@ use App\Http\Controllers\Faculty\FacultyPerformanceController;
 use App\Http\Controllers\Faculty\FacultyReportController;
 use App\Http\Controllers\Chair\ProgramChairController;
 use App\Http\Controllers\Chair\FacultyOversightController;
+use App\Http\Controllers\Chair\SubjectManagementController;
 use App\Http\Controllers\Student\PerformanceController;
 use App\Http\Controllers\Student\QuizController;
 use App\Http\Controllers\Student\ReviewNoteController;
@@ -54,7 +55,13 @@ Route::middleware('auth')->group(function () {
         Route::get('/faculty/{id}/activity', [FacultyOversightController::class, 'activity'])->name('faculty.activity');
 
         // Subject assignment overview
-        Route::get('/subjects', [ProgramChairController::class, 'subjects'])->name('subjects');
+        Route::get('/subjects', [SubjectManagementController::class, 'index'])->name('subjects');
+        Route::post('/subjects', [SubjectManagementController::class, 'storeSubject'])->name('subjects.store');
+        Route::put('/subjects/{subject}', [SubjectManagementController::class, 'updateSubject'])->name('subjects.update');
+        Route::delete('/subjects/{subject}', [SubjectManagementController::class, 'destroySubject'])->name('subjects.destroy');
+        Route::post('/subjects/{subject}/topics', [SubjectManagementController::class, 'storeTopic'])->name('subjects.topics.store');
+        Route::put('/subjects/{subject}/topics/{topic}', [SubjectManagementController::class, 'updateTopic'])->name('subjects.topics.update');
+        Route::delete('/subjects/{subject}/topics/{topic}', [SubjectManagementController::class, 'destroyTopic'])->name('subjects.topics.destroy');
     });
 
     // Faculty Routes

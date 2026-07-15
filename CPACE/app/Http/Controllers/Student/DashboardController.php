@@ -76,18 +76,20 @@ class DashboardController extends Controller
                 $join->on('performance_records.topic_id', '=', 'topics.id')
                     ->where('performance_records.student_id', '=', $studentId);
             })
-            ->groupBy('subjects.id', 'subjects.code', 'subjects.name')
+            ->groupBy('subjects.id', 'subjects.code', 'subjects.name', 'subjects.passing_threshold')
             ->orderBy('subjects.id')
             ->select(
                 'subjects.id',
                 'subjects.code',
                 'subjects.name',
+                'subjects.passing_threshold',
                 DB::raw('COALESCE(SUM(performance_records.correct_count),0) as correct'),
                 DB::raw('COALESCE(SUM(performance_records.total_attempts),0) as attempts')
             )
             ->get()
             ->map(function ($row) {
                 $row->mastery = $row->attempts > 0 ? (int) round($row->correct / $row->attempts * 100) : 0;
+                $row->is_passing = $row->attempts > 0 && $row->mastery >= (int) $row->passing_threshold;
                 return $row;
             });
 

@@ -8,7 +8,12 @@ class Topic extends Model
 {
     public $timestamps = false;
 
-    protected $fillable = ['subject_id', 'name', 'description'];
+    protected $fillable = ['subject_id', 'name', 'description', 'sort_order', 'is_active'];
+
+    protected $casts = [
+        'sort_order' => 'integer',
+        'is_active' => 'boolean',
+    ];
 
     public function subject()
     {

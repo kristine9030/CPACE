@@ -17,7 +17,7 @@ class SubjectsApiController extends Controller
             ->orderBy('id')
             ->get()
             ->map(function ($subject) use ($studentId) {
-                $topicIds = $subject->topics()->pluck('id');
+                $topicIds = $subject->topics()->where('is_active', true)->pluck('id');
 
                 $questionCount = DB::table('questions')
                     ->where('is_active', true)
@@ -41,6 +41,8 @@ class SubjectsApiController extends Controller
                     'icon'           => $subject->icon,
                     'question_count' => $questionCount,
                     'mastery'        => $mastery,
+                    'passing_threshold' => $subject->passing_threshold,
+                    'is_passing'     => $perf && $perf->t > 0 && $mastery >= $subject->passing_threshold,
                 ];
             });
 

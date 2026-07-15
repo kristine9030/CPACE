@@ -16,6 +16,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class QuizController extends Controller
 {
@@ -38,9 +39,9 @@ class QuizController extends Controller
     {
         $studentId = Auth::id();
 
-        $subjects = Subject::orderBy('id')->get()->map(function ($subject) {
+        $subjects = Subject::where('is_active', true)->orderBy('id')->get()->map(function ($subject) {
             $subject->question_count = Question::where('is_active', true)
-                ->whereIn('topic_id', $subject->topics()->pluck('id'))
+                ->whereIn('topic_id', $subject->topics()->where('is_active', true)->pluck('id'))
                 ->count();
             return $subject;
         });
@@ -142,7 +143,7 @@ class QuizController extends Controller
     public function start(Request $request)
     {
         $data = $request->validate([
-            'subject_id'   => 'required|exists:subjects,id',
+            'subject_id'   => ['required', Rule::exists('subjects', 'id')->where('is_active', true)],
             'mode'         => 'nullable|string',
             'count'        => 'required|integer|min:1',
             'session_type' => 'nullable|string',
@@ -159,7 +160,7 @@ class QuizController extends Controller
         // How many questions the student wants this sitting (capped to the max).
         $count = max(1, min((int) $data['count'], self::MAX_QUIZ_LENGTH));
 
-        $topicIds = DB::table('topics')->where('subject_id', $data['subject_id'])->pluck('id');
+        $topicIds = DB::table('topics')->where('subject_id', $data['subject_id'])->where('is_active', true)->pluck('id');
 
         // Mode decides HOW the questions are chosen from the faculty's bank.
         [$questionIds, $focusTopicId] = $this->selectQuestions($mode, $topicIds, Auth::id(), $count);

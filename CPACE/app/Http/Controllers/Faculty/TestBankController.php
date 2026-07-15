@@ -189,7 +189,9 @@ class TestBankController extends Controller
     public function create()
     {
         return view('faculty.question-form', [
-            'subjects'    => Subject::with('topics')->orderBy('id')->get(),
+            'subjects'    => Subject::where('is_active', true)
+                ->with(['topics' => fn ($query) => $query->where('is_active', true)->orderBy('sort_order')])
+                ->orderBy('id')->get(),
             'editMode'    => false,
         ]);
     }

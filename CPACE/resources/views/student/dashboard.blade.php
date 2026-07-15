@@ -960,7 +960,9 @@
                 <a href="{{ route('subjects') }}" class="subject-item" style="text-decoration:none;">
                     <div class="subject-icon s{{ $i % 5 + 1 }}"><i class="fas {{ $subjectIcons[$subject->code] ?? 'fa-book' }}"></i></div>
                     <span class="subject-name">{{ $subject->name }}</span>
-                    <span style="font-size:13px; font-weight:600; color:var(--gray-700); margin-right:10px;">{{ $subject->mastery }}%</span>
+                    <span style="font-size:11px;font-weight:600;color:{{ $subject->is_passing ? '#059669' : 'var(--gray-500)' }};margin-right:10px;text-align:right;">
+                        {{ $subject->mastery }}%<br><small style="font-size:9px;font-weight:500;">Pass: {{ $subject->passing_threshold }}%</small>
+                    </span>
                     <i class="fas fa-chevron-right subject-arrow"></i>
                 </a>
             @endforeach

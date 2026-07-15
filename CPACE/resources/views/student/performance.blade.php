@@ -1565,7 +1565,7 @@
                     <div class="card-head"><span class="card-title">Accuracy by Subject Area</span></div>
                     <table class="perf-table">
                         <thead>
-                            <tr><th>Subject</th><th>Questions</th><th>Correct</th><th>Accuracy</th><th style="width:30%;">Progress</th></tr>
+                            <tr><th>Subject</th><th>Questions</th><th>Correct</th><th>Accuracy</th><th>Readiness</th><th style="width:25%;">Progress</th></tr>
                         </thead>
                         <tbody>
                             @foreach($subjectAccuracy as $subj)
@@ -1574,6 +1574,7 @@
                                     <td>{{ number_format($subj->attempts) }}</td>
                                     <td>{{ number_format($subj->correct) }}</td>
                                     <td style="font-weight:700;color:{{ $subj->color }};">{{ $subj->accuracy }}%</td>
+                                    <td><span style="display:inline-flex;padding:4px 9px;border-radius:14px;font-size:10px;font-weight:700;background:{{ $subj->is_passing ? '#d1fae5' : '#f3f4f6' }};color:{{ $subj->is_passing ? '#047857' : '#6b7280' }};">{{ $subj->is_passing ? 'Ready' : 'Needs '.$subj->passing_threshold.'%' }}</span></td>
                                     <td>
                                         <div class="accuracy-bar"><span style="width:{{ $subj->accuracy }}%;background:{{ $subj->color }}"></span></div>
                                     </td>
@@ -1804,4 +1805,3 @@
     </script>
 </body>
 </html>
-

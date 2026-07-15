@@ -3,246 +3,202 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Subject Assignments - CPACE</title>
+    <title>Subject & Curriculum Management - CPACE</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* ── Summary ── */
-        .summary-row {
-            display: flex; gap: 14px; margin-bottom: 24px; flex-wrap: wrap;
-        }
-        .sum-card {
-            flex: 1; min-width: 130px;
-            background: #fff; border-radius: 12px;
-            padding: 16px 18px;
-            display: flex; align-items: center; gap: 12px;
-            border: 1px solid #ebebeb;
-        }
-        .sum-icon {
-            width: 38px; height: 38px; border-radius: 10px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 16px; flex-shrink: 0;
-        }
-        .sum-icon.total   { background: #f3f4f6; color: #6b7280; }
-        .sum-icon.covered { background: #d1fae5; color: #059669; }
-        .sum-icon.missing { background: #fee2e2; color: #dc2626; }
-        .sum-num { font-size: 22px; font-weight: 700; color: #1a1a1a; line-height: 1; }
-        .sum-lbl { font-size: 11px; color: #9ca3af; margin-top: 2px; }
-
-        /* ── Grid ── */
-        .subj-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 16px; }
-
-        /* ── Card ── */
-        .subj-card {
-            background: #fff;
-            border-radius: 14px;
-            border: 1px solid #e8e8e8;
-            overflow: hidden;
-        }
-        .sc-top {
-            display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
-            padding: 18px 20px 14px;
-            border-left: 5px solid var(--subject-color, #7B1D1D);
-        }
-        .sc-left { flex: 1; min-width: 0; }
-        .sc-code {
-            font-size: 20px; font-weight: 800; color: var(--subject-color, #7B1D1D);
-            line-height: 1;
-        }
-        .sc-name { font-size: 11.5px; color: #888; margin-top: 3px; }
-
-        .sc-badge {
-            display: inline-flex; align-items: center; gap: 5px;
-            padding: 4px 10px; border-radius: 20px;
-            font-size: 10.5px; font-weight: 700; white-space: nowrap; flex-shrink: 0;
-        }
-        .sc-badge.assigned { background: #d1fae5; color: #065f46; }
-        .sc-badge.unassigned { background: #f3f4f6; color: #9ca3af; }
-
-        /* ── Faculty list ── */
-        .sc-body {
-            padding: 12px 20px 16px;
-            border-top: 1px solid #f3f4f6;
-        }
-        .fac-chip {
-            display: inline-flex; align-items: center; gap: 7px;
-            padding: 6px 12px; border-radius: 8px;
-            font-size: 12px; font-weight: 500; color: #374151;
-            background: #f9fafb; border: 1px solid #e5e7eb;
-            margin: 3px 4px 3px 0;
-        }
-        .fac-av {
-            width: 20px; height: 20px; border-radius: 5px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 9px; font-weight: 700; color: #fff;
-            background: var(--subject-color, #7B1D1D);
-            flex-shrink: 0;
-        }
-        .empty-msg {
-            font-size: 12px; color: #bbb;
-            display: flex; align-items: center; gap: 7px;
-        }
-
-        /* ── Tip ── */
-        .tip-card {
-            margin-top: 20px;
-            background: #fff; border-radius: 14px;
-            border: 1px solid #e8e8e8;
-            padding: 18px 22px;
-            display: flex; align-items: flex-start; gap: 14px;
-        }
-        .tip-icon {
-            width: 36px; height: 36px; border-radius: 9px;
-            background: #fef3c7; color: #d97706;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 15px; flex-shrink: 0;
-        }
-        .tip-title { font-size: 13px; font-weight: 600; color: #1a1a1a; margin-bottom: 5px; }
-        .tip-text  { font-size: 12px; color: #666; line-height: 1.65; }
-        .tip-link  {
-            display: inline-flex; align-items: center; gap: 5px;
-            margin-top: 10px; font-size: 12px; font-weight: 600;
-            color: var(--primary); text-decoration: none;
-        }
-        .tip-link:hover { text-decoration: underline; }
-
-        @media (max-width: 900px) { .subj-grid { grid-template-columns: 1fr; } }
-
-        /* ── Subjects page responsive ── */
-        @media (max-width: 768px) {
-            .summary-row { gap: 10px; }
-            .sum-card { min-width: 0; padding: 12px 14px; }
-            .sum-num { font-size: 18px; }
-            .tip-card { flex-direction: column; gap: 10px; }
-            .sc-top { padding: 14px 14px 10px; }
-            .sc-body { padding: 10px 14px 14px; }
-        }
-        @media (max-width: 480px) {
-            .summary-row { flex-direction: column; }
-            .sum-card { width: 100%; }
-            .sc-code { font-size: 16px; }
-            .fac-chip { font-size: 11px; padding: 5px 10px; }
-        }
+        .summary-row { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:22px; }
+        .sum-card { background:#fff; border-radius:12px; padding:16px 18px; display:flex; align-items:center; gap:12px; border:1px solid #ebebeb; }
+        .sum-icon { width:38px; height:38px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0; }
+        .sum-icon.total { background:#f3f4f6;color:#6b7280; } .sum-icon.covered { background:#d1fae5;color:#059669; }
+        .sum-icon.topics { background:#dbeafe;color:#2563eb; } .sum-icon.inactive { background:#fef3c7;color:#d97706; }
+        .sum-num { font-size:22px;font-weight:700;color:#1a1a1a;line-height:1; } .sum-lbl { font-size:10.5px;color:#9ca3af;margin-top:3px; }
+        .subj-grid { display:grid;grid-template-columns:repeat(2,1fr);gap:16px; }
+        .subj-card { background:#fff;border-radius:14px;border:1px solid #e8e8e8;overflow:hidden; }
+        .subj-card.inactive { opacity:.72; }
+        .sc-top { display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:18px 20px 14px;border-left:5px solid var(--subject-color); }
+        .sc-code { font-size:20px;font-weight:800;color:var(--subject-color);line-height:1; }
+        .sc-name { font-size:11.5px;color:#777;margin-top:4px; } .sc-desc { font-size:10.5px;color:#aaa;margin-top:6px;line-height:1.5; }
+        .sc-actions { display:flex;align-items:center;gap:6px; }
+        .icon-btn { width:30px;height:30px;border:0;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px;text-decoration:none; }
+        .ib-edit { background:#dbeafe;color:#2563eb; } .ib-delete { background:#fde8e8;color:#b91c1c; }
+        .threshold { display:inline-flex;align-items:center;gap:5px;padding:4px 9px;border-radius:15px;background:#fef3c7;color:#b45309;font-size:10px;font-weight:700;margin-top:9px; }
+        .inactive-pill { display:inline-flex;padding:3px 8px;border-radius:12px;background:#f3f4f6;color:#6b7280;font-size:9px;font-weight:700;margin-left:5px; }
+        .sc-section { padding:13px 20px;border-top:1px solid #f3f4f6; }
+        .section-head { display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:9px; }
+        .section-label { font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#aaa; }
+        .add-mini { border:0;background:var(--primary-light);color:var(--primary);border-radius:7px;padding:5px 9px;font:600 10px 'Poppins',sans-serif;cursor:pointer; }
+        .fac-chip { display:inline-flex;align-items:center;gap:7px;padding:6px 10px;border-radius:8px;font-size:11px;font-weight:500;color:#374151;background:#f9fafb;border:1px solid #e5e7eb;margin:3px 4px 3px 0; }
+        .fac-av { width:19px;height:19px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:#fff;background:var(--subject-color); }
+        .topic-list { display:flex;flex-direction:column;gap:6px; }
+        .topic-row { display:flex;align-items:center;gap:9px;padding:8px 9px;border-radius:8px;background:#fafafa;border:1px solid #f0f0f0; }
+        .topic-order { width:22px;height:22px;flex-shrink:0;border-radius:6px;background:#fff;color:#999;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700; }
+        .topic-info { flex:1;min-width:0; } .topic-name { font-size:11px;font-weight:600;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+        .topic-meta { font-size:9.5px;color:#aaa;margin-top:2px; } .topic-actions { display:flex;gap:4px; }
+        .topic-actions .icon-btn { width:25px;height:25px;font-size:9px; }
+        .empty-msg { font-size:11px;color:#bbb;display:flex;align-items:center;gap:7px;padding:4px 0; }
+        .modal-overlay { display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:2000;align-items:center;justify-content:center;padding:20px; }
+        .modal-overlay.open { display:flex; } .modal { background:#fff;border-radius:16px;width:100%;max-width:560px;padding:24px;max-height:90vh;overflow-y:auto; }
+        .modal h3 { font-size:16px;color:#1a1a1a;margin-bottom:4px; } .modal-sub { font-size:11px;color:#999;margin-bottom:18px; }
+        .modal-grid { display:grid;grid-template-columns:1fr 1fr;gap:14px; } .full { grid-column:1/-1; }
+        textarea { width:100%;padding:10px 12px;border:1.5px solid #e2e2e6;border-radius:8px;font:13px 'Poppins',sans-serif;resize:vertical;min-height:78px; }
+        input[type=number], input[type=color] { width:100%;padding:10px 12px;border:1.5px solid #e2e2e6;border-radius:8px;font:13px 'Poppins',sans-serif;background:#fff; }
+        input[type=color] { height:42px;padding:4px;cursor:pointer; } textarea:focus,input:focus { outline:none;border-color:var(--primary); }
+        .toggle-row { display:flex;align-items:center;gap:9px;padding:10px 12px;background:#f8f8fa;border-radius:8px; }
+        .toggle-row input { width:17px;height:17px;accent-color:var(--primary); } .toggle-row label { margin:0;font-size:11px; }
+        .modal-actions { display:flex;justify-content:flex-end;gap:9px;margin-top:20px; }
+        @media(max-width:1050px) { .summary-row { grid-template-columns:repeat(2,1fr); } }
+        @media(max-width:900px) { .subj-grid { grid-template-columns:1fr; } }
+        @media(max-width:620px) { .summary-row { grid-template-columns:1fr; }.modal-grid { grid-template-columns:1fr; }.full { grid-column:auto; }.sc-top,.sc-section { padding-left:14px;padding-right:14px; } }
     </style>
 </head>
 <body>
 @include('partials.chair-sidebar', ['active' => 'subjects'])
 
 @php
-    $palette = [
-        'FAR'  => ['color' => '#2563eb', 'icon' => 'fa-book'],
-        'AFAR' => ['color' => '#0891b2', 'icon' => 'fa-book-open'],
-        'MS'   => ['color' => '#7c3aed', 'icon' => 'fa-chart-pie'],
-        'TAX'  => ['color' => '#059669', 'icon' => 'fa-file-invoice-dollar'],
-        'AUD'  => ['color' => '#db2777', 'icon' => 'fa-magnifying-glass-chart'],
-        'RFBT' => ['color' => '#d97706', 'icon' => 'fa-scale-balanced'],
-    ];
     $subjectsColl = collect($subjects);
-    $assigned   = $subjectsColl->filter(fn($s) => $s->faculty->count() > 0)->count();
-    $unassigned = $subjectsColl->count() - $assigned;
+    $assigned = $subjectsColl->filter(fn($subject) => $subject->faculty->isNotEmpty())->count();
+    $topicCount = $subjectsColl->sum(fn($subject) => $subject->topics->count());
+    $inactiveCount = $subjectsColl->where('is_active', false)->count();
 @endphp
 
 <main class="main">
     <div class="topbar">
-        <div class="topbar-left">
-            <div>
-                <div class="page-title">Subject Assignments</div>
-                <div class="page-sub">Faculty handling each of the six CPALE subjects.</div>
-            </div>
-        </div>
+        <div class="topbar-left"><div><div class="page-title">Subject & Curriculum</div><div class="page-sub">Manage CPALE subjects, faculty coverage, topics, and readiness thresholds.</div></div></div>
         <div class="topbar-right">
-            <a href="{{ route('chair.faculty.create') }}" class="btn btn-primary">
-                <i class="fas fa-user-plus"></i> Add Faculty
-            </a>
+            <button type="button" class="btn btn-primary" onclick="openSubject()"><i class="fas fa-plus"></i> Add Subject</button>
             @include('partials.topbar-actions')
         </div>
     </div>
 
-    @if (session('status'))
-        <div class="alert alert-success"><i class="fas fa-check-circle"></i> {{ session('status') }}</div>
+    @if(session('status'))<div class="alert alert-success"><i class="fas fa-check-circle"></i>{{ session('status') }}</div>@endif
+    @if(session('error'))<div class="alert alert-error"><i class="fas fa-triangle-exclamation"></i>{{ session('error') }}</div>@endif
+    @if(isset($errors) && $errors->any())
+        <div class="alert alert-error"><i class="fas fa-circle-exclamation"></i><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>
     @endif
 
-    <!-- Summary -->
     <div class="summary-row">
-        <div class="sum-card">
-            <div class="sum-icon total"><i class="fas fa-layer-group"></i></div>
-            <div>
-                <div class="sum-num">{{ $subjectsColl->count() }}</div>
-                <div class="sum-lbl">Total Subjects</div>
-            </div>
-        </div>
-        <div class="sum-card">
-            <div class="sum-icon covered"><i class="fas fa-circle-check"></i></div>
-            <div>
-                <div class="sum-num">{{ $assigned }}</div>
-                <div class="sum-lbl">Assigned</div>
-            </div>
-        </div>
-        <div class="sum-card">
-            <div class="sum-icon missing"><i class="fas fa-circle-exclamation"></i></div>
-            <div>
-                <div class="sum-num">{{ $unassigned }}</div>
-                <div class="sum-lbl">Unassigned</div>
-            </div>
-        </div>
+        <div class="sum-card"><div class="sum-icon total"><i class="fas fa-layer-group"></i></div><div><div class="sum-num">{{ $subjectsColl->count() }}</div><div class="sum-lbl">Total Subjects</div></div></div>
+        <div class="sum-card"><div class="sum-icon covered"><i class="fas fa-chalkboard-user"></i></div><div><div class="sum-num">{{ $assigned }}</div><div class="sum-lbl">With Assigned Faculty</div></div></div>
+        <div class="sum-card"><div class="sum-icon topics"><i class="fas fa-list-check"></i></div><div><div class="sum-num">{{ $topicCount }}</div><div class="sum-lbl">Curriculum Topics</div></div></div>
+        <div class="sum-card"><div class="sum-icon inactive"><i class="fas fa-eye-slash"></i></div><div><div class="sum-num">{{ $inactiveCount }}</div><div class="sum-lbl">Inactive Subjects</div></div></div>
     </div>
 
-    <!-- Subject cards -->
     <div class="subj-grid">
-        @foreach ($subjects as $s)
-            @php
-                $c = $palette[$s->code] ?? ['color' => '#7B1D1D', 'icon' => 'fa-book'];
-                $hasFaculty = $s->faculty->count() > 0;
-            @endphp
-            <div class="subj-card">
-                <div class="sc-top" style="--subject-color: {{ $c['color'] }}">
-                    <div class="sc-left">
-                        <div class="sc-code">{{ $s->code }}</div>
-                        <div class="sc-name">{{ $s->name }}</div>
+        @forelse($subjects as $subject)
+            @php $color = $subject->color ?: '#7B1D1D'; @endphp
+            <div class="subj-card {{ $subject->is_active ? '' : 'inactive' }}" style="--subject-color:{{ $color }};">
+                <div class="sc-top">
+                    <div style="flex:1;min-width:0;">
+                        <div class="sc-code">{{ $subject->code }} @unless($subject->is_active)<span class="inactive-pill">Inactive</span>@endunless</div>
+                        <div class="sc-name">{{ $subject->name }}</div>
+                        @if($subject->description)<div class="sc-desc">{{ Str::limit($subject->description, 130) }}</div>@endif
+                        <span class="threshold"><i class="fas fa-bullseye"></i> Passing threshold: {{ $subject->passing_threshold }}%</span>
                     </div>
-                    @if ($hasFaculty)
-                        <span class="sc-badge assigned">
-                            <i class="fas fa-check"></i> {{ $s->faculty->count() }} {{ Str::plural('faculty', $s->faculty->count()) }}
-                        </span>
-                    @else
-                        <span class="sc-badge unassigned">
-                            <i class="fas fa-triangle-exclamation"></i> Unassigned
-                        </span>
-                    @endif
+                    <div class="sc-actions">
+                        <button type="button" class="icon-btn ib-edit" title="Edit subject" onclick="openSubject({{ Illuminate\Support\Js::from(['id'=>$subject->id,'code'=>$subject->code,'name'=>$subject->name,'description'=>$subject->description,'passing_threshold'=>$subject->passing_threshold,'color'=>$color,'is_active'=>$subject->is_active]) }})"><i class="fas fa-pen"></i></button>
+                        <form method="POST" action="{{ route('chair.subjects.destroy', $subject) }}" onsubmit="return confirm('Remove {{ addslashes($subject->code) }}? Subjects with topics or assigned faculty are protected.');">@csrf @method('DELETE')<button class="icon-btn ib-delete" title="Remove subject"><i class="fas fa-trash"></i></button></form>
+                    </div>
                 </div>
-                <div class="sc-body" style="--subject-color: {{ $c['color'] }}">
-                    @forelse ($s->faculty as $f)
-                        <span class="fac-chip">
-                            <span class="fac-av">{{ strtoupper(substr($f->name, 0, 1)) }}</span>
-                            {{ $f->name }}
-                        </span>
+
+                <div class="sc-section">
+                    <div class="section-head"><span class="section-label">Assigned Faculty ({{ $subject->faculty->count() }})</span><a href="{{ route('chair.faculty') }}" class="add-mini" style="text-decoration:none;"><i class="fas fa-layer-group"></i> Assign</a></div>
+                    @forelse($subject->faculty as $member)
+                        <span class="fac-chip"><span class="fac-av">{{ strtoupper(substr($member->first_name,0,1).substr($member->last_name,0,1)) }}</span>{{ $member->name }}</span>
                     @empty
-                        <div class="empty-msg">
-                            <i class="fas fa-user-slash"></i>
-                            No faculty assigned yet.
-                        </div>
+                        <div class="empty-msg"><i class="fas fa-user-slash"></i>No faculty assigned yet.</div>
                     @endforelse
                 </div>
-            </div>
-        @endforeach
-    </div>
 
-    <!-- Tip -->
-    <div class="tip-card">
-        <div class="tip-icon"><i class="fas fa-lightbulb"></i></div>
-        <div>
-            <div class="tip-title">How to assign faculty</div>
-            <div class="tip-text">
-                Open <strong>Faculty Accounts</strong>, click the
-                <i class="fas fa-layer-group" style="color:#7c3aed;"></i> assign icon next to a faculty member,
-                then tick the subjects they will handle. You can also set assignments while adding a new account.
+                <div class="sc-section">
+                    <div class="section-head"><span class="section-label">Topics ({{ $subject->topics->count() }})</span><button type="button" class="add-mini" onclick="openTopic({{ $subject->id }}, '{{ addslashes($subject->code) }}')"><i class="fas fa-plus"></i> Add Topic</button></div>
+                    <div class="topic-list">
+                        @forelse($subject->topics as $topic)
+                            <div class="topic-row">
+                                <span class="topic-order">{{ $topic->sort_order }}</span>
+                                <div class="topic-info"><div class="topic-name">{{ $topic->name }} @unless($topic->is_active)<span class="inactive-pill">Inactive</span>@endunless</div><div class="topic-meta">{{ $topic->questions_count }} test-bank question{{ $topic->questions_count === 1 ? '' : 's' }}</div></div>
+                                <div class="topic-actions">
+                                    <button type="button" class="icon-btn ib-edit" title="Edit topic" onclick="openTopic({{ $subject->id }}, '{{ addslashes($subject->code) }}', {{ Illuminate\Support\Js::from(['id'=>$topic->id,'name'=>$topic->name,'description'=>$topic->description,'sort_order'=>$topic->sort_order,'is_active'=>$topic->is_active]) }})"><i class="fas fa-pen"></i></button>
+                                    <form method="POST" action="{{ route('chair.subjects.topics.destroy', [$subject, $topic]) }}" onsubmit="return confirm('Remove this topic? Topics containing questions are protected.');">@csrf @method('DELETE')<button class="icon-btn ib-delete" title="Remove topic"><i class="fas fa-trash"></i></button></form>
+                                </div>
+                            </div>
+                        @empty
+                            <div class="empty-msg"><i class="fas fa-list"></i>No topics added yet.</div>
+                        @endforelse
+                    </div>
+                </div>
             </div>
-            <a href="{{ route('chair.faculty') }}" class="tip-link">
-                <i class="fas fa-arrow-right"></i> Go to Faculty Accounts
-            </a>
-        </div>
+        @empty
+            <div class="card" style="grid-column:1/-1;"><div class="empty"><i class="fas fa-layer-group"></i><div>No subjects yet. Add the first subject to begin.</div></div></div>
+        @endforelse
     </div>
 </main>
+
+<div class="modal-overlay" id="subjectModal">
+    <div class="modal">
+        <h3 id="subjectModalTitle">Add Subject</h3><div class="modal-sub">Configure the subject and the score students need for readiness.</div>
+        <form method="POST" id="subjectForm" action="{{ route('chair.subjects.store') }}">@csrf <input type="hidden" name="_method" id="subjectMethod" value="POST">
+            <div class="modal-grid">
+                <div class="form-group"><label>Subject Code</label><input type="text" name="code" maxlength="20" required placeholder="e.g. FAR"></div>
+                <div class="form-group"><label>Subject Name</label><input type="text" name="name" required placeholder="Full subject name"></div>
+                <div class="form-group"><label>Passing Threshold (%)</label><input type="number" name="passing_threshold" min="1" max="100" value="75" required><div class="hint">Used for quiz results and readiness status.</div></div>
+                <div class="form-group"><label>Display Color</label><input type="color" name="color" value="#7B1D1D"></div>
+                <div class="form-group full"><label>Description</label><textarea name="description" placeholder="Optional subject description"></textarea></div>
+                <div class="toggle-row full"><input type="hidden" name="is_active" value="0"><input type="checkbox" name="is_active" id="subjectActive" value="1" checked><label for="subjectActive">Active and available throughout the system</label></div>
+            </div>
+            <div class="modal-actions"><button type="button" class="btn btn-ghost" onclick="closeModal('subjectModal')">Cancel</button><button class="btn btn-primary"><i class="fas fa-save"></i> Save Subject</button></div>
+        </form>
+    </div>
+</div>
+
+<div class="modal-overlay" id="topicModal">
+    <div class="modal">
+        <h3 id="topicModalTitle">Add Topic</h3><div class="modal-sub" id="topicModalSub">Add a curriculum topic to this subject.</div>
+        <form method="POST" id="topicForm">@csrf <input type="hidden" name="_method" id="topicMethod" value="POST">
+            <div class="modal-grid">
+                <div class="form-group"><label>Topic Name</label><input type="text" name="name" required placeholder="Topic name"></div>
+                <div class="form-group"><label>Display Order</label><input type="number" name="sort_order" min="0" max="9999" value="0" required></div>
+                <div class="form-group full"><label>Description</label><textarea name="description" placeholder="Optional topic description"></textarea></div>
+                <div class="toggle-row full"><input type="hidden" name="is_active" value="0"><input type="checkbox" name="is_active" id="topicActive" value="1" checked><label for="topicActive">Active and available for questions and quizzes</label></div>
+            </div>
+            <div class="modal-actions"><button type="button" class="btn btn-ghost" onclick="closeModal('topicModal')">Cancel</button><button class="btn btn-primary"><i class="fas fa-save"></i> Save Topic</button></div>
+        </form>
+    </div>
+</div>
+
+<script>
+const subjectForm = document.getElementById('subjectForm');
+const topicForm = document.getElementById('topicForm');
+
+function openSubject(subject = null) {
+    document.getElementById('subjectModalTitle').textContent = subject ? 'Edit Subject' : 'Add Subject';
+    subjectForm.action = subject ? `/chair/subjects/${subject.id}` : @json(route('chair.subjects.store'));
+    document.getElementById('subjectMethod').value = subject ? 'PUT' : 'POST';
+    subjectForm.elements.code.value = subject?.code ?? '';
+    subjectForm.elements.name.value = subject?.name ?? '';
+    subjectForm.elements.description.value = subject?.description ?? '';
+    subjectForm.elements.passing_threshold.value = subject?.passing_threshold ?? 75;
+    subjectForm.elements.color.value = subject?.color ?? '#7B1D1D';
+    document.getElementById('subjectActive').checked = subject ? Boolean(subject.is_active) : true;
+    document.getElementById('subjectModal').classList.add('open');
+}
+
+function openTopic(subjectId, subjectCode, topic = null) {
+    document.getElementById('topicModalTitle').textContent = topic ? 'Edit Topic' : 'Add Topic';
+    document.getElementById('topicModalSub').textContent = `${topic ? 'Update a' : 'Add a new'} curriculum topic for ${subjectCode}.`;
+    topicForm.action = topic ? `/chair/subjects/${subjectId}/topics/${topic.id}` : `/chair/subjects/${subjectId}/topics`;
+    document.getElementById('topicMethod').value = topic ? 'PUT' : 'POST';
+    topicForm.elements.name.value = topic?.name ?? '';
+    topicForm.elements.description.value = topic?.description ?? '';
+    topicForm.elements.sort_order.value = topic?.sort_order ?? 0;
+    document.getElementById('topicActive').checked = topic ? Boolean(topic.is_active) : true;
+    document.getElementById('topicModal').classList.add('open');
+}
+
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(modal => modal.addEventListener('click', event => { if (event.target === modal) modal.classList.remove('open'); }));
+document.addEventListener('keydown', event => { if (event.key === 'Escape') document.querySelectorAll('.modal-overlay.open').forEach(modal => modal.classList.remove('open')); });
+</script>
 </body>
 </html>

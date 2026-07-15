@@ -171,7 +171,8 @@
                         $code    = $s->subject->code ?? 'Quiz';
                         $color   = $subjectColors[$code] ?? '#7B1D1D';
                         $score   = (int) round($s->score_percent);
-                        $passing = $score >= 75;
+                        $passMark = (int) ($s->subject->passing_threshold ?? 75);
+                        $passing = $score >= $passMark;
                         $mins    = intdiv((int) $s->duration_secs, 60);
                         $secs    = (int) $s->duration_secs % 60;
                     @endphp
@@ -193,7 +194,7 @@
                         </div>
                         <div class="hc-score {{ $passing ? 'pass' : 'fail' }}">
                             <div class="hc-score-pct">{{ $score }}%</div>
-                            <div class="hc-score-lbl">Score</div>
+                            <div class="hc-score-lbl">{{ $passing ? 'Passed' : 'Needs '.$passMark.'%' }}</div>
                         </div>
                         <div class="hc-action">
                             <span>Review</span> <i class="fas fa-chevron-right"></i>

@@ -179,18 +179,20 @@ class PerformanceController extends Controller
                 $join->on('performance_records.topic_id', '=', 'topics.id')
                      ->where('performance_records.student_id', '=', $studentId);
             })
-            ->groupBy('subjects.id', 'subjects.code', 'subjects.name')
+            ->groupBy('subjects.id', 'subjects.code', 'subjects.name', 'subjects.passing_threshold')
             ->orderBy('subjects.id')
             ->select(
                 'subjects.code',
                 'subjects.name',
+                'subjects.passing_threshold',
                 DB::raw('COALESCE(SUM(performance_records.correct_count),0) as correct'),
                 DB::raw('COALESCE(SUM(performance_records.total_attempts),0) as attempts')
             )
             ->get()
             ->map(function ($r) {
                 $r->accuracy = $r->attempts > 0 ? (int) round($r->correct / $r->attempts * 100) : 0;
-                $r->color    = $this->accuracyColor($r->accuracy);
+                $r->is_passing = $r->attempts > 0 && $r->accuracy >= (int) $r->passing_threshold;
+                $r->color = $r->is_passing ? '#21a366' : $this->accuracyColor($r->accuracy);
                 return $r;
             });
 

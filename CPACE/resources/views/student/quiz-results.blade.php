@@ -258,7 +258,8 @@
 
 @php
     $score        = (int) round($session->score_percent);
-    $passing      = $score >= 75;
+    $passMark     = (int) ($session->subject->passing_threshold ?? 75);
+    $passing      = $score >= $passMark;
     $circumference = 2 * pi() * 50;
     $filled       = round($circumference * $score / 100, 1);
     $mins         = intdiv((int) $session->duration_secs, 60);
@@ -302,7 +303,7 @@
             <div class="score-info">
                 <span class="verdict {{ $passing ? 'pass' : 'fail' }}">{{ $passing ? '🎉 PASSED' : 'KEEP PRACTICING' }}</span>
                 <div class="score-label">{{ $session->subject->name ?? 'Quiz' }} Complete!</div>
-                <div class="score-sub">{{ $session->correct_answers }} of {{ $session->total_items }} correct</div>
+                <div class="score-sub">{{ $session->correct_answers }} of {{ $session->total_items }} correct · Passing score: {{ $passMark }}%</div>
                 <div class="score-pills">
                     <span class="pill correct"><i class="fas fa-check-circle"></i> {{ $session->correct_answers }} Correct</span>
                     <span class="pill wrong"><i class="fas fa-times-circle"></i> {{ $session->total_items - $session->correct_answers }} Wrong</span>

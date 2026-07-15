@@ -8,7 +8,14 @@ class Subject extends Model
 {
     public $timestamps = false;
 
-    protected $fillable = ['code', 'name', 'description'];
+    protected $fillable = [
+        'code', 'name', 'description', 'passing_threshold', 'color', 'icon', 'is_active',
+    ];
+
+    protected $casts = [
+        'passing_threshold' => 'integer',
+        'is_active' => 'boolean',
+    ];
 
     public function topics()
     {
