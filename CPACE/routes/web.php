@@ -15,6 +15,7 @@ use App\Http\Controllers\Chair\StudentManagementController;
 use App\Http\Controllers\Student\PerformanceController;
 use App\Http\Controllers\Student\QuizController;
 use App\Http\Controllers\Student\ReviewNoteController;
+use App\Http\Controllers\Student\AiTutorController;
 use App\Http\Controllers\Faculty\TestBankController;
 
 Route::get('/', function () {
@@ -129,6 +130,8 @@ Route::middleware('auth')->group(function () {
     Route::put('/review-notes/{note}', [ReviewNoteController::class, 'update'])->name('review-notes.update');
     Route::delete('/review-notes/{note}', [ReviewNoteController::class, 'destroy'])->name('review-notes.destroy');
     Route::post('/review-notes/{note}/favorite', [ReviewNoteController::class, 'favorite'])->name('review-notes.favorite');
+    // AI Tutor chat (floating widget on Review Notes)
+    Route::post('/ai-tutor/chat', [AiTutorController::class, 'chat'])->middleware('throttle:20,1')->name('ai-tutor.chat');
     Route::get('/calendar', [CalendarController::class, 'index'])->name('calendar');
     Route::get('/achievements', [AchievementController::class, 'index'])->name('achievements');
     Route::get('/settings', function () {

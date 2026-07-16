@@ -1113,6 +1113,9 @@
 
     <div class="toast" id="toast"><i class="fas fa-circle-check"></i> <span id="toastMsg"></span></div>
 
+    <!-- AI TUTOR (floating chat + highlight-to-ask) -->
+    @include('partials.student-ai-tutor')
+
     <script>
         const CSRF = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
         const TOPICS = @json($topics);
