@@ -112,7 +112,64 @@
             margin-top: 12px;
             font-size: 11px;
         }
-        .pages a { color: var(--primary); }
+        .pages nav > div:first-child { display: none; }
+        .pages nav > div:last-child {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+        .pages nav > div:last-child > div:last-child {
+            display: inline-flex;
+            align-items: center;
+        }
+        .pages nav > div:last-child > div:last-child > span {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .pages a,
+        .pages span[aria-current="page"] > span,
+        .pages span[aria-disabled="true"] > span {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-sizing: border-box;
+            flex: 0 0 auto;
+            min-width: 30px;
+            height: 30px;
+            padding: 0 9px;
+            border: 1px solid #e5e7eb;
+            color: var(--primary);
+            text-decoration: none;
+            background: #fff;
+        }
+        .pages span[aria-current="page"] > span {
+            border-color: var(--primary);
+            background: var(--primary);
+            color: #fff;
+        }
+        .pages a[rel="prev"],
+        .pages a[rel="next"] {
+            border-color: var(--primary);
+            background: var(--primary);
+            color: #fff;
+        }
+        .pages a[rel="prev"]:hover,
+        .pages a[rel="next"]:hover {
+            border-color: var(--primary-hover);
+            background: var(--primary-hover);
+        }
+        .pages span[aria-disabled="true"][aria-label] > span {
+            border-color: var(--primary-light);
+            background: var(--primary-light);
+            color: var(--primary);
+            opacity: .55;
+        }
+        .pages svg {
+            width: 14px;
+            height: 14px;
+        }
         @media (max-width: 950px) {
             .detail-grid { grid-template-columns: 1fr; }
         }
