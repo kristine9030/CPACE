@@ -27,6 +27,30 @@
         .coverage-meta { font-size:10.5px; color:#999; margin-top:4px; }
         .login-box { display:flex; align-items:center; gap:11px; background:#f8f8fa; border-radius:10px; padding:13px; margin-top:16px; }
         .login-box i { color:var(--primary); }
+        .pages { margin-top:14px; padding-top:14px; border-top:1px solid #f5f5f5; font-size:11px; }
+        .pages nav > div:first-child { display:none; }
+        .pages nav > div:last-child { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+        .pages nav > div:last-child > div:last-child,
+        .pages nav > div:last-child > div:last-child > span { display:inline-flex; align-items:center; }
+        .pages nav > div:last-child > div:last-child > span { gap:4px; }
+        .pages a,
+        .pages span[aria-current="page"] > span,
+        .pages span[aria-disabled="true"] > span {
+            display:inline-flex; align-items:center; justify-content:center;
+            box-sizing:border-box; flex:0 0 auto; min-width:30px; height:30px;
+            padding:0 9px; border:1px solid #e5e7eb; color:var(--primary);
+            text-decoration:none; background:#fff;
+        }
+        .pages span[aria-current="page"] > span,
+        .pages a[rel="prev"],
+        .pages a[rel="next"] { border-color:var(--primary); background:var(--primary); color:#fff; }
+        .pages a[rel="prev"]:hover,
+        .pages a[rel="next"]:hover { border-color:var(--primary-hover); background:var(--primary-hover); }
+        .pages span[aria-disabled="true"][aria-label] > span {
+            border-color:var(--primary-light); background:var(--primary-light);
+            color:var(--primary); opacity:.55;
+        }
+        .pages svg { width:14px; height:14px; }
         @media (max-width:900px) { .activity-grid { grid-template-columns:1fr; } }
         @media (max-width:620px) { .timeline-date { display:none; } .profile-card { align-items:flex-start; } }
     </style>
@@ -74,8 +98,8 @@
     <div class="activity-grid">
         <div class="card">
             <div class="card-head">
-                <span class="card-title">Recent Test Bank Activity</span>
-                <span style="font-size:10.5px;color:#aaa;">Latest 50 events</span>
+                <span class="card-title">Test Bank Activity</span>
+                <span style="font-size:10.5px;color:#aaa;">{{ $events->total() }} events</span>
             </div>
             @forelse($events as $event)
                 <div class="timeline-item">
@@ -96,6 +120,9 @@
             @empty
                 <div class="empty"><i class="fas fa-clock-rotate-left"></i><div>No question activity recorded yet.</div></div>
             @endforelse
+            @if($events->hasPages())
+                <div class="pages">{{ $events->withQueryString()->links() }}</div>
+            @endif
         </div>
 
         <div>

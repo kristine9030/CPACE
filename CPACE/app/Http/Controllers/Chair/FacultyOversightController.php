@@ -7,6 +7,7 @@ use App\Models\Question;
 use App\Models\Role;
 use App\Models\Subject;
 use App\Models\User;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -62,7 +63,7 @@ class FacultyOversightController extends Controller
                 ];
             })->sortByDesc('questions')->values();
 
-        $events = $questions->flatMap(function (Question $question) use ($answerStats, $variantCounts) {
+        $allEvents = $questions->flatMap(function (Question $question) use ($answerStats, $variantCounts) {
             $base = [
                 'question_id' => $question->id,
                 'text'        => $question->question_text,
@@ -80,7 +81,20 @@ class FacultyOversightController extends Controller
             }
 
             return $events;
-        })->sortByDesc('date')->take(50)->values();
+        })->sortByDesc('date')->values();
+
+        $eventsPerPage = 10;
+        $currentPage = max(1, LengthAwarePaginator::resolveCurrentPage('activity_page'));
+        $events = new LengthAwarePaginator(
+            $allEvents->forPage($currentPage, $eventsPerPage)->values(),
+            $allEvents->count(),
+            $eventsPerPage,
+            $currentPage,
+            [
+                'path' => request()->url(),
+                'pageName' => 'activity_page',
+            ]
+        );
 
         return view('chair.faculty-activity', compact(
             'faculty', 'stats', 'subjectContributions', 'events'
