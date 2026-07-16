@@ -873,6 +873,73 @@
             font-size: 13px;
         }
 
+        .insight-item.amber { background: #fef6e8; }
+        .insight-item.amber .insight-icon { color: #e8910b; }
+
+        /* AI COACH (inside the Insights card) */
+        .ai-insights-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin: 18px 0 12px;
+            padding-top: 14px;
+            border-top: 1px dashed #eee;
+        }
+
+        .ai-insights-title {
+            font-size: 12.5px;
+            font-weight: 600;
+            color: #7B1D1D;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
+
+        .ai-insights-refresh {
+            border: none;
+            background: #f6f0f0;
+            color: #7B1D1D;
+            width: 26px;
+            height: 26px;
+            border-radius: 7px;
+            cursor: pointer;
+            font-size: 11px;
+            transition: all 0.2s;
+        }
+
+        .ai-insights-refresh:hover { background: #7B1D1D; color: #fff; }
+        .ai-insights-refresh:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* Cap the AI list so the card stays about the same height as its
+           neighbours - extra insights scroll inside instead of stretching
+           the whole column. */
+        #aiInsightsBody {
+            max-height: 170px;
+            overflow-y: auto;
+            padding-right: 4px;
+            margin-right: -4px;
+        }
+
+        #aiInsightsBody::-webkit-scrollbar { width: 5px; }
+        #aiInsightsBody::-webkit-scrollbar-track { background: transparent; }
+        #aiInsightsBody::-webkit-scrollbar-thumb {
+            background: #e0d5d5;
+            border-radius: 10px;
+        }
+        #aiInsightsBody::-webkit-scrollbar-thumb:hover { background: #c9b2b2; }
+        #aiInsightsBody { scrollbar-width: thin; scrollbar-color: #e0d5d5 transparent; }
+
+        .ai-insights-loading, .ai-insights-error {
+            font-size: 11.5px;
+            color: #aaa;
+            padding: 10px 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .ai-insights-error { color: #c99; }
+
         /* BOTTOM 3 COLUMNS */
         .bottom-grid {
             display: grid;
@@ -956,7 +1023,12 @@
             display: flex;
             align-items: center;
             gap: 25px;
+            /* Lives inside the narrower left column now - let the streak
+               dots / button wrap to a second row instead of overflowing. */
+            flex-wrap: wrap;
         }
+
+        .consistency-text { min-width: 200px; }
 
         .consistency-icon {
             font-size: 50px;
@@ -1443,6 +1515,34 @@
                             @endforelse
                         </div>
                     </div>
+
+                    <!-- CONSISTENCY BANNER (fills the space beside the AI Coach) -->
+                    <div class="consistency" style="margin-top:25px;">
+                        <div class="consistency-icon"><i class="fas fa-shield-alt"></i></div>
+                        <div class="consistency-text">
+                            <h4>Consistency is the key!</h4>
+                            @if($streakDays > 0)
+                                <p>You've been consistent for {{ $streakDays }} {{ \Illuminate\Support\Str::plural('day', $streakDays) }} in a row.<br>Keep it up and achieve your goals!</p>
+                            @else
+                                <p>Practise a little every day to build a streak.<br>Start a quiz today to get going!</p>
+                            @endif
+                        </div>
+                        <div class="streak-count">
+                            <div class="num">{{ $streakDays }}</div>
+                            <div class="lbl">Current Streak days</div>
+                        </div>
+                        <div class="streak-days">
+                            @foreach($weekActivity['days'] as $day)
+                                <div class="streak-day">
+                                    <div class="d">{{ $day['label'] }}</div>
+                                    <div class="streak-check {{ $day['done'] ? 'done' : 'empty' }}">
+                                        @if($day['done'])<i class="fas fa-check"></i>@endif
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                        <a href="{{ route('calendar') }}" class="consistency-btn" style="text-decoration:none;display:inline-flex;align-items:center;">View Calendar</a>
+                    </div>
                 </div>
 
                 <!-- RIGHT / SIDE COLUMN -->
@@ -1525,36 +1625,21 @@
                                 <i class="fas fa-arrow-right insight-arrow"></i>
                             </a>
                         @endforeach
-                    </div>
-                </div>
-            </div>
 
-            <!-- CONSISTENCY BANNER -->
-            <div class="consistency" style="margin-top:25px;">
-                <div class="consistency-icon"><i class="fas fa-shield-alt"></i></div>
-                <div class="consistency-text">
-                    <h4>Consistency is the key!</h4>
-                    @if($streakDays > 0)
-                        <p>You've been consistent for {{ $streakDays }} {{ \Illuminate\Support\Str::plural('day', $streakDays) }} in a row.<br>Keep it up and achieve your goals!</p>
-                    @else
-                        <p>Practise a little every day to build a streak.<br>Start a quiz today to get going!</p>
-                    @endif
-                </div>
-                <div class="streak-count">
-                    <div class="num">{{ $streakDays }}</div>
-                    <div class="lbl">Current Streak days</div>
-                </div>
-                <div class="streak-days">
-                    @foreach($weekActivity['days'] as $day)
-                        <div class="streak-day">
-                            <div class="d">{{ $day['label'] }}</div>
-                            <div class="streak-check {{ $day['done'] ? 'done' : 'empty' }}">
-                                @if($day['done'])<i class="fas fa-check"></i>@endif
+                        <!-- AI COACH (personalised, generated from this student's data) -->
+                        <div class="ai-insights-head">
+                            <span class="ai-insights-title"><i class="fas fa-wand-magic-sparkles"></i> AI Coach</span>
+                            <button type="button" class="ai-insights-refresh" id="aiInsightsRefresh" title="Regenerate insights">
+                                <i class="fas fa-rotate-right"></i>
+                            </button>
+                        </div>
+                        <div id="aiInsightsBody">
+                            <div class="ai-insights-loading">
+                                <i class="fas fa-circle-notch fa-spin"></i> Analyzing your performance...
                             </div>
                         </div>
-                    @endforeach
+                    </div>
                 </div>
-                <a href="{{ route('calendar') }}" class="consistency-btn" style="text-decoration:none;display:inline-flex;align-items:center;">View Calendar</a>
             </div>
 
             </div><!-- /overview panel -->
@@ -1801,6 +1886,50 @@
             }
         `;
         document.head.appendChild(style);
+
+        // ── AI Coach insights (Insights & Recommendations card) ─────────────
+        (function () {
+            const INSIGHTS_URL = "{{ route('ai-tutor.performance-insights') }}";
+            const body       = document.getElementById('aiInsightsBody');
+            const refreshBtn = document.getElementById('aiInsightsRefresh');
+            if (!body) return;
+
+            function escapeHtml(str) {
+                const div = document.createElement('div');
+                div.textContent = str;
+                return div.innerHTML;
+            }
+
+            async function loadInsights(refresh = false) {
+                body.innerHTML = '<div class="ai-insights-loading"><i class="fas fa-circle-notch fa-spin"></i> Analyzing your performance...</div>';
+                refreshBtn.disabled = true;
+                try {
+                    const res  = await fetch(INSIGHTS_URL + (refresh ? '?refresh=1' : ''), {
+                        headers: { 'Accept': 'application/json' },
+                    });
+                    const data = await res.json().catch(() => ({}));
+                    if (!res.ok || !data.ok || !Array.isArray(data.insights)) {
+                        throw new Error(data.message || 'unavailable');
+                    }
+                    body.innerHTML = data.insights.map(ins => `
+                        <div class="insight-item ${escapeHtml(ins.tone)}">
+                            <div class="insight-icon"><i class="fas ${escapeHtml(ins.icon)}"></i></div>
+                            <div class="insight-content">
+                                <div class="insight-title">${escapeHtml(ins.title)}</div>
+                                <div class="insight-desc">${escapeHtml(ins.desc)}</div>
+                            </div>
+                        </div>
+                    `).join('');
+                } catch (e) {
+                    body.innerHTML = '<div class="ai-insights-error"><i class="fas fa-circle-exclamation"></i> AI insights are unavailable right now. Try the refresh button in a moment.</div>';
+                } finally {
+                    refreshBtn.disabled = false;
+                }
+            }
+
+            refreshBtn.addEventListener('click', () => loadInsights(true));
+            loadInsights();
+        })();
 
     </script>
 </body>
