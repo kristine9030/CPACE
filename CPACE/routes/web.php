@@ -132,6 +132,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/review-notes/{note}/favorite', [ReviewNoteController::class, 'favorite'])->name('review-notes.favorite');
     // AI Tutor chat (floating widget on Review Notes)
     Route::post('/ai-tutor/chat', [AiTutorController::class, 'chat'])->middleware('throttle:20,1')->name('ai-tutor.chat');
+    Route::get('/ai-tutor/performance-insights', [AiTutorController::class, 'performanceInsights'])->middleware('throttle:10,1')->name('ai-tutor.performance-insights');
     Route::get('/calendar', [CalendarController::class, 'index'])->name('calendar');
     Route::get('/achievements', [AchievementController::class, 'index'])->name('achievements');
     Route::get('/settings', function () {

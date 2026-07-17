@@ -26,8 +26,39 @@ class AiTutorService
      */
     public function chat(array $messages): array
     {
-        $system = $this->systemPrompt();
+        return $this->generate($this->systemPrompt(), $messages);
+    }
 
+    /**
+     * Personalised performance insights for the student Performance page.
+     * Takes a compact summary of the student's real quiz stats and returns
+     * ready-to-render insight cards.
+     *
+     * @return array{insights: array, provider: string}
+     */
+    public function performanceInsights(array $summary): array
+    {
+        $prompt = "Here is the student's current performance data (all numbers are real, from the database):\n\n"
+            . json_encode($summary, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)
+            . "\n\nGenerate the insight cards now. Respond with ONLY the JSON array.";
+
+        $result = $this->generate($this->insightsSystemPrompt(), [
+            ['role' => 'user', 'content' => $prompt],
+        ]);
+
+        return [
+            'insights' => $this->parseInsights($result['reply']),
+            'provider' => $result['provider'],
+        ];
+    }
+
+    /**
+     * Run one completion through the provider chain (Gemini → OpenRouter).
+     *
+     * @return array{reply: string, provider: string}
+     */
+    private function generate(string $system, array $messages): array
+    {
         if (config('services.gemini.key') && ! Cache::has(self::GEMINI_COOLDOWN_KEY)) {
             try {
                 $reply = $this->askGemini($system, $messages);
@@ -79,7 +110,35 @@ class AiTutorService
         return $text !== '' ? $text : null;
     }
 
+    /**
+     * Try each configured OpenRouter model in order until one answers.
+     * The free models run on different upstream providers, so when one is
+     * rate-limited the next usually is not.
+     */
     private function askOpenRouter(string $system, array $messages): string
+    {
+        $lastError = 'no OpenRouter models configured';
+
+        foreach (config('services.openrouter.models', []) as $model) {
+            $model = trim($model);
+            if ($model === '') {
+                continue;
+            }
+
+            try {
+                return $this->askOpenRouterModel($model, $system, $messages);
+            } catch (\Throwable $e) {
+                $lastError = $e->getMessage();
+                Log::warning("AI Tutor: OpenRouter model {$model} failed, trying next.", [
+                    'error' => $lastError,
+                ]);
+            }
+        }
+
+        throw new \RuntimeException('All OpenRouter models failed. Last error: ' . $lastError);
+    }
+
+    private function askOpenRouterModel(string $model, string $system, array $messages): string
     {
         $response = Http::timeout(self::TIMEOUT_SECONDS)
             ->withToken(config('services.openrouter.key'))
@@ -88,7 +147,7 @@ class AiTutorService
                 'X-Title'      => 'CPACE CPA Reviewer',
             ])
             ->post('https://openrouter.ai/api/v1/chat/completions', [
-                'model'      => config('services.openrouter.model'),
+                'model'      => $model,
                 'messages'   => array_merge(
                     [['role' => 'system', 'content' => $system]],
                     $messages
@@ -108,6 +167,75 @@ class AiTutorService
         }
 
         return $text;
+    }
+
+    /**
+     * Parse the model's insight JSON into safe, render-ready cards.
+     * Whitelists tones/icons and truncates text so a misbehaving reply can
+     * never break the UI.
+     */
+    private function parseInsights(string $reply): array
+    {
+        // Models sometimes wrap JSON in ```json fences or add prose — cut
+        // everything outside the outermost [ ... ].
+        $start = strpos($reply, '[');
+        $end   = strrpos($reply, ']');
+        if ($start === false || $end === false || $end <= $start) {
+            throw new \RuntimeException('AI insights reply contained no JSON array.');
+        }
+
+        $items = json_decode(substr($reply, $start, $end - $start + 1), true);
+        if (! is_array($items)) {
+            throw new \RuntimeException('AI insights reply was not valid JSON.');
+        }
+
+        $tones = ['red', 'amber', 'blue', 'green'];
+        $icons = [
+            'fa-chart-line', 'fa-book-open', 'fa-clock', 'fa-brain', 'fa-fire',
+            'fa-bullseye', 'fa-trophy', 'fa-lightbulb', 'fa-triangle-exclamation',
+            'fa-calendar-check', 'fa-arrow-trend-up', 'fa-arrow-trend-down',
+        ];
+
+        $insights = [];
+        foreach ($items as $item) {
+            if (! is_array($item) || empty($item['title']) || empty($item['desc'])) {
+                continue;
+            }
+            $insights[] = [
+                'tone'  => in_array($item['tone'] ?? '', $tones, true) ? $item['tone'] : 'blue',
+                'icon'  => in_array($item['icon'] ?? '', $icons, true) ? $item['icon'] : 'fa-lightbulb',
+                'title' => mb_substr(trim((string) $item['title']), 0, 60),
+                'desc'  => mb_substr(trim((string) $item['desc']), 0, 200),
+            ];
+            if (count($insights) === 5) {
+                break;
+            }
+        }
+
+        if (empty($insights)) {
+            throw new \RuntimeException('AI insights reply contained no usable items.');
+        }
+
+        return $insights;
+    }
+
+    private function insightsSystemPrompt(): string
+    {
+        return <<<'PROMPT'
+You are the CPACE AI study coach inside a CPA board exam reviewer app for Philippine accountancy students. You will receive one student's real performance data as JSON: overall accuracy and week-over-week change, questions attempted, weak and strong topics (with accuracy and attempt counts), accuracy per CPA subject, study streak, average time per question, and quiz-mode usage.
+
+Respond with ONLY a JSON array of 3 to 5 insight cards, no prose, no markdown fences. Each card is an object:
+{"tone": "red|amber|blue|green", "icon": "<one of: fa-chart-line, fa-book-open, fa-clock, fa-brain, fa-fire, fa-bullseye, fa-trophy, fa-lightbulb, fa-triangle-exclamation, fa-calendar-check, fa-arrow-trend-up, fa-arrow-trend-down>", "title": "<max 45 chars>", "desc": "<max 140 chars, one or two sentences>"}
+
+Tone meaning: red = urgent weakness, amber = needs attention, blue = neutral tip, green = strength/praise.
+
+Guidelines:
+- Speak directly to the student ("you"). Be specific: name actual topics, subjects, and numbers from the data instead of generic advice.
+- Prioritise the most impactful findings: the weakest topics, a falling or rising accuracy trend, subjects below their passing threshold, poor pacing, or an impressive streak worth praising.
+- Give an actionable next step in each desc (what to practice, which mode to use, how to schedule review).
+- Include at least one positive card when the data honestly supports it.
+- If the student has very little data, say so and encourage them to take more quizzes so you can analyse their performance.
+PROMPT;
     }
 
     private function systemPrompt(): string

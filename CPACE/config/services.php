@@ -47,8 +47,15 @@ return [
     ],
 
     'openrouter' => [
-        'key'   => env('OPENROUTER_API_KEY'),
-        'model' => env('OPENROUTER_MODEL', 'nvidia/nemotron-3-super-120b-a12b:free'),
+        'key'    => env('OPENROUTER_API_KEY'),
+        // Tried in order until one answers - free models share upstream
+        // capacity with everyone, so any single one can be busy at times.
+        'models' => explode(',', env('OPENROUTER_MODELS',
+            'nvidia/nemotron-3-super-120b-a12b:free'
+            . ',qwen/qwen3-next-80b-a3b-instruct:free'
+            . ',meta-llama/llama-3.3-70b-instruct:free'
+            . ',openai/gpt-oss-20b:free'
+        )),
     ],
 
     'azure' => [
