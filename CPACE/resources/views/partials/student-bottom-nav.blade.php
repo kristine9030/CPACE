@@ -184,6 +184,12 @@
             </a>
         </div>
         <div class="more-drawer-item">
+            <a href="{{ route('notifications.index') }}">
+                <i class="fas fa-bell"></i>
+                Notifications{{ $unreadNotifications ? ' ('.$unreadNotifications.')' : '' }}
+            </a>
+        </div>
+        <div class="more-drawer-item">
             <a href="#">
                 <i class="fas fa-layer-group"></i>
                 Flashcards

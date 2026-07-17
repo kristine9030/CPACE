@@ -1,7 +1,7 @@
 {{--
     Program Chair (Admin) portal sidebar + shared CSS for all chair pages.
     Usage: @include('partials.chair-sidebar', ['active' => 'dashboard'])
-    Valid $active keys: dashboard, students, faculty, faculty-performance, subjects
+    Valid $active keys: dashboard, students, faculty, faculty-performance, subjects, communications
 --}}
 @php $active = $active ?? ''; @endphp
 
@@ -349,6 +349,8 @@
         <li><a href="{{ route('chair.faculty') }}" class="{{ $active === 'faculty' ? 'active' : '' }}"><i class="fas fa-chalkboard-user"></i><span>Faculty Accounts</span></a></li>
         <li><a href="{{ route('chair.faculty.performance') }}" class="{{ $active === 'faculty-performance' ? 'active' : '' }}"><i class="fas fa-chart-column"></i><span>Faculty Performance</span></a></li>
         <li><a href="{{ route('chair.subjects') }}" class="{{ $active === 'subjects' ? 'active' : '' }}"><i class="fas fa-layer-group"></i><span>Subject Assignments</span></a></li>
+        <li><a href="{{ route('chair.communications') }}" class="{{ $active === 'communications' ? 'active' : '' }}"><i class="fas fa-bullhorn"></i><span>Communications</span></a></li>
+        <li><a href="{{ route('notifications.index') }}" class="{{ $active === 'notifications' ? 'active' : '' }}"><i class="fas fa-bell"></i><span>Notifications{{ $unreadNotifications ? ' ('.$unreadNotifications.')' : '' }}</span></a></li>
         <li><a href="{{ route('chair.faculty.create') }}"><i class="fas fa-user-plus"></i><span>Add Faculty</span></a></li>
     </ul>
 

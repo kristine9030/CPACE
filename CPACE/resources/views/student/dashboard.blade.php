@@ -809,12 +809,12 @@
                 <i class="fas fa-search"></i>
                 <input type="text" placeholder="Search topics, questions, subjects...">
             </div>
-            <button class="notif-btn">
+            <a class="notif-btn" href="{{ route('notifications.index') }}" aria-label="Notifications" style="text-decoration:none">
                 <i class="fas fa-bell"></i>
                 @if($unreadNotifications > 0)
                     <span class="badge">{{ $unreadNotifications }}</span>
                 @endif
-            </button>
+            </a>
             <div class="header-dropdown-wrap">
                 <button class="profile-avatar" id="profileBtn">@include('partials.avatar-content')</button>
                 <div class="dropdown-menu" id="profileDropdown">

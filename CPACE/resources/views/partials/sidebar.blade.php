@@ -276,6 +276,7 @@
         <li><a href="{{ route('performance') }}" class="{{ $active === 'performance' ? 'active' : '' }}"><i class="fas fa-chart-bar"></i><span>Performance</span></a></li>
         <li><a href="{{ route('calendar') }}" class="{{ $active === 'calendar' ? 'active' : '' }}"><i class="fas fa-calendar-alt"></i><span>Calendar</span></a></li>
         <li><a href="{{ route('achievements') }}" class="{{ $active === 'achievements' ? 'active' : '' }}"><i class="fas fa-trophy"></i><span>Achievements</span></a></li>
+        <li><a href="{{ route('notifications.index') }}" class="{{ $active === 'notifications' ? 'active' : '' }}"><i class="fas fa-bell"></i><span>Notifications{{ $unreadNotifications ? ' ('.$unreadNotifications.')' : '' }}</span></a></li>
 
         <li class="nav-label">Account</li>
         <li><a href="{{ route('settings') }}" class="{{ $active === 'settings' ? 'active' : '' }}"><i class="fas fa-cog"></i><span>Settings</span></a></li>

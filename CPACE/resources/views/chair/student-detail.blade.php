@@ -236,7 +236,7 @@
             >
                 <i class="fas fa-file-pdf"></i> Report
             </a>
-            <a class="btn btn-primary btn-sm" href="{{ route('chair.students.edit', $student) }}">
+            <a class="btn btn-primary btn-sm" href="{{ route('chair.students.edit', $student) }}">vvc
                 <i class="fas fa-pen"></i> Edit
             </a>
         </div>

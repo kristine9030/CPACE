@@ -17,6 +17,8 @@ use App\Http\Controllers\Student\QuizController;
 use App\Http\Controllers\Student\ReviewNoteController;
 use App\Http\Controllers\Student\AiTutorController;
 use App\Http\Controllers\Faculty\TestBankController;
+use App\Http\Controllers\Chair\CommunicationController;
+use App\Http\Controllers\NotificationController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -40,6 +42,9 @@ Route::middleware('guest')->group(function () {
 
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/read-all', [NotificationController::class, 'readAll'])->name('notifications.read-all');
+    Route::post('/notifications/{id}/read', [NotificationController::class, 'read'])->name('notifications.read');
 
     // Program Chair Routes (Admin role)
     Route::prefix('chair')->name('chair.')->middleware('chair')->group(function () {
@@ -77,6 +82,10 @@ Route::middleware('auth')->group(function () {
         Route::post('/subjects/{subject}/topics', [SubjectManagementController::class, 'storeTopic'])->name('subjects.topics.store');
         Route::put('/subjects/{subject}/topics/{topic}', [SubjectManagementController::class, 'updateTopic'])->name('subjects.topics.update');
         Route::delete('/subjects/{subject}/topics/{topic}', [SubjectManagementController::class, 'destroyTopic'])->name('subjects.topics.destroy');
+
+        // Announcements and internal messages
+        Route::get('/communications', [CommunicationController::class, 'index'])->name('communications');
+        Route::post('/communications', [CommunicationController::class, 'store'])->name('communications.store');
     });
 
     // Faculty Routes

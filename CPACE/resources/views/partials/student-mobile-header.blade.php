@@ -117,11 +117,11 @@
         </div>
     </div>
     <div class="mh-right">
-        <button class="mh-bell" type="button">
+        <a class="mh-bell" href="{{ route('notifications.index') }}" aria-label="Notifications" style="text-decoration:none">
             <i class="fas fa-bell"></i>
             @if($mhNotifs > 0)
                 <span class="mh-badge">{{ $mhNotifs > 9 ? '9+' : $mhNotifs }}</span>
             @endif
-        </button>
+        </a>
     </div>
 </header>
