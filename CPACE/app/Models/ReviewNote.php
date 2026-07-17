@@ -3,9 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ReviewNote extends Model
 {
+    use SoftDeletes;
+
     protected $fillable = [
         'student_id',
         'subject_id',
@@ -16,12 +19,14 @@ class ReviewNote extends Model
         'is_favorite',
         'review_count',
         'last_reviewed_at',
+        'archived_at',
     ];
 
     protected $casts = [
         'is_favorite'      => 'boolean',
         'review_count'     => 'integer',
         'last_reviewed_at' => 'datetime',
+        'archived_at'      => 'datetime',
     ];
 
     public function student()
