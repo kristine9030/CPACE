@@ -137,8 +137,10 @@ Route::middleware('auth')->group(function () {
     Route::post('/review-notes', [ReviewNoteController::class, 'store'])->name('review-notes.store');
     Route::get('/review-notes/{note}', [ReviewNoteController::class, 'show'])->name('review-notes.show');
     Route::put('/review-notes/{note}', [ReviewNoteController::class, 'update'])->name('review-notes.update');
-    Route::delete('/review-notes/{note}', [ReviewNoteController::class, 'destroy'])->name('review-notes.destroy');
+    Route::delete('/review-notes/{note}', [ReviewNoteController::class, 'destroy'])->withTrashed()->name('review-notes.destroy');
     Route::post('/review-notes/{note}/favorite', [ReviewNoteController::class, 'favorite'])->name('review-notes.favorite');
+    Route::post('/review-notes/{note}/archive', [ReviewNoteController::class, 'archive'])->name('review-notes.archive');
+    Route::post('/review-notes/{note}/restore', [ReviewNoteController::class, 'restore'])->withTrashed()->name('review-notes.restore');
     // AI Tutor chat (floating widget on Review Notes)
     Route::post('/ai-tutor/chat', [AiTutorController::class, 'chat'])->middleware('throttle:20,1')->name('ai-tutor.chat');
     Route::get('/ai-tutor/performance-insights', [AiTutorController::class, 'performanceInsights'])->middleware('throttle:10,1')->name('ai-tutor.performance-insights');
