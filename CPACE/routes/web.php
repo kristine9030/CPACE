@@ -145,6 +145,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/ai-tutor/chat', [AiTutorController::class, 'chat'])->middleware('throttle:20,1')->name('ai-tutor.chat');
     Route::get('/ai-tutor/performance-insights', [AiTutorController::class, 'performanceInsights'])->middleware('throttle:10,1')->name('ai-tutor.performance-insights');
     Route::get('/calendar', [CalendarController::class, 'index'])->name('calendar');
+    Route::post('/calendar/plan', [CalendarController::class, 'storePlan'])->name('calendar.plan.store');
+    Route::delete('/calendar/plan/{id}', [CalendarController::class, 'destroyPlan'])->name('calendar.plan.destroy');
     Route::get('/achievements', [AchievementController::class, 'index'])->name('achievements');
     Route::get('/settings', function () {
         return view('student.settings');

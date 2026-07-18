@@ -147,6 +147,9 @@ class QuizController extends Controller
             'mode'         => 'nullable|string',
             'count'        => 'required|integer|min:1',
             'session_type' => 'nullable|string',
+            // Optional: focus a Topic-mode quiz on a specific topic (used by
+            // the Calendar's "Start as Exam" action on a scheduled review).
+            'topic_id'     => ['nullable', Rule::exists('topics', 'id')->where('is_active', true)],
         ], [
             'count.required' => 'Please choose how many questions before starting a quiz.',
             'count.min'      => 'Please choose at least 1 question.',
@@ -162,8 +165,13 @@ class QuizController extends Controller
 
         $topicIds = DB::table('topics')->where('subject_id', $data['subject_id'])->where('is_active', true)->pluck('id');
 
+        // A requested focus topic is honoured only if it belongs to the subject.
+        $forceTopicId = isset($data['topic_id']) && $topicIds->contains((int) $data['topic_id'])
+            ? (int) $data['topic_id']
+            : null;
+
         // Mode decides HOW the questions are chosen from the faculty's bank.
-        [$questionIds, $focusTopicId] = $this->selectQuestions($mode, $topicIds, Auth::id(), $count);
+        [$questionIds, $focusTopicId] = $this->selectQuestions($mode, $topicIds, Auth::id(), $count, $forceTopicId);
 
         if ($questionIds->isEmpty()) {
             return back()->with('error', 'No questions are available for that subject yet.');
@@ -220,7 +228,7 @@ class QuizController extends Controller
      * stored questions are never modified - only WHICH ones are served and
      * (later, at render time) the order they appear in.
      */
-    private function selectQuestions(string $mode, $topicIds, int $studentId, int $count = self::QUIZ_LENGTH): array
+    private function selectQuestions(string $mode, $topicIds, int $studentId, int $count = self::QUIZ_LENGTH, ?int $forceTopicId = null): array
     {
         // Fresh query builder each call - inRandomOrder()/limit() mutate state.
         $base = fn () => Question::where('is_active', true)->whereIn('topic_id', $topicIds);
@@ -228,9 +236,9 @@ class QuizController extends Controller
         switch ($mode) {
             case 'topic':
                 // Focus the whole quiz on one topic so the student drills a
-                // single competency. Prefer a weak topic, else the topic with
-                // the most questions, else a random one.
-                $focusTopicId = $this->pickFocusTopic($topicIds, $studentId);
+                // single competency. A caller-chosen topic wins; otherwise
+                // prefer a weak topic, else the topic with the most questions.
+                $focusTopicId = $forceTopicId ?? $this->pickFocusTopic($topicIds, $studentId);
                 $ids = $base()
                     ->where('topic_id', $focusTopicId)
                     ->inRandomOrder()

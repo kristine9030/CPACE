@@ -24,6 +24,13 @@ class PerformanceController extends Controller
         $studentId = Auth::id();
         $now       = Carbon::now();
 
+        // ── Exam countdown (same source as the Dashboard banner) ───────────
+        $profile    = DB::table('student_profiles')->where('user_id', $studentId)->first();
+        $examDate   = $profile->exam_target_date ?? null;
+        $daysToExam = $examDate
+            ? max(0, (int) ceil((Carbon::parse($examDate)->startOfDay()->timestamp - $now->copy()->startOfDay()->timestamp) / 86400))
+            : null;
+
         // Rolling 7-day windows used for the "from last week" deltas.
         $weekStart     = $now->copy()->subDays(7);
         $prevWeekStart = $now->copy()->subDays(14);
@@ -159,15 +166,20 @@ class PerformanceController extends Controller
             ->where('quiz_sessions.session_type', '!=', 'training')
             ->whereNotNull('quiz_sessions.completed_at')
             ->orderByDesc('quiz_sessions.completed_at')
-            ->limit(5)
+            ->limit(4)
             ->select(
                 'quiz_sessions.mode',
                 'quiz_sessions.session_type',
                 'quiz_sessions.score_percent',
                 'quiz_sessions.completed_at',
+                'quiz_sessions.duration_secs',
                 'subjects.code as subject_code'
             )
-            ->get();
+            ->get()
+            ->map(function ($r) {
+                $r->duration = $this->formatDuration((int) $r->duration_secs);
+                return $r;
+            });
 
         // ── Overall mastery donut (Strong / Medium / Weak topic mix) ───────
         $mastery = $this->masteryBreakdown($topicStats, $overallAccuracy);
@@ -202,6 +214,66 @@ class PerformanceController extends Controller
         // ── Consistency: which of the last 7 days had a quiz ───────────────
         $weekActivity = $this->weeklyActivity($studentId, $now);
 
+        // ── GitHub-style study activity heatmap (last 12 months) ───────────
+        $heatmap = $this->activityHeatmap($studentId, $now);
+
+        // ── Headline dashboard metrics beyond the classic five ─────────────
+        $studyHours      = round($all['duration'] / 3600, 1);
+        $studyHoursDelta = $prevWeek['duration'] > 0
+            ? round(($thisWeek['duration'] - $prevWeek['duration']) / $prevWeek['duration'] * 100, 1)
+            : ($thisWeek['duration'] > 0 ? 100.0 : 0.0);
+        $attemptedDeltaPct = $prevWeek['attempted'] > 0
+            ? round(($thisWeek['attempted'] - $prevWeek['attempted']) / $prevWeek['attempted'] * 100, 1)
+            : ($thisWeek['attempted'] > 0 ? 100.0 : 0.0);
+
+        // Readiness: how close each practised subject is to its passing mark
+        // (100 = every practised subject at/above threshold).
+        $readiness      = $this->readinessScore($sessions, null, null);
+        $readinessDelta = $this->readinessScore($sessions, $weekStart, null)
+                        - $this->readinessScore($sessions, $prevWeekStart, $weekStart);
+
+        // Study-time share per subject for the distribution donut.
+        $studyDist = $this->studyDistribution($sessions, $studyHours);
+
+        // Today vs yesterday study time.
+        $todayStart = $now->copy()->startOfDay();
+        $todaySecs  = $sumWindow($todayStart, null)['duration'];
+        $yestSecs   = $sumWindow($todayStart->copy()->subDay(), $todayStart)['duration'];
+        $todayStudy = $this->formatDuration($todaySecs);
+        $todayDelta = $yestSecs > 0
+            ? (int) round(($todaySecs - $yestSecs) / $yestSecs * 100)
+            : ($todaySecs > 0 ? 100 : 0);
+
+        // Consistency: share of the last 7 days with quiz activity, and how
+        // many active days were gained/lost vs the week before.
+        $activeDaysIn = function ($from, $to) use ($sessions) {
+            $q = $sessions()->where('started_at', '>=', $from);
+            if ($to) {
+                $q->where('started_at', '<', $to);
+            }
+            return $q->get(['started_at'])
+                ->map(fn ($s) => Carbon::parse($s->started_at)->toDateString())
+                ->unique()->count();
+        };
+        $activeThis       = $activeDaysIn($weekStart, null);
+        $activePrev       = $activeDaysIn($prevWeekStart, $weekStart);
+        $consistencyPct   = (int) round($activeThis / 7 * 100);
+        $consistencyDelta = (int) round(($activeThis - $activePrev) / 7 * 100);
+        $streakDelta      = $activeThis - $activePrev;
+
+        // Weekly study-hours goal.
+        $goalTarget = 25;
+        $goalHours  = round($thisWeek['duration'] / 3600, 1);
+        $goalPct    = min(100, (int) round($goalHours / $goalTarget * 100));
+
+        $weakestTopic = $weaknesses->first();
+
+        // ── Unread notifications (header bell) ─────────────────────────────
+        $unreadNotifications = DB::table('notifications')
+            ->where('recipient_id', $studentId)
+            ->where('is_read', false)
+            ->count();
+
         // ── Tab datasets (By Subject / By Topic / By Quiz Type / By Time) ──
         $byTopic     = $topicStats->sortByDesc('accuracy')->values();
         $byQuizType  = $this->byQuizType($studentId);
@@ -220,6 +292,25 @@ class PerformanceController extends Controller
             'subjectAccuracy',
             'insights',
             'weekActivity',
+            'heatmap',
+            'examDate',
+            'daysToExam',
+            'studyHours',
+            'studyHoursDelta',
+            'attemptedDeltaPct',
+            'readiness',
+            'readinessDelta',
+            'studyDist',
+            'todayStudy',
+            'todayDelta',
+            'consistencyPct',
+            'consistencyDelta',
+            'streakDelta',
+            'goalTarget',
+            'goalHours',
+            'goalPct',
+            'weakestTopic',
+            'unreadNotifications',
             'byTopic',
             'byQuizType',
             'byTime'
@@ -484,6 +575,7 @@ class PerformanceController extends Controller
         $correct = [];
         $accuracy = [];
         $time = [];
+        $hours = [];
 
         for ($i = 7; $i >= 0; $i--) {
             $day = $now->copy()->subDays($i)->startOfDay();
@@ -491,11 +583,13 @@ class PerformanceController extends Controller
 
             $att = (int) $sessions()->whereBetween('started_at', [$day, $next])->sum('total_items');
             $cor = (int) $sessions()->whereBetween('started_at', [$day, $next])->sum('correct_answers');
+            $dur = (int) $sessions()->whereBetween('started_at', [$day, $next])->sum('duration_secs');
 
             $attempted[] = $att;
             $correct[]   = $cor;
             $accuracy[]  = $att > 0 ? (int) round($cor / $att * 100) : 0;
             $time[]      = $att; // proxy: busier days = taller bar
+            $hours[]     = $dur;
         }
 
         return [
@@ -503,6 +597,7 @@ class PerformanceController extends Controller
             'correct'   => $this->scaleBars($correct),
             'accuracy'  => $accuracy,
             'time'      => $this->scaleBars($time),
+            'hours'     => $this->scaleBars($hours),
         ];
     }
 
@@ -669,6 +764,169 @@ class PerformanceController extends Controller
         return [
             'days'         => $days,
             'active_count' => $activeCount,
+        ];
+    }
+
+    /**
+     * Readiness score (0-100): for every subject practised in the window,
+     * how close its session accuracy is to that subject's passing threshold
+     * (capped at 100), averaged across subjects. 100 means every practised
+     * subject is at or above its passing mark.
+     */
+    private function readinessScore(callable $sessions, $from, $to): int
+    {
+        $q = $sessions()
+            ->join('subjects', 'subjects.id', '=', 'quiz_sessions.subject_id')
+            ->groupBy('quiz_sessions.subject_id', 'subjects.passing_threshold')
+            ->select(
+                'subjects.passing_threshold',
+                DB::raw('COALESCE(SUM(quiz_sessions.total_items),0) att'),
+                DB::raw('COALESCE(SUM(quiz_sessions.correct_answers),0) cor')
+            );
+        if ($from) {
+            $q->where('quiz_sessions.started_at', '>=', $from);
+        }
+        if ($to) {
+            $q->where('quiz_sessions.started_at', '<', $to);
+        }
+
+        $rows = $q->get()->filter(fn ($r) => (int) $r->att > 0);
+        if ($rows->isEmpty()) {
+            return 0;
+        }
+
+        return (int) round($rows->avg(function ($r) {
+            $acc = $r->cor / $r->att * 100;
+            $thr = max(1, (int) $r->passing_threshold);
+            return min(100, $acc / $thr * 100);
+        }));
+    }
+
+    /**
+     * Study-time share per subject (for the Study Distribution donut).
+     * Colours are assigned to subjects in a fixed order (by subject id) so a
+     * subject keeps its colour no matter which subjects appear.
+     */
+    private function studyDistribution(callable $sessions, float $totalHours): array
+    {
+        $palette = ['#c0392b', '#3b7ddd', '#e8910b', '#8e44ad', '#21a366', '#d4589e'];
+
+        $slices = $sessions()
+            ->join('subjects', 'subjects.id', '=', 'quiz_sessions.subject_id')
+            ->groupBy('subjects.id', 'subjects.code')
+            ->orderBy('subjects.id')
+            ->select('subjects.code', DB::raw('COALESCE(SUM(quiz_sessions.duration_secs),0) secs'))
+            ->get()
+            ->map(function ($r, $i) use ($palette) {
+                $r->color = $palette[$i % count($palette)];
+                return $r;
+            })
+            ->filter(fn ($r) => (int) $r->secs > 0)
+            ->values();
+
+        $total = max(1, $slices->sum('secs'));
+
+        return [
+            'has_data'    => $slices->isNotEmpty(),
+            'total_hours' => $totalHours,
+            'display_val' => $totalHours >= 1 ? round($totalHours, 1) : (int) round($totalHours * 60),
+            'display_unit'=> $totalHours >= 1 ? 'hrs' : 'mins',
+            'slices'      => $slices->map(fn ($r) => [
+                'code'  => $r->code,
+                'hours' => round($r->secs / 3600, 1),
+                'pct'   => (int) round($r->secs / $total * 100),
+                'color' => $r->color,
+            ])->all(),
+        ];
+    }
+
+    /**
+     * GitHub-style activity heatmap: one cell per day for the last 12 months,
+     * shaded by how many questions the student answered that day. Any completed
+     * quiz counts (training included - it is real study activity, the same rule
+     * the streak uses). Aggregated in PHP so it works on any database driver.
+     */
+    private function activityHeatmap(int $studentId, Carbon $now): array
+    {
+        // Grid starts on the Sunday on/before (today - 364 days) so every
+        // column is a full Sun..Sat week, exactly like GitHub's graph.
+        $start     = $now->copy()->subDays(364)->startOfDay();
+        $gridStart = $start->copy()->subDays($start->dayOfWeek);
+
+        $rows = DB::table('quiz_sessions')
+            ->where('student_id', $studentId)
+            ->whereNotNull('completed_at')
+            ->where('started_at', '>=', $gridStart)
+            ->select('started_at', 'total_items')
+            ->get();
+
+        $perDay = [];
+        foreach ($rows as $r) {
+            if (! $r->started_at) {
+                continue;
+            }
+            $key = Carbon::parse($r->started_at)->toDateString();
+            $perDay[$key] = ($perDay[$key] ?? 0) + (int) $r->total_items;
+        }
+
+        // Quartile thresholds over the active days so the shading adapts to
+        // this student's own volume instead of using fixed cut-offs.
+        $counts = array_values(array_filter($perDay, fn ($v) => $v > 0));
+        sort($counts);
+        $q = function (float $p) use ($counts) {
+            return empty($counts) ? 0 : $counts[(int) floor($p * (count($counts) - 1))];
+        };
+        $t1 = max(1, (int) $q(0.25));
+        $t2 = max($t1 + 1, (int) $q(0.50));
+        $t3 = max($t2 + 1, (int) $q(0.75));
+
+        $weeks       = [];
+        $monthLabels = [];
+        $prevMonth   = null;
+        $total       = 0;
+        $activeDays  = 0;
+        $best        = 0;
+
+        $day   = $gridStart->copy();
+        $today = $now->copy()->startOfDay();
+        while ($day <= $today) {
+            // Month label above the column where a new month starts.
+            $m = $day->format('M');
+            if ($m !== $prevMonth) {
+                $monthLabels[count($weeks)] = $m;
+                $prevMonth = $m;
+            }
+
+            $week = [];
+            for ($i = 0; $i < 7; $i++) {
+                $future = $day->gt($today);
+                $c      = $future ? 0 : ($perDay[$day->toDateString()] ?? 0);
+
+                if (! $future) {
+                    $total += $c;
+                    if ($c > 0) {
+                        $activeDays++;
+                        $best = max($best, $c);
+                    }
+                }
+
+                $week[] = [
+                    'date'  => $day->format('M j, Y'),
+                    'count' => $c,
+                    // null level = day is in the future (cell stays blank)
+                    'level' => $future ? null : ($c === 0 ? 0 : ($c <= $t1 ? 1 : ($c <= $t2 ? 2 : ($c <= $t3 ? 3 : 4)))),
+                ];
+                $day->addDay();
+            }
+            $weeks[] = $week;
+        }
+
+        return [
+            'weeks'       => $weeks,
+            'labels'      => $monthLabels,
+            'total'       => $total,
+            'active_days' => $activeDays,
+            'best'        => $best,
         ];
     }
 

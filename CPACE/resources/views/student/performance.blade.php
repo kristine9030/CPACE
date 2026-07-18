@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -14,6 +14,23 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
+        :root {
+            --primary: #7B1D1D;
+            --primary-hover: #6a1818;
+            --accent-red: #c0392b;
+            --green: #21a366;
+            --green-text: #178a53;
+            --blue: #3b7ddd;
+            --amber: #e8910b;
+            --purple: #8e44ad;
+            --pink: #d4589e;
+            --ink: #2b2b2b;
+            --ink-2: #555555;
+            --ink-3: #999999;
+            --line: #edeef2;
+            --card-shadow: 0 1px 2px rgba(16, 24, 40, 0.05);
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -21,9 +38,9 @@
         }
 
         body {
-            font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: #f8f9fa;
-            color: #333;
+            font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f6f7f9;
+            color: var(--ink);
         }
 
         .dashboard-container {
@@ -31,680 +48,665 @@
             min-height: 100vh;
         }
 
-        /* SIDEBAR */
-        .sidebar {
-            background: #7B1D1D;
-            color: white;
-            padding: 30px 0;
-            position: fixed;
-            width: 211px;
-            height: 100vh;
-            overflow-y: auto;
-            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
-            transition: width 0.3s ease;
-            z-index: 1000;
-        }
-
-        .sidebar.collapsed {
-            width: 70px;
-        }
-
-        .sidebar-logo {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 0 20px 30px 20px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            margin-bottom: 30px;
-        }
-
-        .sidebar.collapsed .sidebar-logo {
-            padding: 0 10px 30px 10px;
-        }
-
-        .sidebar-logo-icon {
-            font-size: 32px;
-        }
-
-        .sidebar-logo-text {
-            font-size: 14px;
-            line-height: 1.3;
-            font-family: 'Poppins', sans-serif;
-        }
-
-        .sidebar.collapsed .sidebar-logo-text {
-            display: none;
-        }
-
-        .sidebar-logo-text strong {
-            display: block;
-            font-size: 13px;
-            font-weight: 700;
-        }
-
-        .sidebar-nav {
-            list-style: none;
-        }
-
-        .sidebar-nav li {
-            margin: 0;
-        }
-
-        .sidebar-nav a {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 20px;
-            color: rgba(255, 255, 255, 0.8);
-            text-decoration: none;
-            font-size: 13px;
-            transition: all 0.3s;
-            border-left: 3px solid transparent;
-            font-family: 'Poppins', sans-serif;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .sidebar.collapsed .sidebar-nav a {
-            padding: 12px 10px;
-            justify-content: center;
-            gap: 0;
-        }
-
-        .sidebar.collapsed .sidebar-nav a span {
-            display: none;
-        }
-
-        .sidebar-nav a:hover {
-            color: white;
-            background: rgba(255, 255, 255, 0.1);
-        }
-
-        .sidebar-nav a.active {
-            color: white;
-            background: rgba(255, 255, 255, 0.15);
-            border-left-color: white;
-        }
-
-        .sidebar-nav i {
-            margin-right: 8px;
-            width: 18px;
-            text-align: center;
-        }
-
-        .sidebar.collapsed .sidebar-nav i {
-            margin-right: 0;
-        }
-
-        .sidebar-footer {
-            position: absolute;
-            bottom: 20px;
-            left: 0;
-            right: 0;
-            padding: 0 20px;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            padding-top: 20px;
-        }
-
-        .user-avatar {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            color: white;
-            font-size: 13px;
-        }
-
-        .avatar-circle {
-            width: 40px;
-            height: 40px;
-            background: #c0392b;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 600;
-            font-size: 16px;
-        }
-
-        .user-info-sidebar {
-            flex: 1;
-            font-family: 'Poppins', sans-serif;
-        }
-
-        .user-info-sidebar .name {
-            display: block;
-            font-weight: 600;
-            font-size: 13px;
-        }
-
-        .user-info-sidebar .role {
-            display: block;
-            font-size: 11px;
-            opacity: 0.8;
-        }
-
-        /* MAIN CONTENT */
-        .main-content {
-            margin-left: 211px;
-            padding: 30px 40px;
-            overflow-y: auto;
-            transition: margin-left 0.3s ease;
-        }
-
-        .sidebar.collapsed ~ .main-content {
-            margin-left: 70px;
-        }
-
-        /* HEADER */
-        .header {
+        /* ─── HEADER ─── */
+        .page-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 30px;
+            margin-bottom: 14px;
             gap: 20px;
         }
 
-        .header-left {
-            flex: 1;
+        .page-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--ink);
+            line-height: 1.2;
+        }
+
+        .page-subtitle {
+            font-size: 13px;
+            color: var(--ink-3);
+            margin-top: 2px;
+        }
+
+        .page-header-right {
             display: flex;
             align-items: center;
-            gap: 20px;
+            gap: 14px;
         }
 
-        .sidebar-toggle {
-            background: white;
-            border: 1px solid #ddd;
-            width: 40px;
-            height: 40px;
-            border-radius: 6px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #7B1D1D;
-            font-size: 18px;
-            transition: all 0.3s;
-        }
+        .search-wrap { position: relative; }
 
-        .sidebar-toggle:hover {
-            background: #f0f0f0;
-        }
-
-        .header-title {
-            font-size: 32px;
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 5px;
-            font-family: 'Poppins', sans-serif;
-        }
-
-        .header-subtitle {
-            color: #999;
-            font-size: 14px;
-        }
-
-        .header-right {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-        }
-
-        .search-box {
-            position: relative;
-            flex: 0 1 320px;
-        }
-
-        .search-box i {
+        .search-wrap i {
             position: absolute;
-            left: 15px;
+            left: 14px;
             top: 50%;
             transform: translateY(-50%);
-            color: #aaa;
-            font-size: 14px;
-        }
-
-        .search-box input {
-            width: 100%;
-            padding: 10px 15px 10px 40px;
-            border: 1px solid #ddd;
-            border-radius: 25px;
+            color: var(--ink-3);
             font-size: 13px;
-            background: white;
-            color: #666;
+        }
+
+        .search-wrap input {
+            width: 300px;
+            padding: 10px 14px 10px 38px;
+            border: 1px solid var(--line);
+            border-radius: 24px;
+            font-size: 13px;
             font-family: 'Poppins', sans-serif;
+            background: white;
+            color: var(--ink-2);
+            outline: none;
+            transition: border-color 0.2s;
         }
 
-        .search-box input::placeholder {
-            color: #aaa;
-        }
+        .search-wrap input:focus { border-color: var(--primary); }
+        .search-wrap input::placeholder { color: #b7bcc2; }
 
-        .header-icons {
-            display: flex;
-            gap: 15px;
-            align-items: center;
-        }
-
-        .icon-btn {
+        .notif-btn {
+            position: relative;
             width: 40px;
             height: 40px;
-            border: none;
-            background: transparent;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 18px;
+            border: 1px solid var(--line);
+            background: white;
+            border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.3s;
-            position: relative;
-            color: #666;
+            font-size: 15px;
+            color: var(--ink-2);
+            cursor: pointer;
+            box-shadow: var(--card-shadow);
+            transition: background 0.2s;
         }
 
-        .icon-btn:hover {
-            background: #f0f0f0;
-        }
+        .notif-btn:hover { background: #f1f2f4; }
 
         .notification-badge {
             position: absolute;
-            top: 0;
-            right: 0;
-            width: 18px;
-            height: 18px;
-            background: #c0392b;
+            top: -3px;
+            right: -3px;
+            width: 17px;
+            height: 17px;
+            background: var(--accent-red);
             color: white;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 10px;
-            font-weight: 600;
+            font-size: 9.5px;
+            font-weight: 700;
         }
 
         .profile-btn {
-            width: 42px;
-            height: 42px;
-            background: #7B1D1D;
+            width: 40px;
+            height: 40px;
+            background: var(--primary);
             border: none;
             border-radius: 50%;
             color: white;
-            font-weight: 600;
+            font-weight: 700;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 13px;
             position: relative;
             font-family: 'Poppins', sans-serif;
         }
 
-        .profile-btn:hover {
-            background: #6a1818;
-        }
+        .profile-btn:hover { background: var(--primary-hover); }
 
         .dropdown-menu {
             position: absolute;
-            top: 100%;
+            top: calc(100% + 8px);
             right: 0;
             background: white;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            min-width: 180px;
-            margin-top: 10px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            min-width: 185px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
             display: none;
-            z-index: 1000;
+            z-index: 2000;
             font-family: 'Poppins', sans-serif;
         }
 
-        .dropdown-menu.active {
-            display: block;
-        }
+        .dropdown-menu.active { display: block; }
 
-        .dropdown-menu a {
-            display: block;
-            padding: 12px 16px;
-            color: #333;
-            text-decoration: none;
-            font-size: 13px;
-            transition: all 0.2s;
-            border-bottom: 1px solid #f0f0f0;
-        }
-
-        .dropdown-menu a i {
-            margin-right: 8px;
-            width: 16px;
-            text-align: center;
-            color: #7B1D1D;
-        }
-
-        .dropdown-menu a:hover {
-            background: #f9f9f9;
-            color: #7B1D1D;
-        }
-
+        .dropdown-menu a,
         .dropdown-menu button {
             display: flex;
             align-items: center;
             gap: 10px;
-            width: 100%;
             padding: 11px 16px;
-            background: none;
-            border: none;
-            text-align: left;
-            color: #333;
             font-size: 13px;
             font-family: 'Poppins', sans-serif;
+            text-decoration: none;
+            color: var(--ink);
+            background: none;
+            border: none;
+            width: 100%;
+            text-align: left;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: background 0.2s;
             border-bottom: 1px solid #f5f5f5;
         }
 
+        .dropdown-menu a:hover,
+        .dropdown-menu button:hover { background: #f8f9fa; }
+
+        .dropdown-menu a i,
         .dropdown-menu button i {
+            color: var(--primary);
             width: 16px;
             text-align: center;
-            color: #7B1D1D;
-        }
-
-        .dropdown-menu button:hover {
-            background: #f9f9f9;
         }
 
         .dropdown-menu .logout-btn { color: #e53e3e; }
         .dropdown-menu .logout-btn i { color: #e53e3e; }
 
-        /* TABS + DATE RANGE ROW */
-        .controls-row {
+        /* ─── DATE CHIP ROW ─── */
+        .toolbar-row {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 25px;
-            gap: 20px;
-            flex-wrap: wrap;
-        }
-
-        .tabs {
-            display: flex;
-            gap: 8px;
-            background: white;
-            padding: 6px;
-            border-radius: 10px;
-        }
-
-        .tab {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 9px 16px;
-            border: none;
-            background: transparent;
-            border-radius: 8px;
-            font-size: 13px;
-            font-weight: 500;
-            color: #777;
-            cursor: pointer;
-            transition: all 0.3s;
-            font-family: 'Poppins', sans-serif;
-            white-space: nowrap;
-        }
-
-        .tab i {
-            font-size: 14px;
-        }
-
-        .tab.active {
-            background: #fdeaea;
-            color: #c0392b;
-        }
-
-        .tab:hover:not(.active) {
-            background: #f6f6f6;
-            color: #555;
-        }
-
-        .date-range {
-            display: flex;
+            justify-content: flex-end;
             align-items: center;
             gap: 12px;
-            background: white;
-            padding: 11px 18px;
+            margin-bottom: 16px;
+        }
+
+        /* ─── AI INSIGHTS BUTTON + PANEL ─── */
+        .ai-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 18px;
+            background: var(--primary);
+            color: white;
+            border: none;
             border-radius: 10px;
             font-size: 13px;
-            font-weight: 500;
-            color: #444;
+            font-weight: 600;
+            font-family: 'Poppins', sans-serif;
             cursor: pointer;
+            box-shadow: 0 2px 8px rgba(123, 29, 29, 0.3);
+            transition: all 0.2s;
         }
 
-        .date-range .fa-calendar {
-            color: #7B1D1D;
+        .ai-btn:hover { 
+            background: var(--primary-hover);
+            box-shadow: 0 4px 14px rgba(123, 29, 29, 0.4);
+            transform: translateY(-1px);
         }
 
-        .date-range .fa-chevron-down {
-            color: #999;
-            font-size: 11px;
-        }
-
-        /* MAIN LAYOUT GRID */
-        .perf-grid {
-            display: grid;
-            grid-template-columns: 1fr 360px;
-            gap: 25px;
-            align-items: start;
-        }
-
-        .perf-main {
-            display: flex;
-            flex-direction: column;
-            gap: 25px;
-        }
-
-        .perf-side {
-            display: flex;
-            flex-direction: column;
-            gap: 25px;
-        }
-
-        /* STAT CARDS */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 16px;
-            background: white;
-            padding: 25px;
-            border-radius: 12px;
-        }
-
-        .stat-card {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .stat-card + .stat-card {
-            border-left: 1px solid #f0f0f0;
-            padding-left: 16px;
-        }
-
-        .stat-head {
-            display: flex;
-            justify-content: space-between;
+        .ai-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(20, 10, 10, 0.45);
+            z-index: 3000;
+            display: none;
             align-items: flex-start;
+            justify-content: center;
+            padding: 60px 20px 20px;
+        }
+
+        .ai-overlay.open { display: flex; }
+
+        .ai-panel {
+            background: white;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 520px;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+            animation: slideUp 0.3s ease both;
+        }
+
+        .ai-panel-head {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 18px 22px;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .ai-panel-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            flex: 1;
+        }
+
+        .ai-panel-head button {
+            border: none;
+            background: #f6f0f0;
+            color: var(--primary);
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+
+        .ai-panel-head button:hover { background: var(--primary); color: #fff; }
+        .ai-panel-head button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .ai-panel-body {
+            padding: 18px 22px;
+            overflow-y: auto;
+        }
+
+        .ai-panel-body::-webkit-scrollbar { width: 6px; }
+        .ai-panel-body::-webkit-scrollbar-thumb { background: #e0d5d5; border-radius: 10px; }
+
+        .insight-item {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            padding: 13px 14px;
+            border-radius: 10px;
             margin-bottom: 10px;
         }
 
-        .stat-label {
-            font-size: 11px;
-            color: #888;
-            font-weight: 500;
-            line-height: 1.3;
-            max-width: 90px;
-        }
+        .insight-item:last-child { margin-bottom: 0; }
 
-        .stat-badge {
-            width: 30px;
-            height: 30px;
+        .insight-item.red   { background: #fff1f2; }
+        .insight-item.green { background: #ecfdf5; }
+        .insight-item.blue  { background: #eff6ff; }
+        .insight-item.amber { background: #fffbeb; }
+
+        .insight-icon {
+            width: 34px;
+            height: 34px;
             border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 13px;
+            font-size: 14px;
             flex-shrink: 0;
+            background: white;
         }
 
-        .stat-badge.red { background: #fdeaea; color: #c0392b; }
-        .stat-badge.green { background: #e8f7ee; color: #21a366; }
-        .stat-badge.blue { background: #e9f1fd; color: #3b7ddd; }
-        .stat-badge.amber { background: #fef3e2; color: #e8910b; }
+        .insight-item.red .insight-icon   { color: var(--accent-red); }
+        .insight-item.green .insight-icon { color: var(--green); }
+        .insight-item.blue .insight-icon  { color: var(--blue); }
+        .insight-item.amber .insight-icon { color: var(--amber); }
 
-        .stat-number {
-            font-size: 28px;
-            font-weight: 700;
-            color: #2b2b2b;
-            line-height: 1;
-            margin-bottom: 6px;
+        .insight-content { flex: 1; }
+
+        .insight-title {
+            font-size: 13.5px;
+            font-weight: 600;
+            color: var(--ink);
+            margin-bottom: 2px;
         }
 
-        .stat-number small {
+        .insight-desc {
+            font-size: 12.5px;
+            color: var(--ink-3);
+            line-height: 1.45;
+        }
+
+        .ai-loading, .ai-error {
             font-size: 13px;
-            font-weight: 500;
-            color: #888;
-        }
-
-        .stat-change {
-            font-size: 10.5px;
-            font-weight: 500;
-            margin-bottom: 12px;
-        }
-
-        .stat-change.up { color: #21a366; }
-        .stat-change.down { color: #c0392b; }
-        .stat-change.muted { color: #999; }
-
-        .stat-spark {
-            margin-top: auto;
-            height: 38px;
-        }
-
-        .stat-spark svg {
-            width: 100%;
-            height: 100%;
-            display: block;
-        }
-
-        .spark-bars {
+            color: var(--ink-3);
+            padding: 14px 4px;
             display: flex;
-            align-items: flex-end;
-            gap: 3px;
-            height: 38px;
+            align-items: center;
+            gap: 9px;
         }
 
-        .spark-bars span {
-            flex: 1;
-            border-radius: 2px;
+        .ai-error { color: #c99; flex-wrap: wrap; }
+
+        .ai-retry {
+            border: none;
+            background: var(--primary);
+            color: white;
+            border-radius: 7px;
+            padding: 6px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            font-family: 'Poppins', sans-serif;
+            cursor: pointer;
         }
 
-        /* CARD */
+        .ai-retry:hover { background: var(--primary-hover); }
+
+        .date-range {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: white;
+            padding: 10px 16px;
+            border-radius: 10px;
+            border: 1px solid var(--line);
+            box-shadow: var(--card-shadow);
+            font-size: 13.5px;
+            font-weight: 500;
+            color: #444;
+            transition: box-shadow 0.2s;
+        }
+
+        .date-range:hover {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+
+        .date-range .fa-calendar { color: var(--ink-2); font-size: 12px; }
+        .date-range .fa-chevron-down { color: var(--ink-3); font-size: 10px; }
+
+        /* ─── CARD BASE ─── */
         .card {
             background: white;
-            border-radius: 12px;
-            padding: 25px;
+            border-radius: 20px;
+            border: 1px solid var(--line);
+            box-shadow: var(--card-shadow);
+            padding: 24px;
+            transition: box-shadow 0.25s;
+        }
+
+        .card:hover {
+            box-shadow: 0 4px 16px rgba(0,0,0,0.06);
         }
 
         .card-head {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
+            margin-bottom: 16px;
+            gap: 12px;
         }
 
         .card-title {
             font-size: 16px;
             font-weight: 600;
-            color: #2b2b2b;
-            font-family: 'Poppins', sans-serif;
+            color: var(--ink);
         }
 
-        .card-link {
+        .card-more {
+            color: #c3c7cd;
+            font-size: 14px;
+            letter-spacing: 1px;
+        }
+
+        .view-all-btn {
             font-size: 12px;
-            color: #c0392b;
-            text-decoration: none;
-            font-weight: 500;
-        }
-
-        .card-link:hover { text-decoration: underline; }
-
-        .chart-select {
-            border: 1px solid #e2e2e2;
+            font-weight: 600;
+            color: var(--primary);
+            background: #f6eeee;
+            border: none;
             border-radius: 8px;
-            padding: 7px 14px;
+            padding: 6px 14px;
+            cursor: pointer;
+            text-decoration: none;
+            font-family: 'Poppins', sans-serif;
+            transition: all 0.2s;
+        }
+
+        .view-all-btn:hover { 
+            background: #efdddd;
+            transform: translateY(-1px);
+        }
+
+        /* ─── KPI ROW ─── */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 14px;
+            margin-bottom: 20px;
+        }
+
+        .kpi-card {
+            border-radius: 18px;
+            padding: 18px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+            overflow: hidden;
+            color: var(--ink-1);
+            min-height: 115px;
+            background: #fff;
+            border: 1px solid var(--line);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06), 0 12px 28px rgba(0,0,0,0.08);
+            transition: box-shadow 0.25s, transform 0.25s;
+        }
+
+        .kpi-card:hover {
+            box-shadow: 0 6px 16px rgba(0,0,0,0.1), 0 16px 40px rgba(0,0,0,0.12);
+            transform: translateY(-2px);
+        }
+
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: -50px; right: -50px;
+            width: 180px; height: 180px;
+            border-radius: 50%;
+            pointer-events: none;
+        }
+        .kpi-card.t1::before { background: rgba(192,57,43,0.07); }
+        .kpi-card.t2::before { background: rgba(232,145,11,0.07); }
+        .kpi-card.t3::before { background: rgba(59,125,221,0.07); }
+        .kpi-card.t6::before { background: rgba(142,68,173,0.07); }
+
+        .kpi-card::after {
+            content: '';
+            position: absolute;
+            bottom: -40px; left: 20%;
+            width: 140px; height: 140px;
+            border-radius: 50%;
+            pointer-events: none;
+        }
+        .kpi-card.t1::after { background: rgba(192,57,43,0.05); }
+        .kpi-card.t2::after { background: rgba(232,145,11,0.05); }
+        .kpi-card.t3::after { background: rgba(59,125,221,0.05); }
+        .kpi-card.t6::after { background: rgba(142,68,173,0.05); }
+
+        .kpi-card .kpi-left {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            position: relative;
+            z-index: 1;
+        }
+
+        .kpi-card .kpi-number {
+            font-size: 52px;
+            font-weight: 800;
+            color: var(--ink-1);
+            line-height: 1;
+        }
+
+        .kpi-card .kpi-number small {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--ink-3);
+        }
+
+        .kpi-card .kpi-label {
+            font-size: 12.5px;
+            color: var(--ink-3);
+            font-weight: 500;
+            margin-top: auto;
+        }
+
+        .kpi-card .kpi-delta {
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--ink-3);
+            white-space: nowrap;
+        }
+
+        .kpi-card .kpi-delta .d { font-weight: 600; }
+        .kpi-card .kpi-delta .d.up    { color: #21a366; }
+        .kpi-card .kpi-delta .d.down  { color: #c0392b; }
+        .kpi-card .kpi-delta .d.muted { color: #999; }
+
+        .kpi-illust {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 130px;
+            height: 130px;
+            flex-shrink: 0;
+            position: relative;
+            z-index: 1;
+        }
+
+        .kpi-illust img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            filter: drop-shadow(0 6px 16px rgba(0,0,0,0.15));
+        }
+
+        .kpi-shapes {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .kpi-shapes span {
+            position: absolute;
+        }
+
+        .kpi-shapes span:nth-child(1) {
+            width: 150px; height: 150px;
+            top: -45px; right: 35%;
+            border-radius: 50%;
+        }
+        .kpi-card.t1 .kpi-shapes span:nth-child(1) { background: rgba(192,57,43,0.06); }
+        .kpi-card.t2 .kpi-shapes span:nth-child(1) { background: rgba(232,145,11,0.06); }
+        .kpi-card.t3 .kpi-shapes span:nth-child(1) { background: rgba(59,125,221,0.06); }
+        .kpi-card.t6 .kpi-shapes span:nth-child(1) { background: rgba(142,68,173,0.06); }
+
+        .kpi-shapes span:nth-child(2) {
+            width: 100px; height: 100px;
+            bottom: -25px; left: 8%;
+            border-radius: 20px;
+            transform: rotate(35deg);
+        }
+        .kpi-card.t1 .kpi-shapes span:nth-child(2) { background: rgba(192,57,43,0.05); }
+        .kpi-card.t2 .kpi-shapes span:nth-child(2) { background: rgba(232,145,11,0.05); }
+        .kpi-card.t3 .kpi-shapes span:nth-child(2) { background: rgba(59,125,221,0.05); }
+        .kpi-card.t6 .kpi-shapes span:nth-child(2) { background: rgba(142,68,173,0.05); }
+
+        /* ─── ROW GRIDS ─── */
+        .row-2 {
+            display: grid;
+            grid-template-columns: 1.6fr 1fr 0.7fr;
+            gap: 18px;
+            margin-bottom: 18px;
+            align-items: stretch;
+        }
+
+        .row-3 {
+            display: grid;
+            grid-template-columns: 1.5fr 1fr;
+            gap: 18px;
+            margin-bottom: 18px;
+            align-items: stretch;
+        }
+
+        .row-4 {
+            display: grid;
+            grid-template-columns: 1.8fr 1fr;
+            gap: 18px;
+            align-items: stretch;
+        }
+
+        /* ─── ACCURACY OVER TIME ─── */
+        .chart-select {
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            padding: 7px 12px;
             font-size: 12px;
-            color: #555;
+            color: var(--ink-2);
             font-family: 'Poppins', sans-serif;
             background: white;
             cursor: pointer;
+            outline: none;
         }
 
-        /* LINE CHART */
         .line-chart-wrap {
-            position: relative;
             display: flex;
-            gap: 12px;
+            gap: 10px;
         }
 
         .y-axis {
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            font-size: 11px;
-            color: #bbb;
+            font-size: 12px;
+            color: #c2c6cb;
             height: 230px;
-            padding: 4px 0;
+            padding: 2px 0;
+            flex-shrink: 0;
         }
 
         .line-chart {
             flex: 1;
             position: relative;
+            height: 230px;
         }
 
         .line-chart svg {
             width: 100%;
-            height: 230px;
+            height: 100%;
             display: block;
+        }
+
+        .pt-dot {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: var(--accent-red);
+            border: 2px solid white;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+            pointer-events: none;
+        }
+
+        .pt-lbl {
+            position: absolute;
+            transform: translate(-50%, -100%);
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--ink-2);
+            background: white;
+            border-radius: 5px;
+            padding: 1px 5px;
+            pointer-events: none;
+            white-space: nowrap;
         }
 
         .x-axis {
             display: flex;
             justify-content: space-between;
-            font-size: 11px;
-            color: #aaa;
+            font-size: 12px;
+            color: #aab0b6;
             margin-top: 8px;
-            padding: 0 5px;
+            margin-left: 40px;
+            padding: 0 4px;
         }
 
-        .chart-tooltip {
-            position: absolute;
-            top: 18%;
-            left: 48%;
-            background: white;
-            border: 1px solid #eee;
-            box-shadow: 0 6px 18px rgba(0,0,0,0.12);
-            border-radius: 8px;
-            padding: 8px 12px;
-            font-size: 11px;
-            color: #666;
-            white-space: nowrap;
-        }
-
-        .chart-tooltip strong { color: #c0392b; }
-
-        /* DONUT / MASTERY */
-        .mastery-body {
+        /* ─── DONUTS ─── */
+        .donut-body {
             display: flex;
+            flex-direction: column;
             align-items: center;
-            gap: 20px;
         }
 
         .donut {
-            width: 130px;
-            height: 130px;
+            width: 170px;
+            height: 170px;
             position: relative;
-            flex-shrink: 0;
+            margin: 0 auto 20px;
+            filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.15));
         }
 
         .donut svg {
@@ -726,486 +728,434 @@
         .donut-center .num {
             font-size: 26px;
             font-weight: 700;
-            color: #2b2b2b;
+            color: var(--ink);
+            line-height: 1.1;
         }
 
         .donut-center .lbl {
-            font-size: 10px;
-            color: #999;
+            font-size: 12px;
+            color: var(--ink-3);
         }
 
-        .mastery-legend {
-            flex: 1;
+        .donut-legend {
             display: flex;
-            flex-direction: column;
-            gap: 14px;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px 18px;
+            width: 100%;
         }
 
-        .mastery-legend .row {
+        .donut-legend .row {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 7px;
             font-size: 13px;
-            color: #555;
+            color: var(--ink-2);
         }
 
-        .mastery-legend .dot {
-            width: 11px;
-            height: 11px;
+        .donut-legend .dot {
+            width: 10px;
+            height: 10px;
             border-radius: 50%;
             flex-shrink: 0;
         }
 
-        .mastery-legend .pct {
-            margin-left: auto;
-            font-weight: 700;
-            color: #2b2b2b;
+        .donut-legend .name {
+            white-space: nowrap;
         }
 
-        .dot.strong { background: #21a366; }
-        .dot.medium { background: #f0b429; }
-        .dot.weak { background: #c0392b; }
+        .donut-legend .pct {
+            font-weight: 600;
+            color: var(--ink);
+        }
 
-        .mastery-note {
-            margin-top: 20px;
-            background: #fdeef0;
-            border-radius: 10px;
-            padding: 14px 16px;
-            display: flex;
-            gap: 12px;
-            align-items: flex-start;
-            font-size: 12px;
-            color: #7a5b5b;
+        .empty-note {
+            color: var(--ink-3);
+            font-size: 13.5px;
+            padding: 16px 0;
             line-height: 1.5;
         }
 
-        .mastery-note i {
-            color: #c0392b;
-            font-size: 15px;
-            margin-top: 1px;
-        }
-
-        /* ACCURACY BARS */
-        .accuracy-item {
-            margin-bottom: 16px;
-        }
-
-        .accuracy-item:last-child { margin-bottom: 0; }
-
-        .accuracy-top {
+        /* ─── EXAM COUNTDOWN CARD ─── */
+        .exam-card {
+            border-radius: 20px;
+            padding: 24px;
+            position: relative;
+            overflow: hidden;
+            color: white;
+            background: linear-gradient(145deg, #c0392b 0%, #7B1D1D 100%);
             display: flex;
-            justify-content: space-between;
-            font-size: 12px;
-            color: #555;
-            margin-bottom: 7px;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            min-height: 230px;
         }
 
-        .accuracy-top .val {
+        .exam-card .exam-bg {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .exam-card .flag {
+            position: absolute;
+            font-size: 13px;
+            color: #fff;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+
+        .exam-kicker {
+            font-size: 15px;
             font-weight: 600;
-            color: #2b2b2b;
+            color: rgba(255, 255, 255, 0.92);
+            position: relative;
+            z-index: 1;
+            line-height: 1.4;
         }
 
-        .accuracy-bar {
-            height: 7px;
-            background: #f0f0f0;
+        .exam-days {
+            font-size: 72px;
+            font-weight: 700;
+            line-height: 1.05;
+            position: relative;
+            z-index: 1;
+            text-shadow: 0 2px 12px rgba(0,0,0,0.2);
+        }
+
+        .exam-days-lbl {
+            font-size: 15px;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.9);
+            position: relative;
+            z-index: 1;
+            margin-bottom: 4px;
+        }
+
+        .exam-date {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.8);
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ─── PERFORMANCE BY SUBJECT ─── */
+        .subject-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 13px;
+        }
+
+        .subject-row:last-child { margin-bottom: 0; }
+
+        .subject-row .code {
+            width: 44px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--ink-2);
+            flex-shrink: 0;
+        }
+
+        .subject-row .track {
+            flex: 1;
+            height: 9px;
+            background: #f3f4f6;
             border-radius: 5px;
             overflow: hidden;
         }
 
-        .accuracy-bar span {
+        .subject-row .fill {
             display: block;
             height: 100%;
             border-radius: 5px;
         }
 
-        /* INSIGHTS */
-        .insight-item {
-            display: flex;
-            gap: 12px;
-            align-items: center;
-            padding: 13px;
-            border-radius: 10px;
-            margin-bottom: 12px;
-            cursor: pointer;
-            transition: all 0.3s;
+        .subject-row .val {
+            width: 40px;
+            text-align: right;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--ink);
+            flex-shrink: 0;
         }
 
-        .insight-item:last-child { margin-bottom: 0; }
-        .insight-item:hover { transform: translateX(3px); }
+        .axis-note {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #b7bcc2;
+            margin-top: 14px;
+            padding-left: 54px;
+        }
 
-        .insight-item.red { background: #fdeef0; }
-        .insight-item.green { background: #eaf7f0; }
-        .insight-item.blue { background: #eaf1fb; }
+        /* ─── MINI STAT 2x2 GRID ─── */
+        .mini-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-auto-rows: 1fr;
+            gap: 14px;
+        }
 
-        .insight-icon {
-            width: 34px;
-            height: 34px;
+        .mini-card {
+            background: white;
+            border-radius: 20px;
+            border: 1px solid var(--line);
+            box-shadow: var(--card-shadow);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            transition: box-shadow 0.2s;
+        }
+
+        .mini-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+        }
+
+        .mini-head {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .mini-head i {
+            width: 32px;
+            height: 32px;
             border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 14px;
             flex-shrink: 0;
-            background: white;
         }
 
-        .insight-item.red .insight-icon { color: #c0392b; }
-        .insight-item.green .insight-icon { color: #21a366; }
-        .insight-item.blue .insight-icon { color: #3b7ddd; }
+        .mini-head i.red    { background: #fdeaea; color: var(--accent-red); }
+        .mini-head i.green  { background: #e8f7ee; color: var(--green); }
+        .mini-head i.amber  { background: #fef3e2; color: var(--amber); }
+        .mini-head i.blue   { background: #e9f1fd; color: var(--blue); }
+        .mini-head i.purple { background: #f3eaf9; color: var(--purple); }
+        .mini-head i.teal   { background: #e0f7f6; color: #0d9488; }
 
-        .insight-content { flex: 1; }
-
-        .insight-title {
-            font-size: 12.5px;
-            font-weight: 600;
-            color: #2b2b2b;
-            margin-bottom: 2px;
-        }
-
-        .insight-desc {
-            font-size: 11px;
-            color: #999;
-            line-height: 1.4;
-        }
-
-        .insight-arrow {
-            color: #bbb;
+        .mini-head span {
             font-size: 13px;
-        }
-
-        .insight-item.amber { background: #fef6e8; }
-        .insight-item.amber .insight-icon { color: #e8910b; }
-
-        /* AI COACH (inside the Insights card) */
-        .ai-insights-head {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin: 18px 0 12px;
-            padding-top: 14px;
-            border-top: 1px dashed #eee;
-        }
-
-        .ai-insights-title {
-            font-size: 12.5px;
             font-weight: 600;
-            color: #7B1D1D;
+            color: var(--ink-2);
+            white-space: nowrap;
+        }
+
+        .mini-value {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--ink);
+            line-height: 1.2;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .mini-value.red { color: var(--accent-red); }
+
+        .mini-sub {
+            font-size: 12px;
+            color: var(--ink-3);
+            margin-top: 4px;
+        }
+
+        .mini-sub .d.up   { color: var(--green-text); font-weight: 600; }
+        .mini-sub .d.down { color: var(--accent-red); font-weight: 600; }
+
+        .mini-bar {
+            height: 7px;
+            background: #f1f3f5;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .mini-bar span {
+            display: block;
+            height: 100%;
+            border-radius: 4px;
+            background: linear-gradient(90deg, #c0392b, #e74c3c);
+        }
+
+        /* ─── HEATMAP ─── */
+        .hm-card {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .heatmap-scroll {
+            overflow: hidden;
+            width: 100%;
+            margin: auto 0;
+        }
+
+        .heatmap-scroll::-webkit-scrollbar { height: 0; }
+
+        .hm-months {
+            display: flex;
+            gap: 3px;
+            font-size: 10px;
+            color: var(--ink-3);
+            margin-bottom: 8px;
+            margin-left: 28px;
+        }
+
+        .hm-months span {
+            width: 0;
+            flex-grow: 1;
+            overflow: visible;
+            white-space: nowrap;
+            position: relative;
+        }
+
+        .hm-body { display: flex; width: 100%; }
+
+        .hm-days {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            font-size: 10px;
+            color: var(--ink-3);
+            width: 28px;
+            flex-shrink: 0;
+            justify-content: space-between;
+            padding: 1px 0;
+        }
+
+        .hm-days span {
+            line-height: 1;
             display: flex;
             align-items: center;
-            gap: 7px;
         }
 
-        .ai-insights-refresh {
-            border: none;
-            background: #f6f0f0;
-            color: #7B1D1D;
-            width: 26px;
-            height: 26px;
-            border-radius: 7px;
-            cursor: pointer;
+        .hm-weeks {
+            display: flex;
+            gap: 3px;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .hm-week {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .hm-week .hm-cell {
+            flex: none;
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            border-radius: 2px;
+        }
+
+        .hm-legend {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            justify-content: flex-end;
             font-size: 11px;
-            transition: all 0.2s;
+            color: var(--ink-3);
+            margin-top: auto;
+            padding-top: 12px;
         }
 
-        .ai-insights-refresh:hover { background: #7B1D1D; color: #fff; }
-        .ai-insights-refresh:disabled { opacity: 0.5; cursor: not-allowed; }
+        .hm-legend .hm-cell { display: inline-block; width: 11px; height: 11px; border-radius: 2px; }
 
-        /* Cap the AI list so the card stays about the same height as its
-           neighbours - extra insights scroll inside instead of stretching
-           the whole column. */
-        #aiInsightsBody {
-            max-height: 170px;
-            overflow-y: auto;
-            padding-right: 4px;
-            margin-right: -4px;
+        /* ─── RECENT QUIZZES TABLE ─── */
+        .quiz-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13.5px;
         }
 
-        #aiInsightsBody::-webkit-scrollbar { width: 5px; }
-        #aiInsightsBody::-webkit-scrollbar-track { background: transparent; }
-        #aiInsightsBody::-webkit-scrollbar-thumb {
-            background: #e0d5d5;
-            border-radius: 10px;
-        }
-        #aiInsightsBody::-webkit-scrollbar-thumb:hover { background: #c9b2b2; }
-        #aiInsightsBody { scrollbar-width: thin; scrollbar-color: #e0d5d5 transparent; }
-
-        .ai-insights-loading, .ai-insights-error {
+        .quiz-table th {
+            text-align: left;
             font-size: 11.5px;
-            color: #aaa;
-            padding: 10px 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            color: var(--ink-3);
+            font-weight: 600;
+            padding: 0 10px 10px 0;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .quiz-table td {
+            padding: 10px 10px 10px 0;
+            border-bottom: 1px solid #f5f5f5;
+            color: var(--ink-2);
+            vertical-align: middle;
+            white-space: nowrap;
+        }
+
+        .quiz-table tbody tr {
+            transition: background 0.15s;
+        }
+
+        .quiz-table tbody tr:hover {
+            background: #fafbfc;
+        }
+
+        .quiz-table tbody tr:last-child td { border-bottom: none; }
+
+        .quiz-name {
             display: flex;
             align-items: center;
             gap: 8px;
-        }
-
-        .ai-insights-error { color: #c99; }
-
-        /* BOTTOM 3 COLUMNS */
-        .bottom-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 25px;
-        }
-
-        .list-item {
-            display: flex;
-            align-items: center;
-            gap: 13px;
-            padding: 13px 0;
-            border-bottom: 1px solid #f3f3f3;
-        }
-
-        .list-item:last-child { border-bottom: none; }
-
-        /* Scrollable list for cards that may hold many topics (strengths/weaknesses) */
-        .list-scroll { max-height: 280px; overflow-y: auto; }
-        .list-scroll::-webkit-scrollbar { width: 6px; }
-        .list-scroll::-webkit-scrollbar-thumb { background: #e0e0e0; border-radius: 3px; }
-        .count-badge {
-            font-size: 11px;
             font-weight: 600;
-            color: #777;
-            background: #f1f1f1;
-            border-radius: 10px;
-            padding: 2px 9px;
+            color: var(--ink);
         }
 
-        .list-icon {
-            width: 36px;
-            height: 36px;
+        .quiz-name i {
+            width: 28px;
+            height: 28px;
             border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 15px;
+            font-size: 12px;
             flex-shrink: 0;
         }
 
-        .list-icon.green { background: #e8f7ee; color: #21a366; }
-        .list-icon.red { background: #fdeaea; color: #c0392b; }
-        .list-icon.grey { background: #f1f1f1; color: #777; }
-        .list-icon.amber { background: #fef3e2; color: #e8910b; }
-        .list-icon.blue { background: #e9f1fd; color: #3b7ddd; }
+        .quiz-name i.green { background: #e8f7ee; color: var(--green); }
+        .quiz-name i.red   { background: #fdeaea; color: var(--accent-red); }
+        .quiz-name i.blue  { background: #e9f1fd; color: var(--blue); }
+        .quiz-name i.amber { background: #fef3e2; color: var(--amber); }
+        .quiz-name i.grey  { background: #f1f1f1; color: #999; }
 
-        .list-content { flex: 1; }
+        .score-val { font-weight: 700; }
 
-        .list-title {
-            font-size: 13px;
-            font-weight: 600;
-            color: #2b2b2b;
-            margin-bottom: 2px;
-        }
-
-        .list-sub {
-            font-size: 11px;
-            color: #999;
-        }
-
-        .list-value {
-            font-size: 15px;
-            font-weight: 700;
-        }
-
-        .list-value.green { color: #21a366; }
-        .list-value.red { color: #c0392b; }
-
-        .list-meta {
-            font-size: 11px;
-            color: #aaa;
-            text-align: right;
-        }
-
-        /* CONSISTENCY BANNER */
-        .consistency {
-            background: white;
-            border-radius: 12px;
-            padding: 22px 28px;
-            display: flex;
-            align-items: center;
-            gap: 25px;
-            /* Lives inside the narrower left column now - let the streak
-               dots / button wrap to a second row instead of overflowing. */
-            flex-wrap: wrap;
-        }
-
-        .consistency-text { min-width: 200px; }
-
-        .consistency-icon {
-            font-size: 50px;
-            color: #c0392b;
-            flex-shrink: 0;
-        }
-
-        .consistency-text { flex: 1; }
-
-        .consistency-text h4 {
-            font-size: 17px;
-            font-weight: 600;
-            color: #c0392b;
-            margin-bottom: 5px;
-            font-family: 'Poppins', sans-serif;
-        }
-
-        .consistency-text p {
-            font-size: 12.5px;
-            color: #888;
-            line-height: 1.5;
-        }
-
-        .streak-count {
-            text-align: center;
-            padding: 0 20px;
-            border-left: 1px solid #f0f0f0;
-            border-right: 1px solid #f0f0f0;
-        }
-
-        .streak-count .num {
-            font-size: 30px;
-            font-weight: 700;
-            color: #2b2b2b;
-        }
-
-        .streak-count .lbl {
-            font-size: 11px;
-            color: #999;
-        }
-
-        .streak-days {
-            display: flex;
-            gap: 14px;
-        }
-
-        .streak-day {
-            text-align: center;
-        }
-
-        .streak-day .d {
-            font-size: 12px;
-            color: #888;
-            margin-bottom: 8px;
-            font-weight: 500;
-        }
-
-        .streak-check {
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-        }
-
-        .streak-check.done {
-            background: #fdeaea;
-            color: #c0392b;
-        }
-
-        .streak-check.empty {
-            border: 2px solid #eee;
-            color: transparent;
-        }
-
-        .consistency-btn {
-            padding: 12px 22px;
-            background: #7B1D1D;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
-            font-family: 'Poppins', sans-serif;
-            white-space: nowrap;
-            transition: all 0.3s;
-        }
-
-        .consistency-btn:hover { background: #6a1818; }
-
-        /* TAB PANELS + TABLES */
-        .perf-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 13px;
-        }
-
-        .perf-table th {
-            text-align: left;
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 0.4px;
-            color: #999;
-            font-weight: 600;
-            padding: 0 12px 12px 0;
-            border-bottom: 1px solid #f0f0f0;
-        }
-
-        .perf-table td {
-            padding: 13px 12px 13px 0;
-            border-bottom: 1px solid #f5f5f5;
-            color: #444;
-            vertical-align: middle;
-        }
-
-        .perf-table tbody tr:last-child td { border-bottom: none; }
-        .perf-table tbody tr:hover { background: #fafafa; }
-        .perf-table .accuracy-bar { margin: 0; }
-
-        /* RESPONSIVE */
+        /* ─── RESPONSIVE ─── */
         @media (max-width: 1500px) {
-            .perf-grid { grid-template-columns: 1fr; }
+            .kpi-grid { grid-template-columns: repeat(2, 1fr); }
         }
 
-        @media (max-width: 1100px) {
-            .stats-grid { grid-template-columns: repeat(2, 1fr); }
-            .stat-card + .stat-card { border-left: none; padding-left: 0; }
-            .bottom-grid { grid-template-columns: 1fr; }
-            .consistency { flex-wrap: wrap; }
-        }
-
-        @media (max-width: 768px) {
-            .sidebar {
-                width: 100%;
-                height: auto;
-                position: relative;
-                padding: 15px 0;
-            }
-            .main-content { margin-left: 0; padding: 20px; }
-            .stats-grid { grid-template-columns: 1fr; }
-        }
-
-        /* ─── RESPONSIVE (added) ─── */
-        @media (max-width: 1100px) {
-            .perf-grid { grid-template-columns: 1fr; }
-            .stats-grid { grid-template-columns: repeat(3, 1fr); }
+        @media (max-width: 1200px) {
+            .row-2 { grid-template-columns: 1fr 1fr; }
+            .row-2 .exam-card { grid-column: 1 / -1; min-height: 180px; }
+            .row-3 { grid-template-columns: 1fr 1fr; }
+            .row-4 { grid-template-columns: 1fr; }
         }
 
         @media (max-width: 768px) {
-            .main-content { padding: 20px 16px; }
-            .header { flex-direction: column; align-items: flex-start; gap: 12px; }
-            .header-right { width: 100%; flex-wrap: wrap; }
-            .search-box { flex: 1; min-width: 0; }
-            .header-title { font-size: 22px; }
-            .controls-row { flex-direction: column; align-items: flex-start; gap: 12px; }
-            .tabs { flex-wrap: wrap; gap: 4px; }
-            .tab { padding: 7px 10px; font-size: 12px; }
-            .stats-grid { grid-template-columns: repeat(2, 1fr); padding: 16px; gap: 12px; }
-            .stat-card + .stat-card { border-left: none; padding-left: 0; }
-            .bottom-grid { grid-template-columns: 1fr; }
-            .consistency { flex-direction: column; gap: 14px; align-items: flex-start; }
-            .streak-count { border: none; padding: 0; }
-            .perf-table { display: block; overflow-x: auto; }
+            .page-header { flex-direction: column; align-items: flex-start; gap: 12px; }
+            .page-header-right { width: 100%; flex-wrap: wrap; }
+            .search-wrap { flex: 1; min-width: 0; }
+            .search-wrap input { width: 100%; }
+            .kpi-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+            .row-2, .row-3 { grid-template-columns: 1fr; }
+            .quiz-table { display: block; overflow-x: auto; }
         }
 
         @media (max-width: 480px) {
-            .main-content { padding: 16px 12px; }
-            .header-title { font-size: 20px; }
-            .stats-grid { grid-template-columns: 1fr; }
-            .tabs { gap: 2px; }
-            .tab span { display: none; }
-            .tab i { font-size: 16px; }
-            .card { padding: 16px; }
-            .streak-days { gap: 8px; flex-wrap: wrap; }
+            .kpi-grid { grid-template-columns: 1fr; }
+            .card { padding: 14px; }
         }
     </style>
 </head>
@@ -1219,48 +1169,44 @@
         <!-- MAIN CONTENT -->
         <main class="main-content">
             <!-- HEADER -->
-            <div class="header">
-                <div class="header-left">
-                    <div>
-                        <div class="header-title">Performance</div>
-                        <div class="header-subtitle">Track your progress and identify areas to improve.</div>
-                    </div>
+            <div class="page-header">
+                <div>
+                    <div class="page-title">Performance</div>
+                    <div class="page-subtitle">Track your progress and identify areas to improve.</div>
                 </div>
-                <div class="header-right">
-                    <div class="search-box">
+                <div class="page-header-right">
+                    <div class="search-wrap">
                         <i class="fas fa-search"></i>
-                        <input type="text" placeholder="Search topics, questions...">
+                        <input type="text" placeholder="Search topics, quizzes, subjects...">
                     </div>
-                    <div class="header-icons">
-                        <button class="icon-btn">
-                            <i class="fas fa-bell"></i>
-                            <span class="notification-badge">3</span>
-                        </button>
-                        <div style="position: relative;">
-                            <button class="profile-btn" id="profileBtn">@include('partials.avatar-content')</button>
-                            <div class="dropdown-menu" id="profileDropdown">
-                                <a href="#"><i class="fas fa-user"></i> Profile Settings</a>
-                                <a href="#"><i class="fas fa-chart-line"></i> My Progress</a>
-                                <a href="#"><i class="fas fa-question-circle"></i> Help & Support</a>
-                                <form method="POST" action="{{ route('logout') }}" style="margin: 0; padding: 0;">
-                                    @csrf
-                                    <button type="submit" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</button>
-                                </form>
-                            </div>
+                    <button class="notif-btn" onclick="window.location.href='{{ route('notifications.index') }}'">
+                        <i class="fas fa-bell"></i>
+                        @if($unreadNotifications > 0)
+                            <span class="notification-badge">{{ $unreadNotifications > 9 ? '9+' : $unreadNotifications }}</span>
+                        @endif
+                    </button>
+                    <div style="position: relative;">
+                        <button class="profile-btn" id="profileBtn">@include('partials.avatar-content')</button>
+                        <div class="dropdown-menu" id="profileDropdown">
+                            <a href="{{ route('settings') }}"><i class="fas fa-user"></i> Profile Settings</a>
+                            <a href="{{ route('achievements') }}"><i class="fas fa-trophy"></i> Achievements</a>
+                            <form method="POST" action="{{ route('logout') }}" style="margin: 0; padding: 0;">
+                                @csrf
+                                <button type="submit" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</button>
+                            </form>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- TABS + DATE RANGE -->
-            <div class="controls-row">
-                <div class="tabs">
-                    <button class="tab active" data-tab="overview"><i class="fas fa-th-large"></i> Overview</button>
-                    <button class="tab" data-tab="subject"><i class="fas fa-book"></i> By Subject</button>
-                    <button class="tab" data-tab="topic"><i class="fas fa-tag"></i> By Topic</button>
-                    <button class="tab" data-tab="quiztype"><i class="fas fa-clipboard"></i> By Quiz Type</button>
-                    <button class="tab" data-tab="time"><i class="fas fa-clock"></i> By Time</button>
-                </div>
+            <!-- TOOLBAR: AI INSIGHTS + DATE RANGE -->
+            <div class="toolbar-row">
+                {{-- Inline fallback keeps the panel opening even if a script
+                     error elsewhere stops the listener from being attached. --}}
+                <button type="button" class="ai-btn" id="aiInsightsBtn"
+                    onclick="document.getElementById('aiOverlay').classList.add('open')">
+                    <i class="fas fa-wand-magic-sparkles"></i> AI Insights
+                </button>
                 <div class="date-range">
                     <i class="fas fa-calendar"></i>
                     <span id="dateRangeText">{{ $chartSeries['daily']['range'] }}</span>
@@ -1268,431 +1214,379 @@
                 </div>
             </div>
 
-            <!-- ============ OVERVIEW TAB ============ -->
-            <div class="tab-panel" data-panel="overview">
+            @php
+                // "↑ 6.2% vs last week" delta line. $invert = a NEGATIVE delta is
+                // the good direction (e.g. avg time per question).
+                $deltaRow = function ($val, string $suffix = '%', bool $invert = false) {
+                    $good = $invert ? $val < 0 : $val > 0;
+                    $bad  = $invert ? $val > 0 : $val < 0;
+                    $cls  = $good ? 'up' : ($bad ? 'down' : 'muted');
+                    $icon = $val > 0 ? 'fa-arrow-up' : ($val < 0 ? 'fa-arrow-down' : 'fa-minus');
+                    $txt  = ($val > 0 ? '+' : '') . $val . $suffix;
+                    return [$cls, $icon, $txt];
+                };
 
-            <!-- MAIN GRID -->
-            <div class="perf-grid">
-                <!-- LEFT / MAIN COLUMN -->
-                <div class="perf-main">
-                    <!-- STAT CARDS -->
-                    @php
-                        // Render the "+/- N from last week" line for a delta value.
-                        $deltaLine = function ($delta, $suffix) {
-                            if ($delta > 0) {
-                                return ['up', 'fa-arrow-up', "+{$delta}{$suffix}"];
-                            }
-                            if ($delta < 0) {
-                                return ['down', 'fa-arrow-down', "{$delta}{$suffix}"];
-                            }
-                            return ['muted', 'fa-minus', 'No change'];
-                        };
-                        // For avg time, a DOWN (faster) is the good direction.
-                        $timeDelta = $stats['avg_delta_secs'];
-                    @endphp
-                    <div class="stats-grid">
-                        <div class="stat-card">
-                            <div class="stat-head">
-                                <span class="stat-label">Overall Accuracy</span>
-                                <span class="stat-badge red"><i class="fas fa-shield-alt"></i></span>
-                            </div>
-                            <div class="stat-number">{{ $stats['accuracy'] }}%</div>
-                            @php [$cls, $ic, $txt] = $deltaLine($stats['accuracy_delta'], '% from last week'); @endphp
-                            <div class="stat-change {{ $cls }}"><i class="fas {{ $ic }}"></i> {{ $txt }}</div>
-                            <div class="stat-spark">
-                                <div class="spark-bars">
-                                    @foreach($spark['accuracy'] as $h)
-                                        <span style="height:{{ max(4, $h) }}%;background:#e58a8a"></span>
-                                    @endforeach
-                                </div>
-                            </div>
+                // Tiny line-sparkline points for a 0-100 series in a 100x30 box.
+                $sparkPts = function (array $vals) {
+                    $n = count($vals);
+                    if ($n < 2) {
+                        return '';
+                    }
+                    $pts = [];
+                    foreach ($vals as $i => $v) {
+                        $x = round($i * (100 / ($n - 1)), 1);
+                        $y = round(28 - ($v / 100) * 25, 1);
+                        $pts[] = "$x,$y";
+                    }
+                    return implode(' ', $pts);
+                };
+
+                // Donut segments (dasharray/offset out of a 100-unit circumference)
+                // with a small gap between adjacent slices.
+                $donutSegs = function (array $slices) {
+                    $off  = 0;
+                    $segs = [];
+                    foreach ($slices as $s) {
+                        if ($s['pct'] <= 0) {
+                            continue;
+                        }
+                        $len    = max(0.5, $s['pct'] - 1.5);
+                        $segs[] = ['len' => $len, 'off' => -$off, 'color' => $s['color']];
+                        $off   += $s['pct'];
+                    }
+                    return $segs;
+                };
+
+                $kpis = [
+                    [
+                        'icon' => 'fa-bullseye', 'card' => 't1', 'label' => 'Overall Accuracy',
+                        'value' => $stats['accuracy'] . '%',
+                        'delta' => $deltaRow($stats['accuracy_delta']),
+                        'spark' => $spark['accuracy'],
+                    ],
+                    [
+                        'icon' => 'fa-file-lines', 'card' => 't2', 'label' => 'Questions Answered',
+                        'value' => number_format($stats['attempted']),
+                        'delta' => $deltaRow($attemptedDeltaPct),
+                        'spark' => $spark['attempted'],
+                    ],
+                    [
+                        'icon' => 'fa-clock', 'card' => 't3', 'label' => 'Study Hours',
+                        'value' => $studyHours . ' <small>hrs</small>',
+                        'delta' => $deltaRow($studyHoursDelta),
+                        'spark' => $spark['hours'],
+                    ],
+                    [
+                        'icon' => 'fa-shield-halved', 'card' => 't6', 'label' => 'Readiness Score',
+                        'value' => $readiness . ' <small>/100</small>',
+                        'delta' => $deltaRow($readinessDelta, ' pts'),
+                        'spark' => $spark['accuracy'],
+                    ],
+                ];
+            @endphp
+
+            <!-- KPI CARDS -->
+            <div class="kpi-grid">
+                {{-- Overall Accuracy --}}
+                <div class="kpi-card t1">
+                    <div class="kpi-shapes"><span></span><span></span></div>
+                    <div class="kpi-left">
+                        <div class="kpi-number">{!! $stats['accuracy'] !!}<small>%</small></div>
+                        <span class="kpi-label">Overall Accuracy</span>
+                        @php [$cls, $ic, $txt] = $deltaRow($stats['accuracy_delta']); @endphp
+                        <div class="kpi-delta"><span class="d {{ $cls }}"><i class="fas {{ $ic }}"></i> {{ $txt }}</span> vs last week</div>
+                    </div>
+                    <div class="kpi-illust">
+                        <img src="{{ asset('images/5.png') }}" alt="Overall Accuracy">
+                    </div>
+                </div>
+
+                {{-- Questions Answered --}}
+                <div class="kpi-card t2">
+                    <div class="kpi-shapes"><span></span><span></span></div>
+                    <div class="kpi-left">
+                        <div class="kpi-number">{!! number_format($stats['attempted']) !!}</div>
+                        <span class="kpi-label">Questions Answered</span>
+                        @php [$cls, $ic, $txt] = $deltaRow($attemptedDeltaPct); @endphp
+                        <div class="kpi-delta"><span class="d {{ $cls }}"><i class="fas {{ $ic }}"></i> {{ $txt }}</span> vs last week</div>
+                    </div>
+                    <div class="kpi-illust">
+                        <img src="{{ asset('images/6.png') }}" alt="Questions Answered">
+                    </div>
+                </div>
+
+                {{-- Study Hours --}}
+                <div class="kpi-card t3">
+                    <div class="kpi-shapes"><span></span><span></span></div>
+                    <div class="kpi-left">
+                        <div class="kpi-number">{!! $studyHours !!}<small> hrs</small></div>
+                        <span class="kpi-label">Study Hours</span>
+                        @php [$cls, $ic, $txt] = $deltaRow($studyHoursDelta); @endphp
+                        <div class="kpi-delta"><span class="d {{ $cls }}"><i class="fas {{ $ic }}"></i> {{ $txt }}</span> vs last week</div>
+                    </div>
+                    <div class="kpi-illust">
+                        <img src="{{ asset('images/9.png') }}" alt="Study Hours">
+                    </div>
+                </div>
+
+                {{-- Readiness Score --}}
+                <div class="kpi-card t6">
+                    <div class="kpi-shapes"><span></span><span></span></div>
+                    <div class="kpi-left">
+                        <div class="kpi-number">{!! $readiness !!}<small>/100</small></div>
+                        <span class="kpi-label">Readiness Score</span>
+                        @php [$cls, $ic, $txt] = $deltaRow($readinessDelta, ' pts'); @endphp
+                        <div class="kpi-delta"><span class="d {{ $cls }}"><i class="fas {{ $ic }}"></i> {{ $txt }}</span> vs last week</div>
+                    </div>
+                    <div class="kpi-illust">
+                        <img src="{{ asset('images/8.png') }}" alt="Readiness Score">
+                    </div>
+                </div>
+            </div>
+
+            <!-- ROW 2: ACCURACY OVER TIME + STUDY DISTRIBUTION + EXAM COUNTDOWN -->
+            <div class="row-2">
+                <!-- ACCURACY OVER TIME -->
+                <div class="card">
+                    <div class="card-head">
+                        <span class="card-title">Accuracy Over Time</span>
+                        <select class="chart-select" id="chartGranularity">
+                            <option value="daily">Daily</option>
+                            <option value="weekly">Weekly</option>
+                            <option value="monthly" selected>Monthly</option>
+                        </select>
+                    </div>
+                    <div class="line-chart-wrap">
+                        <div class="y-axis">
+                            <span>100%</span>
+                            <span>75%</span>
+                            <span>50%</span>
+                            <span>25%</span>
+                            <span>0%</span>
                         </div>
-
-                        <div class="stat-card">
-                            <div class="stat-head">
-                                <span class="stat-label">Questions Attempted</span>
-                                <span class="stat-badge red"><i class="fas fa-list-ol"></i></span>
-                            </div>
-                            <div class="stat-number">{{ number_format($stats['attempted']) }}</div>
-                            @php [$cls, $ic, $txt] = $deltaLine($stats['attempted_delta'], ' from last week'); @endphp
-                            <div class="stat-change {{ $cls }}"><i class="fas {{ $ic }}"></i> {{ $txt }}</div>
-                            <div class="stat-spark">
-                                <div class="spark-bars">
-                                    @foreach($spark['attempted'] as $h)
-                                        <span style="height:{{ $h }}%;background:#e58a8a"></span>
-                                    @endforeach
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="stat-card">
-                            <div class="stat-head">
-                                <span class="stat-label">Correct Answers</span>
-                                <span class="stat-badge green"><i class="fas fa-check"></i></span>
-                            </div>
-                            <div class="stat-number">{{ number_format($stats['correct']) }}</div>
-                            @php [$cls, $ic, $txt] = $deltaLine($stats['correct_delta'], ' from last week'); @endphp
-                            <div class="stat-change {{ $cls }}"><i class="fas {{ $ic }}"></i> {{ $txt }}</div>
-                            <div class="stat-spark">
-                                <div class="spark-bars">
-                                    @foreach($spark['correct'] as $h)
-                                        <span style="height:{{ $h }}%;background:#7fd2a0"></span>
-                                    @endforeach
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="stat-card">
-                            <div class="stat-head">
-                                <span class="stat-label">Average Time / Question</span>
-                                <span class="stat-badge blue"><i class="fas fa-clock"></i></span>
-                            </div>
-                            <div class="stat-number">{{ $stats['avg_time'] }}</div>
-                            @if($timeDelta < 0)
-                                <div class="stat-change up"><i class="fas fa-arrow-down"></i> {{ abs($timeDelta) }}s faster</div>
-                            @elseif($timeDelta > 0)
-                                <div class="stat-change down"><i class="fas fa-arrow-up"></i> {{ $timeDelta }}s slower</div>
-                            @else
-                                <div class="stat-change muted"><i class="fas fa-minus"></i> No change</div>
-                            @endif
-                            <div class="stat-spark">
-                                <div class="spark-bars">
-                                    @foreach($spark['time'] as $h)
-                                        <span style="height:{{ $h }}%;background:#8db5ec"></span>
-                                    @endforeach
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="stat-card">
-                            <div class="stat-head">
-                                <span class="stat-label">Current Streak</span>
-                                <span class="stat-badge red"><i class="fas fa-fire"></i></span>
-                            </div>
-                            <div class="stat-number">{{ $streakDays }} <small>{{ \Illuminate\Support\Str::plural('day', $streakDays) }}</small></div>
-                            <div class="stat-change muted">{{ $streakDays > 0 ? 'Keep it up!' : 'Start a streak today!' }}</div>
-                            <div class="stat-spark" style="display:flex;align-items:flex-end;">
-                                <i class="fas fa-fire" style="font-size:30px;color:{{ $streakDays > 0 ? '#c0392b' : '#f0c9c9' }};margin:0 auto;"></i>
-                            </div>
+                        <div class="line-chart">
+                            <svg id="chartSvg" viewBox="0 0 700 230" preserveAspectRatio="none">
+                                <defs>
+                                    <linearGradient id="areaFill" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="0%" stop-color="#c0392b" stop-opacity="0.16"/>
+                                        <stop offset="100%" stop-color="#c0392b" stop-opacity="0"/>
+                                    </linearGradient>
+                                </defs>
+                                <line x1="0" y1="2" x2="700" y2="2" stroke="#f1f3f5"/>
+                                <line x1="0" y1="59" x2="700" y2="59" stroke="#f1f3f5"/>
+                                <line x1="0" y1="116" x2="700" y2="116" stroke="#f1f3f5"/>
+                                <line x1="0" y1="173" x2="700" y2="173" stroke="#f1f3f5"/>
+                                <line x1="0" y1="228" x2="700" y2="228" stroke="#f1f3f5"/>
+                                <path id="chartArea" d="{{ $chart['area'] }}" fill="url(#areaFill)"/>
+                                <polyline id="chartLine" fill="none" stroke="#c0392b" stroke-width="3"
+                                    vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"
+                                    points="{{ $chart['points'] }}"/>
+                            </svg>
+                            <div id="chartOverlay"></div>
                         </div>
                     </div>
+                    <div class="x-axis" id="chartXAxis">
+                        @foreach($chart['labels'] as $label)
+                            <span>{{ $label }}</span>
+                        @endforeach
+                    </div>
+                </div>
 
-                    <!-- PERFORMANCE OVER TIME -->
-                    <div class="card">
-                        <div class="card-head">
-                            <span class="card-title">Performance Over Time</span>
-                            <select class="chart-select" id="chartGranularity">
-                                <option value="daily">Daily</option>
-                                <option value="weekly">Weekly</option>
-                                <option value="monthly">Monthly</option>
-                            </select>
-                        </div>
-                        <div class="line-chart-wrap">
-                            <div class="y-axis">
-                                <span>100%</span>
-                                <span>75%</span>
-                                <span>50%</span>
-                                <span>25%</span>
-                                <span>0%</span>
-                            </div>
-                            <div class="line-chart">
-                                <svg viewBox="0 0 700 230" preserveAspectRatio="none">
-                                    <defs>
-                                        <linearGradient id="areaFill" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="0%" stop-color="#c0392b" stop-opacity="0.18"/>
-                                            <stop offset="100%" stop-color="#c0392b" stop-opacity="0"/>
-                                        </linearGradient>
-                                    </defs>
-                                    <!-- gridlines -->
-                                    <line x1="0" y1="2" x2="700" y2="2" stroke="#f3f3f3"/>
-                                    <line x1="0" y1="59" x2="700" y2="59" stroke="#f3f3f3"/>
-                                    <line x1="0" y1="116" x2="700" y2="116" stroke="#f3f3f3"/>
-                                    <line x1="0" y1="173" x2="700" y2="173" stroke="#f3f3f3"/>
-                                    <line x1="0" y1="228" x2="700" y2="228" stroke="#f3f3f3"/>
-                                    <!-- area -->
-                                    <path id="chartArea" d="{{ $chart['area'] }}" fill="url(#areaFill)"/>
-                                    <!-- line -->
-                                    <polyline id="chartLine" fill="none" stroke="#c0392b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
-                                        points="{{ $chart['points'] }}"/>
-                                    <!-- highlighted point (latest day) -->
-                                    <circle id="chartPoint" cx="{{ $chart['highlight']['x'] }}" cy="{{ $chart['highlight']['y'] }}" r="6" fill="#c0392b" stroke="white" stroke-width="2.5"/>
+                <!-- STUDY DISTRIBUTION -->
+                <div class="card">
+                    <div class="card-head">
+                        <span class="card-title">Study Distribution</span>
+                    </div>
+                    @if($studyDist['has_data'])
+                        <div class="donut-body">
+                            <div class="donut">
+                                <svg viewBox="0 0 36 36">
+                                    <circle cx="18" cy="18" r="14.5" fill="none" stroke="#f0f0f0" stroke-width="5.5"/>
+                                    @foreach($donutSegs($studyDist['slices']) as $seg)
+                                        <circle cx="18" cy="18" r="14.5" fill="none" stroke="{{ $seg['color'] }}" stroke-width="5.5"
+                                            stroke-dasharray="{{ $seg['len'] }} {{ 100 - $seg['len'] }}" stroke-dashoffset="{{ $seg['off'] }}"/>
+                                    @endforeach
                                 </svg>
-                                @if($chart['has_data'])
-                                    <div class="chart-tooltip" id="chartTooltip">
-                                        {{ $chart['highlight']['label'] }}<br>Accuracy: <strong>{{ $chart['highlight']['accuracy'] }}%</strong>
+                                <div class="donut-center">
+                                    <span class="num">{{ $studyDist['display_val'] }}</span>
+                                    <span class="lbl">{{ $studyDist['display_unit'] }}</span>
+                                </div>
+                            </div>
+                            <div class="donut-legend">
+                                @foreach($studyDist['slices'] as $s)
+                                    <div class="row">
+                                        <span class="dot" style="background:{{ $s['color'] }}"></span>
+                                        <span class="name">{{ $s['code'] }}</span>
+                                        <span class="pct">{{ $s['pct'] }}%</span>
                                     </div>
-                                @else
-                                    <div class="chart-tooltip" id="chartTooltip">No quiz activity yet</div>
-                                @endif
+                                @endforeach
                             </div>
                         </div>
-                        <div class="x-axis" id="chartXAxis" style="margin-left:48px;">
-                            @foreach($chart['labels'] as $label)
-                                <span>{{ $label }}</span>
+                    @else
+                        <div class="empty-note">Complete quizzes to see how your study time is distributed across subjects.</div>
+                    @endif
+                </div>
+
+                <!-- EXAM COUNTDOWN -->
+                <div class="exam-card">
+                    <div class="exam-bg">
+                        <svg width="100%" height="100%" viewBox="0 0 300 240" preserveAspectRatio="none">
+                            <circle cx="260" cy="40" r="70" fill="rgba(255,255,255,0.06)"/>
+                            <circle cx="30" cy="200" r="55" fill="rgba(255,255,255,0.05)"/>
+                            <circle cx="200" cy="190" r="40" fill="rgba(255,255,255,0.04)"/>
+                            <ellipse cx="150" cy="30" rx="90" ry="35" fill="rgba(255,255,255,0.03)" transform="rotate(-12 150 30)"/>
+                            <path d="M0,200 Q75,160 150,190 T300,170 V240 H0 Z" fill="rgba(0,0,0,0.08)"/>
+                        </svg>
+                    </div>
+                    <i class="fas fa-flag flag" style="top:22%;right:30%;"></i>
+                    <div class="exam-kicker">CPA Licensure Exam<br>is in</div>
+                    @if($daysToExam !== null)
+                        <div class="exam-days">{{ $daysToExam }}</div>
+                        <div class="exam-days-lbl">{{ \Illuminate\Support\Str::plural('day', $daysToExam) }}</div>
+                        <div class="exam-date">{{ \Illuminate\Support\Carbon::parse($examDate)->format('M j, Y') }}</div>
+                    @else
+                        <div class="exam-days">—</div>
+                        <div class="exam-days-lbl">days</div>
+                        <div class="exam-date">Set your target date in Settings</div>
+                    @endif
+                </div>
+            </div>
+
+            <!-- ROW 3: PERFORMANCE BY SUBJECT + WEEKLY ACCURACY + QUIZ TYPE + MINI STATS -->
+            <div class="row-3">
+                <!-- PERFORMANCE BY SUBJECT -->
+                <div class="card">
+                    <div class="card-head">
+                        <span class="card-title">Performance by Subject</span>
+                    </div>
+                    @php $subjColors = ['#c0392b', '#3b7ddd', '#e8910b', '#8e44ad', '#21a366', '#d4589e']; @endphp
+                    @foreach($subjectAccuracy as $si => $subj)
+                        <div class="subject-row">
+                            <span class="code">{{ $subj->code }}</span>
+                            <div class="track"><span class="fill" style="width:{{ $subj->accuracy }}%;background:{{ $subjColors[$si % count($subjColors)] }};"></span></div>
+                            <span class="val">{{ $subj->accuracy }}%</span>
+                        </div>
+                    @endforeach
+                    <div class="axis-note"><span>0%</span><span>50%</span><span>100%</span></div>
+                </div>
+
+                <!-- MINI STATS 2x2 -->
+                <div class="mini-grid">
+                    <div class="mini-card">
+                        <div class="mini-head"><i class="fas fa-clock red"></i><span>Study Time Today</span></div>
+                        <div class="mini-value">{{ $todayStudy }}</div>
+                        @php [$cls, $ic, $txt] = $deltaRow($todayDelta); @endphp
+                        <div class="mini-sub"><span class="d {{ $cls }}"><i class="fas {{ $ic }}"></i> {{ $txt }}</span> vs yesterday</div>
+                    </div>
+                    <div class="mini-card">
+                        <div class="mini-head"><i class="fas fa-circle-check green"></i><span>Consistency</span></div>
+                        <div class="mini-value">{{ $consistencyPct }}%</div>
+                        @php [$cls, $ic, $txt] = $deltaRow($consistencyDelta); @endphp
+                        <div class="mini-sub"><span class="d {{ $cls }}"><i class="fas {{ $ic }}"></i> {{ $txt }}</span> vs last week</div>
+                    </div>
+                    <div class="mini-card">
+                        <div class="mini-head"><i class="fas fa-triangle-exclamation red"></i><span>Weakest Topic</span></div>
+                        @if($weakestTopic)
+                            <div class="mini-value" title="{{ $weakestTopic->topic }}">{{ $weakestTopic->topic }}</div>
+                            <div class="mini-sub">Accuracy <span class="d down">{{ $weakestTopic->accuracy }}%</span></div>
+                        @else
+                            <div class="mini-value">None yet</div>
+                            <div class="mini-sub">No weak topics flagged</div>
+                        @endif
+                    </div>
+                    <div class="mini-card">
+                        <div class="mini-head"><i class="fas fa-bullseye amber"></i><span>Goal Progress</span></div>
+                        <div class="mini-value">{{ $goalHours }} <small style="font-size:11px;color:var(--ink-3);font-weight:500;">/ {{ $goalTarget }} hrs</small></div>
+                        <div class="mini-bar"><span style="width:{{ $goalPct }}%"></span></div>
+                        <div class="mini-sub" style="text-align:right;">{{ $goalPct }}%</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ROW 4: STUDY ACTIVITY HEATMAP + RECENT QUIZZES -->
+            <div class="row-4">
+                <!-- STUDY ACTIVITY (ONE YEAR) -->
+                <div class="card hm-card">
+                    <div class="card-head">
+                        <span class="card-title">Study Activity (One Year)</span>
+                        <span class="card-more">&#8230;</span>
+                    </div>
+                    @php $hmColors = ['#eef0f2', '#f6cdc9', '#ec9d96', '#dd6b62', '#c0392b']; @endphp
+                    <div class="heatmap-scroll">
+                        <div class="hm-months">
+                            <span></span>
+                            @php $printed = ''; @endphp
+                            @foreach($heatmap['weeks'] as $wi => $w)
+                                @php
+                                    $lbl = $heatmap['labels'][$wi] ?? '';
+                                    $show = ($lbl !== '' && $lbl !== $printed) ? $lbl : '';
+                                    if ($show !== '') { $printed = $lbl; }
+                                @endphp
+                                <span>{{ $show }}</span>
                             @endforeach
                         </div>
+                        <div class="hm-body">
+                            <div class="hm-days">
+                                <span></span><span>Mon</span><span></span><span>Wed</span><span></span><span>Fri</span><span></span>
+                            </div>
+                            <div class="hm-weeks">
+                                @foreach($heatmap['weeks'] as $w)
+                                    <div class="hm-week">
+                                        @foreach($w as $cell)
+                                            <div class="hm-cell" @if($cell['level'] !== null) style="background:{{ $hmColors[$cell['level']] }};" title="{{ $cell['date'] }} — {{ $cell['count'] }} {{ \Illuminate\Support\Str::plural('question', $cell['count']) }}" @endif></div>
+                                        @endforeach
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
                     </div>
+                    <div class="hm-legend">
+                        <span style="margin-right:2px;">Less</span>
+                        @foreach($hmColors as $c)
+                            <span class="hm-cell" style="background:{{ $c }};"></span>
+                        @endforeach
+                        <span style="margin-left:2px;">More</span>
+                    </div>
+                </div>
 
-                    <!-- BOTTOM 3 COLUMNS -->
+                <!-- RECENT QUIZZES -->
+                <div class="card">
+                    <div class="card-head">
+                        <span class="card-title">Recent Quizzes</span>
+                        <a href="{{ route('adaptive-quizzes') }}" class="view-all-btn">View all <i class="fas fa-chevron-right" style="font-size:9px;"></i></a>
+                    </div>
                     @php
                         $modeIcons = [
-                            'adaptive' => ['fa-brain', 'green'],
-                            'topic'    => ['fa-tag', 'amber'],
-                            'timed'    => ['fa-clock', 'blue'],
-                            'challenge'=> ['fa-trophy', 'red'],
+                            'adaptive'  => ['fa-brain', 'green'],
+                            'topic'     => ['fa-tag', 'amber'],
+                            'timed'     => ['fa-clock', 'blue'],
+                            'challenge' => ['fa-trophy', 'red'],
                         ];
                         $modeLabels = [
                             'adaptive' => 'Adaptive Quiz', 'topic' => 'Topic Quiz',
                             'timed' => 'Timed Quiz', 'challenge' => 'Challenge Quiz',
                         ];
                     @endphp
-                    <div class="bottom-grid">
-                        <!-- STRENGTHS -->
-                        <div class="card">
-                            <div class="card-head">
-                                <span class="card-title">Your Strengths</span>
-                                @if($strengths->isNotEmpty())
-                                    <span class="count-badge">{{ $strengths->count() }} topic{{ $strengths->count() === 1 ? '' : 's' }} &middot; 75%+</span>
-                                @endif
-                            </div>
-                            <div class="list-scroll">
-                                @forelse($strengths as $s)
-                                    <div class="list-item">
-                                        <div class="list-icon green"><i class="fas fa-clipboard-check"></i></div>
-                                        <div class="list-content">
-                                            <div class="list-title">{{ $s->topic }}</div>
-                                            <div class="list-sub">{{ $s->subject_code }}</div>
-                                        </div>
-                                        <div class="list-value green">{{ $s->accuracy }}%</div>
-                                    </div>
-                                @empty
-                                    <div style="color:#999;font-size:12px;padding:14px 0;">No mastered topics yet &ndash; reach 75%+ over a few quizzes to build your strengths.</div>
-                                @endforelse
-                            </div>
-                        </div>
-
-                        <!-- WEAKNESSES -->
-                        <div class="card">
-                            <div class="card-head">
-                                <span class="card-title">Your Weaknesses</span>
-                                @if($weaknesses->isNotEmpty())
-                                    <span class="count-badge">{{ $weaknesses->count() }} topic{{ $weaknesses->count() === 1 ? '' : 's' }} &middot; needs review</span>
-                                @endif
-                            </div>
-                            <div class="list-scroll">
-                                @forelse($weaknesses as $w)
-                                    <div class="list-item">
-                                        <div class="list-icon red"><i class="fas fa-triangle-exclamation"></i></div>
-                                        <div class="list-content">
-                                            <div class="list-title">{{ $w->topic }}</div>
-                                            <div class="list-sub">{{ $w->subject_code }}</div>
-                                        </div>
-                                        <div class="list-value red">{{ $w->accuracy }}%</div>
-                                    </div>
-                                @empty
-                                    <div style="color:#999;font-size:12px;padding:14px 0;">No weak topics flagged &ndash; keep practising to keep it that way!</div>
-                                @endforelse
-                            </div>
-                        </div>
-
-                        <!-- RECENT ACTIVITY -->
-                        <div class="card">
-                            <div class="card-head">
-                                <span class="card-title">Recent Activity</span>
-                            </div>
-                            @forelse($recentActivity as $a)
-                                @php [$icon, $tone] = $modeIcons[$a->mode] ?? ['fa-file-alt', 'grey']; @endphp
-                                <div class="list-item">
-                                    <div class="list-icon {{ $tone }}"><i class="fas {{ $icon }}"></i></div>
-                                    <div class="list-content">
-                                        <div class="list-title">{{ $modeLabels[$a->mode] ?? 'Quiz' }} &ndash; {{ $a->subject_code ?? 'General' }}</div>
-                                        <div class="list-sub">Scored {{ (int) round($a->score_percent) }}%</div>
-                                    </div>
-                                    <div class="list-meta">{{ \Illuminate\Support\Carbon::parse($a->completed_at)->diffForHumans(null, true) }} ago</div>
-                                </div>
-                            @empty
-                                <div style="color:#999;font-size:12px;padding:14px 0;">No quizzes completed yet.</div>
-                            @endforelse
-                        </div>
-                    </div>
-
-                    <!-- CONSISTENCY BANNER (fills the space beside the AI Coach) -->
-                    <div class="consistency" style="margin-top:25px;">
-                        <div class="consistency-icon"><i class="fas fa-shield-alt"></i></div>
-                        <div class="consistency-text">
-                            <h4>Consistency is the key!</h4>
-                            @if($streakDays > 0)
-                                <p>You've been consistent for {{ $streakDays }} {{ \Illuminate\Support\Str::plural('day', $streakDays) }} in a row.<br>Keep it up and achieve your goals!</p>
-                            @else
-                                <p>Practise a little every day to build a streak.<br>Start a quiz today to get going!</p>
-                            @endif
-                        </div>
-                        <div class="streak-count">
-                            <div class="num">{{ $streakDays }}</div>
-                            <div class="lbl">Current Streak days</div>
-                        </div>
-                        <div class="streak-days">
-                            @foreach($weekActivity['days'] as $day)
-                                <div class="streak-day">
-                                    <div class="d">{{ $day['label'] }}</div>
-                                    <div class="streak-check {{ $day['done'] ? 'done' : 'empty' }}">
-                                        @if($day['done'])<i class="fas fa-check"></i>@endif
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
-                        <a href="{{ route('calendar') }}" class="consistency-btn" style="text-decoration:none;display:inline-flex;align-items:center;">View Calendar</a>
-                    </div>
-                </div>
-
-                <!-- RIGHT / SIDE COLUMN -->
-                <div class="perf-side">
-                    <!-- OVERALL MASTERY -->
-                    <div class="card">
-                        <div class="card-head">
-                            <span class="card-title">Overall Mastery</span>
-                        </div>
-                        <div class="mastery-body">
-                            <div class="donut">
-                                <svg viewBox="0 0 36 36">
-                                    <circle cx="18" cy="18" r="15.9" fill="none" stroke="#f0f0f0" stroke-width="3.2"/>
-                                    @if($mastery['has_data'])
-                                        <!-- Strong (green) -->
-                                        @if($mastery['strong'] > 0)
-                                        <circle cx="18" cy="18" r="15.9" fill="none" stroke="#21a366" stroke-width="3.2"
-                                            stroke-dasharray="{{ $mastery['strong_dash'] }} {{ 100 - $mastery['strong_dash'] }}" stroke-dashoffset="0"/>
-                                        @endif
-                                        <!-- Medium (amber) -->
-                                        @if($mastery['medium'] > 0)
-                                        <circle cx="18" cy="18" r="15.9" fill="none" stroke="#f0b429" stroke-width="3.2"
-                                            stroke-dasharray="{{ $mastery['medium_dash'] }} {{ 100 - $mastery['medium_dash'] }}" stroke-dashoffset="{{ $mastery['medium_offset'] }}"/>
-                                        @endif
-                                        <!-- Weak (red) -->
-                                        @if($mastery['weak'] > 0)
-                                        <circle cx="18" cy="18" r="15.9" fill="none" stroke="#c0392b" stroke-width="3.2"
-                                            stroke-dasharray="{{ $mastery['weak_dash'] }} {{ 100 - $mastery['weak_dash'] }}" stroke-dashoffset="{{ $mastery['weak_offset'] }}"/>
-                                        @endif
-                                    @endif
-                                </svg>
-                                <div class="donut-center">
-                                    <span class="num">{{ $mastery['level'] }}%</span>
-                                    <span class="lbl">Mastery Level</span>
-                                </div>
-                            </div>
-                            <div class="mastery-legend">
-                                <div class="row"><span class="dot strong"></span> Strong <span class="pct">{{ $mastery['strong'] }}%</span></div>
-                                <div class="row"><span class="dot medium"></span> Medium <span class="pct">{{ $mastery['medium'] }}%</span></div>
-                                <div class="row"><span class="dot weak"></span> Weak <span class="pct">{{ $mastery['weak'] }}%</span></div>
-                            </div>
-                        </div>
-                        <div class="mastery-note">
-                            <i class="fas fa-shield-alt"></i>
-                            @if(! $mastery['has_data'])
-                                <span>Take a quiz to start building your mastery profile.</span>
-                            @elseif($mastery['level'] >= 75)
-                                <span>You're doing great! Keep practising your weak topics to stay sharp.</span>
-                            @else
-                                <span>Focus on your weak topics to level up your overall mastery.</span>
-                            @endif
-                        </div>
-                    </div>
-
-                    <!-- ACCURACY BY SUBJECT -->
-                    <div class="card">
-                        <div class="card-head">
-                            <span class="card-title">Accuracy by Subject Area</span>
-                        </div>
-                        @foreach($subjectAccuracy as $subj)
-                            <div class="accuracy-item">
-                                <div class="accuracy-top"><span>{{ $subj->name }} ({{ $subj->code }})</span><span class="val">{{ $subj->accuracy }}%</span></div>
-                                <div class="accuracy-bar"><span style="width:{{ $subj->accuracy }}%;background:{{ $subj->color }}"></span></div>
-                            </div>
-                        @endforeach
-                    </div>
-
-                    <!-- INSIGHTS & RECOMMENDATIONS -->
-                    <div class="card">
-                        <div class="card-head">
-                            <span class="card-title">Insights &amp; Recommendations</span>
-                        </div>
-                        @foreach($insights as $insight)
-                            <a href="{{ route('adaptive-quizzes') }}" class="insight-item {{ $insight['tone'] }}" style="text-decoration:none;">
-                                <div class="insight-icon"><i class="fas {{ $insight['icon'] }}"></i></div>
-                                <div class="insight-content">
-                                    <div class="insight-title">{{ $insight['title'] }}</div>
-                                    <div class="insight-desc">{{ $insight['desc'] }}</div>
-                                </div>
-                                <i class="fas fa-arrow-right insight-arrow"></i>
-                            </a>
-                        @endforeach
-
-                        <!-- AI COACH (personalised, generated from this student's data) -->
-                        <div class="ai-insights-head">
-                            <span class="ai-insights-title"><i class="fas fa-wand-magic-sparkles"></i> AI Coach</span>
-                            <button type="button" class="ai-insights-refresh" id="aiInsightsRefresh" title="Regenerate insights">
-                                <i class="fas fa-rotate-right"></i>
-                            </button>
-                        </div>
-                        <div id="aiInsightsBody">
-                            <div class="ai-insights-loading">
-                                <i class="fas fa-circle-notch fa-spin"></i> Analyzing your performance...
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            </div><!-- /overview panel -->
-
-            <!-- ============ BY SUBJECT TAB ============ -->
-            <div class="tab-panel" data-panel="subject" style="display:none;">
-                <div class="card">
-                    <div class="card-head"><span class="card-title">Accuracy by Subject Area</span></div>
-                    <table class="perf-table">
-                        <thead>
-                            <tr><th>Subject</th><th>Questions</th><th>Correct</th><th>Accuracy</th><th>Readiness</th><th style="width:25%;">Progress</th></tr>
-                        </thead>
-                        <tbody>
-                            @foreach($subjectAccuracy as $subj)
-                                <tr>
-                                    <td><strong>{{ $subj->code }}</strong> <span style="color:#999;">{{ $subj->name }}</span></td>
-                                    <td>{{ number_format($subj->attempts) }}</td>
-                                    <td>{{ number_format($subj->correct) }}</td>
-                                    <td style="font-weight:700;color:{{ $subj->color }};">{{ $subj->accuracy }}%</td>
-                                    <td><span style="display:inline-flex;padding:4px 9px;border-radius:14px;font-size:10px;font-weight:700;background:{{ $subj->is_passing ? '#d1fae5' : '#f3f4f6' }};color:{{ $subj->is_passing ? '#047857' : '#6b7280' }};">{{ $subj->is_passing ? 'Ready' : 'Needs '.$subj->passing_threshold.'%' }}</span></td>
-                                    <td>
-                                        <div class="accuracy-bar"><span style="width:{{ $subj->accuracy }}%;background:{{ $subj->color }}"></span></div>
-                                    </td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- ============ BY TOPIC TAB ============ -->
-            <div class="tab-panel" data-panel="topic" style="display:none;">
-                <div class="card">
-                    <div class="card-head"><span class="card-title">Accuracy by Topic</span></div>
-                    @if($byTopic->isEmpty())
-                        <div style="color:#999;font-size:13px;padding:20px 0;text-align:center;">
-                            No topic data yet. Complete a few quizzes to see your per-topic performance.
-                        </div>
+                    @if($recentActivity->isEmpty())
+                        <div class="empty-note">No quizzes completed yet.</div>
                     @else
-                        <table class="perf-table">
+                        <table class="quiz-table">
                             <thead>
-                                <tr><th>Topic</th><th>Subject</th><th>Questions</th><th>Correct</th><th>Accuracy</th><th style="width:25%;">Progress</th></tr>
+                                <tr><th>Quiz</th><th>Subject</th><th>Score</th><th>Duration</th><th>Date</th></tr>
                             </thead>
                             <tbody>
-                                @foreach($byTopic as $t)
-                                    @php $tc = $t->accuracy >= 75 ? '#21a366' : ($t->accuracy >= 60 ? '#3b7ddd' : ($t->accuracy >= 45 ? '#e8910b' : '#c0392b')); @endphp
+                                @foreach($recentActivity as $a)
+                                    @php
+                                        [$icon, $tone] = $modeIcons[$a->mode] ?? ['fa-file-alt', 'grey'];
+                                        $score = (int) round($a->score_percent);
+                                        $sc = $score >= 75 ? '#21a366' : ($score >= 60 ? '#3b7ddd' : ($score >= 45 ? '#e8910b' : '#c0392b'));
+                                    @endphp
                                     <tr>
-                                        <td><strong>{{ $t->topic }}</strong></td>
-                                        <td><span style="color:#999;">{{ $t->subject_code }}</span></td>
-                                        <td>{{ number_format($t->attempts) }}</td>
-                                        <td>{{ number_format($t->correct) }}</td>
-                                        <td style="font-weight:700;color:{{ $tc }};">{{ $t->accuracy }}%</td>
-                                        <td><div class="accuracy-bar"><span style="width:{{ $t->accuracy }}%;background:{{ $tc }}"></span></div></td>
+                                        <td><span class="quiz-name"><i class="fas {{ $icon }} {{ $tone }}"></i> {{ $modeLabels[$a->mode] ?? 'Quiz' }}</span></td>
+                                        <td>{{ $a->subject_code ?? 'General' }}</td>
+                                        <td><span class="score-val" style="color:{{ $sc }};">{{ $score }}%</span></td>
+                                        <td>{{ $a->duration }}</td>
+                                        <td>{{ \Illuminate\Support\Carbon::parse($a->completed_at)->format('M j, Y') }}</td>
                                     </tr>
                                 @endforeach
                             </tbody>
@@ -1700,88 +1594,29 @@
                     @endif
                 </div>
             </div>
-
-            <!-- ============ BY QUIZ TYPE TAB ============ -->
-            <div class="tab-panel" data-panel="quiztype" style="display:none;">
-                <div class="bottom-grid" style="grid-template-columns:repeat(4,1fr);">
-                    @foreach($byQuizType as $q)
-                        <div class="card">
-                            <div class="card-head">
-                                <span class="card-title" style="display:flex;align-items:center;gap:10px;">
-                                    <span class="list-icon {{ $q['tone'] }}" style="width:32px;height:32px;"><i class="fas {{ $q['icon'] }}"></i></span>
-                                    {{ $q['label'] }}
-                                </span>
-                            </div>
-                            <div style="font-size:34px;font-weight:700;color:{{ $q['color'] }};line-height:1;">{{ $q['accuracy'] }}%</div>
-                            <div style="font-size:11px;color:#999;margin-bottom:16px;">Accuracy</div>
-                            <div class="accuracy-bar" style="margin-bottom:18px;"><span style="width:{{ $q['accuracy'] }}%;background:{{ $q['color'] }}"></span></div>
-                            <div style="display:flex;justify-content:space-between;font-size:12px;color:#666;margin-bottom:8px;">
-                                <span>Quizzes taken</span><strong>{{ $q['sessions'] }}</strong>
-                            </div>
-                            <div style="display:flex;justify-content:space-between;font-size:12px;color:#666;margin-bottom:8px;">
-                                <span>Questions</span><strong>{{ number_format($q['attempted']) }}</strong>
-                            </div>
-                            <div style="display:flex;justify-content:space-between;font-size:12px;color:#666;">
-                                <span>Correct</span><strong>{{ number_format($q['correct']) }}</strong>
-                            </div>
-                        </div>
-                    @endforeach
-                </div>
-            </div>
-
-            <!-- ============ BY TIME TAB ============ -->
-            <div class="tab-panel" data-panel="time" style="display:none;">
-                <div class="perf-grid">
-                    <div class="perf-main">
-                        <div class="card">
-                            <div class="card-head">
-                                <span class="card-title">Accuracy by Day of Week</span>
-                                @if($byTime['best_day'])
-                                    <span class="card-link" style="cursor:default;">Best: {{ $byTime['best_day'] }}</span>
-                                @endif
-                            </div>
-                            @foreach($byTime['weekday'] as $wd)
-                                <div class="accuracy-item">
-                                    <div class="accuracy-top">
-                                        <span>{{ $wd['label'] }} <span style="color:#bbb;">({{ $wd['attempted'] }} q)</span></span>
-                                        <span class="val">{{ $wd['accuracy'] }}%</span>
-                                    </div>
-                                    <div class="accuracy-bar"><span style="width:{{ $wd['accuracy'] }}%;background:{{ $wd['color'] }}"></span></div>
-                                </div>
-                            @endforeach
-                        </div>
-                    </div>
-                    <div class="perf-side">
-                        <div class="card">
-                            <div class="card-head"><span class="card-title">Last 14 Days</span></div>
-                            @if(! $byTime['has_data'])
-                                <div style="color:#999;font-size:13px;padding:14px 0;text-align:center;">No activity in this period.</div>
-                            @else
-                                @foreach(array_reverse($byTime['daily']) as $d)
-                                    <div class="list-item">
-                                        <div class="list-content">
-                                            <div class="list-title">{{ $d['date'] }}</div>
-                                            <div class="list-sub">{{ $d['attempted'] }} answered &bull; {{ $d['correct'] }} correct</div>
-                                        </div>
-                                        <div class="list-value" style="color:{{ $d['attempted'] > 0 ? $d['color'] : '#ccc' }};">
-                                            {{ $d['attempted'] > 0 ? $d['accuracy'].'%' : '—' }}
-                                        </div>
-                                    </div>
-                                @endforeach
-                            @endif
-                        </div>
-                    </div>
-                </div>
-            </div>
         </main>
+    </div>
+
+    <!-- AI INSIGHTS PANEL -->
+    <div class="ai-overlay" id="aiOverlay">
+        <div class="ai-panel">
+            <div class="ai-panel-head">
+                <span class="ai-panel-title"><i class="fas fa-wand-magic-sparkles"></i> AI Insights</span>
+                <button type="button" id="aiRefreshBtn" title="Regenerate insights"><i class="fas fa-rotate-right"></i></button>
+                <button type="button" id="aiCloseBtn" title="Close"
+                    onclick="document.getElementById('aiOverlay').classList.remove('open')"><i class="fas fa-xmark"></i></button>
+            </div>
+            <div class="ai-panel-body" id="aiPanelBody">
+                <div class="ai-loading"><i class="fas fa-circle-notch fa-spin"></i> Analyzing your performance...</div>
+            </div>
+        </div>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             // Fade-in animation
-            const elements = document.querySelectorAll('.card, .stats-grid, .consistency');
-            elements.forEach((el, index) => {
-                el.style.animation = `slideUp 0.5s ease ${index * 0.08}s both`;
+            document.querySelectorAll('.card, .kpi-card, .mini-card, .exam-card').forEach((el, index) => {
+                el.style.animation = `slideUp 0.45s ease ${index * 0.04}s both`;
             });
 
             // Profile dropdown
@@ -1800,15 +1635,14 @@
                 });
             }
 
-            // Performance Over Time — Daily / Weekly / Monthly granularity.
-            // The SVG geometry is rebuilt from the raw series so the dropdown
-            // switches the curve (and the date-range chip) without a reload.
+            // Accuracy Over Time — Daily / Weekly / Monthly granularity. The SVG
+            // geometry and the dot/label overlay are rebuilt from the raw series
+            // so the dropdown switches the curve without a reload.
             const chartSeries = @json($chartSeries);
             const chartEls = {
                 line:    document.getElementById('chartLine'),
                 area:    document.getElementById('chartArea'),
-                point:   document.getElementById('chartPoint'),
-                tooltip: document.getElementById('chartTooltip'),
+                overlay: document.getElementById('chartOverlay'),
                 xAxis:   document.getElementById('chartXAxis'),
                 range:   document.getElementById('dateRangeText'),
             };
@@ -1829,26 +1663,26 @@
                     return [x, y];
                 });
 
-                const pointsStr = pts.map(p => p.join(',')).join(' ');
-                const firstX = pts[0][0], lastX = pts[n - 1][0];
-
-                chartEls.line.setAttribute('points', pointsStr);
+                chartEls.line.setAttribute('points', pts.map(p => p.join(',')).join(' '));
                 chartEls.area.setAttribute('d',
-                    'M' + pts.map(p => p.join(',')).join(' L') + ` L${lastX},${bottom} L${firstX},${bottom} Z`);
-                chartEls.point.setAttribute('cx', lastX);
-                chartEls.point.setAttribute('cy', pts[n - 1][1]);
+                    'M' + pts.map(p => p.join(',')).join(' L') +
+                    ` L${pts[n - 1][0]},${bottom} L${pts[0][0]},${bottom} Z`);
+
+                // Dots + % labels live in an HTML overlay (not the SVG) so they
+                // don't stretch when the chart resizes.
+                chartEls.overlay.innerHTML = pts.map(([x, y], i) => {
+                    const lx = Math.min(96, Math.max(3, x / W * 100));
+                    const ly = y / 230 * 100;
+                    const lblTop = Math.max(6, ly - 5);
+                    return `<div class="pt-dot" style="left:${lx}%;top:${ly}%"></div>` +
+                           `<div class="pt-lbl" style="left:${lx}%;top:${lblTop}%">${acc[i]}%</div>`;
+                }).join('');
 
                 chartEls.xAxis.innerHTML = series.labels.map(l => `<span>${l}</span>`).join('');
-
-                if (series.has_data) {
-                    chartEls.tooltip.innerHTML =
-                        `${series.labels[n - 1]}<br>Accuracy: <strong>${acc[n - 1]}%</strong>`;
-                } else {
-                    chartEls.tooltip.textContent = 'No quiz activity yet';
-                }
-
                 if (chartEls.range) chartEls.range.textContent = series.range;
             }
+
+            renderPerfChart(chartSeries.monthly);
 
             const granularity = document.getElementById('chartGranularity');
             if (granularity) {
@@ -1856,43 +1690,28 @@
                     renderPerfChart(chartSeries[this.value]);
                 });
             }
-
-            // Tabs — switch the active button AND show the matching panel.
-            const panels = document.querySelectorAll('.tab-panel');
-            document.querySelectorAll('.tab').forEach(tab => {
-                tab.addEventListener('click', function () {
-                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-                    this.classList.add('active');
-
-                    const target = this.dataset.tab;
-                    panels.forEach(p => {
-                        const show = p.dataset.panel === target;
-                        p.style.display = show ? '' : 'none';
-                        if (show) {
-                            p.querySelectorAll('.card, .stats-grid, .consistency').forEach((el, i) => {
-                                el.style.animation = `slideUp 0.4s ease ${i * 0.05}s both`;
-                            });
-                        }
-                    });
-                });
-            });
         });
 
         const style = document.createElement('style');
         style.textContent = `
             @keyframes slideUp {
-                from { opacity: 0; transform: translateY(20px); }
+                from { opacity: 0; transform: translateY(16px); }
                 to { opacity: 1; transform: translateY(0); }
             }
         `;
         document.head.appendChild(style);
 
-        // ── AI Coach insights (Insights & Recommendations card) ─────────────
+        // ── AI Insights panel (personalised, generated from this student's data) ──
         (function () {
             const INSIGHTS_URL = "{{ route('ai-tutor.performance-insights') }}";
-            const body       = document.getElementById('aiInsightsBody');
-            const refreshBtn = document.getElementById('aiInsightsRefresh');
-            if (!body) return;
+            const overlay    = document.getElementById('aiOverlay');
+            const body       = document.getElementById('aiPanelBody');
+            const openBtn    = document.getElementById('aiInsightsBtn');
+            const refreshBtn = document.getElementById('aiRefreshBtn');
+            const closeBtn   = document.getElementById('aiCloseBtn');
+            if (!overlay || !openBtn) return;
+
+            let loaded = false;
 
             function escapeHtml(str) {
                 const div = document.createElement('div');
@@ -1901,15 +1720,22 @@
             }
 
             async function loadInsights(refresh = false) {
-                body.innerHTML = '<div class="ai-insights-loading"><i class="fas fa-circle-notch fa-spin"></i> Analyzing your performance...</div>';
+                body.innerHTML = '<div class="ai-loading"><i class="fas fa-circle-notch fa-spin"></i> Analyzing your performance... this can take up to a minute.</div>';
                 refreshBtn.disabled = true;
+
+                // The AI call can be slow - give it 90s, then fail with a
+                // retry message instead of spinning forever.
+                const ctrl  = new AbortController();
+                const timer = setTimeout(() => ctrl.abort(), 90000);
+
                 try {
                     const res  = await fetch(INSIGHTS_URL + (refresh ? '?refresh=1' : ''), {
                         headers: { 'Accept': 'application/json' },
+                        signal: ctrl.signal,
                     });
                     const data = await res.json().catch(() => ({}));
                     if (!res.ok || !data.ok || !Array.isArray(data.insights)) {
-                        throw new Error(data.message || 'unavailable');
+                        throw new Error(data.message || ('Request failed (HTTP ' + res.status + ').'));
                     }
                     body.innerHTML = data.insights.map(ins => `
                         <div class="insight-item ${escapeHtml(ins.tone)}">
@@ -1920,17 +1746,41 @@
                             </div>
                         </div>
                     `).join('');
+                    loaded = true;
                 } catch (e) {
-                    body.innerHTML = '<div class="ai-insights-error"><i class="fas fa-circle-exclamation"></i> AI insights are unavailable right now. Try the refresh button in a moment.</div>';
+                    console.error('AI insights failed:', e);
+                    const why = e.name === 'AbortError'
+                        ? 'The request timed out.'
+                        : escapeHtml(e.message || 'AI insights are unavailable right now.');
+                    body.innerHTML = '<div class="ai-error"><i class="fas fa-circle-exclamation"></i> ' + why
+                        + ' <button type="button" class="ai-retry" id="aiRetryBtn">Try again</button></div>';
+                    const retry = document.getElementById('aiRetryBtn');
+                    if (retry) retry.addEventListener('click', () => loadInsights(refresh));
                 } finally {
+                    clearTimeout(timer);
                     refreshBtn.disabled = false;
                 }
             }
 
-            refreshBtn.addEventListener('click', () => loadInsights(true));
-            loadInsights();
-        })();
+            function openPanel() {
+                overlay.classList.add('open');
+                if (!loaded) loadInsights();
+            }
 
+            function closePanel() {
+                overlay.classList.remove('open');
+            }
+
+            openBtn.addEventListener('click', openPanel);
+            closeBtn.addEventListener('click', closePanel);
+            refreshBtn.addEventListener('click', () => loadInsights(true));
+            overlay.addEventListener('click', function (e) {
+                if (e.target === overlay) closePanel();
+            });
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape') closePanel();
+            });
+        })();
     </script>
 </body>
 </html>
