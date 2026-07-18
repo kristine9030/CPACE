@@ -38,15 +38,30 @@
         .risk-head { color:#aaa; font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.4px; padding-top:0; border-top:0; }
         .risk-empty { padding:24px 10px 8px; text-align:center; color:#999; font-size:12px; }
         .risk-empty i { color:var(--green); margin-right:6px; }
+        .analytics-strip { margin:18px 0; }
+        .analytics-head { display:flex; align-items:end; justify-content:space-between; gap:12px; margin-bottom:10px; }
+        .analytics-title { font-size:14px; font-weight:700; color:#222; }
+        .analytics-sub { font-size:10.5px; color:#999; margin-top:2px; }
+        .analytics-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; }
+        .analytics-card { display:block; background:#fff; border:1px solid #eee; border-radius:12px; padding:15px; text-decoration:none; transition:.18s ease; }
+        .analytics-card:hover { transform:translateY(-2px); border-color:#ddd; box-shadow:0 8px 22px rgba(0,0,0,.06); }
+        .analytics-card-top { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+        .analytics-card-label { color:#777; font-size:10.5px; font-weight:600; }
+        .analytics-card-icon { width:30px; height:30px; border-radius:9px; display:grid; place-items:center; background:#fef2f2; color:var(--accent); }
+        .analytics-card-value { margin-top:10px; font-size:23px; line-height:1; font-weight:700; color:#1b1b1b; }
+        .analytics-card-note { margin-top:7px; font-size:9.5px; color:#aaa; min-height:14px; }
+        .trend-up { color:#047857; } .trend-down { color:#b91c1c; }
         @media (max-width: 980px) {
             .risk-row { grid-template-columns:minmax(180px, 1.3fr) minmax(145px, 1fr) 85px 70px; }
             .risk-last { display:none; }
+            .analytics-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
         }
         @media (max-width: 620px) {
             .risk-row { grid-template-columns:1fr auto; gap:9px; }
             .risk-head { display:none; }
             .risk-reasons { grid-column:1 / -1; padding-left:49px; }
             .risk-score, .risk-last { display:none; }
+            .analytics-grid { grid-template-columns:1fr; }
         }
     </style>
 </head>
@@ -97,6 +112,35 @@
             </div>
         </div>
     </div>
+
+    <section class="analytics-strip" aria-labelledby="analytics-title">
+        <div class="analytics-head">
+            <div><div class="analytics-title" id="analytics-title">System Analytics Snapshot</div><div class="analytics-sub">Live class-level and test-bank indicators</div></div>
+            <a href="{{ route('chair.analytics.performance') }}" class="card-link">Open Analytics</a>
+        </div>
+        <div class="analytics-grid">
+            <a class="analytics-card" href="{{ route('chair.analytics.performance') }}">
+                <div class="analytics-card-top"><span class="analytics-card-label">Class-Level Accuracy</span><span class="analytics-card-icon"><i class="fas fa-bullseye"></i></span></div>
+                <div class="analytics-card-value">{{ $analytics['class_accuracy'] === null ? '—' : $analytics['class_accuracy'].'%' }}</div>
+                <div class="analytics-card-note">{{ $analytics['weakest_subject'] ? 'Weakest: '.$analytics['weakest_subject']['code'].' at '.$analytics['weakest_subject']['accuracy'].'%' : 'Waiting for student attempts' }}</div>
+            </a>
+            <a class="analytics-card" href="{{ route('chair.analytics.performance') }}#readiness-trend">
+                <div class="analytics-card-top"><span class="analytics-card-label">Board Readiness</span><span class="analytics-card-icon"><i class="fas fa-chart-line"></i></span></div>
+                <div class="analytics-card-value">{{ $analytics['readiness_rate'] === null ? '—' : $analytics['readiness_rate'].'%' }}</div>
+                <div class="analytics-card-note {{ ($analytics['readiness_change'] ?? 0) >= 0 ? 'trend-up' : 'trend-down' }}">{{ $analytics['readiness_change'] === null ? 'Trend begins after two periods' : (($analytics['readiness_change'] >= 0 ? '+' : '').$analytics['readiness_change'].' pts this week') }}</div>
+            </a>
+            <a class="analytics-card" href="{{ route('chair.analytics.test-bank-coverage') }}">
+                <div class="analytics-card-top"><span class="analytics-card-label">Thin Test-Bank Areas</span><span class="analytics-card-icon"><i class="fas fa-layer-group"></i></span></div>
+                <div class="analytics-card-value">{{ $analytics['thin_topics'] }}</div>
+                <div class="analytics-card-note">Topics below 25 active questions</div>
+            </a>
+            <a class="analytics-card" href="{{ route('chair.analytics.performance') }}#pass-projection">
+                <div class="analytics-card-top"><span class="analytics-card-label">Pass Projection</span><span class="analytics-card-icon"><i class="fas fa-graduation-cap"></i></span></div>
+                <div class="analytics-card-value">{{ $analytics['pass_projection'] === null ? '—' : $analytics['pass_projection'].'%' }}</div>
+                <div class="analytics-card-note">Readiness-based · {{ $analytics['eligible_students'] }} eligible students</div>
+            </a>
+        </div>
+    </section>
 
     <div class="dash-content-grid" style="display:grid; grid-template-columns:1fr 340px; gap:18px;">
         <div class="card">

@@ -18,6 +18,7 @@ use App\Http\Controllers\Student\ReviewNoteController;
 use App\Http\Controllers\Student\AiTutorController;
 use App\Http\Controllers\Faculty\TestBankController;
 use App\Http\Controllers\Chair\CommunicationController;
+use App\Http\Controllers\Chair\AnalyticsController;
 use App\Http\Controllers\NotificationController;
 
 Route::get('/', function () {
@@ -49,6 +50,12 @@ Route::middleware('auth')->group(function () {
     // Program Chair Routes (Admin role)
     Route::prefix('chair')->name('chair.')->middleware('chair')->group(function () {
         Route::get('/dashboard', [ProgramChairController::class, 'dashboard'])->name('dashboard');
+
+        // System-wide student performance and test-bank analytics
+        Route::prefix('analytics')->name('analytics.')->group(function () {
+            Route::get('/performance', [AnalyticsController::class, 'performance'])->name('performance');
+            Route::get('/test-bank-coverage', [AnalyticsController::class, 'testBankCoverage'])->name('test-bank-coverage');
+        });
 
         // Student enrollment, monitoring and reporting
         Route::get('/students', [StudentManagementController::class, 'index'])->name('students');

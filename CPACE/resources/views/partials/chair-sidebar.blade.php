@@ -352,6 +352,10 @@
         <li><a href="{{ route('chair.communications') }}" class="{{ $active === 'communications' ? 'active' : '' }}"><i class="fas fa-bullhorn"></i><span>Communications</span></a></li>
         <li><a href="{{ route('notifications.index') }}" class="{{ $active === 'notifications' ? 'active' : '' }}"><i class="fas fa-bell"></i><span>Notifications{{ $unreadNotifications ? ' ('.$unreadNotifications.')' : '' }}</span></a></li>
         <li><a href="{{ route('chair.faculty.create') }}"><i class="fas fa-user-plus"></i><span>Add Faculty</span></a></li>
+
+        <li class="nav-label">Analytics</li>
+        <li><a href="{{ route('chair.analytics.performance') }}" class="{{ $active === 'analytics-performance' ? 'active' : '' }}"><i class="fas fa-chart-line"></i><span>Class-Level Performance</span></a></li>
+        <li><a href="{{ route('chair.analytics.test-bank-coverage') }}" class="{{ $active === 'analytics-coverage' ? 'active' : '' }}"><i class="fas fa-table-cells-large"></i><span>Test Bank Coverage</span></a></li>
     </ul>
 
     <div class="sidebar-footer">

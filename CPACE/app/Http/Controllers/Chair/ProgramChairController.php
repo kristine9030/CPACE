@@ -8,6 +8,7 @@ use App\Models\Role;
 use App\Models\Subject;
 use App\Models\User;
 use App\Services\WeaknessDetector;
+use App\Services\ChairAnalyticsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -23,7 +24,7 @@ class ProgramChairController extends Controller
     /**
      * Program Chair overview: faculty count, subject coverage, assignments.
      */
-    public function dashboard()
+    public function dashboard(ChairAnalyticsService $analytics)
     {
         $subjects = Subject::withCount('faculty')->orderBy('id')->get();
         $atRiskStudents = $this->atRiskStudents();
@@ -44,6 +45,7 @@ class ProgramChairController extends Controller
                 ->take(5)
                 ->get(),
             'atRiskStudents' => $atRiskStudents,
+            'analytics' => $analytics->dashboardSummary(),
         ]);
     }
 
