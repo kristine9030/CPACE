@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Student;
 use App\Http\Controllers\Controller;
 
 use App\Services\AchievementService;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Student achievements page.
@@ -26,6 +28,11 @@ class AchievementController extends Controller
         $data        = $this->achievements->build($studentId);
         $leaderboard = $this->achievements->leaderboards($studentId);
 
+        // Exam countdown (same source as the Dashboard / Calendar banners).
+        $profile    = DB::table('student_profiles')->where('user_id', $studentId)->first();
+        $examDate   = $profile->exam_target_date ?? null;
+        $daysToExam = $examDate ? max(0, Carbon::today()->diffInDays(Carbon::parse($examDate)->startOfDay(), false)) : null;
+
         return view('student.achievements', [
             'user'         => $user,
             'badges'       => $data['badges'],
@@ -37,6 +44,7 @@ class AchievementController extends Controller
             'activeDays'   => $data['active_days'],
             'streak'       => $data['streak'],
             'leaderboard'  => $leaderboard,
+            'daysToExam'   => $daysToExam,
         ]);
     }
 }
