@@ -143,17 +143,34 @@ class QuizController extends Controller
     public function start(Request $request)
     {
         $data = $request->validate([
-            'subject_id'   => ['required', Rule::exists('subjects', 'id')->where('is_active', true)],
-            'mode'         => 'nullable|string',
-            'count'        => 'required|integer|min:1',
-            'session_type' => 'nullable|string',
+            // A quiz can span one subject (single id) or several (array). The
+            // Calendar's "Start as Exam" still posts a single subject_id; the
+            // Adaptive Quizzes page posts subject_ids[] for a custom mix.
+            'subject_id'    => ['nullable', Rule::exists('subjects', 'id')->where('is_active', true)],
+            'subject_ids'   => ['nullable', 'array'],
+            'subject_ids.*' => [Rule::exists('subjects', 'id')->where('is_active', true)],
+            'mode'          => 'nullable|string',
+            'count'         => 'required|integer|min:1',
+            'session_type'  => 'nullable|string',
             // Optional: focus a Topic-mode quiz on a specific topic (used by
             // the Calendar's "Start as Exam" action on a scheduled review).
-            'topic_id'     => ['nullable', Rule::exists('topics', 'id')->where('is_active', true)],
+            'topic_id'      => ['nullable', Rule::exists('topics', 'id')->where('is_active', true)],
         ], [
             'count.required' => 'Please choose how many questions before starting a quiz.',
             'count.min'      => 'Please choose at least 1 question.',
         ]);
+
+        // Merge the single and array inputs into one unique list of subjects.
+        $subjectIds = collect($data['subject_ids'] ?? [])
+            ->when(! empty($data['subject_id']), fn ($c) => $c->push($data['subject_id']))
+            ->map(fn ($v) => (int) $v)
+            ->filter()
+            ->unique()
+            ->values();
+
+        if ($subjectIds->isEmpty()) {
+            return back()->with('error', 'Please choose at least one subject to start a quiz.');
+        }
 
         $mode        = in_array($data['mode'] ?? null, self::MODES, true) ? $data['mode'] : 'adaptive';
         $sessionType = in_array($data['session_type'] ?? null, ['training', 'testing'], true)
@@ -163,7 +180,10 @@ class QuizController extends Controller
         // How many questions the student wants this sitting (capped to the max).
         $count = max(1, min((int) $data['count'], self::MAX_QUIZ_LENGTH));
 
-        $topicIds = DB::table('topics')->where('subject_id', $data['subject_id'])->where('is_active', true)->pluck('id');
+        // Draw from every chosen subject's active topics. A multi-subject quiz
+        // is a "mixed" session (subject_id = null); a single subject keeps its id.
+        $topicIds = DB::table('topics')->whereIn('subject_id', $subjectIds)->where('is_active', true)->pluck('id');
+        $sessionSubjectId = $subjectIds->count() === 1 ? $subjectIds->first() : null;
 
         // A requested focus topic is honoured only if it belongs to the subject.
         $forceTopicId = isset($data['topic_id']) && $topicIds->contains((int) $data['topic_id'])
@@ -181,7 +201,7 @@ class QuizController extends Controller
             'student_id'      => Auth::id(),
             'session_type'    => $sessionType,
             'mode'            => $mode,
-            'subject_id'      => $data['subject_id'],
+            'subject_id'      => $sessionSubjectId,
             'topic_id'        => $focusTopicId,
             'started_at'      => now(),
             'total_items'     => $questionIds->count(),
