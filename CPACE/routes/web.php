@@ -17,6 +17,8 @@ use App\Http\Controllers\Student\QuizController;
 use App\Http\Controllers\Student\ReviewNoteController;
 use App\Http\Controllers\Student\AiTutorController;
 use App\Http\Controllers\Faculty\TestBankController;
+use App\Http\Controllers\Faculty\MaterialController;
+use App\Http\Controllers\Student\SubjectController;
 use App\Http\Controllers\Chair\CommunicationController;
 use App\Http\Controllers\Chair\AnalyticsController;
 use App\Http\Controllers\NotificationController;
@@ -113,6 +115,11 @@ Route::middleware('auth')->group(function () {
         Route::delete('/test-bank/{id}/variants/{variantId}', [TestBankController::class, 'destroyVariant'])->name('question.variants.destroy');
         Route::post('/test-bank/{id}/variants/suggest', [TestBankController::class, 'suggestVariant'])->name('question.variants.suggest');
         Route::get('/subjects', fn() => view('faculty.subjects'))->name('subjects');
+
+        // Learning Materials (upload PDFs, Word, PPT, links per topic for students)
+        Route::get('/materials', [MaterialController::class, 'index'])->name('materials');
+        Route::post('/materials', [MaterialController::class, 'store'])->name('materials.store');
+        Route::delete('/materials/{material}', [MaterialController::class, 'destroy'])->name('materials.destroy');
         Route::get('/performance', [FacultyPerformanceController::class, 'index'])->name('performance');
         Route::get('/performance/export', [FacultyPerformanceController::class, 'export'])->name('performance.export');
         Route::post('/performance/remind', [FacultyPerformanceController::class, 'sendReminder'])->name('performance.remind');
@@ -120,9 +127,10 @@ Route::middleware('auth')->group(function () {
         Route::get('/reports/export', [FacultyReportController::class, 'export'])->name('reports.export');
     });
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    Route::get('/subjects', function () {
-        return view('student.subjects');
-    })->name('subjects');
+    Route::get('/subjects', [SubjectController::class, 'index'])->name('subjects');
+    Route::get('/subjects/{subject}', [SubjectController::class, 'show'])->name('subjects.show');
+    Route::get('/subjects/{subject}/topics/{topic}', [SubjectController::class, 'topic'])->name('subjects.topic');
+    Route::get('/materials/{material}/download', [SubjectController::class, 'download'])->name('materials.download');
     Route::get('/adaptive-quizzes', [QuizController::class, 'index'])->name('adaptive-quizzes');
 
     // Quiz engine

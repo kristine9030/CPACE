@@ -439,173 +439,41 @@
     <!-- SUBJECTS GRID -->
     <div class="subjects-grid anim" style="animation-delay:0.12s">
 
-        <!-- FAR -->
-        <div class="subject-card">
-            <div class="subject-card-top">
-                <div class="subject-icon-circle si-far">
-                    <i class="fas fa-chart-bar"></i>
+        @forelse($subjects as $subject)
+            @php $color = $subject->color ?: '#7B1D1D'; @endphp
+            <div class="subject-card">
+                <div class="subject-card-top">
+                    <div class="subject-icon-circle" style="background:{{ $color }}1a; color:{{ $color }};">
+                        <i class="fas {{ $subject->icon ?: 'fa-book' }}"></i>
+                    </div>
+                    <div class="subject-info">
+                        <div class="subject-abbr">{{ $subject->code }}</div>
+                        <div class="subject-full">{{ $subject->name }}</div>
+                    </div>
                 </div>
-                <div class="subject-info">
-                    <div class="subject-abbr">FAR</div>
-                    <div class="subject-full">Financial Accounting<br>and Reporting</div>
+                <div class="subject-stats">
+                    <div>
+                        <span class="stat-num">{{ $subject->topic_count }}</span>
+                        <span class="stat-lbl">Topics</span>
+                    </div>
+                    <div>
+                        <span class="stat-num">{{ $subject->question_count }}</span>
+                        <span class="stat-lbl">Questions</span>
+                    </div>
+                    <div>
+                        <span class="stat-num weak">{{ $subject->weak_count }}</span>
+                        <span class="stat-lbl">Weak Topics</span>
+                    </div>
                 </div>
+                <a href="{{ route('subjects.show', $subject->id) }}" class="subject-btn"
+                   style="background:{{ $color }}1a; color:{{ $color }};">Review Subject <i class="fas fa-arrow-right"></i></a>
             </div>
-            <div class="subject-stats">
-                <div>
-                    <span class="stat-num">128</span>
-                    <span class="stat-lbl">Topics</span>
-                </div>
-                <div>
-                    <span class="stat-num">245</span>
-                    <span class="stat-lbl">Questions</span>
-                </div>
-                <div>
-                    <span class="stat-num weak">18</span>
-                    <span class="stat-lbl">Weak Topics</span>
-                </div>
+        @empty
+            <div style="grid-column:1/-1; text-align:center; padding:60px 20px; color:#aaa;">
+                <i class="fas fa-book-open" style="font-size:38px; color:#e5d5d5; display:block; margin-bottom:14px;"></i>
+                No subjects available yet.
             </div>
-            <a href="#" class="subject-btn btn-far">Review Subject <i class="fas fa-arrow-right"></i></a>
-        </div>
-
-        <!-- AUD -->
-        <div class="subject-card">
-            <div class="subject-card-top">
-                <div class="subject-icon-circle si-aud">
-                    <i class="fas fa-search"></i>
-                </div>
-                <div class="subject-info">
-                    <div class="subject-abbr">AUD</div>
-                    <div class="subject-full">Auditing and<br>Attestation</div>
-                </div>
-            </div>
-            <div class="subject-stats">
-                <div>
-                    <span class="stat-num">98</span>
-                    <span class="stat-lbl">Topics</span>
-                </div>
-                <div>
-                    <span class="stat-num">189</span>
-                    <span class="stat-lbl">Questions</span>
-                </div>
-                <div>
-                    <span class="stat-num weak">14</span>
-                    <span class="stat-lbl">Weak Topics</span>
-                </div>
-            </div>
-            <a href="#" class="subject-btn btn-aud">Review Subject <i class="fas fa-arrow-right"></i></a>
-        </div>
-
-        <!-- TAX -->
-        <div class="subject-card">
-            <div class="subject-card-top">
-                <div class="subject-icon-circle si-tax">
-                    <i class="fas fa-table"></i>
-                </div>
-                <div class="subject-info">
-                    <div class="subject-abbr">TAX</div>
-                    <div class="subject-full">Taxation</div>
-                </div>
-            </div>
-            <div class="subject-stats">
-                <div>
-                    <span class="stat-num">87</span>
-                    <span class="stat-lbl">Topics</span>
-                </div>
-                <div>
-                    <span class="stat-num">176</span>
-                    <span class="stat-lbl">Questions</span>
-                </div>
-                <div>
-                    <span class="stat-num weak">12</span>
-                    <span class="stat-lbl">Weak Topics</span>
-                </div>
-            </div>
-            <a href="#" class="subject-btn btn-tax">Review Subject <i class="fas fa-arrow-right"></i></a>
-        </div>
-
-        <!-- MS -->
-        <div class="subject-card">
-            <div class="subject-card-top">
-                <div class="subject-icon-circle si-ms">
-                    <i class="fas fa-users"></i>
-                </div>
-                <div class="subject-info">
-                    <div class="subject-abbr">MS</div>
-                    <div class="subject-full">Management<br>Services</div>
-                </div>
-            </div>
-            <div class="subject-stats">
-                <div>
-                    <span class="stat-num">76</span>
-                    <span class="stat-lbl">Topics</span>
-                </div>
-                <div>
-                    <span class="stat-num">142</span>
-                    <span class="stat-lbl">Questions</span>
-                </div>
-                <div>
-                    <span class="stat-num weak">10</span>
-                    <span class="stat-lbl">Weak Topics</span>
-                </div>
-            </div>
-            <a href="#" class="subject-btn btn-ms">Review Subject <i class="fas fa-arrow-right"></i></a>
-        </div>
-
-        <!-- RFBT -->
-        <div class="subject-card">
-            <div class="subject-card-top">
-                <div class="subject-icon-circle si-rfbt">
-                    <i class="fas fa-balance-scale"></i>
-                </div>
-                <div class="subject-info">
-                    <div class="subject-abbr">RFBT</div>
-                    <div class="subject-full">Regulatory Framework<br>for Business Transactions</div>
-                </div>
-            </div>
-            <div class="subject-stats">
-                <div>
-                    <span class="stat-num">92</span>
-                    <span class="stat-lbl">Topics</span>
-                </div>
-                <div>
-                    <span class="stat-num">168</span>
-                    <span class="stat-lbl">Questions</span>
-                </div>
-                <div>
-                    <span class="stat-num weak">11</span>
-                    <span class="stat-lbl">Weak Topics</span>
-                </div>
-            </div>
-            <a href="#" class="subject-btn btn-rfbt">Review Subject <i class="fas fa-arrow-right"></i></a>
-        </div>
-
-        <!-- AFAR -->
-        <div class="subject-card">
-            <div class="subject-card-top">
-                <div class="subject-icon-circle si-afar">
-                    <i class="fas fa-calendar-alt"></i>
-                </div>
-                <div class="subject-info">
-                    <div class="subject-abbr">AFAR</div>
-                    <div class="subject-full">Advanced Financial<br>Accounting and Reporting</div>
-                </div>
-            </div>
-            <div class="subject-stats">
-                <div>
-                    <span class="stat-num">85</span>
-                    <span class="stat-lbl">Topics</span>
-                </div>
-                <div>
-                    <span class="stat-num">154</span>
-                    <span class="stat-lbl">Questions</span>
-                </div>
-                <div>
-                    <span class="stat-num weak">9</span>
-                    <span class="stat-lbl">Weak Topics</span>
-                </div>
-            </div>
-            <a href="#" class="subject-btn btn-afar">Review Subject <i class="fas fa-arrow-right"></i></a>
-        </div>
+        @endforelse
 
     </div>
 </main>
