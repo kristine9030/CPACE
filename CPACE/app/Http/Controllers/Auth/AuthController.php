@@ -94,9 +94,15 @@ class AuthController extends Controller
             return route('chair.dashboard');
         }
 
-        return $user->isFaculty()
-            ? route('faculty.dashboard')
-            : route('dashboard');
+        if ($user->isFaculty()) {
+            return route('faculty.dashboard');
+        }
+
+        if ($user->isAlumni()) {
+            return route('community.index');
+        }
+
+        return route('dashboard');
     }
 
     // ── Social OAuth ─────────────────────────────────────────────────────────

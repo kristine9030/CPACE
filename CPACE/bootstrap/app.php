@@ -15,6 +15,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'faculty' => \App\Http\Middleware\FacultyMiddleware::class,
             'chair'   => \App\Http\Middleware\ChairMiddleware::class,
+            'alumni'  => \App\Http\Middleware\AlumniMiddleware::class,
             'api.auth' => \App\Http\Middleware\ApiAuthenticate::class,
         ]);
     })

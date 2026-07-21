@@ -276,6 +276,133 @@ class ProgramChairController extends Controller
     }
 
     /**
+     * Alumni account management (Alumni Community posters).
+     */
+    public function alumni()
+    {
+        return view('chair.alumni', [
+            'alumni' => User::where('role_id', Role::ALUMNI)
+                ->with('alumniProfile')
+                ->orderBy('first_name')
+                ->get(),
+        ]);
+    }
+
+    /**
+     * Show the "create alumni account" form.
+     */
+    public function createAlumni()
+    {
+        return view('chair.alumni-form', ['editMode' => false]);
+    }
+
+    /**
+     * Create an alumni login so they can post in the Community feed.
+     */
+    public function storeAlumni(Request $request)
+    {
+        $data = $request->validate([
+            'first_name'   => 'required|string|max:60',
+            'last_name'    => 'required|string|max:60',
+            'email'        => 'required|email|max:120|unique:users,email',
+            'password'     => ['required', 'confirmed', Password::defaults()],
+            'batch_year'   => 'nullable|integer|digits:4|between:1980,2100',
+            'current_job'  => 'nullable|string|max:120',
+            'company'      => 'nullable|string|max:120',
+        ]);
+
+        DB::transaction(function () use ($data) {
+            $user = User::create([
+                'role_id'        => Role::ALUMNI,
+                'first_name'     => $data['first_name'],
+                'last_name'      => $data['last_name'],
+                'email'          => $data['email'],
+                'password'       => Hash::make($data['password']),
+                'is_active'      => true,
+                'email_verified' => true,
+            ]);
+
+            $user->alumniProfile()->create([
+                'batch_year'  => $data['batch_year'] ?? null,
+                'current_job' => $data['current_job'] ?? null,
+                'company'     => $data['company'] ?? null,
+            ]);
+        });
+
+        return redirect()->route('chair.alumni')
+            ->with('status', 'Alumni account created. They can now log in and post to the Community feed.');
+    }
+
+    /**
+     * Show the edit form for an existing alumni account.
+     */
+    public function editAlumni(int $id)
+    {
+        $alumnus = User::where('role_id', Role::ALUMNI)->with('alumniProfile')->findOrFail($id);
+
+        return view('chair.alumni-form', [
+            'editMode' => true,
+            'alumnus'  => $alumnus,
+        ]);
+    }
+
+    /**
+     * Update an alumni account's details, password (optional) and profile.
+     */
+    public function updateAlumni(Request $request, int $id)
+    {
+        $alumnus = User::where('role_id', Role::ALUMNI)->findOrFail($id);
+
+        $data = $request->validate([
+            'first_name'   => 'required|string|max:60',
+            'last_name'    => 'required|string|max:60',
+            'email'        => ['required', 'email', 'max:120', Rule::unique('users', 'email')->ignore($alumnus->id)],
+            'password'     => ['nullable', 'confirmed', Password::defaults()],
+            'batch_year'   => 'nullable|integer|digits:4|between:1980,2100',
+            'current_job'  => 'nullable|string|max:120',
+            'company'      => 'nullable|string|max:120',
+            'is_active'    => 'nullable|boolean',
+        ]);
+
+        DB::transaction(function () use ($alumnus, $data, $request) {
+            $alumnus->update([
+                'first_name' => $data['first_name'],
+                'last_name'  => $data['last_name'],
+                'email'      => $data['email'],
+                'is_active'  => $request->boolean('is_active'),
+            ]);
+
+            if (!empty($data['password'])) {
+                $alumnus->update(['password' => Hash::make($data['password'])]);
+            }
+
+            $alumnus->alumniProfile()->updateOrCreate(
+                ['user_id' => $alumnus->id],
+                [
+                    'batch_year'  => $data['batch_year'] ?? null,
+                    'current_job' => $data['current_job'] ?? null,
+                    'company'     => $data['company'] ?? null,
+                ]
+            );
+        });
+
+        return redirect()->route('chair.alumni')->with('status', 'Alumni account updated.');
+    }
+
+    /**
+     * Activate / deactivate an alumni login without deleting their posts.
+     */
+    public function toggleAlumni(int $id)
+    {
+        $alumnus = User::where('role_id', Role::ALUMNI)->findOrFail($id);
+        $alumnus->update(['is_active' => !$alumnus->is_active]);
+
+        return back()->with('status', $alumnus->is_active
+            ? "{$alumnus->name}'s account is now active."
+            : "{$alumnus->name}'s account has been deactivated.");
+    }
+
+    /**
      * Subject-centric view: which faculty handle each CPALE subject.
      */
     public function subjects()

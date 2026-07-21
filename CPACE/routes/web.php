@@ -22,6 +22,9 @@ use App\Http\Controllers\Student\SubjectController;
 use App\Http\Controllers\Chair\CommunicationController;
 use App\Http\Controllers\Chair\AnalyticsController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\CommunityController;
+use App\Http\Controllers\ChatController;
+use App\Http\Controllers\Alumni\ProfileController as AlumniProfileController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -95,6 +98,14 @@ Route::middleware('auth')->group(function () {
         // Announcements and internal messages
         Route::get('/communications', [CommunicationController::class, 'index'])->name('communications');
         Route::post('/communications', [CommunicationController::class, 'store'])->name('communications.store');
+
+        // Alumni account management (Alumni Community posters)
+        Route::get('/alumni', [ProgramChairController::class, 'alumni'])->name('alumni');
+        Route::get('/alumni/create', [ProgramChairController::class, 'createAlumni'])->name('alumni.create');
+        Route::post('/alumni', [ProgramChairController::class, 'storeAlumni'])->name('alumni.store');
+        Route::get('/alumni/{id}/edit', [ProgramChairController::class, 'editAlumni'])->name('alumni.edit');
+        Route::put('/alumni/{id}', [ProgramChairController::class, 'updateAlumni'])->name('alumni.update');
+        Route::post('/alumni/{id}/toggle', [ProgramChairController::class, 'toggleAlumni'])->name('alumni.toggle');
     });
 
     // Faculty Routes
@@ -126,6 +137,33 @@ Route::middleware('auth')->group(function () {
         Route::get('/reports', [FacultyReportController::class, 'index'])->name('reports');
         Route::get('/reports/export', [FacultyReportController::class, 'export'])->name('reports.export');
     });
+
+    // Alumni Routes
+    Route::prefix('alumni')->name('alumni.')->middleware('alumni')->group(function () {
+        Route::get('/profile', [AlumniProfileController::class, 'edit'])->name('profile');
+        Route::post('/profile', [AlumniProfileController::class, 'update'])->name('profile.update');
+    });
+
+    // Alumni Community — shared "group page" feed for alumni + students
+    Route::get('/community', [CommunityController::class, 'index'])->name('community.index');
+    Route::post('/community/posts', [CommunityController::class, 'store'])->name('community.posts.store');
+    Route::delete('/community/posts/{post}', [CommunityController::class, 'destroy'])->name('community.posts.destroy');
+    Route::post('/community/posts/{post}/like', [CommunityController::class, 'toggleLike'])->name('community.posts.like');
+    Route::post('/community/posts/{post}/comments', [CommunityController::class, 'storeComment'])->name('community.comments.store');
+    Route::delete('/community/comments/{comment}', [CommunityController::class, 'destroyComment'])->name('community.comments.destroy');
+    Route::get('/community/attachments/{attachment}/download', [CommunityController::class, 'download'])->name('community.attachments.download');
+
+    // Messenger-style chat — the default community GC, alumni-created group chats, and DMs
+    Route::get('/messages', [ChatController::class, 'index'])->name('messages.index');
+    Route::get('/messages/{conversation}', [ChatController::class, 'show'])->name('messages.show');
+    Route::post('/messages/{conversation}', [ChatController::class, 'send'])->name('messages.send');
+    Route::get('/messages/{conversation}/poll', [ChatController::class, 'poll'])->name('messages.poll');
+    Route::post('/messages/start/direct', [ChatController::class, 'startDirect'])->name('messages.start');
+    Route::post('/messages/start/group', [ChatController::class, 'createGroup'])->name('messages.group.create');
+    Route::post('/messages/{conversation}/members', [ChatController::class, 'addMembers'])->name('messages.members.add');
+    Route::put('/messages/{conversation}/rename', [ChatController::class, 'rename'])->name('messages.rename');
+    Route::post('/messages/{conversation}/leave', [ChatController::class, 'leave'])->name('messages.leave');
+
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/subjects', [SubjectController::class, 'index'])->name('subjects');
     Route::get('/subjects/{subject}', [SubjectController::class, 'show'])->name('subjects.show');
