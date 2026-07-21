@@ -15,6 +15,19 @@ class User extends Authenticatable
     use HasFactory, Notifiable;
 
     /**
+     * Every student and alumnus is automatically dropped into the single
+     * default "CPACE Community" group chat as soon as their account exists.
+     */
+    protected static function booted(): void
+    {
+        static::created(function (User $user) {
+            if ($user->isStudent() || $user->isAlumni()) {
+                Conversation::defaultGroup()->addParticipant($user);
+            }
+        });
+    }
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var list<string>
@@ -81,6 +94,31 @@ class User extends Authenticatable
     }
 
     /**
+     * The alumnus's profile (batch year, current job).
+     */
+    public function alumniProfile()
+    {
+        return $this->hasOne(AlumniProfile::class);
+    }
+
+    /**
+     * Posts this alumnus has published to the Alumni Community feed.
+     */
+    public function communityPosts()
+    {
+        return $this->hasMany(CommunityPost::class, 'author_id');
+    }
+
+    /**
+     * Direct messages and group chats this user is a participant of.
+     */
+    public function conversations()
+    {
+        return $this->belongsToMany(Conversation::class, 'conversation_participants')
+            ->withPivot('joined_at', 'last_read_at');
+    }
+
+    /**
      * CPALE subjects assigned to this faculty member by the Program Chair.
      */
     public function assignedSubjects()
@@ -133,5 +171,10 @@ class User extends Authenticatable
     public function isChair(): bool
     {
         return $this->role_id === Role::ADMIN;
+    }
+
+    public function isAlumni(): bool
+    {
+        return $this->role_id === Role::ALUMNI;
     }
 }

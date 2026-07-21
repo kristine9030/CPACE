@@ -26,6 +26,8 @@
     @include('partials.chair-sidebar', ['active' => 'notifications'])
 @elseif(Auth::user()->isFaculty())
     @include('partials.faculty-sidebar', ['active' => 'notifications'])
+@elseif(Auth::user()->isAlumni())
+    @include('partials.alumni-sidebar', ['active' => 'notifications'])
 @else
     @include('partials.sidebar', ['active' => 'notifications'])
     @include('partials.student-bottom-nav', ['active' => 'more'])

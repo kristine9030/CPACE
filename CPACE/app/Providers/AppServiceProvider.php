@@ -29,6 +29,7 @@ class AppServiceProvider extends ServiceProvider
             'partials.student-bottom-nav',
             'partials.faculty-sidebar',
             'partials.chair-sidebar',
+            'partials.alumni-sidebar',
             'partials.topbar-actions',
         ], function ($view) {
             $view->with('unreadNotifications', Auth::check()
