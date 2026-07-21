@@ -9,7 +9,7 @@ class CommunityPost extends Model
     // Pre-existing table (seeded via cpace_database.sql) — the Alumni
     // Community "group page" feed lives here.
     protected $fillable = [
-        'author_id', 'subject_id', 'title', 'body', 'post_type', 'is_pinned',
+        'author_id', 'subject_id', 'title', 'body', 'post_type', 'is_pinned', 'resource_id',
     ];
 
     protected $casts = [
@@ -29,6 +29,12 @@ class CommunityPost extends Model
     public function attachments()
     {
         return $this->hasMany(CommunityPostAttachment::class);
+    }
+
+    /** An optional Resource Library upload this post announces/references. */
+    public function resource()
+    {
+        return $this->belongsTo(CommunityResource::class, 'resource_id');
     }
 
     public function likes()

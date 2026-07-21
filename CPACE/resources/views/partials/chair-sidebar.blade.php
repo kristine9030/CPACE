@@ -352,6 +352,7 @@
         <li><a href="{{ route('chair.alumni') }}" class="{{ $active === 'alumni' ? 'active' : '' }}"><i class="fas fa-user-tie"></i><span>Alumni Accounts</span></a></li>
         <li><a href="{{ route('chair.communications') }}" class="{{ $active === 'communications' ? 'active' : '' }}"><i class="fas fa-bullhorn"></i><span>Communications</span></a></li>
         <li><a href="{{ route('community.index') }}" class="{{ $active === 'community' ? 'active' : '' }}"><i class="fas fa-people-group"></i><span>Alumni Community</span></a></li>
+        <li><a href="{{ route('community.resources.index') }}" class="{{ $active === 'resources' ? 'active' : '' }}"><i class="fas fa-book"></i><span>Resource Library</span></a></li>
         <li><a href="{{ route('messages.index') }}" class="{{ $active === 'messages' ? 'active' : '' }}"><i class="fas fa-comment-dots"></i><span>Messages</span></a></li>
         <li><a href="{{ route('notifications.index') }}" class="{{ $active === 'notifications' ? 'active' : '' }}"><i class="fas fa-bell"></i><span>Notifications{{ $unreadNotifications ? ' ('.$unreadNotifications.')' : '' }}</span></a></li>
         <li><a href="{{ route('chair.faculty.create') }}"><i class="fas fa-user-plus"></i><span>Add Faculty</span></a></li>

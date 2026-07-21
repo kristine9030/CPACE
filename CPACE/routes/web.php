@@ -23,6 +23,7 @@ use App\Http\Controllers\Chair\CommunicationController;
 use App\Http\Controllers\Chair\AnalyticsController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\CommunityController;
+use App\Http\Controllers\CommunityResourceController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\Alumni\ProfileController as AlumniProfileController;
 
@@ -152,6 +153,12 @@ Route::middleware('auth')->group(function () {
     Route::post('/community/posts/{post}/comments', [CommunityController::class, 'storeComment'])->name('community.comments.store');
     Route::delete('/community/comments/{comment}', [CommunityController::class, 'destroyComment'])->name('community.comments.destroy');
     Route::get('/community/attachments/{attachment}/download', [CommunityController::class, 'download'])->name('community.attachments.download');
+
+    // Resource Library — persistent, filterable study materials, decoupled from the feed
+    Route::get('/community/resources', [CommunityResourceController::class, 'index'])->name('community.resources.index');
+    Route::post('/community/resources', [CommunityResourceController::class, 'store'])->name('community.resources.store');
+    Route::get('/community/resources/{resource}/download', [CommunityResourceController::class, 'download'])->name('community.resources.download');
+    Route::delete('/community/resources/{resource}', [CommunityResourceController::class, 'destroy'])->name('community.resources.destroy');
 
     // Messenger-style chat — the default community GC, alumni-created group chats, and DMs
     Route::get('/messages', [ChatController::class, 'index'])->name('messages.index');

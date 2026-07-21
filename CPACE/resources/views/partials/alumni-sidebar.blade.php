@@ -1,7 +1,7 @@
 {{--
     Alumni portal sidebar + shared sidebar CSS for all alumni pages.
     Usage: @include('partials.alumni-sidebar', ['active' => 'community'])
-    Valid $active keys: community, profile, notifications
+    Valid $active keys: community, resources, profile, notifications
 --}}
 @php $active = $active ?? ''; @endphp
 
@@ -199,6 +199,7 @@
     <ul class="sidebar-nav">
         <li class="nav-label">Community</li>
         <li><a href="{{ route('community.index') }}" class="{{ $active === 'community' ? 'active' : '' }}"><i class="fas fa-people-group"></i><span>Community Feed</span></a></li>
+        <li><a href="{{ route('community.resources.index') }}" class="{{ $active === 'resources' ? 'active' : '' }}"><i class="fas fa-book"></i><span>Resource Library</span></a></li>
         <li><a href="{{ route('messages.index') }}" class="{{ $active === 'messages' ? 'active' : '' }}"><i class="fas fa-comment-dots"></i><span>Messages</span></a></li>
 
         <li class="nav-label">Account</li>

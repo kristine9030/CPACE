@@ -180,6 +180,18 @@
                                accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.csv,.txt,.rtf,.odt,.jpg,.jpeg,.png,.gif,.webp,.zip,.rar">
                     </div>
 
+                    @if($myResources->isNotEmpty())
+                        <div class="field">
+                            <label>...or link an existing material <span style="color:#bbb;font-weight:400;">(from your Resource Library uploads, optional)</span></label>
+                            <select name="resource_id" id="resourceSelect" style="width:100%; font-family:'Poppins',sans-serif; font-size:13px; color:#333; border:1px solid #e2e2e2; border-radius:9px; padding:10px 12px; outline:none; background:#fff;">
+                                <option value="">— None —</option>
+                                @foreach($myResources as $r)
+                                    <option value="{{ $r->id }}" {{ (string) old('resource_id') === (string) $r->id ? 'selected' : '' }}>{{ $r->title }} ({{ $r->original_name }})</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    @endif
+
                     <div class="composer-foot">
                         <button type="submit" class="btn-primary"><i class="fas fa-paper-plane"></i> Share</button>
                     </div>
@@ -245,6 +257,18 @@
                         <i class="fas fa-download" style="color:#bbb;"></i>
                     </a>
                 @endforeach
+
+                @if($post->resource)
+                    @php $rmeta = $post->resource->iconMeta(); @endphp
+                    <a class="attachment" href="{{ route('community.resources.download', $post->resource->id) }}" style="border-color:var(--primary-light);">
+                        <div class="att-icon" style="background:{{ $rmeta['color'] }};"><i class="fas {{ $rmeta['icon'] }}"></i></div>
+                        <div class="att-info">
+                            <div class="att-title">{{ $post->resource->title }} <span class="role-badge" style="margin-left:4px;"><i class="fas fa-book" style="margin-right:3px;"></i>Library</span></div>
+                            <div class="att-meta">{{ strtoupper($post->resource->file_category) }} · {{ $post->resource->humanSize() }} · {{ $post->resource->downloads_count }} downloads</div>
+                        </div>
+                        <i class="fas fa-download" style="color:#bbb;"></i>
+                    </a>
+                @endif
 
                 <div class="post-actions">
                     <form method="POST" action="{{ route('community.posts.like', $post->id) }}">
@@ -317,6 +341,19 @@
             fileLabel.innerHTML = this.files.length
                 ? '<span class="fname">' + this.files[0].name + '</span>'
                 : 'Click to attach a material';
+            // A post carries either a fresh attachment or a linked library
+            // material, never both — picking one clears the other.
+            if (this.files.length && resourceSelect) resourceSelect.value = '';
+        });
+    }
+
+    const resourceSelect = document.getElementById('resourceSelect');
+    if (resourceSelect) {
+        resourceSelect.addEventListener('change', function () {
+            if (this.value && fileInput) {
+                fileInput.value = '';
+                fileLabel.textContent = 'Click to attach a material';
+            }
         });
     }
 })();

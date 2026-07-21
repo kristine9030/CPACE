@@ -6,6 +6,7 @@ use App\Models\CommunityPost;
 use App\Models\CommunityPostAttachment;
 use App\Models\CommunityPostLike;
 use App\Models\CommunityReply;
+use App\Models\CommunityResource;
 use App\Models\Material;
 use App\Models\Role;
 use App\Models\Subject;
@@ -29,7 +30,7 @@ class CommunityController extends Controller
     {
         $user = Auth::user();
 
-        $posts = CommunityPost::with(['author.alumniProfile', 'subject', 'attachments', 'likes', 'replies.author'])
+        $posts = CommunityPost::with(['author.alumniProfile', 'subject', 'attachments', 'resource', 'likes', 'replies.author'])
             ->orderByDesc('is_pinned')
             ->orderByDesc('created_at')
             ->paginate(10);
@@ -39,10 +40,17 @@ class CommunityController extends Controller
             ->where('is_read', false)
             ->count();
 
+        // Materials the current user can pick from when linking an existing
+        // upload to a new post, instead of re-attaching the same file.
+        $myResources = ($user->isAlumni() || $user->isChair())
+            ? CommunityResource::where('uploader_id', $user->id)->orderByDesc('created_at')->get(['id', 'title', 'original_name'])
+            : collect();
+
         return view('community.index', [
             'posts' => $posts,
             'subjects' => Subject::where('is_active', true)->orderBy('code')->get(),
             'unreadNotifications' => $unreadNotifications,
+            'myResources' => $myResources,
         ]);
     }
 
@@ -56,19 +64,24 @@ class CommunityController extends Controller
         abort_unless($user->isAlumni() || $user->isChair(), 403, 'Only alumni can post to the community.');
 
         $data = $request->validate([
-            'post_type'  => ['required', 'in:discussion,tip'],
-            'body'       => ['required', 'string', 'max:3000'],
-            'title'      => ['nullable', 'string', 'max:200'],
-            'subject_id' => ['nullable', 'integer', 'exists:subjects,id'],
-            'file'       => ['nullable', 'file', 'mimes:' . self::ALLOWED_EXTENSIONS, 'max:20480'],
+            'post_type'   => ['required', 'in:discussion,tip'],
+            'body'        => ['required', 'string', 'max:3000'],
+            'title'       => ['nullable', 'string', 'max:200'],
+            'subject_id'  => ['nullable', 'integer', 'exists:subjects,id'],
+            'file'        => ['nullable', 'file', 'mimes:' . self::ALLOWED_EXTENSIONS, 'max:20480'],
+            // A post can either attach a fresh file OR link an existing Resource
+            // Library upload — never both (enforced below), so the library isn't
+            // duplicated as a raw attachment.
+            'resource_id' => ['nullable', 'integer', 'exists:community_resources,id'],
         ]);
 
         $post = CommunityPost::create([
-            'author_id'  => $user->id,
-            'subject_id' => $data['subject_id'] ?? null,
-            'title'      => $data['title'] ?? null,
-            'body'       => $data['body'],
-            'post_type'  => $data['post_type'],
+            'author_id'   => $user->id,
+            'subject_id'  => $data['subject_id'] ?? null,
+            'title'       => $data['title'] ?? null,
+            'body'        => $data['body'],
+            'post_type'   => $data['post_type'],
+            'resource_id' => $request->hasFile('file') ? null : ($data['resource_id'] ?? null),
         ]);
 
         if ($request->hasFile('file')) {
