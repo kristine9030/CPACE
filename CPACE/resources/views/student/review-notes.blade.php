@@ -674,7 +674,8 @@
                         <input type="text" id="globalSearch" placeholder="Search notes, topics, or subjects..." autocomplete="off">
                     </div>
                     <a href="{{ route('calendar') }}" class="icon-btn" title="Calendar"><i class="far fa-calendar"></i></a>
-                    <button class="icon-btn" title="Notifications"><i class="far fa-bell"></i></button>
+                    <a href="{{ route('messages.index') }}" class="icon-btn" title="Messages" aria-label="Messages" style="position:relative;"><i class="far fa-comment-dots"></i>@if($unreadMessages > 0)<span style="position:absolute;top:-4px;right:-4px;min-width:16px;height:16px;padding:0 4px;background:#c0392b;color:#fff;border-radius:8px;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;">{{ $unreadMessages > 9 ? '9+' : $unreadMessages }}</span>@endif</a>
+                    <a href="{{ route('notifications.index') }}" class="icon-btn" title="Notifications" aria-label="Notifications" style="position:relative;"><i class="far fa-bell"></i>@if($unreadNotifications > 0)<span style="position:absolute;top:-4px;right:-4px;min-width:16px;height:16px;padding:0 4px;background:#c0392b;color:#fff;border-radius:8px;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;">{{ $unreadNotifications > 9 ? '9+' : $unreadNotifications }}</span>@endif</a>
                     <div style="position: relative;">
                         <button class="profile-btn" id="profileBtn">@include('partials.avatar-content')</button>
                         <div class="dropdown-menu" id="profileDropdown">

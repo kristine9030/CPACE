@@ -1179,7 +1179,13 @@
                         <i class="fas fa-search"></i>
                         <input type="text" placeholder="Search topics, quizzes, subjects...">
                     </div>
-                    <button class="notif-btn" onclick="window.location.href='{{ route('notifications.index') }}'">
+                    <button class="notif-btn" onclick="window.location.href='{{ route('messages.index') }}'" title="Messages" aria-label="Messages">
+                        <i class="fas fa-comment-dots"></i>
+                        @if($unreadMessages > 0)
+                            <span class="notification-badge">{{ $unreadMessages > 9 ? '9+' : $unreadMessages }}</span>
+                        @endif
+                    </button>
+                    <button class="notif-btn" onclick="window.location.href='{{ route('notifications.index') }}'" title="Notifications" aria-label="Notifications">
                         <i class="fas fa-bell"></i>
                         @if($unreadNotifications > 0)
                             <span class="notification-badge">{{ $unreadNotifications > 9 ? '9+' : $unreadNotifications }}</span>

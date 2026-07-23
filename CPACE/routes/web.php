@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Student\AchievementController;
 use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\Auth\AccountSetupController;
 use App\Http\Controllers\Student\CalendarController;
 use App\Http\Controllers\Student\DashboardController;
 use App\Http\Controllers\Faculty\FacultyDashboardController;
@@ -14,6 +15,7 @@ use App\Http\Controllers\Chair\SubjectManagementController;
 use App\Http\Controllers\Chair\StudentManagementController;
 use App\Http\Controllers\Student\PerformanceController;
 use App\Http\Controllers\Student\QuizController;
+use App\Http\Controllers\Student\MockExamController;
 use App\Http\Controllers\Student\ReviewNoteController;
 use App\Http\Controllers\Student\AiTutorController;
 use App\Http\Controllers\Faculty\TestBankController;
@@ -49,6 +51,12 @@ Route::middleware('guest')->group(function () {
 
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+    // First-login onboarding flow (change one-time password + build study plan)
+    Route::get('/account-setup', [AccountSetupController::class, 'show'])->name('account-setup');
+    Route::post('/account-setup', [AccountSetupController::class, 'store'])->name('account-setup.store');
+    Route::get('/welcome-setup', [AccountSetupController::class, 'welcome'])->name('onboarding.welcome');
+
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::post('/notifications/read-all', [NotificationController::class, 'readAll'])->name('notifications.read-all');
     Route::post('/notifications/{id}/read', [NotificationController::class, 'read'])->name('notifications.read');
@@ -67,6 +75,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/students', [StudentManagementController::class, 'index'])->name('students');
         Route::get('/students/create', [StudentManagementController::class, 'create'])->name('students.create');
         Route::post('/students', [StudentManagementController::class, 'store'])->name('students.store');
+        // Bulk-enrollment UI (upload class list → auto-provision GSuite accounts)
+        Route::get('/students/import', fn () => view('chair.students-import'))->name('students.import.form');
         Route::post('/students/import', [StudentManagementController::class, 'import'])->name('students.import');
         Route::get('/students/import-template', [StudentManagementController::class, 'template'])->name('students.template');
         Route::get('/students/export/csv', [StudentManagementController::class, 'exportCsv'])->name('students.export.csv');
@@ -185,12 +195,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/quiz/{session}/take', [QuizController::class, 'take'])->name('quiz.take');
     Route::post('/quiz/{session}/submit', [QuizController::class, 'submit'])->name('quiz.submit');
     Route::get('/quiz/{session}/results', [QuizController::class, 'results'])->name('quiz.results');
-    Route::get('/mock-exams', function () {
-        return view('student.mock-exams');
-    })->name('mock-exams');
-    Route::get('/mock-exams/simulation', function () {
-        return view('student.mock-exam-simulation');
-    })->name('mock-exams.simulation');
+    // Mock exams are locked until faculty hands out the access code.
+    Route::get('/mock-exams', [MockExamController::class, 'index'])->name('mock-exams');
+    Route::post('/mock-exams/unlock', [MockExamController::class, 'unlock'])->name('mock-exams.unlock');
+    Route::get('/mock-exams/simulation', [MockExamController::class, 'simulation'])->name('mock-exams.simulation');
     Route::get('/performance', [PerformanceController::class, 'index'])->name('performance');
     // Review Notes (personal study notes, real CRUD backed by the database)
     Route::get('/review-notes', [ReviewNoteController::class, 'index'])->name('review-notes');

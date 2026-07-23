@@ -44,6 +44,7 @@
         /* SIDEBAR */
         .sidebar {
             background: #7B1D1D;
+            background: linear-gradient(180deg, #a12626 0%, #7B1D1D 34%, #3d0c0c 74%, #1a0a0a 100%);
             color: white;
             padding: 30px 0;
             position: fixed;
@@ -1003,9 +1004,13 @@
                         <input type="text" placeholder="Search topics, questions...">
                     </div>
                     <div class="header-icons">
-                        <button class="icon-btn">
+                        <button class="icon-btn" onclick="window.location.href='{{ route('messages.index') }}'" title="Messages" aria-label="Messages">
+                            <i class="fas fa-comment-dots"></i>
+                            @if($unreadMessages > 0)<span class="notification-badge">{{ $unreadMessages > 9 ? '9+' : $unreadMessages }}</span>@endif
+                        </button>
+                        <button class="icon-btn" onclick="window.location.href='{{ route('notifications.index') }}'" title="Notifications" aria-label="Notifications">
                             <i class="fas fa-bell"></i>
-                            <span class="notification-badge">1</span>
+                            @if($unreadNotifications > 0)<span class="notification-badge">{{ $unreadNotifications > 9 ? '9+' : $unreadNotifications }}</span>@endif
                         </button>
                         <div class="header-dropdown-wrap">
                             <button class="profile-btn" id="profileBtn">@include('partials.avatar-content')</button>

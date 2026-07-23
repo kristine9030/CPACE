@@ -42,6 +42,7 @@ class User extends Authenticatable
         'is_active',
         'email_verified',
         'last_login_at',
+        'setup_completed_at',
     ];
 
     /**
@@ -65,6 +66,7 @@ class User extends Authenticatable
             'is_active' => 'boolean',
             'email_verified' => 'boolean',
             'last_login_at' => 'datetime',
+            'setup_completed_at' => 'datetime',
             'password' => 'hashed',
         ];
     }
@@ -176,5 +178,15 @@ class User extends Authenticatable
     public function isAlumni(): bool
     {
         return $this->role_id === Role::ALUMNI;
+    }
+
+    /**
+     * A freshly-imported student must run the first-login Account Setup
+     * (change the one-time password, confirm details, build a study plan)
+     * before the rest of the app opens up.
+     */
+    public function needsSetup(): bool
+    {
+        return $this->isStudent() && $this->setup_completed_at === null;
     }
 }

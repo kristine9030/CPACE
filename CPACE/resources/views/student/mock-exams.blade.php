@@ -34,6 +34,7 @@
         /* SIDEBAR */
         .sidebar {
             background: #7B1D1D;
+            background: linear-gradient(180deg, #a12626 0%, #7B1D1D 34%, #3d0c0c 74%, #1a0a0a 100%);
             color: white;
             padding: 30px 0;
             position: fixed;
@@ -883,6 +884,150 @@
             .btn-primary { width: 100%; justify-content: center; }
             .tabs { gap: 14px; overflow-x: auto; white-space: nowrap; padding-bottom: 2px; }
         }
+
+        /* ─── MOCK EXAM AREA ─── */
+        .mock-area { position: relative; }
+        .mock-flash {
+            display: flex; align-items: center; gap: 9px;
+            background: #e6f7ee; color: #1c8f52; border: 1px solid #b8e6cd;
+            border-radius: 10px; padding: 11px 16px; font-size: 13px; font-weight: 500;
+            margin-bottom: 18px;
+        }
+
+        /* ─── DRAMATIC DARK LOCK ─── */
+        .mock-lock {
+            position: absolute; inset: 0; z-index: 30;
+            display: flex; align-items: flex-start; justify-content: center;
+            padding: 44px 24px;
+            background: rgba(10, 4, 4, 0.66);
+            backdrop-filter: blur(9px); -webkit-backdrop-filter: blur(9px);
+            border-radius: 16px;
+        }
+        .lock-card {
+            position: relative; overflow: hidden;
+            width: 100%; max-width: 500px;
+            padding: 46px 44px 34px;
+            text-align: center; color: #333;
+            background: #fff;
+            border: 1px solid #eee;
+            border-radius: 22px;
+            box-shadow: 0 30px 80px rgba(0,0,0,0.35);
+        }
+        .lock-shapes span { position: absolute; pointer-events: none; z-index: 0; }
+        .lock-shapes span:nth-child(1) { top: 22px; left: 22px; width: 58px; height: 58px; border: 1.5px solid rgba(123,29,29,0.07); border-radius: 16px; transform: rotate(24deg); }
+        .lock-shapes span:nth-child(2) { bottom: 22px; right: 24px; width: 70px; height: 70px; border: 1.5px solid rgba(192,57,43,0.07); border-radius: 50%; }
+
+        .lock-badge {
+            position: relative; z-index: 1;
+            width: 90px; height: 90px; margin: 0 auto 22px;
+            border-radius: 24px;
+            background: linear-gradient(135deg, #e04a3a, #7B1D1D);
+            color: #fff; font-size: 36px;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 14px 30px rgba(192,57,43,0.32);
+        }
+        .lock-kicker { position: relative; z-index: 1; font-size: 11px; font-weight: 700; letter-spacing: 2.5px; text-transform: uppercase; color: #c0392b; margin-bottom: 10px; }
+        .lock-card h2 { position: relative; z-index: 1; font-size: 25px; font-weight: 800; color: #2d2d2d; margin-bottom: 12px; letter-spacing: 0.3px; }
+        .lock-card p { position: relative; z-index: 1; font-size: 13.5px; color: #666; line-height: 1.7; margin-bottom: 24px; }
+        .lock-card p strong { color: #c0392b; font-weight: 600; }
+        .lock-error {
+            position: relative; z-index: 1;
+            background: #fdecec; color: #c0392b; border: 1px solid #f5c6c6;
+            border-radius: 10px; padding: 10px 14px; font-size: 13px; margin-bottom: 18px;
+            display: flex; align-items: center; gap: 8px; justify-content: center;
+        }
+        .lock-form { position: relative; z-index: 1; }
+        .lock-label { display: block; font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #999; margin-bottom: 10px; }
+        .lock-inputrow { display: flex; gap: 10px; }
+        .lock-inputrow input {
+            flex: 1; min-width: 0;
+            padding: 14px 16px; border-radius: 12px;
+            background: #faf9f9; border: 1.5px solid #ddd;
+            color: #333; font-size: 18px; font-family: inherit; letter-spacing: 5px; text-align: center; text-transform: uppercase;
+            outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .lock-inputrow input::placeholder { color: #bbb; letter-spacing: 2px; }
+        .lock-inputrow input:focus { border-color: #c0392b; box-shadow: 0 0 0 3px rgba(192,57,43,0.12); }
+        .lock-inputrow button {
+            background: linear-gradient(135deg, #e04a3a, #7B1D1D); color: #fff; border: none;
+            padding: 14px 22px; border-radius: 12px; font-size: 14px; font-weight: 700; cursor: pointer;
+            display: inline-flex; align-items: center; gap: 8px; white-space: nowrap;
+            transition: filter 0.2s, transform 0.2s;
+        }
+        .lock-inputrow button:hover { filter: brightness(1.06); transform: translateY(-1px); }
+        .lock-hint { position: relative; z-index: 1; font-size: 12px; color: #999; margin-top: 18px; display: flex; align-items: center; gap: 6px; justify-content: center; }
+
+        /* ─── COMPREHENSIVE PRE-BOARD EXAM ─── */
+        .pb-hero {
+            position: relative; overflow: hidden;
+            border-radius: 20px; padding: 40px 44px; margin-bottom: 20px;
+            background: linear-gradient(125deg, #7B1D1D 0%, #4a1212 46%, #190808 100%);
+            color: #fff; box-shadow: 0 18px 44px rgba(58,16,16,0.42);
+        }
+        .pb-hero-shapes span { position: absolute; pointer-events: none; z-index: 0; }
+        .pb-hero-shapes span:nth-child(1) { top: -40px; right: 8%; width: 150px; height: 150px; border: 2px solid rgba(255,255,255,0.05); border-radius: 40px; transform: rotate(30deg); }
+        .pb-hero-shapes span:nth-child(2) { bottom: -54px; right: 24%; width: 130px; height: 130px; border: 2px solid rgba(255,215,106,0.08); border-radius: 50%; }
+        .pb-hero-shapes span:nth-child(3) { top: 30px; right: 3%; width: 60px; height: 60px; background: rgba(192,57,43,0.28); border-radius: 16px; transform: rotate(20deg); }
+        .pb-hero-body { position: relative; z-index: 1; max-width: 660px; }
+        .pb-badge {
+            display: inline-flex; align-items: center; gap: 8px;
+            font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+            color: #ffca6a; background: rgba(255,202,106,0.12); border: 1px solid rgba(255,202,106,0.28);
+            padding: 6px 14px; border-radius: 20px; margin-bottom: 16px;
+        }
+        .pb-title { font-size: 34px; font-weight: 800; line-height: 1.12; margin-bottom: 12px; }
+        .pb-sub { font-size: 14px; color: rgba(255,255,255,0.74); line-height: 1.65; margin-bottom: 20px; }
+        .pb-meta { display: flex; flex-wrap: wrap; gap: 22px; margin-bottom: 26px; }
+        .pb-meta span { display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; color: rgba(255,255,255,0.82); font-weight: 500; }
+        .pb-meta span i { color: #ffca6a; }
+        .pb-start {
+            display: inline-flex; align-items: center; gap: 10px;
+            background: #fff; color: #7B1D1D; text-decoration: none;
+            padding: 14px 28px; border-radius: 12px; font-size: 15px; font-weight: 700;
+            box-shadow: 0 10px 24px rgba(0,0,0,0.28);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .pb-start:hover { transform: translateY(-2px); box-shadow: 0 14px 30px rgba(0,0,0,0.34); }
+
+        .pb-specs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px; }
+        .pb-spec {
+            background: #fff; border: 1px solid #eef0f2; border-radius: 16px;
+            padding: 20px 22px; display: flex; align-items: center; gap: 14px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+        }
+        .pb-spec-ic {
+            width: 48px; height: 48px; border-radius: 12px; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px; color: #c0392b; background: linear-gradient(135deg, #fdecec, #f7d3d3);
+        }
+        .pb-spec-num { font-size: 24px; font-weight: 800; color: #2d2d2d; line-height: 1; }
+        .pb-spec-lbl { font-size: 11.5px; color: #888; margin-top: 4px; font-weight: 500; }
+
+        .pb-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 18px; margin-bottom: 20px; }
+        .pb-card { background: #fff; border: 1px solid #eef0f2; border-radius: 18px; padding: 26px; box-shadow: 0 2px 10px rgba(0,0,0,0.04); }
+        .pb-card-h { font-size: 16px; font-weight: 700; color: #2d2d2d; margin-bottom: 18px; display: flex; align-items: center; gap: 10px; }
+        .pb-card-h i { color: #c0392b; }
+        .pb-subjects { list-style: none; margin: 0; padding: 0; }
+        .pb-subjects li { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f4f4f4; }
+        .pb-subjects li:last-child { border-bottom: none; }
+        .pb-scode { width: 54px; flex-shrink: 0; text-align: center; font-size: 11px; font-weight: 700; color: #fff; padding: 6px 0; border-radius: 7px; background: linear-gradient(135deg, #c0392b, #7B1D1D); letter-spacing: 0.5px; }
+        .pb-sname { flex: 1; font-size: 13.5px; color: #333; }
+        .pb-sitems { font-size: 12px; color: #888; font-weight: 600; }
+        .pb-rules { margin: 0; padding-left: 20px; }
+        .pb-rules li { font-size: 13px; color: #555; line-height: 1.6; margin-bottom: 12px; padding-left: 4px; }
+        .pb-rules li:last-child { margin-bottom: 0; }
+        .pb-rules li::marker { color: #c0392b; font-weight: 700; }
+
+        @media (max-width: 1000px) {
+            .pb-specs { grid-template-columns: repeat(2, 1fr); }
+            .pb-grid { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 560px) {
+            .lock-inputrow { flex-direction: column; }
+            .lock-inputrow button { justify-content: center; }
+            .pb-title { font-size: 26px; }
+            .pb-hero { padding: 28px 22px; }
+        }
     </style>
 </head>
 <body>
@@ -908,9 +1053,13 @@
                         <input type="text" placeholder="Search topics, questions, subjects...">
                     </div>
                     <div class="header-icons">
-                        <button class="icon-btn">
+                        <button class="icon-btn" onclick="window.location.href='{{ route('messages.index') }}'" title="Messages" aria-label="Messages">
+                            <i class="fas fa-comment-dots"></i>
+                            @if($unreadMessages > 0)<span class="notification-badge">{{ $unreadMessages > 9 ? '9+' : $unreadMessages }}</span>@endif
+                        </button>
+                        <button class="icon-btn" onclick="window.location.href='{{ route('notifications.index') }}'" title="Notifications" aria-label="Notifications">
                             <i class="fas fa-bell"></i>
-                            <span class="notification-badge">3</span>
+                            @if($unreadNotifications > 0)<span class="notification-badge">{{ $unreadNotifications > 9 ? '9+' : $unreadNotifications }}</span>@endif
                         </button>
                         <div class="header-dropdown-wrap">
                             <button class="profile-btn" id="profileBtn">@include('partials.avatar-content')</button>
@@ -928,244 +1077,101 @@
                 </div>
             </div>
 
-            <!-- STATS CARDS -->
-            <div class="stats-row">
-                <div class="stat-card">
-                    <div class="stat-card-icon" style="background: #fde8e8; color: #c0392b;"><i class="fas fa-clipboard-list"></i></div>
-                    <div>
-                        <div class="stat-card-label">Overall Average Score</div>
-                        <div class="stat-card-value">68%</div>
-                        <div class="stat-card-sub">Across 4 exams</div>
-                        <div class="stat-card-sub green" style="margin-top: 4px;"><i class="fas fa-arrow-up"></i> 8% <span class="muted">vs last 7 days</span></div>
+            @if(session('status'))
+                <div class="mock-flash"><i class="fas fa-circle-check"></i> {{ session('status') }}</div>
+            @endif
+
+            <div class="mock-area">
+
+            @unless($mockUnlocked)
+                <!-- LOCK OVERLAY: proctored, faculty-administered exam -->
+                <div class="mock-lock">
+                    <div class="lock-card">
+                        <div class="lock-shapes"><span></span><span></span></div>
+                        <div class="lock-badge"><i class="fas fa-lock"></i></div>
+                        <div class="lock-kicker">Comprehensive Pre-Board Examination</div>
+                        <h2>This Examination is Locked</h2>
+                        <p>This is a <strong>proctored, faculty-administered</strong> exam. It unlocks only when your proctor starts the session and provides the access code.</p>
+
+                        @if($errors->has('access_code'))
+                            <div class="lock-error"><i class="fas fa-circle-exclamation"></i> {{ $errors->first('access_code') }}</div>
+                        @endif
+
+                        <form method="POST" action="{{ route('mock-exams.unlock') }}" class="lock-form">
+                            @csrf
+                            <label class="lock-label">Enter Access Code</label>
+                            <div class="lock-inputrow">
+                                <input type="text" name="access_code" placeholder="• • • • • •" autocomplete="off" autofocus required>
+                                <button type="submit"><i class="fas fa-unlock-keyhole"></i> Unlock</button>
+                            </div>
+                        </form>
+                        <div class="lock-hint"><i class="fas fa-circle-info"></i> Codes are issued at exam time &mdash; do not share yours.</div>
                     </div>
                 </div>
+            @endunless
 
-                <div class="stat-card">
-                    <div class="stat-card-icon" style="background: #e6f7ee; color: #27AE60;"><i class="fas fa-chart-line"></i></div>
-                    <div>
-                        <div class="stat-card-label">Exams Taken</div>
-                        <div class="stat-card-value">4</div>
-                        <div class="stat-card-sub">of 10 total</div>
+            <!-- COMPREHENSIVE PRE-BOARD EXAM -->
+            <div class="pb-hero">
+                <div class="pb-hero-shapes"><span></span><span></span><span></span></div>
+                <div class="pb-hero-body">
+                    <span class="pb-badge"><i class="fas fa-shield-halved"></i> Comprehensive &middot; Pre-Board</span>
+                    <h1 class="pb-title">Comprehensive Pre-Board Examination</h1>
+                    <p class="pb-sub">A full, timed simulation of the CPA Licensure Examination (CPALE). All six subjects in one sitting, under real exam conditions &mdash; your truest measure of board readiness.</p>
+                    <div class="pb-meta">
+                        <span><i class="fas fa-user-shield"></i> Proctored by Faculty</span>
+                        <span><i class="fas fa-calendar-day"></i> Scheduled Session</span>
+                        <span><i class="fas fa-hourglass-half"></i> One Continuous Sitting</span>
                     </div>
-                </div>
-
-                <div class="stat-card">
-                    <div class="stat-card-icon" style="background: #f1eafc; color: #8b5cf6;"><i class="fas fa-trophy"></i></div>
-                    <div>
-                        <div class="stat-card-label">Highest Score</div>
-                        <div class="stat-card-value">78%</div>
-                        <div class="stat-card-sub">FAR Mock Exam 1</div>
-                        <div class="stat-card-sub" style="margin-top: 4px;">May 5, 2024</div>
-                    </div>
-                </div>
-
-                <div class="stat-card">
-                    <div class="stat-card-icon" style="background: #fef3e0; color: #F39C12;"><i class="fas fa-clock"></i></div>
-                    <div>
-                        <div class="stat-card-label">Avg. Time Used</div>
-                        <div class="stat-card-value">3h 12m</div>
-                        <div class="stat-card-sub">Per exam</div>
-                        <div class="stat-card-sub" style="margin-top: 4px;">Target: 4 hours</div>
-                    </div>
+                    <a href="{{ route('mock-exams.simulation', ['exam' => 'Comprehensive Pre-Board Examination']) }}" class="pb-start"><i class="fas fa-play"></i> Begin Examination</a>
                 </div>
             </div>
 
-            <!-- MAIN GRID -->
-            <div class="main-grid">
-                <!-- LEFT: EXAMS -->
-                <div class="card">
-                    <div class="card-head">
-                        <div>
-                            <div class="card-title">Mock Exams</div>
-                            <div class="card-subtitle">Take a full-length exam or practice by subject area.</div>
-                        </div>
-                        <a href="{{ route('mock-exams.simulation', ['exam' => 'Full CPALE Mock Exam']) }}" class="btn-primary"><i class="fas fa-plus"></i> Take New Exam</a>
-                    </div>
-
-                    <div class="tabs">
-                        <div class="tab active" onclick="selectTab(this)">All Exams</div>
-                        <div class="tab" onclick="selectTab(this)">By Subject</div>
-                        <div class="tab" onclick="selectTab(this)">Custom Exams</div>
-                    </div>
-
-                    <table class="exam-table">
-                        <thead>
-                            <tr>
-                                <th>Exam</th>
-                                <th>Type</th>
-                                <th>Score</th>
-                                <th>Time Used</th>
-                                <th>Date Taken</th>
-                                <th>Status</th>
-                                <th></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>
-                                    <span class="exam-name">FAR Mock Exam 1</span>
-                                    <span class="exam-format">Full-length</span>
-                                </td>
-                                <td><span class="type-badge type-far">FAR</span></td>
-                                <td>
-                                    <span class="score-value">78%</span>
-                                    <span class="score-tag above">Above Average</span>
-                                </td>
-                                <td>
-                                    <span class="time-value">3h 45m</span>
-                                    <span class="time-sub">of 4h</span>
-                                </td>
-                                <td>
-                                    <span class="date-value">May 5, 2024</span>
-                                    <span class="date-sub">2:30 PM</span>
-                                </td>
-                                <td><span class="status"><span class="status-dot"></span> Completed</span></td>
-                                <td><i class="fas fa-ellipsis-vertical row-action"></i></td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <span class="exam-name">AUD Mock Exam 1</span>
-                                    <span class="exam-format">Full-length</span>
-                                </td>
-                                <td><span class="type-badge type-aud">AUD</span></td>
-                                <td>
-                                    <span class="score-value">65%</span>
-                                    <span class="score-tag avg">Average</span>
-                                </td>
-                                <td>
-                                    <span class="time-value">3h 10m</span>
-                                    <span class="time-sub">of 4h</span>
-                                </td>
-                                <td>
-                                    <span class="date-value">May 2, 2024</span>
-                                    <span class="date-sub">9:15 AM</span>
-                                </td>
-                                <td><span class="status"><span class="status-dot"></span> Completed</span></td>
-                                <td><i class="fas fa-ellipsis-vertical row-action"></i></td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <span class="exam-name">TAX Mock Exam 1</span>
-                                    <span class="exam-format">Full-length</span>
-                                </td>
-                                <td><span class="type-badge type-tax">TAX</span></td>
-                                <td>
-                                    <span class="score-value">60%</span>
-                                    <span class="score-tag below">Below Average</span>
-                                </td>
-                                <td>
-                                    <span class="time-value">2h 55m</span>
-                                    <span class="time-sub">of 4h</span>
-                                </td>
-                                <td>
-                                    <span class="date-value">Apr 29, 2024</span>
-                                    <span class="date-sub">1:40 PM</span>
-                                </td>
-                                <td><span class="status"><span class="status-dot"></span> Completed</span></td>
-                                <td><i class="fas fa-ellipsis-vertical row-action"></i></td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <span class="exam-name">REG Mock Exam 1</span>
-                                    <span class="exam-format">Full-length</span>
-                                </td>
-                                <td><span class="type-badge type-reg">REG</span></td>
-                                <td>
-                                    <span class="score-value">72%</span>
-                                    <span class="score-tag above">Above Average</span>
-                                </td>
-                                <td>
-                                    <span class="time-value">3h 20m</span>
-                                    <span class="time-sub">of 4h</span>
-                                </td>
-                                <td>
-                                    <span class="date-value">Apr 26, 2024</span>
-                                    <span class="date-sub">10:00 AM</span>
-                                </td>
-                                <td><span class="status"><span class="status-dot"></span> Completed</span></td>
-                                <td><i class="fas fa-ellipsis-vertical row-action"></i></td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <span class="exam-name">FAR Mock Exam 2</span>
-                                    <span class="exam-format">Full-length</span>
-                                </td>
-                                <td><span class="type-badge type-far">FAR</span></td>
-                                <td>
-                                    <span class="score-value">â€”</span>
-                                    <span class="score-tag none">Not taken</span>
-                                </td>
-                                <td>
-                                    <span class="time-value">â€”</span>
-                                    <span class="time-sub">of 4h</span>
-                                </td>
-                                <td>
-                                    <span class="date-value">â€”</span>
-                                </td>
-                                <td><span class="status not-taken">Not Taken</span></td>
-                                <td><a href="{{ route('mock-exams.simulation', ['exam' => 'FAR Mock Exam 2']) }}" class="btn-take">Take Exam</a></td>
-                            </tr>
-                        </tbody>
-                    </table>
-
-                    <div class="view-all">
-                        <a href="#">View All Exams</a>
-                    </div>
+            <!-- SPECS -->
+            <div class="pb-specs">
+                <div class="pb-spec">
+                    <div class="pb-spec-ic"><i class="fas fa-list-ol"></i></div>
+                    <div><div class="pb-spec-num">350</div><div class="pb-spec-lbl">Total Items</div></div>
                 </div>
-
-                <!-- RIGHT COLUMN -->
-                <div>
-                    <!-- PERFORMANCE OVERVIEW -->
-                    <div class="card perf-card" style="margin-bottom: 25px;">
-                        <div class="perf-head">
-                            <div class="card-title">Performance Overview</div>
-                            <select class="perf-select">
-                                <option>This Week</option>
-                                <option>This Month</option>
-                                <option>All Time</option>
-                            </select>
-                        </div>
-                        <div class="perf-illustration">
-                            <i class="fas fa-shield-alt"></i>
-                            <i class="fas fa-location-arrow"></i>
-                        </div>
-                        <div class="perf-text">Focus on improvement, not perfection.</div>
-                        <div class="perf-subtext">Keep taking exams to unlock your performance insights.</div>
-                    </div>
-
-                    <!-- EXAM TIPS -->
-                    <div class="card">
-                        <div class="tips-title">Exam Tips</div>
-                        <div class="tips-subtitle">Prepare smarter for your mock exams.</div>
-
-                        <div class="tip-item">
-                            <div class="tip-icon" style="background: #fde8e8; color: #c0392b;"><i class="fas fa-calendar-day"></i></div>
-                            <div>
-                                <div class="tip-name">Simulate Real Conditions</div>
-                                <div class="tip-desc">Take exams in a quiet place, with no interruptions.</div>
-                            </div>
-                        </div>
-
-                        <div class="tip-item">
-                            <div class="tip-icon" style="background: #e3f0fd; color: #2f80c2;"><i class="fas fa-clock"></i></div>
-                            <div>
-                                <div class="tip-name">Manage Your Time</div>
-                                <div class="tip-desc">Aim for 4 hours. Practice pacing for each testlet.</div>
-                            </div>
-                        </div>
-
-                        <div class="tip-item">
-                            <div class="tip-icon" style="background: #fef3e0; color: #F39C12;"><i class="fas fa-chart-bar"></i></div>
-                            <div>
-                                <div class="tip-name">Review Thoroughly</div>
-                                <div class="tip-desc">Learn from your mistakes and focus on weak areas.</div>
-                            </div>
-                        </div>
-
-                        <div class="tips-illustration"><i class="fas fa-book"></i> <i class="fas fa-mug-hot"></i></div>
-                    </div>
+                <div class="pb-spec">
+                    <div class="pb-spec-ic"><i class="fas fa-clock"></i></div>
+                    <div><div class="pb-spec-num">4h 00m</div><div class="pb-spec-lbl">Time Limit</div></div>
+                </div>
+                <div class="pb-spec">
+                    <div class="pb-spec-ic"><i class="fas fa-layer-group"></i></div>
+                    <div><div class="pb-spec-num">6</div><div class="pb-spec-lbl">Subjects</div></div>
+                </div>
+                <div class="pb-spec">
+                    <div class="pb-spec-ic"><i class="fas fa-award"></i></div>
+                    <div><div class="pb-spec-num">75%</div><div class="pb-spec-lbl">Passing Score</div></div>
                 </div>
             </div>
+
+            <!-- COVERAGE + GUIDELINES -->
+            <div class="pb-grid">
+                <div class="pb-card">
+                    <div class="pb-card-h"><i class="fas fa-book-open"></i> Subject Coverage</div>
+                    <ul class="pb-subjects">
+                        <li><span class="pb-scode">FAR</span><span class="pb-sname">Financial Accounting &amp; Reporting</span><span class="pb-sitems">70 items</span></li>
+                        <li><span class="pb-scode">AFAR</span><span class="pb-sname">Advanced Financial Accounting &amp; Reporting</span><span class="pb-sitems">70 items</span></li>
+                        <li><span class="pb-scode">MS</span><span class="pb-sname">Management Services</span><span class="pb-sitems">60 items</span></li>
+                        <li><span class="pb-scode">TAX</span><span class="pb-sname">Taxation</span><span class="pb-sitems">50 items</span></li>
+                        <li><span class="pb-scode">AUD</span><span class="pb-sname">Auditing</span><span class="pb-sitems">50 items</span></li>
+                        <li><span class="pb-scode">RFBT</span><span class="pb-sname">Regulatory Framework for Business Transactions</span><span class="pb-sitems">50 items</span></li>
+                    </ul>
+                </div>
+                <div class="pb-card">
+                    <div class="pb-card-h"><i class="fas fa-clipboard-check"></i> Examination Guidelines</div>
+                    <ol class="pb-rules">
+                        <li>Once you begin, the exam runs on a single continuous timer and cannot be paused.</li>
+                        <li>Ensure a stable internet connection and enough battery for the full sitting.</li>
+                        <li>No external notes, references, or applications are permitted during the exam.</li>
+                        <li>Unanswered items are marked wrong; answers auto-submit when time expires.</li>
+                        <li>Scores and rationales are released after your proctor closes the session.</li>
+                    </ol>
+                </div>
+            </div>
+
+            </div><!-- /.mock-area -->
         </main>
     </div>
 

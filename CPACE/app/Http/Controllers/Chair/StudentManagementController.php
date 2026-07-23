@@ -167,22 +167,29 @@ class StudentManagementController extends Controller
         return back()->with('status', $student->is_active ? 'Student account enabled.' : 'Student account disabled.');
     }
 
+    /**
+     * Bulk-enroll students from an uploaded class list. For every valid row we
+     * provision an account with a generated one-time password (which the
+     * student must change on first login) and hand the credentials back once.
+     */
     public function import(Request $request)
     {
-        $request->validate(['csv_file' => ['required', 'file', 'mimes:csv,txt', 'max:5120']]);
-        $handle = fopen($request->file('csv_file')->getRealPath(), 'r');
+        $request->validate(['file' => ['required', 'file', 'mimes:csv,txt', 'max:5120']]);
+
+        $handle = fopen($request->file('file')->getRealPath(), 'r');
         $header = fgetcsv($handle);
         $header = array_map(fn ($value) => strtolower(trim((string) $value)), $header ?: []);
-        $required = ['first_name', 'last_name', 'email', 'password'];
-        if (array_diff($required, $header)) {
+
+        if (! in_array('first_name', $header, true) || ! in_array('last_name', $header, true)) {
             fclose($handle);
 
-            return back()->with('error', 'CSV must contain: first_name, last_name, email, and password columns.');
+            return back()->with('error', 'The file must contain at least first_name and last_name columns.');
         }
 
-        $created = 0;
-        $line = 1;
+        $created = [];
         $errors = [];
+        $line = 1;
+
         while (($values = fgetcsv($handle)) !== false) {
             $line++;
             if (count(array_filter($values, fn ($value) => trim((string) $value) !== '')) === 0) {
@@ -190,14 +197,31 @@ class StudentManagementController extends Controller
             }
             $values = array_pad($values, count($header), null);
             $row = array_combine($header, array_slice($values, 0, count($header)));
-            foreach (['student_number', 'year_level', 'section', 'exam_target_date'] as $optional) {
-                if (array_key_exists($optional, $row) && trim((string) $row[$optional]) === '') {
-                    $row[$optional] = null;
-                }
+
+            $firstName = trim((string) ($row['first_name'] ?? ''));
+            $lastName = trim((string) ($row['last_name'] ?? ''));
+            $email = strtolower(trim((string) ($row['email'] ?? '')));
+            $studentNumber = trim((string) ($row['student_number'] ?? '')) ?: null;
+            $section = trim((string) ($row['section'] ?? '')) ?: null;
+
+            if ($firstName === '' || $lastName === '') {
+                $errors[] = "Row {$line}: missing first or last name.";
+
+                continue;
             }
-            $row['is_active'] = $this->csvBoolean($row['is_active'] ?? '1');
-            $row['password_confirmation'] = $row['password'] ?? null;
-            $validator = Validator::make($row, $this->studentRules());
+            if ($email === '') {
+                $email = $this->generateEmail($firstName, $lastName);
+            }
+
+            $validator = Validator::make(
+                ['first_name' => $firstName, 'last_name' => $lastName, 'email' => $email, 'student_number' => $studentNumber],
+                [
+                    'first_name' => ['required', 'string', 'max:60'],
+                    'last_name' => ['required', 'string', 'max:60'],
+                    'email' => ['required', 'email', 'max:120', Rule::unique('users', 'email')],
+                    'student_number' => ['nullable', 'string', 'max:30', Rule::unique('student_profiles', 'student_number')],
+                ]
+            );
             if ($validator->fails()) {
                 $errors[] = "Row {$line}: ".$validator->errors()->first();
 
@@ -205,35 +229,76 @@ class StudentManagementController extends Controller
             }
 
             try {
-                $data = $validator->validated();
-                DB::transaction(function () use ($data) {
+                $tempPassword = $this->generatePassword();
+                DB::transaction(function () use ($firstName, $lastName, $email, $studentNumber, $section, $tempPassword) {
                     $student = User::create([
-                        'role_id' => Role::STUDENT, 'first_name' => $data['first_name'],
-                        'last_name' => $data['last_name'], 'email' => $data['email'],
-                        'password' => Hash::make($data['password']), 'is_active' => (bool) $data['is_active'],
+                        'role_id' => Role::STUDENT,
+                        'first_name' => $firstName,
+                        'last_name' => $lastName,
+                        'email' => $email,
+                        'password' => Hash::make($tempPassword),
+                        'is_active' => true,
                         'email_verified' => true,
+                        'setup_completed_at' => null, // must run first-login Account Setup
                     ]);
-                    $this->saveProfile($student, $data);
+                    StudentProfile::updateOrCreate(
+                        ['user_id' => $student->id],
+                        ['student_number' => $studentNumber, 'section' => $section]
+                    );
                 });
-                $created++;
+
+                $created[] = [
+                    'first_name' => $firstName,
+                    'last_name' => $lastName,
+                    'email' => $email,
+                    'student_number' => $studentNumber,
+                    'section' => $section,
+                    'temp_password' => $tempPassword,
+                ];
             } catch (\Throwable $exception) {
                 $errors[] = "Row {$line}: could not be imported.";
             }
         }
         fclose($handle);
 
-        return back()->with('status', "{$created} student".($created === 1 ? '' : 's').' imported.')
-            ->with('import_errors', array_slice($errors, 0, 20));
+        return back()
+            ->with('created_credentials', $created)
+            ->with('status', count($created).' account'.(count($created) === 1 ? '' : 's').' created.')
+            ->with('import_errors', array_slice($errors, 0, 25));
     }
 
     public function template()
     {
         return response()->streamDownload(function () {
             $out = fopen('php://output', 'w');
-            fputcsv($out, ['first_name', 'last_name', 'email', 'password', 'student_number', 'year_level', 'section', 'is_active']);
-            fputcsv($out, ['Juan', 'Dela Cruz', 'juan@example.edu', 'ChangeMe123!', '2026-0001', '4', 'A', '1']);
+            fputcsv($out, ['first_name', 'last_name', 'email', 'student_number', 'section']);
+            fputcsv($out, ['Juan', 'Dela Cruz', 'juan.delacruz@cpace.edu', '2026-0001', 'BSA-4A']);
+            fputcsv($out, ['Maria', 'Santos', '', '2026-0002', 'BSA-4A']);
             fclose($out);
         }, 'student-import-template.csv', ['Content-Type' => 'text/csv']);
+    }
+
+    /**
+     * Build a GSuite-style address when a row leaves the email blank.
+     */
+    private function generateEmail(string $first, string $last): string
+    {
+        $slug = fn ($value) => preg_replace('/[^a-z0-9]/', '', strtolower($value));
+        $base = $slug($first).'.'.$slug($last);
+
+        return $base.'@cpace.edu';
+    }
+
+    /**
+     * Human-readable one-time password, e.g. "Kf7p-Rq3m".
+     */
+    private function generatePassword(): string
+    {
+        $chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+        $pick = fn () => $chars[random_int(0, strlen($chars) - 1)];
+        $block = fn () => implode('', array_map($pick, range(1, 4)));
+
+        return $block().'-'.$block();
     }
 
     public function exportCsv(Request $request)

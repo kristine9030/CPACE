@@ -19,6 +19,11 @@ class StudentProfile extends Model
         'exam_target_date',
         'total_points',
         'streak_days',
+        'mobile',
+        'study_days',
+        'study_time',
+        'study_intensity',
+        'focus_subjects',
     ];
 
     protected $casts = [

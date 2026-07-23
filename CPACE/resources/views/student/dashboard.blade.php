@@ -20,7 +20,7 @@
             --primary-light: #f5e8e8;
             --primary-mid: #c0392b;
             --accent-red: #c0392b;
-            --sidebar-bg: #7B1D1D;
+            --sidebar-bg: linear-gradient(180deg, #a12626 0%, #7B1D1D 34%, #3d0c0c 74%, #1a0a0a 100%);
             --white: #ffffff;
             --gray-100: #f8f9fa;
             --gray-200: #f0f0f0;
@@ -316,11 +316,166 @@
         .dropdown-menu .logout-btn { color: #e53e3e; }
         .dropdown-menu .logout-btn i { color: #e53e3e; }
 
-        /* ─── WELCOME BANNER ─── */
+        /* countdown + calendar sit on one row */
+        .overview-top {
+            display: grid;
+            grid-template-columns: 1fr 240px;
+            gap: 18px;
+            margin-bottom: 22px;
+            align-items: stretch;
+        }
+
+        /* ─── EXAM COUNTDOWN (flip-clock style) ─── */
+        .exam-hero {
+            position: relative;
+            overflow: hidden;
+            border-radius: 18px;
+            padding: 30px 40px;
+            background: linear-gradient(115deg, #6a1a1a 0%, #3a1010 46%, #130707 100%);
+            border: 1px solid rgba(255,255,255,0.06);
+            box-shadow: 0 14px 34px rgba(0,0,0,0.40);
+            color: #fff;
+            height: 100%;
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 30px;
+            align-items: center;
+        }
+        .exam-hero-left { position: relative; z-index: 1; }
+        .exam-hero-greeting { font-size: 32px; font-weight: 800; color: #fff; line-height: 1.1; }
+        .exam-hero-subtitle { font-size: 16px; font-weight: 500; color: rgba(255,255,255,0.78); margin-top: 5px; }
+
+        /* abstract decorative shapes (pure background overlay, out of the grid flow) */
+        .exam-hero-shapes { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
+        .exam-hero-shapes span { position: absolute; pointer-events: none; z-index: 0; }
+        .exam-hero-shapes span:nth-child(1) { top: -34px; left: 28%; width: 120px; height: 120px; border: 2px solid rgba(255,255,255,0.06); border-radius: 50%; }
+        .exam-hero-shapes span:nth-child(2) { bottom: -30px; left: 10%; width: 88px; height: 88px; border: 2px solid rgba(255,215,106,0.14); border-radius: 24px; transform: rotate(30deg); }
+        .exam-hero-shapes span:nth-child(3) { top: 24px; left: -16px; width: 0; height: 0; border-left: 22px solid transparent; border-right: 22px solid transparent; border-bottom: 38px solid rgba(255,255,255,0.05); transform: rotate(-18deg); }
+        .exam-hero-shapes span:nth-child(4) { bottom: 18px; left: 44%; width: 56px; height: 56px; background: rgba(192,57,43,0.30); border-radius: 15px; transform: rotate(20deg); }
+        .exam-hero-shapes span:nth-child(5) { top: 30px; right: 3%; width: 66px; height: 66px; border: 1.5px solid rgba(255,255,255,0.07); border-radius: 50%; }
+
+        /* calendar-style "today" card, same row as the countdown */
+        .today-card {
+            background: #fff;
+            border: 1px solid #eef0f2;
+            border-radius: 18px;
+            overflow: hidden;
+            box-shadow: 0 16px 44px rgba(0,0,0,0.10);
+            display: flex;
+            flex-direction: column;
+            text-align: center;
+        }
+        .cal-top {
+            background: linear-gradient(135deg, #c0392b, #7B1D1D);
+            color: #fff;
+            font-size: 13.5px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            padding: 15px 12px 12px;
+            position: relative;
+        }
+        .cal-rings::before,
+        .cal-rings::after {
+            content: '';
+            position: absolute;
+            top: 5px;
+            width: 7px; height: 12px;
+            border-radius: 4px;
+            background: rgba(255,255,255,0.85);
+            box-shadow: inset 0 0 0 1px rgba(0,0,0,0.08);
+        }
+        .cal-rings::before { left: 32%; }
+        .cal-rings::after  { right: 32%; }
+        .cal-body {
+            flex: 1;
+            display: flex; flex-direction: column;
+            padding: 20px 20px 22px;
+        }
+        .cal-hero {
+            flex: 1;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+        }
+        .cal-daynum { font-size: 84px; font-weight: 800; color: var(--gray-900); line-height: 0.92; }
+        .cal-weekday { font-size: 16px; font-weight: 700; color: var(--accent-red); letter-spacing: 0.4px; margin-top: 2px; }
+        .cal-clock {
+            margin-top: 16px; padding-top: 16px;
+            border-top: 1px dashed #e6e6e6;
+            font-size: 26px; font-weight: 700; color: var(--gray-700);
+            font-variant-numeric: tabular-nums; letter-spacing: 1px;
+        }
+        .cal-clock .ampm { font-size: 13px; font-weight: 600; color: var(--accent-red); margin-left: 5px; }
+        .exam-hero-target { font-size: 16px; font-weight: 600; color: #e0a94b; margin-top: 22px; }
+        .exam-hero-target strong { color: #ffb020; font-weight: 700; }
+
+        /* flip-clock countdown */
+        .countdown-grid { display: flex; align-items: flex-start; gap: 15px; position: relative; z-index: 1; }
+        .cd-unit { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+        .cd-flip {
+            position: relative;
+            width: 98px; height: 96px;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 13px;
+            background: linear-gradient(180deg, #343434 0%, #1c1c1c 49%, #050505 50%, #191919 100%);
+            box-shadow: 0 8px 18px rgba(0,0,0,0.48), inset 0 1px 0 rgba(255,255,255,0.07);
+            font-size: 62px; font-weight: 800; color: #f5f5f5;
+            font-variant-numeric: tabular-nums; letter-spacing: 1px;
+        }
+        /* center flip seam */
+        .cd-flip::before {
+            content: ''; position: absolute; left: 0; right: 0; top: 50%;
+            height: 2px; background: rgba(0,0,0,0.6); transform: translateY(-1px); z-index: 2;
+        }
+        /* hinge dots on both sides */
+        .cd-flip::after {
+            content: ''; position: absolute; top: 50%; left: -3px;
+            width: 7px; height: 7px; border-radius: 50%;
+            background: rgba(0,0,0,0.5); transform: translateY(-50%);
+            box-shadow: 98px 0 0 rgba(0,0,0,0.5);
+        }
+        .cd-lbl { font-size: 12px; font-weight: 600; letter-spacing: 2.5px; text-transform: uppercase; color: rgba(255,255,255,0.45); }
+        .cd-sep { align-self: flex-start; margin-top: 38px; display: flex; flex-direction: column; gap: 9px; }
+        .cd-sep span { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.32); }
+
+        .exam-hero-empty { font-size: 13px; color: rgba(255,255,255,0.72); margin: 10px 0 16px; max-width: 400px; line-height: 1.6; }
+        .exam-hero-btn {
+            display: inline-flex; align-items: center; gap: 8px;
+            background: #ffca6a; color: #4a1010; text-decoration: none;
+            padding: 11px 22px; border-radius: 10px; font-size: 13px; font-weight: 700;
+            transition: transform 0.2s, filter 0.2s;
+        }
+        .exam-hero-btn:hover { filter: brightness(1.06); transform: translateY(-1px); }
+
+        /* tighter 2-column range: shrink the flip cards so they never overflow */
+        @media (max-width: 1350px) {
+            .cd-flip { width: 80px; height: 80px; font-size: 50px; }
+            .cd-flip::after { box-shadow: 80px 0 0 rgba(0,0,0,0.5); }
+            .cd-sep { margin-top: 31px; }
+            .exam-hero-greeting { font-size: 28px; }
+        }
+        /* stack the row → countdown gets full width, go big again */
+        @media (max-width: 1100px) {
+            .overview-top { grid-template-columns: 1fr; }
+            .cd-flip { width: 98px; height: 96px; font-size: 62px; }
+            .cd-flip::after { box-shadow: 98px 0 0 rgba(0,0,0,0.5); }
+            .cd-sep { margin-top: 38px; }
+            .exam-hero-greeting { font-size: 32px; }
+        }
+        @media (max-width: 600px) {
+            .exam-hero { grid-template-columns: 1fr; padding: 22px; }
+            .countdown-grid { gap: 9px; }
+            .cd-flip { width: 62px; height: 62px; font-size: 38px; }
+            .cd-flip::after { box-shadow: 62px 0 0 rgba(0,0,0,0.5); }
+            .cd-sep { margin-top: 24px; gap: 8px; }
+            .exam-hero-greeting { font-size: 26px; }
+        }
+
+        /* ─── WELCOME BANNER (dark red-black gradient, matches Achievements) ─── */
         .welcome-banner {
-            background: linear-gradient(to right, #f9e5e5 0%, #fdf0f0 50%, #ffffff 100%);
+            background: linear-gradient(135deg, #1a0a0a 0%, #3d0c0c 30%, #7B1D1D 60%, #a12626 100%);
             border-radius: 16px;
-            padding: 20px 28px;
+            padding: 26px 34px;
             margin-bottom: 22px;
             display: grid;
             grid-template-columns: 1fr auto;
@@ -328,40 +483,72 @@
             align-items: center;
             overflow: hidden;
             position: relative;
+            box-shadow: 0 8px 22px rgba(0,0,0,0.28);
         }
+
+        /* faint blueprint grid, faded toward the text side */
+        .welcome-banner::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background:
+                repeating-linear-gradient(0deg, transparent, transparent 38px, rgba(255,255,255,0.06) 38px, rgba(255,255,255,0.06) 40px),
+                repeating-linear-gradient(90deg, transparent, transparent 38px, rgba(255,255,255,0.06) 38px, rgba(255,255,255,0.06) 40px);
+            mask-image: linear-gradient(to left, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.3) 30%, transparent 55%);
+            -webkit-mask-image: linear-gradient(to left, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.3) 30%, transparent 55%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* warm glow behind the vector */
+        .welcome-banner::after {
+            content: '';
+            position: absolute;
+            bottom: -70px;
+            right: 10%;
+            width: 260px;
+            height: 260px;
+            background: radial-gradient(circle, rgba(255,215,106,0.10) 0%, transparent 65%);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        .welcome-content { position: relative; z-index: 1; }
 
         .welcome-banner h2 {
             font-size: 26px;
             font-weight: 700;
-            color: var(--gray-900);
+            color: #ffffff;
             margin-bottom: 8px;
         }
 
         .welcome-banner p {
             font-size: 13px;
-            color: var(--gray-500);
+            color: rgba(255,255,255,0.72);
             margin-bottom: 18px;
         }
 
-        .exam-countdown {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--accent-red);
-        }
+        /* floating vector accents */
+        .welcome-banner .w-shape { position: absolute; pointer-events: none; z-index: 0; }
+        .welcome-banner .w-shape-1 { top: -18px; right: 30%; width: 80px; height: 80px; border: 2px solid rgba(255,215,106,0.12); border-radius: 22px; transform: rotate(28deg); }
+        .welcome-banner .w-shape-2 { bottom: 10px; right: 8%; width: 46px; height: 46px; background: rgba(192,57,43,0.22); border-radius: 50%; }
+        .welcome-banner .w-shape-3 { top: 18px; right: 12%; width: 0; height: 0; border-left: 18px solid transparent; border-right: 18px solid transparent; border-bottom: 32px solid rgba(255,255,255,0.05); transform: rotate(18deg); }
+        .welcome-banner .w-shape-4 { bottom: -20px; right: 24%; width: 110px; height: 110px; border: 1.5px solid rgba(255,255,255,0.06); border-radius: 30px; transform: rotate(42deg); }
 
-        .welcome-banner-video {
-            height: 220px;
-            width: auto;
-            object-fit: contain;
+        /* right-side study vector illustration */
+        .welcome-vector {
+            position: relative;
+            z-index: 1;
+            width: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             flex-shrink: 0;
-            align-self: center;
         }
+        .welcome-vector svg { width: 100%; height: auto; }
 
         @media (max-width: 768px) {
-            .welcome-banner-video { display: none; }
+            .welcome-vector { display: none; }
         }
 
         .welcome-illustration {
@@ -443,31 +630,80 @@
             margin-bottom: 22px;
         }
 
+        /* horizontal KPI card — big number on the left, illustration on the right */
         .metric-card {
-            background: white;
-            border-radius: 14px;
-            padding: 22px 22px 16px;
+            background: #fff;
+            border: 1px solid #eef0f2;
+            border-radius: 18px;
+            padding: 18px 20px;
             position: relative;
             overflow: hidden;
-        }
-
-        .metric-top {
+            min-height: 130px;
             display: flex;
-            align-items: flex-start;
+            align-items: center;
             justify-content: space-between;
-            margin-bottom: 12px;
+            gap: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05), 0 12px 26px rgba(0,0,0,0.06);
+            transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+        }
+        .metric-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 18px rgba(0,0,0,0.10), 0 18px 40px rgba(0,0,0,0.11);
+            border-color: #e3e6e9;
+        }
+        /* top accent bar */
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 4px;
+            background: var(--m-accent, #dcdfe3);
+            z-index: 2;
+        }
+        /* soft tinted glow in the corner */
+        .metric-card::after {
+            content: '';
+            position: absolute;
+            top: -55px; right: -55px;
+            width: 170px; height: 170px;
+            border-radius: 50%;
+            background: var(--m-glow, transparent);
+            pointer-events: none;
+        }
+        .metric-card.accent-red    { --m-accent: linear-gradient(90deg, #c0392b, #7B1D1D); --m-glow: rgba(192,57,43,0.08); }
+        .metric-card.accent-green  { --m-accent: linear-gradient(90deg, #10b981, #059669); --m-glow: rgba(16,185,129,0.08); }
+        .metric-card.accent-blue   { --m-accent: linear-gradient(90deg, #3b82f6, #2563eb); --m-glow: rgba(59,130,246,0.08); }
+        .metric-card.accent-orange { --m-accent: linear-gradient(90deg, #f59e0b, #d97706); --m-glow: rgba(245,158,11,0.08); }
+
+        .metric-left {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+        .metric-number-lg { font-size: 34px; font-weight: 800; color: var(--gray-900); line-height: 1; }
+        .metric-number-lg small { font-size: 16px; font-weight: 600; color: var(--gray-500); }
+        .metric-label-lg { font-size: 12.5px; font-weight: 600; color: var(--gray-900); margin-top: 9px; }
+        .metric-sub { font-size: 11px; color: var(--gray-500); margin-top: 3px; }
+        .metric-sub .up { color: var(--green); font-weight: 600; }
+
+        .metric-illust {
+            width: 96px; height: 96px;
+            flex-shrink: 0;
+            position: relative;
+            z-index: 1;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .metric-illust img {
+            width: 100%; height: 100%;
+            object-fit: contain;
+            filter: drop-shadow(0 6px 14px rgba(0,0,0,0.15));
         }
 
-        .metric-icon-wrap {
-            width: 38px; height: 38px;
-            border-radius: 10px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 18px;
+        @media (max-width: 480px) {
+            .metric-illust { width: 78px; height: 78px; }
         }
-        .metric-icon-wrap.red   { background: #fde8e8; color: var(--accent-red); }
-        .metric-icon-wrap.green { background: #d1fae5; color: var(--green); }
-        .metric-icon-wrap.blue  { background: #dbeafe; color: var(--blue); }
-        .metric-icon-wrap.orange{ background: #fef3c7; color: var(--orange); }
 
         .metric-body {}
         .metric-label { font-size: 11px; color: var(--gray-500); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
@@ -495,8 +731,15 @@
         /* ─── CARDS ─── */
         .card {
             background: white;
-            border-radius: 14px;
-            padding: 22px;
+            border: 1px solid #eef0f2;
+            border-radius: 18px;
+            padding: 24px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+            transition: box-shadow 0.22s ease, border-color 0.22s ease;
+        }
+        .card:hover {
+            box-shadow: 0 10px 24px rgba(0,0,0,0.07);
+            border-color: #e3e6e9;
         }
 
         .card-header {
@@ -510,6 +753,17 @@
             font-size: 15px;
             font-weight: 600;
             color: var(--gray-900);
+            position: relative;
+            padding-left: 13px;
+        }
+        .card-title::before {
+            content: '';
+            position: absolute;
+            left: 0; top: 50%;
+            transform: translateY(-50%);
+            width: 4px; height: 16px;
+            border-radius: 2px;
+            background: linear-gradient(180deg, #c0392b, #7B1D1D);
         }
 
         .card-link {
@@ -687,15 +941,19 @@
 
         /* Study Streak */
         .streak-card {
-            background: white;
-            border-radius: 14px;
+            background: linear-gradient(135deg, #ffffff 0%, #fdf3f3 100%);
+            border: 1px solid #f4e3e3;
+            border-radius: 18px;
             padding: 28px 28px;
             display: flex;
             align-items: center;
             justify-content: space-between;
             gap: 20px;
             overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+            transition: box-shadow 0.22s ease, transform 0.22s ease;
         }
+        .streak-card:hover { box-shadow: 0 10px 24px rgba(123,29,29,0.10); transform: translateY(-3px); }
 
         .streak-title { font-size: 15px; font-weight: 600; color: var(--gray-900); margin-bottom: 14px; }
 
@@ -708,15 +966,19 @@
 
         /* Quote Card */
         .quote-card {
-            background: white;
-            border-radius: 14px;
+            background: linear-gradient(135deg, #ffffff 0%, #f6f7fb 100%);
+            border: 1px solid #eef0f2;
+            border-radius: 18px;
             padding: 28px;
             display: flex;
             align-items: center;
             justify-content: space-between;
             gap: 20px;
             overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+            transition: box-shadow 0.22s ease, transform 0.22s ease;
         }
+        .quote-card:hover { box-shadow: 0 10px 24px rgba(0,0,0,0.07); transform: translateY(-3px); }
 
         .quote-body {}
         .quote-marks { font-size: 48px; color: var(--primary-light); line-height: 0.8; margin-bottom: 10px; font-family: Georgia, serif; color: #e0d0d0; }
@@ -809,7 +1071,13 @@
                 <i class="fas fa-search"></i>
                 <input type="text" placeholder="Search topics, questions, subjects...">
             </div>
-            <a class="notif-btn" href="{{ route('notifications.index') }}" aria-label="Notifications" style="text-decoration:none">
+            <a class="notif-btn" href="{{ route('messages.index') }}" aria-label="Messages" title="Messages" style="text-decoration:none">
+                <i class="fas fa-comment-dots"></i>
+                @if($unreadMessages > 0)
+                    <span class="badge">{{ $unreadMessages > 9 ? '9+' : $unreadMessages }}</span>
+                @endif
+            </a>
+            <a class="notif-btn" href="{{ route('notifications.index') }}" aria-label="Notifications" title="Notifications" style="text-decoration:none">
                 <i class="fas fa-bell"></i>
                 @if($unreadNotifications > 0)
                     <span class="badge">{{ $unreadNotifications }}</span>
@@ -830,114 +1098,94 @@
         </div>
     </div>
 
-    <!-- WELCOME BANNER -->
-    <div class="welcome-banner anim" style="animation-delay:0.08s">
-        <div class="welcome-content">
-            <h2>Good morning, {{ explode(' ', Auth::user()->name)[0] }}! &#128075;</h2>
-            <p>Every day you study brings you closer to your goal.</p>
-            <div class="exam-countdown">
-                <i class="fas fa-fire-alt"></i>
-                @if($daysToExam !== null)
-                    {{ $daysToExam }} {{ \Illuminate\Support\Str::plural('day', $daysToExam) }} until board exam
+    <!-- COUNTDOWN + CALENDAR ROW -->
+    <div class="overview-top anim" style="animation-delay:0.03s">
+
+        <!-- EXAM COUNTDOWN (flip-clock style) -->
+        <div class="exam-hero">
+            <div class="exam-hero-shapes" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
+
+            <div class="exam-hero-left">
+                <div class="exam-hero-greeting">Good Morning, {{ explode(' ', Auth::user()->name)[0] }}!</div>
+                <div class="exam-hero-subtitle">Board Exam Countdown</div>
+                @if($examDateIso)
+                    <div class="exam-hero-target">Target Board Exam: <strong id="examTargetLabel">&mdash;</strong></div>
                 @else
-                    Set your exam target date to start the countdown
+                    <p class="exam-hero-empty">Set your target board exam date to start the countdown.</p>
+                    <a href="{{ route('settings') }}" class="exam-hero-btn"><i class="fas fa-calendar-plus"></i> Set target date</a>
                 @endif
             </div>
+
+            @if($examDateIso)
+                <div class="countdown-grid" id="countdownGrid">
+                    <div class="cd-unit"><div class="cd-flip"><span id="cdDays">--</span></div><span class="cd-lbl">Days</span></div>
+                    <div class="cd-sep"><span></span><span></span></div>
+                    <div class="cd-unit"><div class="cd-flip"><span id="cdHours">--</span></div><span class="cd-lbl">Hrs</span></div>
+                    <div class="cd-sep"><span></span><span></span></div>
+                    <div class="cd-unit"><div class="cd-flip"><span id="cdMins">--</span></div><span class="cd-lbl">Mins</span></div>
+                    <div class="cd-sep"><span></span><span></span></div>
+                    <div class="cd-unit"><div class="cd-flip"><span id="cdSecs">--</span></div><span class="cd-lbl">Secs</span></div>
+                </div>
+            @endif
         </div>
-        <video class="welcome-banner-video" autoplay loop muted playsinline>
-            <source src="{{ asset('images/GIF HEADER.mp4') }}" type="video/mp4">
-        </video>
+
+        <!-- CALENDAR / TODAY -->
+        <div class="today-card">
+            <div class="cal-top"><span class="cal-rings"></span><span id="calMonth">&mdash;</span></div>
+            <div class="cal-body">
+                <div class="cal-hero">
+                    <div class="cal-daynum" id="calDayNum">--</div>
+                    <div class="cal-weekday" id="calWeekday">&mdash;</div>
+                </div>
+                <div class="cal-clock"><span id="clockTime">--:--:--</span><span class="ampm" id="clockAmPm"></span></div>
+            </div>
+        </div>
     </div>
 
     <!-- METRICS -->
     <div class="metrics-grid anim" style="animation-delay:0.14s">
         <!-- Board Readiness Score -->
-        <div class="metric-card">
-            <div class="metric-top">
-                <div class="metric-icon-wrap red"><i class="fas fa-chart-area"></i></div>
+        <div class="metric-card accent-red">
+            <div class="metric-left">
+                <div class="metric-number-lg">{{ $readiness }}<small>%</small></div>
+                <div class="metric-label-lg">Board Readiness Score</div>
+                <div class="metric-sub">Overall accuracy across all topics</div>
             </div>
-            <div class="metric-label">Board Readiness Score</div>
-            <div class="metric-number">{{ $readiness }}%</div>
-            <div class="metric-change neutral">Overall accuracy across all topics</div>
-            <div class="metric-chart">
-                <svg class="sparkline" viewBox="0 0 100 36" preserveAspectRatio="none">
-                    <defs>
-                        <linearGradient id="redGrad" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stop-color="#c0392b" stop-opacity="0.3"/>
-                            <stop offset="100%" stop-color="#c0392b" stop-opacity="0"/>
-                        </linearGradient>
-                    </defs>
-                    <path d="M0,30 L14,26 L28,22 L42,20 L56,16 L70,13 L84,9 L100,5" fill="none" stroke="#c0392b" stroke-width="2" stroke-linecap="round"/>
-                    <path d="M0,30 L14,26 L28,22 L42,20 L56,16 L70,13 L84,9 L100,5 L100,36 L0,36 Z" fill="url(#redGrad)"/>
-                </svg>
-            </div>
+            <div class="metric-illust"><img src="{{ asset('images/5.png') }}" alt="Board Readiness Score"></div>
         </div>
 
         <!-- Questions Attempted -->
-        <div class="metric-card">
-            <div class="metric-top">
-                <div class="metric-icon-wrap green"><i class="fas fa-clipboard-check"></i></div>
+        <div class="metric-card accent-red">
+            <div class="metric-left">
+                <div class="metric-number-lg">{{ number_format($questionsAttempted) }}</div>
+                <div class="metric-label-lg">Questions Attempted</div>
+                <div class="metric-sub">
+                    @if($questionsThisWeek > 0)<span class="up"><i class="fas fa-arrow-up"></i> {{ $questionsThisWeek }}</span> this week @else No activity this week @endif
+                </div>
             </div>
-            <div class="metric-label">Questions Attempted</div>
-            <div class="metric-number">{{ number_format($questionsAttempted) }}</div>
-            <div class="metric-change {{ $questionsThisWeek > 0 ? '' : 'neutral' }}">
-                @if($questionsThisWeek > 0)<i class="fas fa-arrow-up"></i> {{ $questionsThisWeek }} this week @else No activity this week @endif
-            </div>
-            <div class="metric-chart">
-                <svg class="sparkline" viewBox="0 0 100 36" preserveAspectRatio="none">
-                    <rect x="2"  y="20" width="10" height="16" rx="2" fill="#10b981" opacity="0.5"/>
-                    <rect x="16" y="14" width="10" height="22" rx="2" fill="#10b981" opacity="0.6"/>
-                    <rect x="30" y="18" width="10" height="18" rx="2" fill="#10b981" opacity="0.65"/>
-                    <rect x="44" y="10" width="10" height="26" rx="2" fill="#10b981" opacity="0.75"/>
-                    <rect x="58" y="12" width="10" height="24" rx="2" fill="#10b981" opacity="0.8"/>
-                    <rect x="72" y="6"  width="10" height="30" rx="2" fill="#10b981" opacity="0.9"/>
-                    <rect x="86" y="2"  width="10" height="34" rx="2" fill="#10b981"/>
-                </svg>
-            </div>
+            <div class="metric-illust"><img src="{{ asset('images/6.png') }}" alt="Questions Attempted"></div>
         </div>
 
         <!-- Study Time -->
-        <div class="metric-card">
-            <div class="metric-top">
-                <div class="metric-icon-wrap blue"><i class="fas fa-clock"></i></div>
+        <div class="metric-card accent-red">
+            <div class="metric-left">
+                <div class="metric-number-lg">{{ $studyHours }}<small>h</small></div>
+                <div class="metric-label-lg">Study Time</div>
+                <div class="metric-sub">
+                    @if($studyHoursWeek > 0)<span class="up"><i class="fas fa-arrow-up"></i> {{ $studyHoursWeek }}h</span> this week @else No activity this week @endif
+                </div>
             </div>
-            <div class="metric-label">Study Time</div>
-            <div class="metric-number">{{ $studyHours }}h</div>
-            <div class="metric-change {{ $studyHoursWeek > 0 ? '' : 'neutral' }}">
-                @if($studyHoursWeek > 0)<i class="fas fa-arrow-up"></i> {{ $studyHoursWeek }}h this week @else No activity this week @endif
-            </div>
-            <div class="metric-chart">
-                <svg class="sparkline" viewBox="0 0 100 36" preserveAspectRatio="none">
-                    <rect x="2"  y="24" width="10" height="12" rx="2" fill="#3b82f6" opacity="0.5"/>
-                    <rect x="16" y="20" width="10" height="16" rx="2" fill="#3b82f6" opacity="0.6"/>
-                    <rect x="30" y="16" width="10" height="20" rx="2" fill="#3b82f6" opacity="0.65"/>
-                    <rect x="44" y="18" width="10" height="18" rx="2" fill="#3b82f6" opacity="0.7"/>
-                    <rect x="58" y="10" width="10" height="26" rx="2" fill="#3b82f6" opacity="0.8"/>
-                    <rect x="72" y="8"  width="10" height="28" rx="2" fill="#3b82f6" opacity="0.9"/>
-                    <rect x="86" y="4"  width="10" height="32" rx="2" fill="#3b82f6"/>
-                </svg>
-            </div>
+            <div class="metric-illust"><img src="{{ asset('images/9.png') }}" alt="Study Time"></div>
         </div>
 
         <!-- Day Streak -->
-        <div class="metric-card">
-            <div class="metric-top">
-                <div class="metric-icon-wrap orange"><i class="fas fa-fire"></i></div>
+        <div class="metric-card accent-red">
+            <div class="metric-left">
+                <div class="metric-number-lg">{{ $streak }}</div>
+                <div class="metric-label-lg">Day Streak</div>
+                <div class="metric-sub">{{ $streak > 0 ? 'Keep it up!' : 'Start a quiz to begin a streak' }}</div>
             </div>
-            <div class="metric-label">Day Streak</div>
-            <div class="metric-number">{{ $streak }}</div>
-            <div class="metric-change neutral">{{ $streak > 0 ? 'Keep it up!' : 'Start a quiz to begin a streak' }}</div>
-            <div class="metric-chart">
-                <div class="fire-row">
-                    @for($i = 1; $i <= 5; $i++)
-                        @if($i <= min($streak, 5))
-                            <span class="fire-icon lit">&#128293;</span>
-                        @else
-                            <span class="fire-icon unlit"><i class="fas fa-fire" style="color:#e0e0e0;"></i></span>
-                        @endif
-                    @endfor
-                </div>
-            </div>
+            <div class="metric-illust"><img src="{{ asset('images/8.png') }}" alt="Day Streak"></div>
         </div>
     </div>
 
@@ -1019,38 +1267,6 @@
                 <a href="{{ route('adaptive-quizzes') }}" class="quick-btn primary">Start Quick Quiz &rarr;</a>
                 <a href="{{ route('mock-exams') }}" class="quick-btn outline">Take a Mock Exam</a>
             </div>
-
-            <!-- Recent Activity -->
-            <div class="card">
-                <div class="card-header">
-                    <span class="card-title">Recent Activity</span>
-                    <a class="card-link" href="{{ route('performance') }}">View All</a>
-                </div>
-                @php
-                    $sessionLabels = [
-                        'training' => 'Training Quiz', 'testing' => 'Adaptive Quiz',
-                        'mock_exam' => 'Mock Exam', 'spaced_review' => 'Spaced Review',
-                    ];
-                @endphp
-                @forelse($recentActivity as $activity)
-                    <div class="activity-item">
-                        <div class="activity-icon quiz"><i class="fas fa-clipboard-list"></i></div>
-                        <div class="activity-info">
-                            <div class="activity-name">{{ $sessionLabels[$activity->session_type] ?? 'Quiz' }}@if($activity->subject_code) &ndash; {{ $activity->subject_code }}@endif</div>
-                            <div class="activity-meta">
-                                {{ $activity->total_items }} Questions
-                                @if($activity->score_percent !== null) &bull; Score: {{ round($activity->score_percent) }}% @endif
-                            </div>
-                        </div>
-                        <div class="activity-right">
-                            <div class="activity-time">{{ \Illuminate\Support\Carbon::parse($activity->started_at)->diffForHumans(null, true) }} ago</div>
-                            <div class="activity-chevron"><i class="fas fa-chevron-right"></i></div>
-                        </div>
-                    </div>
-                @empty
-                    <p style="font-size:13px; color:var(--gray-500); padding:10px 0;">No recent activity yet.</p>
-                @endforelse
-            </div>
         </div>
     </div>
 
@@ -1084,6 +1300,64 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    // Live digital clock + live board-exam countdown
+    (function () {
+        const timeEl = document.getElementById('clockTime');
+        const ampmEl = document.getElementById('clockAmPm');
+        const calMonth   = document.getElementById('calMonth');
+        const calDayNum  = document.getElementById('calDayNum');
+        const calWeekday = document.getElementById('calWeekday');
+        if (!timeEl) return;
+
+        const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+        const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+        const pad = n => String(n).padStart(2, '0');
+
+        // Countdown target (midnight of the exam day, viewer's local time), or null.
+        const EXAM_TARGET = @json($examDateIso);
+        const target = EXAM_TARGET ? new Date(EXAM_TARGET + 'T00:00:00') : null;
+
+        const cdDays = document.getElementById('cdDays');
+        const cdHours = document.getElementById('cdHours');
+        const cdMins = document.getElementById('cdMins');
+        const cdSecs = document.getElementById('cdSecs');
+        const targetLabel = document.getElementById('examTargetLabel');
+        if (target && targetLabel) {
+            targetLabel.textContent = `${months[target.getMonth()]} ${target.getDate()}, ${target.getFullYear()}`;
+        }
+
+        function tick() {
+            const now = new Date();
+
+            // clock
+            let h = now.getHours();
+            const ampm = h >= 12 ? 'PM' : 'AM';
+            h = h % 12 || 12;
+            timeEl.textContent = `${pad(h)}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+            ampmEl.textContent = ampm;
+
+            // calendar card
+            if (calMonth)   calMonth.textContent   = `${months[now.getMonth()].toUpperCase()} ${now.getFullYear()}`;
+            if (calDayNum)  calDayNum.textContent  = now.getDate();
+            if (calWeekday) calWeekday.textContent = days[now.getDay()];
+
+            // countdown
+            if (target && cdDays) {
+                let diff = Math.max(0, target.getTime() - now.getTime());
+                const d = Math.floor(diff / 86400000); diff -= d * 86400000;
+                const hh = Math.floor(diff / 3600000); diff -= hh * 3600000;
+                const mm = Math.floor(diff / 60000); diff -= mm * 60000;
+                const ss = Math.floor(diff / 1000);
+                cdDays.textContent  = d;
+                cdHours.textContent = pad(hh);
+                cdMins.textContent  = pad(mm);
+                cdSecs.textContent  = pad(ss);
+            }
+        }
+        tick();
+        setInterval(tick, 1000);
+    })();
+
     // Profile dropdown
     const profileBtn = document.getElementById('profileBtn');
     const profileDrop = document.getElementById('profileDropdown');

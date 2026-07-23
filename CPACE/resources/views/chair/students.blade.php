@@ -258,9 +258,9 @@
             </div>
         </div>
         <div class="topbar-right">
-            <button class="btn btn-outline" type="button" onclick="openImportModal()">
-                <i class="fas fa-file-import"></i><span>Import CSV</span>
-            </button>
+            <a class="btn btn-outline" href="{{ route('chair.students.import.form') }}">
+                <i class="fas fa-file-import"></i><span>Bulk Enroll</span>
+            </a>
             <a class="btn btn-primary" href="{{ route('chair.students.create') }}">
                 <i class="fas fa-user-plus"></i><span>Enroll Student</span>
             </a>
