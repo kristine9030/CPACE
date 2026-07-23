@@ -180,6 +180,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/messages/{conversation}/members', [ChatController::class, 'addMembers'])->name('messages.members.add');
     Route::put('/messages/{conversation}/rename', [ChatController::class, 'rename'])->name('messages.rename');
     Route::post('/messages/{conversation}/leave', [ChatController::class, 'leave'])->name('messages.leave');
+    Route::get('/messages/attachments/{message}/download', [ChatController::class, 'download'])->name('messages.attachments.download');
 
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/subjects', [SubjectController::class, 'index'])->name('subjects');
