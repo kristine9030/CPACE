@@ -30,10 +30,14 @@ class CommunityController extends Controller
     {
         $user = Auth::user();
 
+        $activeSubjectId = $request->filled('subject_id') ? (int) $request->query('subject_id') : null;
+
         $posts = CommunityPost::with(['author.alumniProfile', 'subject', 'attachments', 'resource', 'likes', 'replies.author'])
+            ->when($activeSubjectId, fn ($q) => $q->where('subject_id', $activeSubjectId))
             ->orderByDesc('is_pinned')
             ->orderByDesc('created_at')
-            ->paginate(10);
+            ->paginate(10)
+            ->withQueryString();
 
         $unreadNotifications = DB::table('notifications')
             ->where('recipient_id', $user->id)
@@ -46,11 +50,20 @@ class CommunityController extends Controller
             ? CommunityResource::where('uploader_id', $user->id)->orderByDesc('created_at')->get(['id', 'title', 'original_name'])
             : collect();
 
+        // Facebook-style "Contacts" rail — anyone else active in the community
+        // that the current user can start a chat with from the sidebar.
+        $contacts = User::where('is_active', true)
+            ->where('id', '!=', $user->id)
+            ->orderBy('first_name')
+            ->get(['id', 'first_name', 'last_name', 'role_id']);
+
         return view('community.index', [
             'posts' => $posts,
             'subjects' => Subject::where('is_active', true)->orderBy('code')->get(),
             'unreadNotifications' => $unreadNotifications,
             'myResources' => $myResources,
+            'contacts' => $contacts,
+            'activeSubjectId' => $activeSubjectId,
         ]);
     }
 

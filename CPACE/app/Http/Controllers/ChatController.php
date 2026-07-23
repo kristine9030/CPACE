@@ -3,15 +3,20 @@
 namespace App\Http\Controllers;
 
 use App\Models\Conversation;
+use App\Models\Material;
 use App\Models\Message;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class ChatController extends Controller
 {
+    /** Extensions users are allowed to share in a chat. */
+    private const ALLOWED_EXTENSIONS = 'pdf,doc,docx,ppt,pptx,xls,xlsx,csv,txt,rtf,odt,jpg,jpeg,png,gif,webp,zip,rar';
+
     /**
      * Inbox — every conversation (the default community GC, any other group
      * chats, and DMs) the current user belongs to, newest activity first.
@@ -86,21 +91,37 @@ class ChatController extends Controller
     }
 
     /**
-     * Send a message into a conversation.
+     * Send a message into a conversation. A message carries text and/or a
+     * single shared file/photo — at least one of the two is required.
      */
     public function send(Request $request, Conversation $conversation)
     {
         $this->authorizeParticipant($conversation);
 
         $data = $request->validate([
-            'body' => ['required', 'string', 'max:3000'],
+            'body' => ['nullable', 'string', 'max:3000'],
+            'file' => ['nullable', 'file', 'mimes:' . self::ALLOWED_EXTENSIONS, 'max:20480'],
         ]);
 
-        $message = Message::create([
+        abort_if(empty($data['body']) && ! $request->hasFile('file'), 422, 'A message needs text or a file.');
+
+        $attributes = [
             'conversation_id' => $conversation->id,
             'sender_id' => Auth::id(),
-            'body' => $data['body'],
-        ]);
+            'body' => $data['body'] ?? '',
+        ];
+
+        if ($request->hasFile('file')) {
+            $file = $request->file('file');
+            $extension = strtolower($file->getClientOriginalExtension());
+
+            $attributes['file_path'] = $file->store('chat-attachments', 'public');
+            $attributes['original_name'] = $file->getClientOriginalName();
+            $attributes['file_size'] = $file->getSize();
+            $attributes['file_category'] = Material::categoryFor($extension);
+        }
+
+        $message = Message::create($attributes);
 
         $conversation->touch();
         $conversation->participants()->updateExistingPivot(Auth::id(), ['last_read_at' => $message->created_at]);
@@ -110,6 +131,18 @@ class ChatController extends Controller
         }
 
         return back();
+    }
+
+    /**
+     * Stream/redirect to a shared chat file for download.
+     */
+    public function download(Message $message)
+    {
+        $this->authorizeParticipant($message->conversation);
+
+        abort_unless($message->file_path && Storage::disk('public')->exists($message->file_path), 404);
+
+        return Storage::disk('public')->download($message->file_path, $message->original_name);
     }
 
     /**
@@ -153,6 +186,19 @@ class ChatController extends Controller
             $conversation = Conversation::create(['type' => 'direct', 'created_by' => Auth::id()]);
             $conversation->addParticipant(Auth::user());
             $conversation->addParticipant(User::findOrFail($otherId));
+        }
+
+        if ($request->wantsJson()) {
+            $conversation->load('participants');
+            $messages = $conversation->messages()->with('sender')->get();
+
+            return response()->json([
+                'conversation' => [
+                    'id' => $conversation->id,
+                    'name' => $conversation->displayNameFor(Auth::user()),
+                ],
+                'messages' => $messages->map(fn (Message $m) => $this->formatMessage($m, Auth::user()))->values(),
+            ]);
         }
 
         return redirect()->route('messages.show', $conversation);
@@ -255,12 +301,27 @@ class ChatController extends Controller
 
     private function formatMessage(Message $message, User $viewer): array
     {
+        $attachment = null;
+        if ($message->file_path) {
+            $meta = $message->iconMeta();
+            $attachment = [
+                'url' => route('messages.attachments.download', $message->id),
+                'name' => $message->original_name,
+                'size' => $message->humanSize(),
+                'is_image' => $message->file_category === 'image',
+                'preview_url' => $message->file_category === 'image' ? $message->url() : null,
+                'icon' => $meta['icon'],
+                'color' => $meta['color'],
+            ];
+        }
+
         return [
             'id' => $message->id,
             'body' => $message->body,
             'sender_name' => $message->sender?->name ?? 'User',
             'is_mine' => $message->sender_id === $viewer->id,
             'created_at' => $message->created_at->diffForHumans(),
+            'attachment' => $attachment,
         ];
     }
 }
