@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Faculty;
 
 use App\Http\Controllers\Controller;
 
+use App\Mail\StudentReminderMail;
 use App\Models\Role;
 use App\Models\Subject;
 use App\Services\WeaknessDetector;
@@ -11,6 +12,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 /**
  * Faculty "Student Performance" monitor. Every figure on the page is computed
@@ -468,8 +471,8 @@ class FacultyPerformanceController extends Controller
 
     /**
      * Drop a real "review reminder" notification into each at-risk student's
-     * inbox. Used by both "Send Report" (whole filtered set) and "Send Reminder
-     * to All" (at-risk only) buttons.
+     * inbox AND email them over SMTP. Used by both "Send Report" (whole
+     * filtered set) and "Send Reminder to All" (at-risk only) buttons.
      */
     public function sendReminder(Request $request)
     {
@@ -485,13 +488,19 @@ class FacultyPerformanceController extends Controller
 
         $sender = Auth::user();
         $now = now();
+        $subjectLine = $scope === 'all'
+            ? 'Your performance check-in from ' . $sender->name
+            : 'A study reminder from ' . $sender->name;
+
+        $message = fn ($r) => $scope === 'all'
+            ? "Your instructor {$sender->name} sent you a performance check-in. Keep up your reviews!"
+            : "Your instructor {$sender->name} noticed you may need extra practice. Try a focused review of your weak topics.";
+
         $payload = $targets->map(fn ($r) => [
             'recipient_id'   => $r['id'],
             'type'           => 'review_reminder',
             'title'          => 'Study reminder from your instructor',
-            'message'        => $scope === 'all'
-                ? "Your instructor {$sender->name} sent you a performance check-in. Keep up your reviews!"
-                : "Your instructor {$sender->name} noticed you may need extra practice. Try a focused review of your weak topics.",
+            'message'        => $message($r),
             'is_read'        => 0,
             'reference_type' => 'faculty',
             'reference_id'   => $sender->id,
@@ -500,8 +509,40 @@ class FacultyPerformanceController extends Controller
 
         DB::table('notifications')->insert($payload);
 
+        // Send the actual SMTP email to each targeted student. Failures (bad
+        // address, mail server down, etc.) are logged and skipped so one
+        // bad recipient doesn't block the rest of the batch.
+        $emailed = 0;
+        $failed = 0;
+        foreach ($targets as $r) {
+            if (empty($r['email'])) {
+                continue;
+            }
+
+            try {
+                Mail::to($r['email'])->send(new StudentReminderMail(
+                    studentName: $r['name'],
+                    facultyName: $sender->name,
+                    subjectLine: $subjectLine,
+                    bodyMessage: $message($r),
+                    ctaUrl: route('dashboard'),
+                    ctaLabel: 'Go to CPACE',
+                ));
+                $emailed++;
+            } catch (\Throwable $e) {
+                $failed++;
+                Log::warning('Failed to send student reminder email', [
+                    'student_id' => $r['id'],
+                    'email'      => $r['email'],
+                    'error'      => $e->getMessage(),
+                ]);
+            }
+        }
+
         $count = count($payload);
-        return back()->with('status', "Reminder sent to {$count} student" . ($count === 1 ? '' : 's') . '.');
+        $status = "Reminder sent to {$count} student" . ($count === 1 ? '' : 's') . " ({$emailed} email" . ($emailed === 1 ? '' : 's') . ' delivered' . ($failed ? ", {$failed} failed" : '') . ').';
+
+        return back()->with('status', $status);
     }
 
     /** Two-letter initials from a name. */
