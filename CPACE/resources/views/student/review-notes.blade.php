@@ -633,6 +633,82 @@
         .toast.success i { color: #4ade80; }
         .toast.error { background: var(--red); }
 
+        /* ── ALUMNI MATERIALS TAB ───────────────────────────────────────── */
+        .materials-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+            gap: 16px;
+        }
+        .mat-card {
+            background: #fff; border: 1px solid var(--line); border-radius: var(--panel-radius);
+            padding: 16px; display: flex; flex-direction: column; gap: 10px;
+        }
+        .mat-head { display: flex; align-items: flex-start; gap: 12px; }
+        .mat-icon {
+            width: 42px; height: 42px; border-radius: 10px; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px; color: #fff;
+        }
+        .mat-title { font-size: 13.5px; font-weight: 600; color: #232327; line-height: 1.35; }
+        .mat-meta { font-size: 11px; color: #a0a0a5; margin-top: 3px; }
+        .mat-desc { font-size: 12px; color: #6f6f75; line-height: 1.55; }
+        .mat-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+        .mat-foot {
+            display: flex; flex-direction: column; align-items: stretch; gap: 10px;
+            border-top: 1px solid #f1f1f3; padding-top: 10px; margin-top: auto;
+        }
+        .mat-downloads {
+            font-size: 11px; color: #a0a0a5; display: flex; align-items: center; gap: 5px;
+            white-space: nowrap;
+        }
+        .mat-actions { display: flex; align-items: center; gap: 8px; }
+        .mat-actions .mat-btn { flex: 1; }
+        .mat-btn {
+            display: flex; align-items: center; justify-content: center; gap: 6px;
+            border: none; padding: 8px 13px; border-radius: 8px;
+            font-size: 12px; font-weight: 600; font-family: 'Poppins', sans-serif;
+            cursor: pointer; text-decoration: none; white-space: nowrap;
+        }
+        .mat-btn-view { background: var(--red-chip-bg); color: var(--red); }
+        .mat-btn-view:hover { background: #fbdbd3; }
+        .mat-btn-download { background: #f2f2f4; color: #55555b; }
+        .mat-btn-download:hover { background: #e8e8ea; }
+
+        /* Big preview modal — regardless of file type */
+        .mat-modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+            display: none; align-items: center; justify-content: center;
+            z-index: 5500; padding: 30px;
+        }
+        .mat-modal-overlay.open { display: flex; }
+        .mat-modal {
+            background: #fff; border-radius: 14px;
+            width: 100%; max-width: 980px; height: calc(100vh - 60px);
+            display: flex; flex-direction: column; overflow: hidden;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+            animation: modalUp 0.25s ease;
+        }
+        .mat-modal-head {
+            display: flex; align-items: center; justify-content: space-between; gap: 14px;
+            padding: 16px 22px; border-bottom: 1px solid #f0f0f0; flex-shrink: 0;
+        }
+        .mat-modal-title-wrap { display: flex; align-items: center; gap: 12px; min-width: 0; }
+        .mat-modal-title { font-size: 15.5px; font-weight: 600; color: #232327; }
+        .mat-modal-sub { font-size: 11.5px; color: #a0a0a5; margin-top: 2px; }
+        .mat-modal-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+        .mat-modal-body {
+            flex: 1; background: #eef0f3; overflow: auto;
+            display: flex; align-items: stretch; justify-content: center;
+        }
+        .mat-modal-body iframe { width: 100%; height: 100%; border: none; background: #fff; }
+        .mat-modal-body img { max-width: 100%; max-height: 100%; margin: auto; object-fit: contain; }
+        .mat-preview-fallback {
+            margin: auto; text-align: center; padding: 50px 30px; color: #77777d;
+        }
+        .mat-preview-fallback i { font-size: 48px; margin-bottom: 16px; display: block; }
+        .mat-preview-fallback p { font-size: 14px; margin-bottom: 6px; color: #3a3a3f; font-weight: 500; }
+        .mat-preview-fallback span { font-size: 12.5px; color: #a0a0a5; }
+
         /* ── RESPONSIVE ─────────────────────────────────────────────────── */
         @media (max-width: 1350px) {
             .workspace { grid-template-columns: 250px 1fr; }
@@ -698,6 +774,7 @@
                 <button class="tab-btn" data-tab="topic"><i class="fas fa-tag"></i> By Topic</button>
                 <button class="tab-btn" data-tab="recent"><i class="far fa-clock"></i> Recent</button>
                 <button class="tab-btn" data-tab="archived"><i class="fas fa-box-archive"></i> Archived</button>
+                <button class="tab-btn" data-tab="materials"><i class="fas fa-graduation-cap"></i> Alumni Materials</button>
             </div>
 
             <!-- WORKSPACE -->
@@ -765,7 +842,48 @@
                     <div class="pv-body" id="previewBody"></div>
                 </section>
             </div>
+
+            <!-- ALUMNI MATERIALS -->
+            <div class="panel" id="materialsWrap" style="display:none;">
+                <div class="panel-head">
+                    <span class="panel-title">Alumni Materials</span>
+                    <div class="sort-wrap">
+                        <select class="sort-select" id="matSubjectFilter" title="Filter by subject">
+                            <option value="">All subjects</option>
+                            @foreach($subjects as $subj)
+                                <option value="{{ $subj->code }}">{{ $subj->code }} — {{ $subj->name }}</option>
+                            @endforeach
+                        </select>
+                        <select class="sort-select" id="matSortSelect" title="Sort materials">
+                            <option value="newest">Sort: Newest</option>
+                            <option value="most_downloaded">Sort: Most Downloaded</option>
+                            <option value="az">Sort: A – Z</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="padding:16px;overflow-y:auto;max-height:calc(100vh - 235px);" id="materialsList"></div>
+            </div>
         </main>
+    </div>
+
+    <!-- ALUMNI MATERIAL PREVIEW MODAL -->
+    <div class="mat-modal-overlay" id="matModal">
+        <div class="mat-modal">
+            <div class="mat-modal-head">
+                <div class="mat-modal-title-wrap">
+                    <div class="mat-icon" id="matModalIcon"><i class="fas fa-file"></i></div>
+                    <div style="min-width:0;">
+                        <div class="mat-modal-title" id="matModalTitle"></div>
+                        <div class="mat-modal-sub" id="matModalSub"></div>
+                    </div>
+                </div>
+                <div class="mat-modal-actions">
+                    <a href="#" id="matModalDownload" class="mat-btn mat-btn-download" title="Download"><i class="fas fa-arrow-down-to-line"></i> Download</a>
+                    <button class="icon-btn" id="matModalClose" title="Close"><i class="fas fa-xmark"></i></button>
+                </div>
+            </div>
+            <div class="mat-modal-body" id="matModalBody"></div>
+        </div>
     </div>
 
     <!-- CONTEXT MENU -->
@@ -828,9 +946,10 @@
 
     <script>
         const CSRF     = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-        const NOTES    = @json($notes);
-        const SUBJECTS = @json($subjects);
-        const TOPICS   = @json($topics);
+        const NOTES     = @json($notes);
+        const SUBJECTS  = @json($subjects);
+        const TOPICS    = @json($topics);
+        const MATERIALS = @json($materials);
         const ROUTES   = {
             store: "{{ route('review-notes.store') }}",
             base:  "{{ url('review-notes') }}",
@@ -895,6 +1014,8 @@
             selectedId: null,
             editing: false,
             view: 'cards',       // cards | rows
+            matSubject: '',      // Alumni Materials subject filter (subject code)
+            matSort: 'newest',   // newest | most_downloaded | az
         };
 
         const esc = s => String(s ?? '').replace(/[&<>"']/g, c =>
@@ -1453,10 +1574,148 @@
         }
 
         function renderAll() {
+            const onMaterials = state.tab === 'materials';
+            document.getElementById('workspace').style.display = onMaterials ? 'none' : '';
+            document.getElementById('materialsWrap').style.display = onMaterials ? 'flex' : 'none';
+            document.getElementById('materialsWrap').style.flexDirection = 'column';
+
+            if (onMaterials) {
+                renderMaterials();
+                return;
+            }
             renderFolders();
             renderList();
             // Never wipe an open document editor from a background re-render.
             if (!state.editing) renderPreview();
+        }
+
+        // ── Alumni Materials tab ────────────────────────────────────────────
+        function visibleMaterials() {
+            let list = MATERIALS.slice();
+
+            if (state.matSubject) {
+                list = list.filter(m => (m.subject_code || '') === state.matSubject);
+            }
+
+            if (state.search) {
+                const q = state.search.toLowerCase();
+                list = list.filter(m =>
+                    (m.title || '').toLowerCase().includes(q) ||
+                    (m.description || '').toLowerCase().includes(q) ||
+                    (m.uploader_name || '').toLowerCase().includes(q) ||
+                    (m.subject_code || '').toLowerCase().includes(q) ||
+                    (m.subject_name || '').toLowerCase().includes(q));
+            }
+
+            // MATERIALS already arrives ordered newest-first from the server,
+            // so "newest" needs no extra sort — only re-sort for the others.
+            if (state.matSort === 'most_downloaded') {
+                list.sort((a, b) => (b.downloads_count || 0) - (a.downloads_count || 0));
+            } else if (state.matSort === 'az') {
+                list.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
+            }
+
+            return list;
+        }
+
+        function materialCardHtml(m) {
+            return `
+                <div class="mat-card" data-id="${m.id}">
+                    <div class="mat-head">
+                        <div class="mat-icon" style="background:${m.color};"><i class="fas ${m.icon}"></i></div>
+                        <div style="flex:1;min-width:0;">
+                            <div class="mat-title">${esc(m.title)}</div>
+                            <div class="mat-meta">${esc((m.file_category || '').toUpperCase())} · ${esc(m.file_size || '')} · ${esc(m.created_human || '')}</div>
+                        </div>
+                    </div>
+                    ${m.description ? `<div class="mat-desc">${esc(m.description)}</div>` : ''}
+                    <div class="mat-tags">
+                        ${m.subject_code ? `<span class="chip">${esc(m.subject_code)}</span>` : ''}
+                        <span class="chip"><i class="fas fa-user" style="margin-right:3px;"></i>${esc(m.uploader_name)}</span>
+                    </div>
+                    <div class="mat-foot">
+                        <span class="mat-downloads"><i class="fas fa-download"></i> ${m.downloads_count} download${m.downloads_count === 1 ? '' : 's'}</span>
+                        <div class="mat-actions">
+                            <button class="mat-btn mat-btn-view" data-act="view" data-id="${m.id}"><i class="far fa-eye"></i> View</button>
+                            <a class="mat-btn mat-btn-download" href="${m.download_url}"><i class="fas fa-arrow-down-to-line"></i> Download</a>
+                        </div>
+                    </div>
+                </div>`;
+        }
+
+        function renderMaterials() {
+            const el = document.getElementById('materialsList');
+            const list = visibleMaterials();
+
+            if (!list.length) {
+                el.innerHTML = `
+                    <div class="list-empty">
+                        <i class="far fa-folder-open"></i>
+                        <p>No materials yet</p>
+                        <span>Check back soon — alumni will start sharing reviewers and notes here.</span>
+                    </div>`;
+                return;
+            }
+
+            el.innerHTML = `<div class="materials-grid">${list.map(materialCardHtml).join('')}</div>`;
+
+            el.querySelectorAll('[data-act="view"]').forEach(btn => {
+                btn.addEventListener('click', () => openMaterialModal(Number(btn.dataset.id)));
+            });
+        }
+
+        // Office/Google-viewable extensions vs. natively-renderable ones.
+        const OFFICE_CATEGORIES = ['word', 'excel', 'powerpoint'];
+
+        function materialPreviewBody(m) {
+            if (!m.view_url) {
+                return `
+                    <div class="mat-preview-fallback">
+                        <i class="fas fa-file-circle-exclamation"></i>
+                        <p>Preview unavailable</p>
+                        <span>Use the Download button to view this file.</span>
+                    </div>`;
+            }
+            if (m.file_category === 'pdf') {
+                return `<iframe src="${esc(m.view_url)}" title="${esc(m.title)}"></iframe>`;
+            }
+            if (m.file_category === 'image') {
+                return `<img src="${esc(m.view_url)}" alt="${esc(m.title)}">`;
+            }
+            if (m.file_category === 'text') {
+                return `<iframe src="${esc(m.view_url)}" title="${esc(m.title)}"></iframe>`;
+            }
+            if (OFFICE_CATEGORIES.includes(m.file_category)) {
+                // Best-effort Office Online viewer — needs the file URL to be
+                // publicly reachable. Falls back to a download prompt below it.
+                const viewerUrl = 'https://view.officeapps.live.com/op/embed.aspx?src=' + encodeURIComponent(m.view_url);
+                return `<iframe src="${viewerUrl}" title="${esc(m.title)}"></iframe>`;
+            }
+            return `
+                <div class="mat-preview-fallback">
+                    <i class="fas ${m.icon}" style="color:${m.color};"></i>
+                    <p>${esc(m.original_name || m.title)}</p>
+                    <span>This file type can't be previewed in-browser. Use Download to open it.</span>
+                </div>`;
+        }
+
+        function openMaterialModal(id) {
+            const m = MATERIALS.find(x => x.id === id);
+            if (!m) return;
+
+            document.getElementById('matModalIcon').style.background = m.color;
+            document.getElementById('matModalIcon').innerHTML = `<i class="fas ${m.icon}"></i>`;
+            document.getElementById('matModalTitle').textContent = m.title;
+            document.getElementById('matModalSub').textContent =
+                `${(m.file_category || '').toUpperCase()} · ${m.file_size || ''} · Uploaded by ${m.uploader_name}`;
+            document.getElementById('matModalDownload').href = m.download_url;
+            document.getElementById('matModalBody').innerHTML = materialPreviewBody(m);
+            document.getElementById('matModal').classList.add('open');
+        }
+
+        function closeMaterialModal() {
+            document.getElementById('matModal').classList.remove('open');
+            document.getElementById('matModalBody').innerHTML = '';
         }
 
         // ── Selection (counts as a review) ─────────────────────────────────
@@ -1848,7 +2107,10 @@
             let searchTimer;
             document.getElementById('globalSearch').addEventListener('input', e => {
                 clearTimeout(searchTimer);
-                searchTimer = setTimeout(() => { state.search = e.target.value.trim(); renderList(); }, 200);
+                searchTimer = setTimeout(() => {
+                    state.search = e.target.value.trim();
+                    state.tab === 'materials' ? renderMaterials() : renderList();
+                }, 200);
             });
 
             // New note (+), preview toolbar
@@ -1888,12 +2150,29 @@
             document.addEventListener('click', closeMenu);
             document.addEventListener('keydown', e => {
                 if (e.key !== 'Escape') return;
+                if (document.getElementById('matModal').classList.contains('open')) { closeMaterialModal(); return; }
                 const hadMenu = document.getElementById('ctxMenu').classList.contains('open');
                 const hadModal = document.querySelectorAll('.modal-overlay.open').length > 0;
                 closeMenu();
                 document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
                 // Nothing else was open → Escape closes the note preview.
                 if (!hadMenu && !hadModal && !state.editing && state.selectedId !== null) closePreview();
+            });
+
+            // Alumni Materials preview modal
+            document.getElementById('matModalClose').addEventListener('click', closeMaterialModal);
+            document.getElementById('matModal').addEventListener('click', e => {
+                if (e.target === e.currentTarget) closeMaterialModal();
+            });
+
+            // Alumni Materials filters
+            document.getElementById('matSubjectFilter').addEventListener('change', e => {
+                state.matSubject = e.target.value;
+                renderMaterials();
+            });
+            document.getElementById('matSortSelect').addEventListener('change', e => {
+                state.matSort = e.target.value;
+                renderMaterials();
             });
             window.addEventListener('scroll', closeMenu, true);
 

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Student;
 
 use App\Http\Controllers\Controller;
 
+use App\Models\CommunityResource;
 use App\Models\ReviewNote;
 use App\Models\Subject;
 use Illuminate\Http\Request;
@@ -35,7 +36,15 @@ class ReviewNoteController extends Controller
             ->orderBy('subject_id')->orderBy('name')
             ->get(['id', 'subject_id', 'name']);
 
-        return view('student.review-notes', compact('notes', 'subjects', 'topics'));
+        // Alumni Materials tab — study materials alumni uploaded to the
+        // (now student-hidden) Resource Library, viewable/downloadable here.
+        $materials = CommunityResource::with(['uploader', 'subject'])
+            ->orderByDesc('created_at')
+            ->get()
+            ->map(fn (CommunityResource $r) => $this->presentMaterial($r))
+            ->values();
+
+        return view('student.review-notes', compact('notes', 'subjects', 'topics', 'materials'));
     }
 
     /**
@@ -199,6 +208,33 @@ class ReviewNoteController extends Controller
             'created_human'  => $note->created_at?->diffForHumans(),
             'last_reviewed'  => $note->last_reviewed_at?->diffForHumans(),
             'created_on'     => $note->created_at?->format('M j, Y'),
+        ];
+    }
+
+    /**
+     * Shape an alumni-uploaded resource for the Alumni Materials tab.
+     */
+    private function presentMaterial(CommunityResource $r): array
+    {
+        $meta = $r->iconMeta();
+
+        return [
+            'id'              => $r->id,
+            'title'           => $r->title,
+            'description'     => $r->description,
+            'subject_code'    => $r->subject->code ?? null,
+            'subject_name'    => $r->subject->name ?? null,
+            'uploader_name'   => $r->uploader->name ?? 'Former Member',
+            'file_category'   => $r->file_category,
+            'original_name'   => $r->original_name,
+            'file_size'       => $r->humanSize(),
+            'downloads_count' => $r->downloads_count,
+            'icon'            => $meta['icon'],
+            'color'           => $meta['color'],
+            'created_human'   => $r->created_at?->diffForHumans(),
+            'date_display'    => $r->created_at?->format('M j, Y'),
+            'view_url'        => $r->url(),
+            'download_url'    => route('community.resources.download', $r->id),
         ];
     }
 }

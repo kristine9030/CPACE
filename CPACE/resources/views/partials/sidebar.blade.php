@@ -285,7 +285,6 @@
 
         <li class="nav-label">Community</li>
         <li><a href="{{ route('community.index') }}" class="{{ $active === 'community' ? 'active' : '' }}"><i class="fas fa-people-group"></i><span>Alumni Community</span></a></li>
-        <li><a href="{{ route('community.resources.index') }}" class="{{ $active === 'resources' ? 'active' : '' }}"><i class="fas fa-book"></i><span>Resource Library</span></a></li>
 
         <li class="nav-label">Account</li>
         <li><a href="{{ route('settings') }}" class="{{ $active === 'settings' ? 'active' : '' }}"><i class="fas fa-cog"></i><span>Settings</span></a></li>
