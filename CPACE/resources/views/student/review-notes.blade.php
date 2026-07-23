@@ -1667,6 +1667,15 @@
         // Office/Google-viewable extensions vs. natively-renderable ones.
         const OFFICE_CATEGORIES = ['word', 'excel', 'powerpoint'];
 
+        // Office Online can only preview a file if it can fetch the URL itself,
+        // so it's useless against localhost/private-network hosts — skip straight
+        // to the download fallback there instead of showing a dead iframe.
+        const IS_PUBLIC_HOST = (() => {
+            const h = window.location.hostname;
+            return h !== 'localhost' && h !== '127.0.0.1' &&
+                !/^192\.168\.|^10\.|^172\.(1[6-9]|2[0-9]|3[0-1])\.|\.test$|\.local$/.test(h);
+        })();
+
         function materialPreviewBody(m) {
             if (!m.view_url) {
                 return `
@@ -1685,11 +1694,19 @@
             if (m.file_category === 'text') {
                 return `<iframe src="${esc(m.view_url)}" title="${esc(m.title)}"></iframe>`;
             }
-            if (OFFICE_CATEGORIES.includes(m.file_category)) {
+            if (OFFICE_CATEGORIES.includes(m.file_category) && IS_PUBLIC_HOST) {
                 // Best-effort Office Online viewer — needs the file URL to be
                 // publicly reachable. Falls back to a download prompt below it.
                 const viewerUrl = 'https://view.officeapps.live.com/op/embed.aspx?src=' + encodeURIComponent(m.view_url);
                 return `<iframe src="${viewerUrl}" title="${esc(m.title)}"></iframe>`;
+            }
+            if (OFFICE_CATEGORIES.includes(m.file_category)) {
+                return `
+                    <div class="mat-preview-fallback">
+                        <i class="fas ${m.icon}" style="color:${m.color};"></i>
+                        <p>${esc(m.original_name || m.title)}</p>
+                        <span>Preview isn't available on a local/private server — Office Online needs a public URL. Use Download to open it.</span>
+                    </div>`;
             }
             return `
                 <div class="mat-preview-fallback">

@@ -83,7 +83,24 @@ class SubjectController extends Controller
             ->orderByDesc('id')
             ->get();
 
-        return view('student.topic-materials', compact('subject', 'topic', 'materials'));
+        $materialsJson = $materials->map(function (Material $m) {
+            $meta = $m->iconMeta();
+
+            return [
+                'id'            => $m->id,
+                'title'         => $m->title,
+                'file_category' => $m->file_category,
+                'original_name' => $m->original_name,
+                'file_size'     => $m->humanSize(),
+                'uploader_name' => $m->uploader->name ?? 'Faculty',
+                'icon'          => $meta['icon'],
+                'color'         => $meta['color'],
+                'view_url'      => $m->url(),
+                'download_url'  => route('materials.download', $m->id),
+            ];
+        })->values();
+
+        return view('student.topic-materials', compact('subject', 'topic', 'materials', 'materialsJson'));
     }
 
     /**
