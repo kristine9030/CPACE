@@ -1106,7 +1106,7 @@
             <div class="exam-hero-shapes" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
 
             <div class="exam-hero-left">
-                <div class="exam-hero-greeting">Good Morning, {{ explode(' ', Auth::user()->name)[0] }}!</div>
+                <div class="exam-hero-greeting" id="examHeroGreeting">Good Day, {{ explode(' ', Auth::user()->name)[0] }}!</div>
                 <div class="exam-hero-subtitle">Board Exam Countdown</div>
                 @if($examDateIso)
                     <div class="exam-hero-target">Target Board Exam: <strong id="examTargetLabel">&mdash;</strong></div>
@@ -1324,6 +1324,13 @@ document.addEventListener('DOMContentLoaded', function () {
         const targetLabel = document.getElementById('examTargetLabel');
         if (target && targetLabel) {
             targetLabel.textContent = `${months[target.getMonth()]} ${target.getDate()}, ${target.getFullYear()}`;
+        }
+
+        const greetingEl = document.getElementById('examHeroGreeting');
+        if (greetingEl) {
+            const hour = new Date().getHours();
+            const period = hour < 12 ? 'Good Morning' : (hour < 18 ? 'Good Afternoon' : 'Good Evening');
+            greetingEl.textContent = greetingEl.textContent.replace('Good Day', period);
         }
 
         function tick() {
