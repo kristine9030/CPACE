@@ -374,7 +374,8 @@
             const cells = line.split(',');
             const g = k => (idx(k) > -1 ? (cells[idx(k)] || '').trim() : '');
             let email = g('email');
-            const fn = g('first_name'), ln = g('last_name');
+            const fn = g('first_name'), ln = g('last_name'), sn = g('student_number');
+            if (!email && sn) email = sn.toLowerCase().replace(/[^a-z0-9\-]/g, '') + '@g.batstate-u.edu.ph';
             if (!email && fn && ln) email = (fn + '.' + ln).toLowerCase().replace(/\s+/g,'') + '@cpace.edu';
             const dup = seen.has(email); seen.add(email);
             return { first_name: fn, last_name: ln, email, student_number: g('student_number'), section: g('section'), dup };

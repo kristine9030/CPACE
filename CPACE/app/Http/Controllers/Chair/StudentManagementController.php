@@ -33,7 +33,9 @@ class StudentManagementController extends Controller
         $page = max(1, (int) $request->input('page', 1));
         $students = new LengthAwarePaginator(
             $rows->forPage($page, self::PER_PAGE)->values(),
-            $rows->count(), self::PER_PAGE, $page,
+            $rows->count(),
+            self::PER_PAGE,
+            $page,
             ['path' => $request->url(), 'query' => $request->query()]
         );
 
@@ -73,7 +75,9 @@ class StudentManagementController extends Controller
             ->groupBy('subjects.id', 'subjects.code', 'subjects.name', 'subjects.passing_threshold')
             ->orderBy('subjects.id')
             ->select(
-                'subjects.code', 'subjects.name', 'subjects.passing_threshold',
+                'subjects.code',
+                'subjects.name',
+                'subjects.passing_threshold',
                 DB::raw('COALESCE(SUM(performance_records.correct_count),0) as correct'),
                 DB::raw('COALESCE(SUM(performance_records.total_attempts),0) as attempted')
             )->get()->map(function ($subject) {
@@ -90,8 +94,10 @@ class StudentManagementController extends Controller
             ->where('performance_records.student_id', $student->id)
             ->where('performance_records.total_attempts', '>', 0)
             ->select(
-                'topics.name as topic', 'subjects.code as subject',
-                'performance_records.correct_count', 'performance_records.total_attempts',
+                'topics.name as topic',
+                'subjects.code as subject',
+                'performance_records.correct_count',
+                'performance_records.total_attempts',
                 'performance_records.consecutive_wrong'
             )->get()->filter(function ($record) {
                 [$weak] = $this->weakness->evaluate($record);
@@ -121,9 +127,12 @@ class StudentManagementController extends Controller
         $student = DB::transaction(function () use ($data) {
             $student = User::create([
                 'role_id' => Role::STUDENT,
-                'first_name' => $data['first_name'], 'last_name' => $data['last_name'],
-                'email' => $data['email'], 'password' => Hash::make($data['password']),
-                'is_active' => (bool) $data['is_active'], 'email_verified' => true,
+                'first_name' => $data['first_name'],
+                'last_name' => $data['last_name'],
+                'email' => $data['email'],
+                'password' => Hash::make($data['password']),
+                'is_active' => (bool) $data['is_active'],
+                'email_verified' => true,
             ]);
             $this->saveProfile($student, $data);
 
@@ -147,8 +156,10 @@ class StudentManagementController extends Controller
         $data = $this->validateStudent($request, $student);
         DB::transaction(function () use ($student, $data) {
             $student->update([
-                'first_name' => $data['first_name'], 'last_name' => $data['last_name'],
-                'email' => $data['email'], 'is_active' => (bool) $data['is_active'],
+                'first_name' => $data['first_name'],
+                'last_name' => $data['last_name'],
+                'email' => $data['email'],
+                'is_active' => (bool) $data['is_active'],
             ]);
             if (! empty($data['password'])) {
                 $student->update(['password' => Hash::make($data['password'])]);
@@ -178,7 +189,7 @@ class StudentManagementController extends Controller
 
         $handle = fopen($request->file('file')->getRealPath(), 'r');
         $header = fgetcsv($handle);
-        $header = array_map(fn ($value) => strtolower(trim((string) $value)), $header ?: []);
+        $header = array_map(fn($value) => strtolower(trim((string) $value)), $header ?: []);
 
         if (! in_array('first_name', $header, true) || ! in_array('last_name', $header, true)) {
             fclose($handle);
@@ -192,7 +203,7 @@ class StudentManagementController extends Controller
 
         while (($values = fgetcsv($handle)) !== false) {
             $line++;
-            if (count(array_filter($values, fn ($value) => trim((string) $value) !== '')) === 0) {
+            if (count(array_filter($values, fn($value) => trim((string) $value) !== '')) === 0) {
                 continue;
             }
             $values = array_pad($values, count($header), null);
@@ -210,7 +221,7 @@ class StudentManagementController extends Controller
                 continue;
             }
             if ($email === '') {
-                $email = $this->generateEmail($firstName, $lastName);
+                $email = $this->generateEmail($firstName, $lastName, $studentNumber);
             }
 
             $validator = Validator::make(
@@ -223,7 +234,7 @@ class StudentManagementController extends Controller
                 ]
             );
             if ($validator->fails()) {
-                $errors[] = "Row {$line}: ".$validator->errors()->first();
+                $errors[] = "Row {$line}: " . $validator->errors()->first();
 
                 continue;
             }
@@ -263,7 +274,7 @@ class StudentManagementController extends Controller
 
         return back()
             ->with('created_credentials', $created)
-            ->with('status', count($created).' account'.(count($created) === 1 ? '' : 's').' created.')
+            ->with('status', count($created) . ' account' . (count($created) === 1 ? '' : 's') . ' created.')
             ->with('import_errors', array_slice($errors, 0, 25));
     }
 
@@ -280,13 +291,23 @@ class StudentManagementController extends Controller
 
     /**
      * Build a GSuite-style address when a row leaves the email blank.
+     * Students are identified by their SR-Code (e.g. "23-70362@g.batstate-u.edu.ph"),
+     * falling back to a name-based address when no student number is given.
      */
-    private function generateEmail(string $first, string $last): string
+    private function generateEmail(string $first, string $last, ?string $studentNumber = null): string
     {
-        $slug = fn ($value) => preg_replace('/[^a-z0-9]/', '', strtolower($value));
-        $base = $slug($first).'.'.$slug($last);
+        if ($studentNumber) {
+            $slugNumber = preg_replace('/[^a-z0-9\-]/', '', strtolower($studentNumber));
 
-        return $base.'@cpace.edu';
+            if ($slugNumber !== '') {
+                return $slugNumber . '@g.batstate-u.edu.ph';
+            }
+        }
+
+        $slug = fn($value) => preg_replace('/[^a-z0-9]/', '', strtolower($value));
+        $base = $slug($first) . '.' . $slug($last);
+
+        return $base . '@cpace.edu';
     }
 
     /**
@@ -295,10 +316,10 @@ class StudentManagementController extends Controller
     private function generatePassword(): string
     {
         $chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
-        $pick = fn () => $chars[random_int(0, strlen($chars) - 1)];
-        $block = fn () => implode('', array_map($pick, range(1, 4)));
+        $pick = fn() => $chars[random_int(0, strlen($chars) - 1)];
+        $block = fn() => implode('', array_map($pick, range(1, 4)));
 
-        return $block().'-'.$block();
+        return $block() . '-' . $block();
     }
 
     public function exportCsv(Request $request)
@@ -311,13 +332,22 @@ class StudentManagementController extends Controller
             fputcsv($out, ['Student Number', 'Student', 'Email', 'Year Level', 'Section', 'Readiness (%)', 'Questions Attempted', 'Quizzes', 'Streak', 'Last Active', 'At Risk', 'Status']);
             foreach ($rows as $row) {
                 fputcsv($out, [
-                    $row['student_number'], $row['name'], $row['email'], $row['year_level'], $row['section'],
-                    $row['score'], $row['attempted'], $row['quizzes'], $row['streak'],
-                    $row['last_active']?->format('Y-m-d H:i'), $row['at_risk'] ? 'Yes' : 'No', $row['is_active'] ? 'Active' : 'Disabled',
+                    $row['student_number'],
+                    $row['name'],
+                    $row['email'],
+                    $row['year_level'],
+                    $row['section'],
+                    $row['score'],
+                    $row['attempted'],
+                    $row['quizzes'],
+                    $row['streak'],
+                    $row['last_active']?->format('Y-m-d H:i'),
+                    $row['at_risk'] ? 'Yes' : 'No',
+                    $row['is_active'] ? 'Active' : 'Disabled',
                 ]);
             }
             fclose($out);
-        }, 'student-performance-'.now()->format('Y-m-d_His').'.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
+        }, 'student-performance-' . now()->format('Y-m-d_His') . '.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
     }
 
     public function exportPdf(Request $request)
@@ -326,7 +356,8 @@ class StudentManagementController extends Controller
         $rows = $this->applyFilters($this->studentRows(), $filters);
         $scored = $rows->whereNotNull('score');
         $stats = [
-            'total' => $rows->count(), 'active' => $rows->where('is_active', true)->count(),
+            'total' => $rows->count(),
+            'active' => $rows->where('is_active', true)->count(),
             'average' => $scored->isNotEmpty() ? (int) round($scored->avg('score')) : 0,
             'at_risk' => $rows->where('at_risk', true)->count(),
         ];
@@ -337,19 +368,22 @@ class StudentManagementController extends Controller
     private function studentRows(?array $onlyIds = null)
     {
         $activity = DB::table('quiz_sessions')->where('session_type', '!=', 'training')
-            ->whereNotNull('completed_at')->when($onlyIds, fn ($query) => $query->whereIn('student_id', $onlyIds))
+            ->whereNotNull('completed_at')->when($onlyIds, fn($query) => $query->whereIn('student_id', $onlyIds))
             ->groupBy('student_id')->select(
-                'student_id', DB::raw('COUNT(*) as quizzes'), DB::raw('COALESCE(SUM(total_items),0) as attempted'),
-                DB::raw('COALESCE(SUM(correct_answers),0) as correct'), DB::raw('MAX(completed_at) as last_quiz')
+                'student_id',
+                DB::raw('COUNT(*) as quizzes'),
+                DB::raw('COALESCE(SUM(total_items),0) as attempted'),
+                DB::raw('COALESCE(SUM(correct_answers),0) as correct'),
+                DB::raw('MAX(completed_at) as last_quiz')
             )->get()->keyBy('student_id');
 
-        return User::where('role_id', Role::STUDENT)->when($onlyIds, fn ($query) => $query->whereIn('id', $onlyIds))
+        return User::where('role_id', Role::STUDENT)->when($onlyIds, fn($query) => $query->whereIn('id', $onlyIds))
             ->with('studentProfile')->orderBy('first_name')->get()->map(function (User $student) use ($activity) {
                 $quiz = $activity->get($student->id);
                 $attempted = (int) ($quiz->attempted ?? 0);
                 $score = $attempted > 0 ? (int) round((int) $quiz->correct / $attempted * 100) : null;
                 $dates = collect([$quiz?->last_quiz, $student->last_login_at, $student->created_at])
-                    ->filter()->map(fn ($date) => Carbon::parse($date));
+                    ->filter()->map(fn($date) => Carbon::parse($date));
                 $lastActive = $dates->sortDesc()->first();
                 $daysIdle = $lastActive ? (int) $lastActive->diffInDays(now()) : self::INACTIVE_DAYS;
                 $low = $attempted >= WeaknessDetector::MIN_ATTEMPTS && $score < WeaknessDetector::ACCURACY_THRESHOLD * 100;
@@ -357,11 +391,21 @@ class StudentManagementController extends Controller
                 $profile = $student->studentProfile;
 
                 return [
-                    'id' => $student->id, 'name' => $student->name, 'initials' => strtoupper(substr($student->first_name, 0, 1).substr($student->last_name, 0, 1)),
-                    'email' => $student->email, 'student_number' => $profile?->student_number, 'year_level' => $profile?->year_level,
-                    'section' => $profile?->section, 'score' => $score, 'attempted' => $attempted, 'quizzes' => (int) ($quiz->quizzes ?? 0),
-                    'streak' => (int) ($profile?->streak_days ?? 0), 'last_active' => $lastActive, 'days_idle' => $daysIdle,
-                    'at_risk' => $student->is_active && ($low || $inactive), 'is_active' => (bool) $student->is_active,
+                    'id' => $student->id,
+                    'name' => $student->name,
+                    'initials' => strtoupper(substr($student->first_name, 0, 1) . substr($student->last_name, 0, 1)),
+                    'email' => $student->email,
+                    'student_number' => $profile?->student_number,
+                    'year_level' => $profile?->year_level,
+                    'section' => $profile?->section,
+                    'score' => $score,
+                    'attempted' => $attempted,
+                    'quizzes' => (int) ($quiz->quizzes ?? 0),
+                    'streak' => (int) ($profile?->streak_days ?? 0),
+                    'last_active' => $lastActive,
+                    'days_idle' => $daysIdle,
+                    'at_risk' => $student->is_active && ($low || $inactive),
+                    'is_active' => (bool) $student->is_active,
                     'setup_completed' => $student->setup_completed_at !== null,
                 ];
             });
@@ -369,15 +413,20 @@ class StudentManagementController extends Controller
 
     private function filters(Request $request): array
     {
-        return ['search' => trim((string) $request->input('search')), 'year' => $request->input('year'),
-            'section' => $request->input('section'), 'status' => $request->input('status'), 'sort' => $request->input('sort', 'name')];
+        return [
+            'search' => trim((string) $request->input('search')),
+            'year' => $request->input('year'),
+            'section' => $request->input('section'),
+            'status' => $request->input('status'),
+            'sort' => $request->input('sort', 'name')
+        ];
     }
 
     private function applyFilters($rows, array $filters)
     {
         if ($filters['search'] !== '') {
             $needle = mb_strtolower($filters['search']);
-            $rows = $rows->filter(fn ($r) => str_contains(mb_strtolower($r['name'].' '.$r['email'].' '.$r['student_number']), $needle));
+            $rows = $rows->filter(fn($r) => str_contains(mb_strtolower($r['name'] . ' ' . $r['email'] . ' ' . $r['student_number']), $needle));
         }
         if ($filters['year'] !== null && $filters['year'] !== '') {
             $rows = $rows->where('year_level', (int) $filters['year']);
@@ -395,8 +444,8 @@ class StudentManagementController extends Controller
             $rows = $rows->where('setup_completed', false);
         }
         $rows = match ($filters['sort']) {
-            'score_desc' => $rows->sortByDesc(fn ($row) => $row['score'] ?? -1),
-            'score_asc' => $rows->sortBy(fn ($row) => $row['score'] ?? 101),
+            'score_desc' => $rows->sortByDesc(fn($row) => $row['score'] ?? -1),
+            'score_asc' => $rows->sortBy(fn($row) => $row['score'] ?? 101),
             'recent' => $rows->sortByDesc('last_active'),
             default => $rows->sortBy('name', SORT_NATURAL | SORT_FLAG_CASE),
         };
@@ -412,20 +461,25 @@ class StudentManagementController extends Controller
     private function studentRules(?User $student = null): array
     {
         return [
-            'first_name' => ['required', 'string', 'max:60'], 'last_name' => ['required', 'string', 'max:60'],
+            'first_name' => ['required', 'string', 'max:60'],
+            'last_name' => ['required', 'string', 'max:60'],
             'email' => ['required', 'email', 'max:120', Rule::unique('users', 'email')->ignore($student?->id)],
             'password' => $student ? ['nullable', 'confirmed', Password::defaults()] : ['required', 'confirmed', Password::defaults()],
             'student_number' => ['nullable', 'string', 'max:30', Rule::unique('student_profiles', 'student_number')->ignore($student?->id, 'user_id')],
-            'year_level' => ['nullable', 'integer', 'between:1,6'], 'section' => ['nullable', 'string', 'max:30'],
-            'exam_target_date' => ['nullable', 'date'], 'is_active' => ['required', 'boolean'],
+            'year_level' => ['nullable', 'integer', 'between:1,6'],
+            'section' => ['nullable', 'string', 'max:30'],
+            'exam_target_date' => ['nullable', 'date'],
+            'is_active' => ['required', 'boolean'],
         ];
     }
 
     private function saveProfile(User $student, array $data): void
     {
         StudentProfile::updateOrCreate(['user_id' => $student->id], [
-            'student_number' => $data['student_number'] ?? null, 'year_level' => $data['year_level'] ?? null,
-            'section' => $data['section'] ?? null, 'exam_target_date' => $data['exam_target_date'] ?? null,
+            'student_number' => $data['student_number'] ?? null,
+            'year_level' => $data['year_level'] ?? null,
+            'section' => $data['section'] ?? null,
+            'exam_target_date' => $data['exam_target_date'] ?? null,
         ]);
     }
 
