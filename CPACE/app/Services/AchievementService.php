@@ -451,12 +451,14 @@ class AchievementService
     private function display(Collection $rows, int $meId): array
     {
         $shaped = $rows->values()->map(function ($r, $i) use ($meId) {
+            $isMe = (int) $r->student_id === $meId;
+
             return [
                 'rank'     => $i + 1,
-                'name'     => trim("{$r->first_name} {$r->last_name}"),
-                'initials' => $this->initials($r->first_name, $r->last_name),
+                'name'     => $isMe ? trim("{$r->first_name} {$r->last_name}") : $this->anonymousName((int) $r->student_id),
+                'initials' => $isMe ? $this->initials($r->first_name, $r->last_name) : $this->anonymousInitials((int) $r->student_id),
                 'score'    => (int) $r->score,
-                'is_me'    => (int) $r->student_id === $meId,
+                'is_me'    => $isMe,
             ];
         });
 
@@ -473,5 +475,35 @@ class AchievementService
     private function initials(?string $first, ?string $last): string
     {
         return strtoupper(substr((string) $first, 0, 1) . substr((string) $last, 0, 1));
+    }
+
+    /**
+     * Adjectives + animals used to build a Google-Docs-style anonymous alias
+     * for every leaderboard entry that isn't the viewing student. The alias
+     * is deterministic per student id so the same learner always shows up
+     * under the same disguise, but nothing in it reveals their identity.
+     */
+    private const ANON_ADJECTIVES = [
+        'Brave', 'Clever', 'Swift', 'Mighty', 'Quiet', 'Bold', 'Curious', 'Jolly',
+        'Nimble', 'Sharp', 'Sunny', 'Witty', 'Lucky', 'Gentle', 'Fierce', 'Merry',
+    ];
+
+    private const ANON_ANIMALS = [
+        'Falcon', 'Otter', 'Panther', 'Dolphin', 'Lion', 'Fox', 'Eagle', 'Wolf',
+        'Tiger', 'Panda', 'Hawk', 'Bear', 'Lynx', 'Owl', 'Shark', 'Rabbit',
+    ];
+
+    private function anonymousName(int $studentId): string
+    {
+        $adjective = self::ANON_ADJECTIVES[$studentId % count(self::ANON_ADJECTIVES)];
+        $animal    = self::ANON_ANIMALS[intdiv($studentId, count(self::ANON_ADJECTIVES)) % count(self::ANON_ANIMALS)];
+
+        return "{$adjective} {$animal}";
+    }
+
+    private function anonymousInitials(int $studentId): string
+    {
+        return strtoupper(substr($this->anonymousName($studentId), 0, 1)
+            . substr(strrchr($this->anonymousName($studentId), ' '), 1, 1));
     }
 }
