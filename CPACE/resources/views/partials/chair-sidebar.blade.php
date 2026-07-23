@@ -21,8 +21,8 @@
 
     /* ── SIDEBAR ── */
     .sidebar {
-        background: #6B1A1A;
-        background: linear-gradient(180deg, #7B1D1D 0%, #5a1515 100%);
+        background: #7B1D1D;
+        background: linear-gradient(180deg, #a12626 0%, #7B1D1D 34%, #3d0c0c 74%, #1a0a0a 100%);
         position: fixed;
         top: 0; left: 0;
         width: 230px; height: 100vh;

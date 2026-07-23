@@ -23,18 +23,38 @@ class AppServiceProvider extends ServiceProvider
             $event->extendSocialite('azure', MicrosoftAzureProvider::class);
         });
 
-        View::composer([
-            'partials.sidebar',
-            'partials.student-mobile-header',
-            'partials.student-bottom-nav',
-            'partials.faculty-sidebar',
-            'partials.chair-sidebar',
-            'partials.alumni-sidebar',
-            'partials.topbar-actions',
-        ], function ($view) {
-            $view->with('unreadNotifications', Auth::check()
-                ? DB::table('notifications')->where('recipient_id', Auth::id())->where('is_read', false)->count()
-                : 0);
+        // Share the unread notification + message counts with every view so the
+        // top-bar bell and messages icons work globally (computed once per request).
+        View::composer('*', function ($view) {
+            static $counts = null;
+
+            if ($counts === null) {
+                if (Auth::check()) {
+                    $uid = Auth::id();
+
+                    $counts = [
+                        'unreadNotifications' => DB::table('notifications')
+                            ->where('recipient_id', $uid)
+                            ->where('is_read', false)
+                            ->count(),
+                        'unreadMessages' => DB::table('messages as m')
+                            ->join('conversation_participants as cp', function ($join) use ($uid) {
+                                $join->on('cp.conversation_id', '=', 'm.conversation_id')
+                                     ->where('cp.user_id', '=', $uid);
+                            })
+                            ->where('m.sender_id', '!=', $uid)
+                            ->where(function ($q) {
+                                $q->whereNull('cp.last_read_at')
+                                  ->orWhereColumn('m.created_at', '>', 'cp.last_read_at');
+                            })
+                            ->count(),
+                    ];
+                } else {
+                    $counts = ['unreadNotifications' => 0, 'unreadMessages' => 0];
+                }
+            }
+
+            $view->with($counts);
         });
     }
 }

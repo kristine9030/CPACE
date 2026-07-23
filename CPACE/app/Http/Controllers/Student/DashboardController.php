@@ -30,6 +30,8 @@ class DashboardController extends Controller
         $daysToExam = $examDate
             ? max(0, (int) ceil((Carbon::parse($examDate)->startOfDay()->timestamp - Carbon::now()->startOfDay()->timestamp) / 86400))
             : null;
+        // ISO date fed to the JS countdown so it can tick down to the second.
+        $examDateIso = $examDate ? Carbon::parse($examDate)->toDateString() : null;
 
         // ── Questions attempted (every question served in completed quizzes) ──
         // Counts all served questions (total_items) so a skipped question still
@@ -138,6 +140,7 @@ class DashboardController extends Controller
             'streak',
             'points',
             'daysToExam',
+            'examDateIso',
             'questionsAttempted',
             'questionsThisWeek',
             'studyHours',

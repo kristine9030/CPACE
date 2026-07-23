@@ -11,9 +11,9 @@
 <style>
     /* ─── SHARED SIDEBAR ─── */
     .sidebar {
-        background: #6B1A1A;
-        background: linear-gradient(180deg, #7B1D1D 0%, #5a1515 100%);
         color: #fff;
+        background: #5c1616;
+        background: linear-gradient(180deg, #7e1d1d 0%, #5c1616 34%, #2b0808 74%, #0f0505 100%);
         position: fixed;
         top: 0; left: 0;
         padding: 0;
@@ -26,8 +26,14 @@
         overflow-y: auto;
         overflow-x: hidden;
         transition: width 0.28s cubic-bezier(.4,0,.2,1);
-        box-shadow: 4px 0 24px rgba(0,0,0,0.18);
+        /* curvy right edge + soft modern shadow */
+        border-radius: 0 22px 22px 0;
+        box-shadow: 6px 0 30px rgba(0,0,0,0.28);
+        /* hide the scrollbar while keeping the sidebar scrollable */
+        scrollbar-width: none;          /* Firefox */
+        -ms-overflow-style: none;       /* IE / old Edge */
     }
+    .sidebar::-webkit-scrollbar { width: 0; height: 0; display: none; }  /* Chrome / Safari */
     .sidebar.collapsed { width: 68px; }
 
     /* ── Logo (doubles as collapse toggle) ── */
@@ -280,8 +286,6 @@
         <li class="nav-label">Community</li>
         <li><a href="{{ route('community.index') }}" class="{{ $active === 'community' ? 'active' : '' }}"><i class="fas fa-people-group"></i><span>Alumni Community</span></a></li>
         <li><a href="{{ route('community.resources.index') }}" class="{{ $active === 'resources' ? 'active' : '' }}"><i class="fas fa-book"></i><span>Resource Library</span></a></li>
-        <li><a href="{{ route('messages.index') }}" class="{{ $active === 'messages' ? 'active' : '' }}"><i class="fas fa-comment-dots"></i><span>Messages</span></a></li>
-        <li><a href="{{ route('notifications.index') }}" class="{{ $active === 'notifications' ? 'active' : '' }}"><i class="fas fa-bell"></i><span>Notifications{{ $unreadNotifications ? ' ('.$unreadNotifications.')' : '' }}</span></a></li>
 
         <li class="nav-label">Account</li>
         <li><a href="{{ route('settings') }}" class="{{ $active === 'settings' ? 'active' : '' }}"><i class="fas fa-cog"></i><span>Settings</span></a></li>

@@ -18,6 +18,11 @@ return Application::configure(basePath: dirname(__DIR__))
             'alumni'  => \App\Http\Middleware\AlumniMiddleware::class,
             'api.auth' => \App\Http\Middleware\ApiAuthenticate::class,
         ]);
+
+        // Gate freshly-imported students into first-login Account Setup.
+        $middleware->web(append: [
+            \App\Http\Middleware\EnsureAccountSetup::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
