@@ -352,6 +352,7 @@
             <option value="active" @selected($filters['status'] === 'active')>Active</option>
             <option value="disabled" @selected($filters['status'] === 'disabled')>Disabled</option>
             <option value="at_risk" @selected($filters['status'] === 'at_risk')>At Risk</option>
+            <option value="setup_pending" @selected($filters['status'] === 'setup_pending')>Setup Pending</option>
         </select>
         <select name="sort">
             <option value="name" @selected($filters['sort'] === 'name')>Name</option>
@@ -449,6 +450,10 @@
                             <td>
                                 @if (! $student['is_active'])
                                     <span class="pill pill-off">Disabled</span>
+                                @elseif (! $student['setup_completed'])
+                                    <span class="pill pill-pending" title="Student hasn't completed first-login Account Setup yet">
+                                        <i class="fas fa-hourglass-half"></i> Setup Pending
+                                    </span>
                                 @elseif ($student['at_risk'])
                                     <span class="risk-pill">
                                         <i class="fas fa-triangle-exclamation"></i> At Risk

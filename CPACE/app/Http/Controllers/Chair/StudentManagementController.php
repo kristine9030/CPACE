@@ -362,6 +362,7 @@ class StudentManagementController extends Controller
                     'section' => $profile?->section, 'score' => $score, 'attempted' => $attempted, 'quizzes' => (int) ($quiz->quizzes ?? 0),
                     'streak' => (int) ($profile?->streak_days ?? 0), 'last_active' => $lastActive, 'days_idle' => $daysIdle,
                     'at_risk' => $student->is_active && ($low || $inactive), 'is_active' => (bool) $student->is_active,
+                    'setup_completed' => $student->setup_completed_at !== null,
                 ];
             });
     }
@@ -390,6 +391,8 @@ class StudentManagementController extends Controller
             $rows = $rows->where('is_active', false);
         } elseif ($filters['status'] === 'at_risk') {
             $rows = $rows->where('at_risk', true);
+        } elseif ($filters['status'] === 'setup_pending') {
+            $rows = $rows->where('setup_completed', false);
         }
         $rows = match ($filters['sort']) {
             'score_desc' => $rows->sortByDesc(fn ($row) => $row['score'] ?? -1),

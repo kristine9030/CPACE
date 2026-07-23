@@ -204,6 +204,7 @@
     .pill { display:inline-flex; align-items:center; gap:5px; padding:3px 10px; border-radius:20px; font-size:10px; font-weight:700; }
     .pill-on  { background:#d1fae5; color:#059669; }
     .pill-off { background:#f3f4f6; color:#9ca3af; }
+    .pill-pending { background:#fef3c7; color:#b45309; }
 
     /* USER AVATAR (initials) */
     .user-av {
