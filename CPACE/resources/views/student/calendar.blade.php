@@ -124,7 +124,7 @@
 
         .notif-btn:hover { background: #f1f2f4; }
 
-        .notification-badge {
+        .badge {
             position: absolute;
             top: -3px;
             right: -3px;
@@ -141,7 +141,7 @@
             font-weight: 700;
         }
 
-        .profile-btn {
+        .profile-avatar {
             width: 40px;
             height: 40px;
             background: var(--primary);
@@ -155,7 +155,7 @@
             font-family: 'Poppins', sans-serif;
         }
 
-        .profile-btn:hover { background: var(--primary-hover); }
+        .profile-avatar:hover { background: var(--primary-hover); }
 
         .dropdown-menu {
             position: absolute;
@@ -1210,20 +1210,16 @@
                         <i class="fas fa-search"></i>
                         <input type="text" data-gs="true" placeholder="Search topics, questions...">
                     </div>
-                    <button class="notif-btn" onclick="window.location.href='{{ route('messages.index') }}'" title="Messages" aria-label="Messages">
+                    <a class="notif-btn" href="{{ route('messages.index') }}" title="Messages" aria-label="Messages">
                         <i class="fas fa-comment-dots"></i>
-                        @if($unreadMessages > 0)
-                            <span class="notification-badge">{{ $unreadMessages > 9 ? '9+' : $unreadMessages }}</span>
-                        @endif
-                    </button>
-                    <button class="notif-btn" onclick="window.location.href='{{ route('notifications.index') }}'" title="Notifications" aria-label="Notifications">
+                        @if($unreadMessages > 0)<span class="badge">{{ $unreadMessages > 9 ? '9+' : $unreadMessages }}</span>@endif
+                    </a>
+                    <a class="notif-btn" href="{{ route('notifications.index') }}" title="Notifications" aria-label="Notifications">
                         <i class="fas fa-bell"></i>
-                        @if($unreadNotifications > 0)
-                            <span class="notification-badge">{{ $unreadNotifications > 9 ? '9+' : $unreadNotifications }}</span>
-                        @endif
-                    </button>
+                        @if($unreadNotifications > 0)<span class="badge">{{ $unreadNotifications > 9 ? '9+' : $unreadNotifications }}</span>@endif
+                    </a>
                     <div style="position: relative;">
-                        <button class="profile-btn" id="profileBtn">@include('partials.avatar-content')</button>
+                        <button class="profile-avatar" id="profileBtn">@include('partials.avatar-content')</button>
                         <div class="dropdown-menu" id="profileDropdown">
                             <a href="{{ route('settings') }}"><i class="fas fa-user"></i> Profile Settings</a>
                             <a href="{{ route('performance') }}"><i class="fas fa-chart-line"></i> My Progress</a>

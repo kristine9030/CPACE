@@ -9,7 +9,7 @@
     /* ─── SHARED ALUMNI SIDEBAR (mirrors faculty sidebar) ─── */
     .sidebar {
         background: #7B1D1D;
-        background: linear-gradient(180deg, #a12626 0%, #7B1D1D 34%, #3d0c0c 74%, #1a0a0a 100%);
+        background: linear-gradient(180deg, #7e1d1d 0%, #5c1616 34%, #2b0808 74%, #0f0505 100%);
         color: #fff;
         position: fixed;
         top: 0; left: 0;
@@ -22,8 +22,12 @@
         overflow-y: auto;
         overflow-x: hidden;
         transition: width 0.28s cubic-bezier(.4,0,.2,1);
-        box-shadow: 4px 0 24px rgba(0,0,0,0.18);
+        border-radius: 0 22px 22px 0;
+        box-shadow: 6px 0 30px rgba(0,0,0,0.28);
+        scrollbar-width: none;
+        -ms-overflow-style: none;
     }
+    .sidebar::-webkit-scrollbar { width: 0; height: 0; display: none; }
     .sidebar.collapsed { width: 68px; }
 
     .sidebar .sidebar-logo {

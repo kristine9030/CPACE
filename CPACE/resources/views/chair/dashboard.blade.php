@@ -7,7 +7,11 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    @include('partials.chart-kit')
     <style>
+        .health-grid { display:grid; grid-template-columns:minmax(0,1.6fr) minmax(0,1fr) minmax(0,1fr); gap:18px; margin-bottom:18px; }
+        @media (max-width: 1200px) { .health-grid { grid-template-columns:1fr 1fr; } .health-grid > :first-child { grid-column:1 / -1; } }
+        @media (max-width: 760px) { .health-grid { grid-template-columns:1fr; } }
         /* ── Dashboard-specific responsive ── */
         @media (max-width: 768px) {
             .dash-content-grid {
@@ -142,6 +146,24 @@
         </div>
     </section>
 
+    <section class="health-grid" aria-labelledby="health-title">
+        <div class="viz-card">
+            <h4 id="health-title"><i class="fas fa-chart-line"></i> Readiness &amp; Accuracy Trend</h4>
+            <div class="viz-sub">Cumulative to the end of each week — both series are percentages. <a href="{{ route('chair.analytics.performance') }}" style="color:var(--accent);text-decoration:none;">Full report</a></div>
+            <div class="chart-canvas-wrap h-sm"><canvas id="dashTrend"></canvas></div>
+        </div>
+        <div class="viz-card">
+            <h4><i class="fas fa-users"></i> Students Practising</h4>
+            <div class="viz-sub">Distinct students completing a quiz each week.</div>
+            <div class="chart-canvas-wrap h-sm"><canvas id="dashEngagement"></canvas></div>
+        </div>
+        <div class="viz-card">
+            <h4><i class="fas fa-chart-pie"></i> Readiness Bands</h4>
+            <div class="viz-sub">{{ $analytics['readiness']['eligible'] }} measured · {{ $analytics['readiness']['insufficient'] }} not yet measurable.</div>
+            <div class="chart-canvas-wrap h-sm"><canvas id="dashBands"></canvas></div>
+        </div>
+    </section>
+
     <div class="dash-content-grid" style="display:grid; grid-template-columns:1fr 340px; gap:18px;">
         <div class="card">
             <div class="card-head">
@@ -242,5 +264,77 @@
         @endif
     </div>
 </main>
+
+<script>
+(function () {
+    const P = Viz.palette;
+    const trend = @json($analytics['trend']->values());
+    const engagement = @json($analytics['engagement']->values());
+    const readiness = @json($analytics['readiness']);
+    const pluck = (rows, key) => rows.map((row) => row[key]);
+
+    Viz.chart('dashTrend', {
+        type: 'line',
+        data: {
+            labels: pluck(trend, 'label'),
+            datasets: [
+                Viz.line({ label: 'Board readiness', data: pluck(trend, 'rate'), borderColor: P.s1, backgroundColor: 'rgba(163,43,43,.08)', pointBackgroundColor: P.s1, fill: true, pointRadius: 3 }),
+                Viz.line({ label: 'Class accuracy', data: pluck(trend, 'accuracy'), borderColor: P.s2, backgroundColor: 'transparent', pointBackgroundColor: P.s2, pointRadius: 3 }),
+            ],
+        },
+        options: {
+            interaction: { mode: 'index', intersect: false },
+            scales: { y: Viz.percentAxis(), x: Viz.catAxis() },
+            plugins: {
+                legend: { position: 'bottom' },
+                tooltip: { callbacks: { afterBody: (items) => {
+                    const point = trend[items[0].dataIndex];
+                    return point.ready + ' of ' + point.eligible + ' eligible students ready';
+                } } },
+            },
+        },
+    });
+
+    Viz.chart('dashEngagement', {
+        type: 'bar',
+        data: {
+            labels: pluck(engagement, 'label'),
+            datasets: [Viz.bar({ label: 'Active students', data: pluck(engagement, 'active_students'), backgroundColor: P.s1 })],
+        },
+        options: {
+            scales: { y: Viz.countAxis(), x: Viz.catAxis() },
+            plugins: {
+                legend: { display: false },
+                tooltip: { callbacks: { label: (c) => {
+                    const week = engagement[c.dataIndex];
+                    return week.active_students + ' student' + (week.active_students === 1 ? '' : 's') + ' · ' + week.quizzes + ' quizzes · ' + week.items.toLocaleString() + ' items';
+                } } },
+            },
+        },
+    });
+
+    Viz.chart('dashBands', {
+        type: 'doughnut',
+        data: {
+            labels: ['Ready', 'Developing', 'At risk'],
+            datasets: [{
+                data: [readiness.ready, readiness.developing, readiness.at_risk],
+                backgroundColor: [P.good, P.warn, P.crit],
+                borderWidth: 2, borderColor: P.surface,
+            }],
+        },
+        options: {
+            cutout: '58%',
+            plugins: {
+                legend: { position: 'bottom' },
+                tooltip: { callbacks: { label: (c) => {
+                    const total = readiness.eligible || 1;
+                    return c.label + ': ' + c.raw + ' (' + Math.round(c.raw / total * 100) + '%)';
+                } } },
+            },
+        },
+    });
+})();
+</script>
 </body>
 </html>

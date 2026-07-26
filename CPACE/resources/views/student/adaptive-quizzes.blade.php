@@ -212,7 +212,7 @@
         }
         .icon-btn:hover { background: #f0f0f0; }
 
-        .notification-badge {
+        .badge {
             position: absolute;
             top: -5px;
             right: -5px;
@@ -228,7 +228,7 @@
             font-weight: 600;
         }
 
-        .profile-btn {
+        .profile-avatar {
             width: 40px;
             height: 40px;
             background: #7B1D1D;
@@ -241,7 +241,7 @@
             position: relative;
             font-family: 'Poppins', sans-serif;
         }
-        .profile-btn:hover { background: #6a1818; }
+        .profile-avatar:hover { background: #6a1818; }
 
         .header-dropdown-wrap { position: relative; }
         .dropdown-menu {
@@ -1006,14 +1006,14 @@
                     <div class="header-icons">
                         <button class="icon-btn" onclick="window.location.href='{{ route('messages.index') }}'" title="Messages" aria-label="Messages">
                             <i class="fas fa-comment-dots"></i>
-                            @if($unreadMessages > 0)<span class="notification-badge">{{ $unreadMessages > 9 ? '9+' : $unreadMessages }}</span>@endif
+                            @if($unreadMessages > 0)<span class="badge">{{ $unreadMessages > 9 ? '9+' : $unreadMessages }}</span>@endif
                         </button>
                         <button class="icon-btn" onclick="window.location.href='{{ route('notifications.index') }}'" title="Notifications" aria-label="Notifications">
                             <i class="fas fa-bell"></i>
-                            @if($unreadNotifications > 0)<span class="notification-badge">{{ $unreadNotifications > 9 ? '9+' : $unreadNotifications }}</span>@endif
+                            @if($unreadNotifications > 0)<span class="badge">{{ $unreadNotifications > 9 ? '9+' : $unreadNotifications }}</span>@endif
                         </button>
                         <div class="header-dropdown-wrap">
-                            <button class="profile-btn" id="profileBtn">@include('partials.avatar-content')</button>
+                            <button class="profile-avatar" id="profileBtn">@include('partials.avatar-content')</button>
                             <div class="dropdown-menu" id="profileDropdown">
                                 <a href="#"><i class="fas fa-user"></i> Profile Settings</a>
                                 <a href="#"><i class="fas fa-chart-line"></i> My Progress</a>

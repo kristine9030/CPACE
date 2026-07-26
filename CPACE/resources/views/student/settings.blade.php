@@ -19,6 +19,7 @@
             --primary-hover: #6a1818;
             --primary-light: #f5e8e8;
             --accent-red: #c0392b;
+            --sidebar-bg: linear-gradient(180deg, #a12626 0%, #7B1D1D 34%, #3d0c0c 74%, #1a0a0a 100%);
             --white: #ffffff;
             --gray-100: #f8f9fa;
             --gray-200: #f0f0f0;
@@ -27,6 +28,8 @@
             --gray-700: #555555;
             --gray-900: #333333;
             --green: #10b981;
+            --blue: #3b82f6;
+            --orange: #f59e0b;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -38,13 +41,64 @@
         }
 
         /* ─── HEADER ─── */
-        .page-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 24px;
-            gap: 20px;
+        .top-bar { display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; gap:20px; }
+        .top-bar-left { display:flex; align-items:center; gap:14px; }
+        .top-bar-right { display:flex; align-items:center; gap:14px; }
+
+        .search-wrap { position:relative; }
+        .search-wrap i { position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#aaa; font-size:14px; }
+        .search-wrap input {
+            width:280px; padding:10px 14px 10px 36px;
+            border:1px solid #e0e0e0; border-radius:24px;
+            font-size:13px; font-family:'Poppins',sans-serif;
+            background:white; color:#555; outline:none;
         }
+        .search-wrap input:focus { border-color:var(--primary); }
+        .search-wrap input::placeholder { color:#bbb; }
+
+        .notif-btn {
+            position:relative; width:40px; height:40px;
+            border:none; background:white; border-radius:50%;
+            display:flex; align-items:center; justify-content:center;
+            font-size:17px; color:#555; cursor:pointer;
+            box-shadow:0 1px 4px rgba(0,0,0,0.08); text-decoration:none;
+        }
+        .notif-btn:hover { background:#f0f0f0; }
+        .badge {
+            position:absolute; top:-3px; right:-3px;
+            width:18px; height:18px; background:var(--accent-red);
+            color:white; border-radius:50%; font-size:10px; font-weight:700;
+            display:flex; align-items:center; justify-content:center;
+        }
+        .profile-avatar {
+            width:40px; height:40px; background:var(--primary);
+            border-radius:10px; border:none; color:white;
+            font-weight:700; font-size:14px; cursor:pointer;
+            font-family:'Poppins',sans-serif; transition:background 0.2s;
+        }
+        .profile-avatar:hover { background:var(--primary-hover); }
+
+        .header-dropdown-wrap { position:relative; }
+        .dropdown-menu {
+            position:absolute; top:calc(100% + 8px); right:0;
+            background:white; border:1px solid #e5e7eb; border-radius:10px;
+            min-width:185px; box-shadow:0 6px 20px rgba(0,0,0,0.12);
+            display:none; z-index:2000;
+        }
+        .dropdown-menu.active { display:block; }
+        .dropdown-menu a, .dropdown-menu button {
+            display:flex; align-items:center; gap:10px;
+            padding:11px 16px; font-size:13px; font-family:'Poppins',sans-serif;
+            text-decoration:none; color:#333; background:none; border:none;
+            width:100%; text-align:left; cursor:pointer; transition:background 0.2s;
+            border-bottom:1px solid #f5f5f5;
+        }
+        .dropdown-menu a:last-child, .dropdown-menu form:last-child button { border-bottom:none; }
+        .dropdown-menu a:hover, .dropdown-menu button:hover { background:#f9f9f9; }
+        .dropdown-menu a i, .dropdown-menu button i { color:var(--primary); width:16px; text-align:center; }
+        .dropdown-menu .logout-btn { color:#e53e3e; }
+        .dropdown-menu .logout-btn i { color:#e53e3e; }
+
         .page-title { font-size: 28px; font-weight: 700; color: var(--gray-900); line-height: 1.2; }
         .page-subtitle { font-size: 13px; color: var(--gray-500); margin-top: 2px; }
 
@@ -186,6 +240,10 @@
             .page-title { font-size: 22px; }
             .settings-card { padding: 20px 18px; }
             .theme-choice { min-width: 100%; }
+            .top-bar { flex-direction:column; align-items:flex-start; gap:12px; }
+            .top-bar-right { width:100%; flex-wrap:wrap; }
+            .search-wrap { flex:1; }
+            .search-wrap input { width:100%; }
         }
     </style>
 </head>
@@ -198,13 +256,42 @@
 <main class="main-content">
 
     <!-- HEADER -->
-    <div class="page-header">
-        <div>
-            <div class="page-title">Settings</div>
-            <div class="page-subtitle">Manage how CPACE looks and behaves for you.</div>
+    <div class="top-bar">
+        <div class="top-bar-left">
+            <div>
+                <div class="page-title">Settings</div>
+                <div class="page-subtitle">Manage how CPACE looks and behaves for you.</div>
+            </div>
         </div>
-        <span class="save-hint" id="saveHint"><i class="fas fa-check-circle"></i> Saved</span>
+        <div class="top-bar-right">
+            <div class="search-wrap gs-wrap">
+                <i class="fas fa-search"></i>
+                <input type="text" data-gs="true" placeholder="Search topics, questions...">
+            </div>
+            <a class="notif-btn" href="{{ route('messages.index') }}" title="Messages" aria-label="Messages">
+                <i class="fas fa-comment-dots"></i>
+                @if($unreadMessages > 0)<span class="badge">{{ $unreadMessages > 9 ? '9+' : $unreadMessages }}</span>@endif
+            </a>
+            <a class="notif-btn" href="{{ route('notifications.index') }}" title="Notifications" aria-label="Notifications">
+                <i class="fas fa-bell"></i>
+                @if($unreadNotifications > 0)<span class="badge">{{ $unreadNotifications > 9 ? '9+' : $unreadNotifications }}</span>@endif
+            </a>
+            <div class="header-dropdown-wrap">
+                <button class="profile-avatar" id="profileBtn">@include('partials.avatar-content')</button>
+                <div class="dropdown-menu" id="profileDropdown">
+                    <a href="#"><i class="fas fa-user"></i> Profile Settings</a>
+                    <a href="#"><i class="fas fa-chart-line"></i> My Progress</a>
+                    <a href="#"><i class="fas fa-question-circle"></i> Help &amp; Support</a>
+                    <form method="POST" action="{{ route('logout') }}" style="margin:0;padding:0;">
+                        @csrf
+                        <button type="submit" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</button>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
+
+    <span class="save-hint" id="saveHint"><i class="fas fa-check-circle"></i> Saved</span>
 
     <div class="settings-wrap">
 
@@ -286,6 +373,22 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    const sidebar = document.querySelector('.sidebar');
+    if (sidebar && localStorage.getItem('sidebarCollapsed') === 'true') {
+        sidebar.classList.add('collapsed');
+    }
+
+    const profileBtn = document.getElementById('profileBtn');
+    const profileDrop = document.getElementById('profileDropdown');
+    if (profileBtn && profileDrop) {
+        profileBtn.addEventListener('click', e => {
+            e.stopPropagation();
+            profileDrop.classList.toggle('active');
+        });
+        document.addEventListener('click', () => profileDrop.classList.remove('active'));
+        profileDrop.addEventListener('click', e => e.stopPropagation());
+    }
+
     const toggle      = document.getElementById('darkToggle');
     const choiceLight = document.getElementById('choiceLight');
     const choiceDark  = document.getElementById('choiceDark');
@@ -321,5 +424,6 @@ document.addEventListener('DOMContentLoaded', function () {
     window.addEventListener('cpace:themechange', e => reflect(e.detail.theme));
 });
 </script>
+@include('partials.global-search')
 </body>
 </html>
