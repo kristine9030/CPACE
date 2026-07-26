@@ -40,9 +40,22 @@ class SubjectController extends Controller
                     ->whereRaw('(correct_count / total_attempts) * 100 < ?', [$subject->passing_threshold])
                     ->count();
 
+                // Overall subject accuracy = correct answers / attempts summed
+                // across every topic and subtopic in this subject (not an
+                // average of per-topic percentages — a rollup of raw counts,
+                // so heavily-attempted topics weigh more than lightly-touched ones).
+                $totals = DB::table('performance_records')
+                    ->where('student_id', $studentId)
+                    ->whereIn('topic_id', $topicIds)
+                    ->selectRaw('SUM(total_attempts) as attempts, SUM(correct_count) as correct')
+                    ->first();
+
                 $subject->setAttribute('topic_count', $topicIds->count());
                 $subject->setAttribute('question_count', $questionCount);
                 $subject->setAttribute('weak_count', $weakTopics);
+                $subject->setAttribute('overall_attempts', (int) ($totals->attempts ?? 0));
+                $subject->setAttribute('overall_correct', (int) ($totals->correct ?? 0));
+                $subject->setAttribute('overall_accuracy', $totals->attempts > 0 ? (int) round($totals->correct / $totals->attempts * 100) : null);
 
                 return $subject;
             });
@@ -67,7 +80,27 @@ class SubjectController extends Controller
             ->orderBy('name')
             ->get();
 
-        return view('student.subject-topics', compact('subject', 'topics'));
+        $topicTree = Topic::buildTree($topics);
+
+        $performanceByTopicId = DB::table('performance_records')
+            ->where('student_id', Auth::id())
+            ->whereIn('topic_id', $topics->pluck('id'))
+            ->get()
+            ->keyBy('topic_id');
+
+        Topic::attachProgress($topicTree, $performanceByTopicId);
+
+        // Overall subject accuracy = correct/attempts summed across every
+        // topic and subtopic in this subject — same rollup rule as the
+        // Subjects grid card, computed here from the records already fetched
+        // above instead of a second query.
+        $overallAttempts = (int) $performanceByTopicId->sum('total_attempts');
+        $overallCorrect = (int) $performanceByTopicId->sum('correct_count');
+        $overallAccuracy = $overallAttempts > 0 ? (int) round($overallCorrect / $overallAttempts * 100) : null;
+
+        return view('student.subject-topics', compact(
+            'subject', 'topics', 'topicTree', 'overallAttempts', 'overallCorrect', 'overallAccuracy'
+        ));
     }
 
     /**

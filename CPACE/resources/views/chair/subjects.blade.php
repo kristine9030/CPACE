@@ -32,18 +32,28 @@
         .fac-chip { display:inline-flex;align-items:center;gap:7px;padding:6px 10px;border-radius:8px;font-size:11px;font-weight:500;color:#374151;background:#f9fafb;border:1px solid #e5e7eb;margin:3px 4px 3px 0; }
         .fac-av { width:19px;height:19px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:#fff;background:var(--subject-color); }
         .topic-list { display:flex;flex-direction:column;gap:6px; }
+        .topic-node + .topic-node { margin-top:6px; }
         .topic-row { display:flex;align-items:center;gap:9px;padding:8px 9px;border-radius:8px;background:#fafafa;border:1px solid #f0f0f0; }
+        .topic-toggle { width:18px;height:18px;flex-shrink:0;border:0;background:none;color:#999;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:9px;padding:0; }
+        .topic-toggle.open i { transform:rotate(90deg); }
+        .topic-toggle i { transition:transform .15s; }
+        .topic-toggle-spacer { width:18px;flex-shrink:0; }
         .topic-order { width:22px;height:22px;flex-shrink:0;border-radius:6px;background:#fff;color:#999;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700; }
         .topic-info { flex:1;min-width:0; } .topic-name { font-size:11px;font-weight:600;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
         .topic-meta { font-size:9.5px;color:#aaa;margin-top:2px; } .topic-actions { display:flex;gap:4px; }
         .topic-actions .icon-btn { width:25px;height:25px;font-size:9px; }
+        .topic-children { margin-top:6px; }
+        .topic-search { position:relative; margin-bottom:9px; }
+        .topic-search i { position:absolute; left:11px; top:50%; transform:translateY(-50%); color:#bbb; font-size:10px; }
+        .topic-search input { width:100%; padding:8px 10px 8px 30px; border:1.5px solid #e2e2e6; border-radius:8px; font:11px 'Poppins',sans-serif; }
+        .topic-search input:focus { outline:none; border-color:var(--primary); }
         .empty-msg { font-size:11px;color:#bbb;display:flex;align-items:center;gap:7px;padding:4px 0; }
         .modal-overlay { display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:2000;align-items:center;justify-content:center;padding:20px; }
         .modal-overlay.open { display:flex; } .modal { background:#fff;border-radius:16px;width:100%;max-width:560px;padding:24px;max-height:90vh;overflow-y:auto; }
         .modal h3 { font-size:16px;color:#1a1a1a;margin-bottom:4px; } .modal-sub { font-size:11px;color:#999;margin-bottom:18px; }
         .modal-grid { display:grid;grid-template-columns:1fr 1fr;gap:14px; } .full { grid-column:1/-1; }
         textarea { width:100%;padding:10px 12px;border:1.5px solid #e2e2e6;border-radius:8px;font:13px 'Poppins',sans-serif;resize:vertical;min-height:78px; }
-        input[type=number], input[type=color] { width:100%;padding:10px 12px;border:1.5px solid #e2e2e6;border-radius:8px;font:13px 'Poppins',sans-serif;background:#fff; }
+        input[type=number], input[type=color], select { width:100%;padding:10px 12px;border:1.5px solid #e2e2e6;border-radius:8px;font:13px 'Poppins',sans-serif;background:#fff; }
         input[type=color] { height:42px;padding:4px;cursor:pointer; } textarea:focus,input:focus { outline:none;border-color:var(--primary); }
         .toggle-row { display:flex;align-items:center;gap:9px;padding:10px 12px;background:#f8f8fa;border-radius:8px; }
         .toggle-row input { width:17px;height:17px;accent-color:var(--primary); } .toggle-row label { margin:0;font-size:11px; }
@@ -113,19 +123,18 @@
 
                 <div class="sc-section">
                     <div class="section-head"><span class="section-label">Topics ({{ $subject->topics->count() }})</span><button type="button" class="add-mini" onclick="openTopic({{ $subject->id }}, '{{ addslashes($subject->code) }}')"><i class="fas fa-plus"></i> Add Topic</button></div>
-                    <div class="topic-list">
-                        @forelse($subject->topics as $topic)
-                            <div class="topic-row">
-                                <span class="topic-order">{{ $topic->sort_order }}</span>
-                                <div class="topic-info"><div class="topic-name">{{ $topic->name }} @unless($topic->is_active)<span class="inactive-pill">Inactive</span>@endunless</div><div class="topic-meta">{{ $topic->questions_count }} test-bank question{{ $topic->questions_count === 1 ? '' : 's' }}</div></div>
-                                <div class="topic-actions">
-                                    <button type="button" class="icon-btn ib-edit" title="Edit topic" onclick="openTopic({{ $subject->id }}, '{{ addslashes($subject->code) }}', {{ Illuminate\Support\Js::from(['id'=>$topic->id,'name'=>$topic->name,'description'=>$topic->description,'sort_order'=>$topic->sort_order,'is_active'=>$topic->is_active]) }})"><i class="fas fa-pen"></i></button>
-                                    <form method="POST" action="{{ route('chair.subjects.topics.destroy', [$subject, $topic]) }}" onsubmit="return confirm('Remove this topic? Topics containing questions are protected.');">@csrf @method('DELETE')<button class="icon-btn ib-delete" title="Remove topic"><i class="fas fa-trash"></i></button></form>
-                                </div>
-                            </div>
-                        @empty
+                    @if($subject->topicTree->isNotEmpty())
+                        <div class="topic-search">
+                            <i class="fas fa-magnifying-glass"></i>
+                            <input type="text" placeholder="Search topics..." oninput="searchChairTopics(this, this.value)">
+                        </div>
+                    @endif
+                    <div class="topic-list" id="topics-data-{{ $subject->id }}" data-topics="{{ Illuminate\Support\Js::from($subject->topics->map(fn($t) => ['id' => $t->id, 'name' => $t->name, 'parent_id' => $t->parent_id])) }}">
+                        @if($subject->topicTree->isNotEmpty())
+                            @include('chair.partials.topic-node', ['subject' => $subject, 'topics' => $subject->topicTree, 'depth' => 0])
+                        @else
                             <div class="empty-msg"><i class="fas fa-list"></i>No topics added yet.</div>
-                        @endforelse
+                        @endif
                     </div>
                 </div>
             </div>
@@ -159,6 +168,7 @@
             <div class="modal-grid">
                 <div class="form-group"><label>Topic Name</label><input type="text" name="name" required placeholder="Topic name"></div>
                 <div class="form-group"><label>Display Order</label><input type="number" name="sort_order" min="0" max="9999" value="0" required></div>
+                <div class="form-group full"><label>Parent Topic</label><select name="parent_id" id="topicParent"><option value="">— None (top-level topic) —</option></select><div class="hint">Choose an existing topic to make this a subtopic of it.</div></div>
                 <div class="form-group full"><label>Description</label><textarea name="description" placeholder="Optional topic description"></textarea></div>
                 <div class="toggle-row full"><input type="hidden" name="is_active" value="0"><input type="checkbox" name="is_active" id="topicActive" value="1" checked><label for="topicActive">Active and available for questions and quizzes</label></div>
             </div>
@@ -184,8 +194,43 @@ function openSubject(subject = null) {
     document.getElementById('subjectModal').classList.add('open');
 }
 
-function openTopic(subjectId, subjectCode, topic = null) {
-    document.getElementById('topicModalTitle').textContent = topic ? 'Edit Topic' : 'Add Topic';
+function descendantIds(topics, rootId) {
+    const ids = new Set();
+    let frontier = [rootId];
+    while (frontier.length) {
+        const next = topics.filter(t => frontier.includes(t.parent_id)).map(t => t.id);
+        next.forEach(id => ids.add(id));
+        frontier = next;
+    }
+    return ids;
+}
+
+function populateParentOptions(subjectId, excludeTopicId, selectedParentId) {
+    const el = document.getElementById(`topics-data-${subjectId}`);
+    const topics = el ? JSON.parse(el.dataset.topics || '[]') : [];
+
+    const excluded = excludeTopicId ? descendantIds(topics, excludeTopicId) : new Set();
+    if (excludeTopicId) excluded.add(excludeTopicId);
+
+    const byId = Object.fromEntries(topics.map(t => [t.id, t]));
+    const depthOf = (t) => { let d = 0, p = t.parent_id; while (p) { d++; p = byId[p]?.parent_id; } return d; };
+
+    const select = document.getElementById('topicParent');
+    select.innerHTML = '<option value="">— None (top-level topic) —</option>';
+    topics
+        .filter(t => !excluded.has(t.id))
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .forEach(t => {
+            const opt = document.createElement('option');
+            opt.value = t.id;
+            opt.textContent = '—'.repeat(depthOf(t)) + ' ' + t.name;
+            select.appendChild(opt);
+        });
+    select.value = selectedParentId ?? '';
+}
+
+function openTopic(subjectId, subjectCode, topic = null, parentId = null) {
+    document.getElementById('topicModalTitle').textContent = topic ? 'Edit Topic' : (parentId ? 'Add Subtopic' : 'Add Topic');
     document.getElementById('topicModalSub').textContent = `${topic ? 'Update a' : 'Add a new'} curriculum topic for ${subjectCode}.`;
     topicForm.action = topic ? `/chair/subjects/${subjectId}/topics/${topic.id}` : `/chair/subjects/${subjectId}/topics`;
     document.getElementById('topicMethod').value = topic ? 'PUT' : 'POST';
@@ -193,7 +238,56 @@ function openTopic(subjectId, subjectCode, topic = null) {
     topicForm.elements.description.value = topic?.description ?? '';
     topicForm.elements.sort_order.value = topic?.sort_order ?? 0;
     document.getElementById('topicActive').checked = topic ? Boolean(topic.is_active) : true;
+    populateParentOptions(subjectId, topic?.id ?? null, topic?.parent_id ?? parentId);
     document.getElementById('topicModal').classList.add('open');
+}
+
+function applyChairTopicSearch(node, query) {
+    const row = node.querySelector(':scope > .topic-row');
+    const nameEl = row.querySelector('.topic-name');
+    const selfMatch = nameEl.textContent.toLowerCase().includes(query);
+
+    const childrenContainer = node.querySelector(':scope > .topic-children');
+    let childMatch = false;
+    if (childrenContainer) {
+        childrenContainer.querySelectorAll(':scope > .topic-node').forEach(child => {
+            if (applyChairTopicSearch(child, query)) childMatch = true;
+        });
+    }
+
+    const visible = selfMatch || childMatch;
+    node.style.display = visible ? '' : 'none';
+
+    if (childrenContainer) {
+        childrenContainer.hidden = !childMatch;
+        const toggle = row.querySelector('.topic-toggle');
+        if (toggle) toggle.classList.toggle('open', childMatch);
+    }
+
+    return visible;
+}
+
+function searchChairTopics(input, rawQuery) {
+    const query = rawQuery.trim().toLowerCase();
+    const list = input.closest('.sc-section').querySelector('.topic-list');
+    if (!list) return;
+    const topLevelNodes = list.querySelectorAll(':scope > .topic-node');
+
+    if (!query) {
+        list.querySelectorAll('.topic-node').forEach(node => { node.style.display = ''; });
+        list.querySelectorAll('.topic-children').forEach(children => { children.hidden = true; });
+        list.querySelectorAll('.topic-toggle').forEach(toggle => toggle.classList.remove('open'));
+        return;
+    }
+
+    topLevelNodes.forEach(node => applyChairTopicSearch(node, query));
+}
+
+function toggleTopicChildren(button) {
+    button.classList.toggle('open');
+    const node = button.closest('.topic-node');
+    const children = node.querySelector(':scope > .topic-children');
+    if (children) children.hidden = !children.hidden;
 }
 
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }

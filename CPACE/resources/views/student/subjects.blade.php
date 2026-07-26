@@ -312,6 +312,27 @@
         .subject-abbr { font-size: 20px; font-weight: 800; color: #1a1a1a; margin-bottom: 3px; }
         .subject-full { font-size: 12px; color: #888; line-height: 1.4; }
 
+        .overall-progress {
+            display: flex; align-items: center; gap: 14px;
+            padding-bottom: 16px; margin-bottom: 16px;
+            border-bottom: 1px solid #f5f5f5;
+        }
+        .ring-wrap { position: relative; width: 58px; height: 58px; flex-shrink: 0; }
+        .ring-svg { width: 58px; height: 58px; transform: rotate(-90deg); }
+        .ring-bg { fill: none; stroke: #f0f0f0; stroke-width: 6; }
+        .ring-fill { fill: none; stroke-width: 6; stroke-linecap: round; transition: stroke-dashoffset 0.6s ease; }
+        .ring-pct {
+            position: absolute; inset: 0;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 13px; font-weight: 800; color: #1a1a1a;
+        }
+        .overall-info { flex: 1; min-width: 0; }
+        .overall-title {
+            font-size: 11px; font-weight: 700; color: #333;
+            text-transform: uppercase; letter-spacing: 0.4px;
+        }
+        .overall-sub { font-size: 11px; color: #999; margin-top: 3px; }
+
         .subject-stats {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -455,6 +476,37 @@
                         <div class="subject-full">{{ $subject->name }}</div>
                     </div>
                 </div>
+                @php
+                    $circumference = round(2 * M_PI * 26);
+                    $hasAttempts = $subject->overall_accuracy !== null;
+                    $ringColor = $hasAttempts
+                        ? ($subject->overall_accuracy >= $subject->passing_threshold ? '#059669' : '#dc2626')
+                        : '#e5e5e5';
+                    $ringOffset = $hasAttempts
+                        ? round($circumference * (1 - $subject->overall_accuracy / 100))
+                        : $circumference;
+                @endphp
+                <div class="overall-progress">
+                    <div class="ring-wrap">
+                        <svg viewBox="0 0 60 60" class="ring-svg">
+                            <circle class="ring-bg" cx="30" cy="30" r="26"></circle>
+                            <circle class="ring-fill" cx="30" cy="30" r="26"
+                                    style="stroke:{{ $ringColor }}; stroke-dasharray:{{ $circumference }}; stroke-dashoffset:{{ $ringOffset }};"></circle>
+                        </svg>
+                        <div class="ring-pct">{{ $hasAttempts ? $subject->overall_accuracy.'%' : '—' }}</div>
+                    </div>
+                    <div class="overall-info">
+                        <div class="overall-title">Overall Progress</div>
+                        <div class="overall-sub">
+                            @if($hasAttempts)
+                                {{ $subject->overall_correct }}/{{ $subject->overall_attempts }} correct across all topics
+                            @else
+                                Not attempted yet
+                            @endif
+                        </div>
+                    </div>
+                </div>
+
                 <div class="subject-stats">
                     <div>
                         <span class="stat-num">{{ $subject->topic_count }}</span>

@@ -12,12 +12,16 @@ class SubjectManagementController extends Controller
 {
     public function index()
     {
-        return view('chair.subjects', [
-            'subjects' => Subject::with([
-                'faculty' => fn ($query) => $query->orderBy('first_name'),
-                'topics' => fn ($query) => $query->withCount('questions')->orderBy('sort_order')->orderBy('name'),
-            ])->orderBy('id')->get(),
-        ]);
+        $subjects = Subject::with([
+            'faculty' => fn ($query) => $query->orderBy('first_name'),
+            'topics' => fn ($query) => $query->withCount('questions')->orderBy('sort_order')->orderBy('name'),
+        ])->orderBy('id')->get();
+
+        $subjects->each(function (Subject $subject) {
+            $subject->setRelation('topicTree', Topic::buildTree($subject->topics));
+        });
+
+        return view('chair.subjects', ['subjects' => $subjects]);
     }
 
     public function storeSubject(Request $request)
@@ -61,7 +65,13 @@ class SubjectManagementController extends Controller
     public function updateTopic(Request $request, Subject $subject, Topic $topic)
     {
         abort_unless($topic->subject_id === $subject->id, 404);
-        $topic->update($this->validateTopic($request, $subject, $topic));
+        $data = $this->validateTopic($request, $subject, $topic);
+
+        if (! empty($data['parent_id']) && $topic->isSelfOrDescendant((int) $data['parent_id'], $subject->topics)) {
+            return back()->withInput()->withErrors(['parent_id' => 'A topic cannot be moved under itself or one of its own subtopics.']);
+        }
+
+        $topic->update($data);
 
         return back()->with('status', "Topic “{$topic->name}” was updated.");
     }
@@ -72,6 +82,10 @@ class SubjectManagementController extends Controller
 
         if ($topic->questions()->exists()) {
             return back()->with('error', 'This topic contains test-bank questions and cannot be removed. Edit it and mark it inactive instead.');
+        }
+
+        if ($topic->children()->exists()) {
+            return back()->with('error', 'This topic has subtopics and cannot be removed. Remove or reassign its subtopics first.');
         }
 
         $name = $topic->name;
@@ -103,6 +117,7 @@ class SubjectManagementController extends Controller
                 Rule::unique('topics', 'name')->where(fn ($query) => $query->where('subject_id', $subject->id))->ignore($topic?->id),
             ],
             'description' => ['nullable', 'string', 'max:2000'],
+            'parent_id'    => ['nullable', 'integer', Rule::exists('topics', 'id')->where('subject_id', $subject->id)],
             'sort_order'   => ['required', 'integer', 'min:0', 'max:9999'],
             'is_active'    => ['required', 'boolean'],
         ]);
