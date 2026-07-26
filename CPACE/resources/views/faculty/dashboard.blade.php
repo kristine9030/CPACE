@@ -410,13 +410,6 @@
                             <span class="qa-sub">Add to test bank</span>
                         </div>
                     </a>
-                    <a href="{{ route('faculty.subjects') }}" class="qa-btn secondary-qa">
-                        <div class="qa-icon" style="background:#dbeafe;color:#2563eb;"><i class="fas fa-book-open"></i></div>
-                        <div>
-                            <span class="qa-title">Manage Subjects</span>
-                            <span class="qa-sub">Add or edit topics</span>
-                        </div>
-                    </a>
                     <a href="{{ route('faculty.performance') }}" class="qa-btn secondary-qa">
                         <div class="qa-icon" style="background:#d1fae5;color:#059669;"><i class="fas fa-users"></i></div>
                         <div>

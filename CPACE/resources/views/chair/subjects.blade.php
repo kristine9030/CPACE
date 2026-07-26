@@ -58,6 +58,17 @@
         .toggle-row { display:flex;align-items:center;gap:9px;padding:10px 12px;background:#f8f8fa;border-radius:8px; }
         .toggle-row input { width:17px;height:17px;accent-color:var(--primary); } .toggle-row label { margin:0;font-size:11px; }
         .modal-actions { display:flex;justify-content:flex-end;gap:9px;margin-top:20px; }
+        .btn-danger { border:none;background:#b91c1c;color:#fff;padding:9px 16px;border-radius:8px;font:600 12px Poppins,sans-serif;cursor:pointer;display:inline-flex;align-items:center;gap:6px; }
+        .btn-danger:hover { background:#991b1b; }
+        .btn-warning { border:none;background:#d97706;color:#fff;padding:9px 16px;border-radius:8px;font:600 12px Poppins,sans-serif;cursor:pointer;display:inline-flex;align-items:center;gap:6px; }
+        .btn-warning:hover { background:#b45309; }
+        .btn-success { border:none;background:#059669;color:#fff;padding:9px 16px;border-radius:8px;font:600 12px Poppins,sans-serif;cursor:pointer;display:inline-flex;align-items:center;gap:6px; }
+        .btn-success:hover { background:#047857; }
+        .ib-warning { background:#fef3c7;color:#d97706; } .ib-success { background:#d1fae5;color:#059669; } .ib-muted { background:#f3f4f6;color:#9ca3af; }
+        .del-warn { margin:14px 0;padding:12px;background:#fef3c7;border-radius:8px;font-size:11.5px;color:#92400e;display:flex;align-items:flex-start;gap:8px; }
+        .del-warn i { margin-top:1px;flex-shrink:0; }
+        .info-note { margin:14px 0;padding:12px;background:#eff6ff;border-radius:8px;font-size:11.5px;color:#1e40af;display:flex;align-items:flex-start;gap:8px; }
+        .info-note i { margin-top:1px;flex-shrink:0; }
         @media(max-width:1050px) { .summary-row { grid-template-columns:repeat(2,1fr); } }
         @media(max-width:900px) { .subj-grid { grid-template-columns:1fr; } }
         @media(max-width:620px) { .summary-row { grid-template-columns:1fr; }.modal-grid { grid-template-columns:1fr; }.full { grid-column:auto; }.sc-top,.sc-section { padding-left:14px;padding-right:14px; } }
@@ -108,7 +119,7 @@
                     </div>
                     <div class="sc-actions">
                         <button type="button" class="icon-btn ib-edit" title="Edit subject" onclick="openSubject({{ Illuminate\Support\Js::from(['id'=>$subject->id,'code'=>$subject->code,'name'=>$subject->name,'description'=>$subject->description,'passing_threshold'=>$subject->passing_threshold,'color'=>$color,'is_active'=>$subject->is_active]) }})"><i class="fas fa-pen"></i></button>
-                        <form method="POST" action="{{ route('chair.subjects.destroy', $subject) }}" onsubmit="return confirm('Remove {{ addslashes($subject->code) }}? Subjects with topics or assigned faculty are protected.');">@csrf @method('DELETE')<button class="icon-btn ib-delete" title="Remove subject"><i class="fas fa-trash"></i></button></form>
+                        <button type="button" class="icon-btn ib-delete" title="Remove subject" onclick="openSubjectDelete({{ $subject->id }}, '{{ addslashes($subject->code) }}')"><i class="fas fa-trash"></i></button>
                     </div>
                 </div>
 
@@ -129,7 +140,7 @@
                             <input type="text" placeholder="Search topics..." oninput="searchChairTopics(this, this.value)">
                         </div>
                     @endif
-                    <div class="topic-list" id="topics-data-{{ $subject->id }}" data-topics="{{ Illuminate\Support\Js::from($subject->topics->map(fn($t) => ['id' => $t->id, 'name' => $t->name, 'parent_id' => $t->parent_id])) }}">
+                    <div class="topic-list" id="topics-data-{{ $subject->id }}" data-topics="{{ json_encode($subject->topics->map(fn($t) => ['id' => $t->id, 'name' => $t->name, 'parent_id' => $t->parent_id])) }}">
                         @if($subject->topicTree->isNotEmpty())
                             @include('chair.partials.topic-node', ['subject' => $subject, 'topics' => $subject->topicTree, 'depth' => 0])
                         @else
@@ -177,19 +188,37 @@
     </div>
 </div>
 
+<div class="modal-overlay" id="confirmModal" style="z-index:2100;">
+    <div class="modal" style="max-width:420px;text-align:center;">
+        <div style="font-size:32px;margin-bottom:8px;" id="confirmIcon"><i class="fas fa-triangle-exclamation" style="color:#b91c1c;"></i></div>
+        <h3 id="confirmTitle">Remove Topic</h3>
+        <div class="modal-sub" id="confirmMsg">Are you sure?</div>
+        <div id="confirmNote"></div>
+        <form method="POST" id="confirmForm" style="display:inline-block;">@csrf <input type="hidden" name="_method" id="confirmMethod" value="DELETE">
+            <div class="modal-actions" style="justify-content:center;">
+                <button type="button" class="btn btn-ghost" onclick="closeModal('confirmModal')">Cancel</button>
+                <button class="btn btn-danger" id="confirmBtn"><i class="fas fa-trash"></i> Remove</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script>
-const subjectForm = document.getElementById('subjectForm');
-const topicForm = document.getElementById('topicForm');
+function getTopicForm() { return document.getElementById('topicForm'); }
 
 function openSubject(subject = null) {
+    const f = document.getElementById('subjectForm');
+    if (!f) return;
     document.getElementById('subjectModalTitle').textContent = subject ? 'Edit Subject' : 'Add Subject';
-    subjectForm.action = subject ? `/chair/subjects/${subject.id}` : @json(route('chair.subjects.store'));
+    f.action = subject ? `/chair/subjects/${subject.id}` : @json(route('chair.subjects.store'));
     document.getElementById('subjectMethod').value = subject ? 'PUT' : 'POST';
-    subjectForm.elements.code.value = subject?.code ?? '';
-    subjectForm.elements.name.value = subject?.name ?? '';
-    subjectForm.elements.description.value = subject?.description ?? '';
-    subjectForm.elements.passing_threshold.value = subject?.passing_threshold ?? 75;
-    subjectForm.elements.color.value = subject?.color ?? '#7B1D1D';
+    if (f.elements) {
+        f.elements['code'].value = subject?.code ?? '';
+        f.elements['name'].value = subject?.name ?? '';
+        f.elements['description'].value = subject?.description ?? '';
+        f.elements['passing_threshold'].value = subject?.passing_threshold ?? 75;
+        f.elements['color'].value = subject?.color ?? '#7B1D1D';
+    }
     document.getElementById('subjectActive').checked = subject ? Boolean(subject.is_active) : true;
     document.getElementById('subjectModal').classList.add('open');
 }
@@ -230,13 +259,17 @@ function populateParentOptions(subjectId, excludeTopicId, selectedParentId) {
 }
 
 function openTopic(subjectId, subjectCode, topic = null, parentId = null) {
+    const f = getTopicForm();
+    if (!f) return;
     document.getElementById('topicModalTitle').textContent = topic ? 'Edit Topic' : (parentId ? 'Add Subtopic' : 'Add Topic');
     document.getElementById('topicModalSub').textContent = `${topic ? 'Update a' : 'Add a new'} curriculum topic for ${subjectCode}.`;
-    topicForm.action = topic ? `/chair/subjects/${subjectId}/topics/${topic.id}` : `/chair/subjects/${subjectId}/topics`;
+    f.action = topic ? `/chair/subjects/${subjectId}/topics/${topic.id}` : `/chair/subjects/${subjectId}/topics`;
     document.getElementById('topicMethod').value = topic ? 'PUT' : 'POST';
-    topicForm.elements.name.value = topic?.name ?? '';
-    topicForm.elements.description.value = topic?.description ?? '';
-    topicForm.elements.sort_order.value = topic?.sort_order ?? 0;
+    if (f.elements) {
+        f.elements['name'].value = topic?.name ?? '';
+        f.elements['description'].value = topic?.description ?? '';
+        f.elements['sort_order'].value = topic?.sort_order ?? 0;
+    }
     document.getElementById('topicActive').checked = topic ? Boolean(topic.is_active) : true;
     populateParentOptions(subjectId, topic?.id ?? null, topic?.parent_id ?? parentId);
     document.getElementById('topicModal').classList.add('open');
@@ -288,6 +321,50 @@ function toggleTopicChildren(button) {
     const node = button.closest('.topic-node');
     const children = node.querySelector(':scope > .topic-children');
     if (children) children.hidden = !children.hidden;
+}
+
+function openTopicDelete(subjectId, topicId, topicName) {
+    document.getElementById('confirmIcon').innerHTML = '<i class="fas fa-triangle-exclamation" style="color:#b91c1c;"></i>';
+    document.getElementById('confirmTitle').textContent = 'Remove Topic';
+    document.getElementById('confirmMsg').textContent = `Remove "${topicName}" from this subject?`;
+    document.getElementById('confirmNote').innerHTML = '<div class="del-warn"><i class="fas fa-shield-halved"></i><span>Topics containing questions or subtopics are protected and cannot be removed. Mark them inactive instead.</span></div>';
+    document.getElementById('confirmForm').action = `/chair/subjects/${subjectId}/topics/${topicId}`;
+    document.getElementById('confirmMethod').value = 'DELETE';
+    document.getElementById('confirmBtn').className = 'btn btn-danger';
+    document.getElementById('confirmBtn').innerHTML = '<i class="fas fa-trash"></i> Remove';
+    document.getElementById('confirmModal').classList.add('open');
+}
+
+function openSubjectDelete(subjectId, subjectCode) {
+    document.getElementById('confirmIcon').innerHTML = '<i class="fas fa-triangle-exclamation" style="color:#b91c1c;"></i>';
+    document.getElementById('confirmTitle').textContent = 'Remove Subject';
+    document.getElementById('confirmMsg').textContent = `Remove "${subjectCode}"? Subjects with topics or assigned faculty are protected.`;
+    document.getElementById('confirmNote').innerHTML = '<div class="del-warn"><i class="fas fa-shield-halved"></i><span>Subjects containing topics or assigned faculty cannot be removed. Remove those links first, or mark the subject inactive.</span></div>';
+    document.getElementById('confirmForm').action = `/chair/subjects/${subjectId}`;
+    document.getElementById('confirmMethod').value = 'DELETE';
+    document.getElementById('confirmBtn').className = 'btn btn-danger';
+    document.getElementById('confirmBtn').innerHTML = '<i class="fas fa-trash"></i> Remove';
+    document.getElementById('confirmModal').classList.add('open');
+}
+
+function openTopicToggle(subjectId, topicId, topicName, makeActive) {
+    const action = makeActive ? 'Enable' : 'Disable';
+    const from = makeActive ? 'inactive' : 'active';
+    document.getElementById('confirmIcon').innerHTML = makeActive
+        ? '<i class="fas fa-eye" style="color:#059669;"></i>'
+        : '<i class="fas fa-eye-slash" style="color:#d97706;"></i>';
+    document.getElementById('confirmTitle').textContent = action + ' Topic';
+    document.getElementById('confirmMsg').textContent = `${action} "${topicName}"?`;
+    document.getElementById('confirmNote').innerHTML = makeActive
+        ? '<div class="info-note"><i class="fas fa-info-circle"></i><span>This topic will become visible and available for questions and quizzes.</span></div>'
+        : '<div class="del-warn"><i class="fas fa-info-circle"></i><span>This topic will be hidden. Existing questions and subtopics remain but won\'t appear in quizzes.</span></div>';
+    document.getElementById('confirmForm').action = `/chair/subjects/${subjectId}/topics/${topicId}/toggle`;
+    document.getElementById('confirmMethod').value = 'PATCH';
+    document.getElementById('confirmBtn').className = makeActive ? 'btn btn-success' : 'btn btn-warning';
+    document.getElementById('confirmBtn').innerHTML = makeActive
+        ? '<i class="fas fa-eye"></i> Enable'
+        : '<i class="fas fa-eye-slash"></i> Disable';
+    document.getElementById('confirmModal').classList.add('open');
 }
 
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }

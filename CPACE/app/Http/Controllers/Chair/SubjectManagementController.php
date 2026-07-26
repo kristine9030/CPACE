@@ -76,6 +76,16 @@ class SubjectManagementController extends Controller
         return back()->with('status', "Topic “{$topic->name}” was updated.");
     }
 
+    public function toggleTopic(Subject $subject, Topic $topic)
+    {
+        abort_unless($topic->subject_id === $subject->id, 404);
+
+        $topic->update(['is_active' => !$topic->is_active]);
+
+        $status = $topic->is_active ? 'enabled' : 'disabled';
+        return back()->with('status', "Topic “{$topic->name}” has been {$status}.");
+    }
+
     public function destroyTopic(Subject $subject, Topic $topic)
     {
         abort_unless($topic->subject_id === $subject->id, 404);

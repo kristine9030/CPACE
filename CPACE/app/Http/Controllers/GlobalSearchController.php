@@ -533,19 +533,6 @@ class GlobalSearchController extends Controller
                 route('faculty.question.edit', $c->question_id));
         }
 
-        // ── Subjects ──
-        $subjects = Subject::whereIn('id', $assignedSubjectIds)
-            ->where(function ($q) use ($like) {
-                $q->where('code', 'LIKE', $like)
-                  ->orWhere('name', 'LIKE', $like);
-            })->get();
-        foreach ($subjects as $s) {
-            $this->addResult($results, 'Subjects', 'fa-book-open', '#7B1D1D',
-                $s->code . ' — ' . $s->name,
-                mb_substr((string)$s->description, 0, 100),
-                route('faculty.subjects'));
-        }
-
         // ── Students in their classes ──
         $studentIds = QuizSession::whereIn('subject_id', $assignedSubjectIds)
             ->pluck('student_id')->unique();
@@ -600,12 +587,6 @@ class GlobalSearchController extends Controller
                 'title' => 'Add Question',
                 'desc' => 'Create new test questions with multiple choice or true/false answers',
                 'icon' => 'fa-plus-circle', 'color' => '#10b981', 'url' => route('faculty.question.create'),
-            ],
-            [
-                'keywords' => 'subjects topics assigned coverage',
-                'title' => 'Subjects & Topics',
-                'desc' => 'View your assigned subjects and their topic coverage',
-                'icon' => 'fa-book-open', 'color' => '#7B1D1D', 'url' => route('faculty.subjects'),
             ],
             [
                 'keywords' => 'learning materials files upload pdf resources',

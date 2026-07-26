@@ -110,6 +110,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/subjects/{subject}/topics', [SubjectManagementController::class, 'storeTopic'])->name('subjects.topics.store');
         Route::put('/subjects/{subject}/topics/{topic}', [SubjectManagementController::class, 'updateTopic'])->name('subjects.topics.update');
         Route::delete('/subjects/{subject}/topics/{topic}', [SubjectManagementController::class, 'destroyTopic'])->name('subjects.topics.destroy');
+        Route::patch('/subjects/{subject}/topics/{topic}/toggle', [SubjectManagementController::class, 'toggleTopic'])->name('subjects.topics.toggle');
 
         // Announcements and internal messages
         Route::get('/communications', [CommunicationController::class, 'index'])->name('communications');
@@ -134,7 +135,6 @@ Route::middleware('auth')->group(function () {
         Route::post('/test-bank/{id}/variants/{variantId}/toggle', [TestBankController::class, 'toggleVariant'])->name('question.variants.toggle');
         Route::delete('/test-bank/{id}/variants/{variantId}', [TestBankController::class, 'destroyVariant'])->name('question.variants.destroy');
         Route::post('/test-bank/{id}/variants/suggest', [TestBankController::class, 'suggestVariant'])->name('question.variants.suggest');
-        Route::get('/subjects', fn() => view('faculty.subjects'))->name('subjects');
 
         // Learning Materials (upload PDFs, Word, PPT, links per topic for students)
         Route::get('/materials', [MaterialController::class, 'index'])->name('materials');

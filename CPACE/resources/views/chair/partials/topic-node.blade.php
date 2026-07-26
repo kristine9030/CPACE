@@ -15,7 +15,8 @@
             <div class="topic-actions">
                 <button type="button" class="icon-btn ib-edit" title="Add subtopic" onclick="openTopic({{ $subject->id }}, '{{ addslashes($subject->code) }}', null, {{ $topic->id }})"><i class="fas fa-plus"></i></button>
                 <button type="button" class="icon-btn ib-edit" title="Edit topic" onclick="openTopic({{ $subject->id }}, '{{ addslashes($subject->code) }}', {{ Illuminate\Support\Js::from(['id'=>$topic->id,'name'=>$topic->name,'description'=>$topic->description,'sort_order'=>$topic->sort_order,'is_active'=>$topic->is_active,'parent_id'=>$topic->parent_id]) }})"><i class="fas fa-pen"></i></button>
-                <form method="POST" action="{{ route('chair.subjects.topics.destroy', [$subject, $topic]) }}" onsubmit="return confirm('Remove this topic? Topics containing questions or subtopics are protected.');">@csrf @method('DELETE')<button class="icon-btn ib-delete" title="Remove topic"><i class="fas fa-trash"></i></button></form>
+                <button type="button" class="icon-btn {{ $topic->is_active ? 'ib-success' : 'ib-muted' }}" title="{{ $topic->is_active ? 'Disable' : 'Enable' }} topic" onclick="openTopicToggle({{ $subject->id }}, {{ $topic->id }}, '{{ addslashes($topic->name) }}', {{ $topic->is_active ? 'false' : 'true' }})"><i class="fas {{ $topic->is_active ? 'fa-eye' : 'fa-eye-slash' }}"></i></button>
+                <button type="button" class="icon-btn ib-delete" title="Remove topic" onclick="openTopicDelete({{ $subject->id }}, {{ $topic->id }}, '{{ addslashes($topic->name) }}')"><i class="fas fa-trash"></i></button>
             </div>
         </div>
         @if($topic->children->isNotEmpty())

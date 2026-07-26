@@ -251,7 +251,6 @@
         <li class="nav-label">Content</li>
         <li><a href="{{ route('faculty.test-bank') }}" class="{{ $active === 'test-bank' ? 'active' : '' }}"><i class="fas fa-database"></i><span>Test Bank</span></a></li>
         <li><a href="{{ route('faculty.question.create') }}" class="{{ $active === 'add-question' ? 'active' : '' }}"><i class="fas fa-plus-circle"></i><span>Add Question</span></a></li>
-        <li><a href="{{ route('faculty.subjects') }}" class="{{ $active === 'subjects' ? 'active' : '' }}"><i class="fas fa-book-open"></i><span>Subjects &amp; Topics</span></a></li>
         <li><a href="{{ route('faculty.materials') }}" class="{{ $active === 'materials' ? 'active' : '' }}"><i class="fas fa-folder-open"></i><span>Learning Materials</span></a></li>
 
         <li class="nav-label">Analytics</li>
