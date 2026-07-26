@@ -18,6 +18,7 @@ class MockExamController extends Controller
     {
         return view('student.mock-exams', [
             'mockUnlocked' => (bool) $request->session()->get(self::UNLOCK_KEY, false),
+            'isAlumniLocked' => $request->user()->hasAlumniAccess(),
         ]);
     }
 
@@ -27,6 +28,8 @@ class MockExamController extends Controller
      */
     public function unlock(Request $request)
     {
+        abort_if($request->user()->hasAlumniAccess(), 403, 'Mock exams are locked for alumni accounts.');
+
         $data = $request->validate([
             'access_code' => ['required', 'string', 'max:60'],
         ]);
@@ -47,6 +50,8 @@ class MockExamController extends Controller
      */
     public function simulation(Request $request)
     {
+        abort_if($request->user()->hasAlumniAccess(), 403, 'Mock exams are locked for alumni accounts.');
+
         if (! $request->session()->get(self::UNLOCK_KEY, false)) {
             return redirect()->route('mock-exams')
                 ->withErrors(['access_code' => 'Enter the access code from your faculty to start the mock exam.']);

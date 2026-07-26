@@ -46,7 +46,7 @@ class CommunityController extends Controller
 
         // Materials the current user can pick from when linking an existing
         // upload to a new post, instead of re-attaching the same file.
-        $myResources = ($user->isAlumni() || $user->isChair())
+        $myResources = ($user->hasAlumniAccess() || $user->isChair())
             ? CommunityResource::where('uploader_id', $user->id)->orderByDesc('created_at')->get(['id', 'title', 'original_name'])
             : collect();
 
@@ -74,7 +74,7 @@ class CommunityController extends Controller
     public function store(Request $request)
     {
         $user = Auth::user();
-        abort_unless($user->isAlumni() || $user->isChair(), 403, 'Only alumni can post to the community.');
+        abort_unless($user->hasAlumniAccess() || $user->isChair(), 403, 'Only alumni can post to the community.');
 
         $data = $request->validate([
             'post_type'   => ['required', 'in:discussion,tip'],

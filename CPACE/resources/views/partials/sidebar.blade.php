@@ -268,6 +268,7 @@
         </div>
     </div>
 
+    @php $isAlumniStudent = Auth::user()?->hasAlumniAccess() ?? false; @endphp
     <ul class="sidebar-nav">
         <li class="nav-label">Main</li>
         <li><a href="{{ route('dashboard') }}" class="{{ $active === 'dashboard' ? 'active' : '' }}"><i class="fas fa-home"></i><span>Dashboard</span></a></li>
@@ -275,7 +276,14 @@
 
         <li class="nav-label">Study</li>
         <li><a href="{{ route('adaptive-quizzes') }}" class="{{ $active === 'quizzes' ? 'active' : '' }}"><i class="fas fa-pen-fancy"></i><span>Quizzes</span></a></li>
-        <li><a href="{{ route('mock-exams') }}" class="{{ $active === 'mock-exams' ? 'active' : '' }}"><i class="fas fa-file-alt"></i><span>Mock Exams</span></a></li>
+        <li>
+            <a href="{{ route('mock-exams') }}" class="{{ $active === 'mock-exams' ? 'active' : '' }}">
+                <i class="fas fa-file-alt"></i><span>Mock Exams</span>
+                @if ($isAlumniStudent)
+                    <i class="fas fa-lock" style="margin-left:auto; font-size:11px; opacity:.7;" title="Locked for alumni"></i>
+                @endif
+            </a>
+        </li>
         <li><a href="{{ route('review-notes') }}" class="{{ $active === 'review-notes' ? 'active' : '' }}"><i class="fas fa-sticky-note"></i><span>Review Notes</span></a></li>
 
         <li class="nav-label">Track</li>
@@ -285,6 +293,9 @@
 
         <li class="nav-label">Community</li>
         <li><a href="{{ route('community.index') }}" class="{{ $active === 'community' ? 'active' : '' }}"><i class="fas fa-people-group"></i><span>Alumni Community</span></a></li>
+        @if ($isAlumniStudent)
+            <li><a href="{{ route('community.resources.index') }}" class="{{ $active === 'resources' ? 'active' : '' }}"><i class="fas fa-book"></i><span>Resource Library</span></a></li>
+        @endif
 
         <li class="nav-label">Account</li>
         <li><a href="{{ route('settings') }}" class="{{ $active === 'settings' ? 'active' : '' }}"><i class="fas fa-cog"></i><span>Settings</span></a></li>
@@ -298,7 +309,7 @@
                 </div>
                 <div class="user-details">
                     <span class="uname">{{ Auth::user()->name }}</span>
-                    <span class="urole">Student Reviewer</span>
+                    <span class="urole">{{ $isAlumniStudent ? 'Alumni' : 'Student Reviewer' }}</span>
                 </div>
                 <i class="fas fa-chevron-down chevron-icon"></i>
             </div>

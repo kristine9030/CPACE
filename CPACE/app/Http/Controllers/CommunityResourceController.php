@@ -67,7 +67,7 @@ class CommunityResourceController extends Controller
     public function store(Request $request)
     {
         $user = Auth::user();
-        abort_unless($user->isAlumni() || $user->isChair(), 403, 'Only alumni can upload to the Resource Library.');
+        abort_unless($user->hasAlumniAccess() || $user->isChair(), 403, 'Only alumni can upload to the Resource Library.');
 
         $data = $request->validate([
             'title'       => ['required', 'string', 'max:200'],

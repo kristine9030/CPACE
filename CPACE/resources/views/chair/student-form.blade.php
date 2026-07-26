@@ -49,6 +49,35 @@
             accent-color: var(--primary);
         }
         .toggle-row label { margin: 0; }
+        .status-toggle {
+            border: 1.5px solid #e2e2e6;
+            border-radius: 10px;
+            padding: 14px 16px;
+            margin-bottom: 12px;
+        }
+        .status-toggle.is-checked { border-color: var(--primary); background: #fff8f6; }
+        .status-toggle .toggle-row { background: transparent; padding: 0; }
+        .status-toggle .toggle-hint {
+            margin: 6px 0 0 26px;
+            font-size: 12px;
+            color: #888;
+        }
+        .status-toggle .toggle-fields {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #f1f1f1;
+            display: none;
+        }
+        .status-toggle.is-checked .toggle-fields { display: grid; }
+        .status-toggle textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1.5px solid #e2e2e6;
+            border-radius: 8px;
+            font: 13px 'Poppins', sans-serif;
+            resize: vertical;
+            min-height: 70px;
+        }
         .actions {
             display: flex;
             justify-content: flex-end;
@@ -219,6 +248,88 @@
                 </div>
             </div>
         </div>
+
+        @if ($editMode)
+            @php
+                $alumniProfile = $student->alumniProfile;
+                $studentProfile = $student->studentProfile;
+                $isAlumniChecked = old('is_alumni', $studentProfile?->is_alumni) ? true : false;
+                $isShiftedChecked = old('is_shifted', $studentProfile?->is_shifted) ? true : false;
+            @endphp
+            <!-- Alumni & program status -->
+            <div class="card form-section">
+                <div class="section-title">
+                    <i class="fas fa-user-graduate"></i> Alumni &amp; Program Status
+                </div>
+
+                <div class="status-toggle {{ $isAlumniChecked ? 'is-checked' : '' }}" id="alumniToggleWrap">
+                    <div class="toggle-row">
+                        <input type="hidden" name="is_alumni" value="0">
+                        <input type="checkbox" id="isAlumni" name="is_alumni" value="1" @checked($isAlumniChecked)>
+                        <label for="isAlumni">Mark as Alumni (graduated)</label>
+                    </div>
+                    <div class="toggle-hint">
+                        Keeps this same login — the student still signs in as before, but gains access to the
+                        Resource Library (to share materials with current students) and Mock Exams becomes locked.
+                    </div>
+                    <div class="form-grid three toggle-fields">
+                        <div class="form-group">
+                            <label>Batch Year</label>
+                            <input type="number" name="batch_year" min="1980" max="2100"
+                                value="{{ old('batch_year', $alumniProfile?->batch_year) }}" placeholder="e.g. 2026">
+                        </div>
+                        <div class="form-group">
+                            <label>Current Job</label>
+                            <input type="text" name="current_job"
+                                value="{{ old('current_job', $alumniProfile?->current_job) }}" placeholder="e.g. Senior Auditor">
+                        </div>
+                        <div class="form-group">
+                            <label>Company</label>
+                            <input type="text" name="company"
+                                value="{{ old('company', $alumniProfile?->company) }}" placeholder="e.g. SGV & Co.">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="status-toggle {{ $isShiftedChecked ? 'is-checked' : '' }}" id="shiftedToggleWrap">
+                    <div class="toggle-row">
+                        <input type="hidden" name="is_shifted" value="0">
+                        <input type="checkbox" id="isShifted" name="is_shifted" value="1" @checked($isShiftedChecked)>
+                        <label for="isShifted">Shifted out of the BSA program</label>
+                    </div>
+                    <div class="toggle-hint">
+                        Immediately locks this account out. The student will be blocked at login and shown the
+                        reason you enter below.
+                    </div>
+                    <div class="toggle-fields" style="display: {{ $isShiftedChecked ? 'block' : 'none' }};">
+                        <label style="display:block; font-size:12px; font-weight:600; margin-bottom:6px;">Reason for shifting</label>
+                        <textarea name="shift_reason" placeholder="e.g. Shifted to BS Accountancy Management at another university.">{{ old('shift_reason', $studentProfile?->shift_reason) }}</textarea>
+                    </div>
+                </div>
+            </div>
+
+            <script>
+                (function () {
+                    var alumniWrap = document.getElementById('alumniToggleWrap');
+                    var shiftedWrap = document.getElementById('shiftedToggleWrap');
+                    var alumniBox = document.getElementById('isAlumni');
+                    var shiftedBox = document.getElementById('isShifted');
+
+                    function sync(wrap, box, otherBox) {
+                        wrap.classList.toggle('is-checked', box.checked);
+                        var fields = wrap.querySelector('.toggle-fields');
+                        if (fields) fields.style.display = box.checked ? '' : 'none';
+                        if (box.checked && otherBox.checked) {
+                            otherBox.checked = false;
+                            otherBox.dispatchEvent(new Event('change'));
+                        }
+                    }
+
+                    alumniBox.addEventListener('change', function () { sync(alumniWrap, alumniBox, shiftedBox); });
+                    shiftedBox.addEventListener('change', function () { sync(shiftedWrap, shiftedBox, alumniBox); });
+                })();
+            </script>
+        @endif
 
         <div class="actions">
             <a class="btn btn-ghost" href="{{ $backUrl }}">Cancel</a>

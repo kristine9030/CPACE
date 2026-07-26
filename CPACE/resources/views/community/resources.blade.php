@@ -117,7 +117,7 @@
             <div class="flash err"><i class="fas fa-circle-exclamation"></i> {{ $errors->first() }}</div>
         @endif
 
-        @if(Auth::user()->isAlumni() || Auth::user()->isChair())
+        @if(Auth::user()->hasAlumniAccess() || Auth::user()->isChair())
             <div class="card composer">
                 <h4><i class="fas fa-cloud-arrow-up"></i> Upload a material</h4>
                 <form method="POST" action="{{ route('community.resources.store') }}" enctype="multipart/form-data" id="uploadForm">
@@ -222,7 +222,7 @@
             <div class="card">
                 <div class="empty">
                     <i class="fas fa-folder-open"></i>
-                    No materials yet. @if(Auth::user()->isAlumni()) Be the first to upload a study material! @else Check back soon — alumni will start sharing reviewers and notes here. @endif
+                    No materials yet. @if(Auth::user()->hasAlumniAccess()) Be the first to upload a study material! @else Check back soon — alumni will start sharing reviewers and notes here. @endif
                 </div>
             </div>
         @endforelse

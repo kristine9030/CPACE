@@ -210,7 +210,7 @@ class ChatController extends Controller
     public function createGroup(Request $request)
     {
         $user = Auth::user();
-        abort_unless($user->isAlumni() || $user->isChair(), 403, 'Only alumni can create a group chat.');
+        abort_unless($user->hasAlumniAccess() || $user->isChair(), 403, 'Only alumni can create a group chat.');
 
         $data = $request->validate([
             'name' => ['required', 'string', 'max:120'],

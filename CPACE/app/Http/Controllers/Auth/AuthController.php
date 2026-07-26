@@ -39,6 +39,11 @@ class AuthController extends Controller
             $request->session()->regenerate();
 
             $user = Auth::user();
+
+            if ($user->isShifted()) {
+                return $this->rejectShiftedLogin($request, $user);
+            }
+
             $user->forceFill(['last_login_at' => now()])->save();
 
             return redirect()->intended($this->homeFor($user));
@@ -46,6 +51,23 @@ class AuthController extends Controller
 
         return back()->withErrors([
             'email' => 'The provided credentials do not match our records.',
+        ])->onlyInput('email');
+    }
+
+    /**
+     * A student the Program Chair marked as "shifted" out of the program is
+     * logged straight back out, rather than getting a session. The specific
+     * reason is not shown here (data privacy) — it's only visible to the
+     * Program Chair in the student's record.
+     */
+    protected function rejectShiftedLogin(Request $request, User $user)
+    {
+        Auth::logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return back()->withErrors([
+            'email' => 'This account has shifted out of the program and no longer has access to CPACE. Please contact the Program Chair for more information.',
         ])->onlyInput('email');
     }
 
@@ -154,6 +176,11 @@ class AuthController extends Controller
 
         Auth::login($user, true);
         request()->session()->regenerate();
+
+        if ($user->isShifted()) {
+            return $this->rejectShiftedLogin(request(), $user);
+        }
+
         $user->forceFill(['last_login_at' => now()])->save();
 
         return redirect()->intended($this->homeFor($user));

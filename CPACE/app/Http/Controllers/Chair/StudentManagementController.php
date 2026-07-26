@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Chair;
 
 use App\Http\Controllers\Controller;
+use App\Models\AlumniProfile;
 use App\Models\QuizSession;
 use App\Models\Role;
 use App\Models\StudentProfile;
@@ -146,7 +147,7 @@ class StudentManagementController extends Controller
     {
         return view('chair.student-form', [
             'editMode' => true,
-            'student' => User::where('role_id', Role::STUDENT)->with('studentProfile')->findOrFail($id),
+            'student' => User::where('role_id', Role::STUDENT)->with(['studentProfile', 'alumniProfile'])->findOrFail($id),
         ]);
     }
 
@@ -159,7 +160,9 @@ class StudentManagementController extends Controller
                 'first_name' => $data['first_name'],
                 'last_name' => $data['last_name'],
                 'email' => $data['email'],
-                'is_active' => (bool) $data['is_active'],
+                // A student who just shifted out of the program is locked
+                // out regardless of what the "account enabled" toggle said.
+                'is_active' => ! empty($data['is_shifted']) ? false : (bool) $data['is_active'],
             ]);
             if (! empty($data['password'])) {
                 $student->update(['password' => Hash::make($data['password'])]);
@@ -470,17 +473,51 @@ class StudentManagementController extends Controller
             'section' => ['nullable', 'string', 'max:30'],
             'exam_target_date' => ['nullable', 'date'],
             'is_active' => ['required', 'boolean'],
+            'is_alumni' => ['nullable', 'boolean'],
+            'batch_year' => ['nullable', 'integer', 'digits:4', 'between:1980,2100'],
+            'current_job' => ['nullable', 'string', 'max:120'],
+            'company' => ['nullable', 'string', 'max:120'],
+            'is_shifted' => ['nullable', 'boolean'],
+            'shift_reason' => ['nullable', 'string', 'max:500', 'required_if:is_shifted,1'],
         ];
     }
 
+    /**
+     * Persists enrollment fields plus the Alumni/Shifted status toggles. The
+     * "marked at" timestamps are only stamped the moment a toggle flips from
+     * false to true, so re-saving the form afterwards doesn't reset them.
+     */
     private function saveProfile(User $student, array $data): void
     {
+        $profile = $student->studentProfile;
+        $wasAlumni = (bool) ($profile?->is_alumni ?? false);
+        $wasShifted = (bool) ($profile?->is_shifted ?? false);
+        $isAlumni = (bool) ($data['is_alumni'] ?? false);
+        $isShifted = (bool) ($data['is_shifted'] ?? false);
+
         StudentProfile::updateOrCreate(['user_id' => $student->id], [
             'student_number' => $data['student_number'] ?? null,
             'year_level' => $data['year_level'] ?? null,
             'section' => $data['section'] ?? null,
             'exam_target_date' => $data['exam_target_date'] ?? null,
+            'is_alumni' => $isAlumni,
+            'alumni_marked_at' => $isAlumni
+                ? ($wasAlumni ? $profile?->alumni_marked_at : now())
+                : null,
+            'is_shifted' => $isShifted,
+            'shift_reason' => $isShifted ? ($data['shift_reason'] ?? null) : null,
+            'shifted_at' => $isShifted
+                ? ($wasShifted ? $profile?->shifted_at : now())
+                : null,
         ]);
+
+        if ($isAlumni) {
+            AlumniProfile::updateOrCreate(['user_id' => $student->id], [
+                'batch_year' => $data['batch_year'] ?? null,
+                'current_job' => $data['current_job'] ?? null,
+                'company' => $data['company'] ?? null,
+            ]);
+        }
     }
 
     private function csvBoolean($value): bool

@@ -112,13 +112,6 @@ Route::middleware('auth')->group(function () {
         Route::get('/communications', [CommunicationController::class, 'index'])->name('communications');
         Route::post('/communications', [CommunicationController::class, 'store'])->name('communications.store');
 
-        // Alumni account management (Alumni Community posters)
-        Route::get('/alumni', [ProgramChairController::class, 'alumni'])->name('alumni');
-        Route::get('/alumni/create', [ProgramChairController::class, 'createAlumni'])->name('alumni.create');
-        Route::post('/alumni', [ProgramChairController::class, 'storeAlumni'])->name('alumni.store');
-        Route::get('/alumni/{id}/edit', [ProgramChairController::class, 'editAlumni'])->name('alumni.edit');
-        Route::put('/alumni/{id}', [ProgramChairController::class, 'updateAlumni'])->name('alumni.update');
-        Route::post('/alumni/{id}/toggle', [ProgramChairController::class, 'toggleAlumni'])->name('alumni.toggle');
     });
 
     // Faculty Routes

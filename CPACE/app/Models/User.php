@@ -181,6 +181,35 @@ class User extends Authenticatable
     }
 
     /**
+     * A student account the Program Chair has flagged as graduated. Unlike
+     * legacy role-based alumni, this keeps role_id = STUDENT so the person
+     * still logs into their one and only student account.
+     */
+    public function isAlumniStudent(): bool
+    {
+        return $this->isStudent() && (bool) $this->studentProfile?->is_alumni;
+    }
+
+    /**
+     * True for either kind of alumni: a legacy dedicated alumni account, or
+     * a student account flagged as alumni. Use this for any alumni-only
+     * feature gate instead of isAlumni() alone.
+     */
+    public function hasAlumniAccess(): bool
+    {
+        return $this->isAlumni() || $this->isAlumniStudent();
+    }
+
+    /**
+     * A student the Program Chair has flagged as having shifted out of the
+     * BSA program. Their account is blocked at login (see AuthController).
+     */
+    public function isShifted(): bool
+    {
+        return $this->isStudent() && (bool) $this->studentProfile?->is_shifted;
+    }
+
+    /**
      * A freshly-imported student must run the first-login Account Setup
      * (change the one-time password, confirm details, build a study plan)
      * before the rest of the app opens up.

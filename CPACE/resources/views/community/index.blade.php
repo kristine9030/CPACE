@@ -225,7 +225,7 @@
             <div class="flash err"><i class="fas fa-circle-exclamation"></i> {{ $errors->first() }}</div>
         @endif
 
-        @if(Auth::user()->isAlumni() || Auth::user()->isChair())
+        @if(Auth::user()->hasAlumniAccess() || Auth::user()->isChair())
             @php $meInitials = strtoupper(substr(Auth::user()->first_name,0,1).substr(Auth::user()->last_name,0,1)); @endphp
             <div class="card composer">
                 <div class="composer-trigger" id="composerTrigger">
@@ -417,7 +417,7 @@
             <div class="card">
                 <div class="empty">
                     <i class="fas fa-people-group"></i>
-                    No posts yet. @if(Auth::user()->isAlumni()) Be the first to share something! @else Check back soon — alumni will start posting updates and materials here. @endif
+                    No posts yet. @if(Auth::user()->hasAlumniAccess()) Be the first to share something! @else Check back soon — alumni will start posting updates and materials here. @endif
                 </div>
             </div>
         @endforelse

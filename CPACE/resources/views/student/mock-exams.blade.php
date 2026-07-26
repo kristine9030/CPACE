@@ -1083,7 +1083,19 @@
 
             <div class="mock-area">
 
-            @unless($mockUnlocked)
+            @if($isAlumniLocked)
+                <!-- LOCK OVERLAY: alumni no longer take mock exams -->
+                <div class="mock-lock">
+                    <div class="lock-card">
+                        <div class="lock-shapes"><span></span><span></span></div>
+                        <div class="lock-badge"><i class="fas fa-user-graduate"></i></div>
+                        <div class="lock-kicker">Alumni Account</div>
+                        <h2>Mock Exams Are Locked For You</h2>
+                        <p>You're marked as an <strong>alumni</strong> in CPACE, so this feature is reserved for active reviewers only. Check out the <strong>Resource Library</strong> in your sidebar to share materials with current students instead.</p>
+                        <div class="lock-hint"><i class="fas fa-circle-info"></i> Contact the Program Chair if this looks wrong.</div>
+                    </div>
+                </div>
+            @elseif(! $mockUnlocked)
                 <!-- LOCK OVERLAY: proctored, faculty-administered exam -->
                 <div class="mock-lock">
                     <div class="lock-card">
@@ -1108,7 +1120,7 @@
                         <div class="lock-hint"><i class="fas fa-circle-info"></i> Codes are issued at exam time &mdash; do not share yours.</div>
                     </div>
                 </div>
-            @endunless
+            @endif
 
             <!-- COMPREHENSIVE PRE-BOARD EXAM -->
             <div class="pb-hero">

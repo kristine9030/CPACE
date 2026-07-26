@@ -128,7 +128,7 @@
                 <div class="cl-title">Chats</div>
                 <div class="cl-actions">
                     <button type="button" class="cl-icon-btn" title="New Message" onclick="document.getElementById('newMsgModal').classList.add('open')"><i class="fas fa-pen"></i></button>
-                    @if(Auth::user()->isAlumni() || Auth::user()->isChair())
+                    @if(Auth::user()->hasAlumniAccess() || Auth::user()->isChair())
                         <button type="button" class="cl-icon-btn" title="New Group" onclick="document.getElementById('newGroupModal').classList.add('open')"><i class="fas fa-users"></i></button>
                     @endif
                 </div>
@@ -324,7 +324,7 @@
     </div>
 </div>
 
-@if(Auth::user()->isAlumni() || Auth::user()->isChair())
+@if(Auth::user()->hasAlumniAccess() || Auth::user()->isChair())
     {{-- New Group modal --}}
     <div class="modal-overlay" id="newGroupModal">
         <div class="modal">
