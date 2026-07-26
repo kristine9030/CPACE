@@ -1000,8 +1000,8 @@
                     </div>
                 </div>
                 <div class="header-right">
-                    <div class="search-box">
-                        <input type="text" placeholder="Search topics, questions...">
+                    <div class="search-box gs-wrap">
+                        <input type="text" data-gs="true" placeholder="Search topics, questions...">
                     </div>
                     <div class="header-icons">
                         <button class="icon-btn" onclick="window.location.href='{{ route('messages.index') }}'" title="Messages" aria-label="Messages">
@@ -1495,5 +1495,6 @@
         applyMode(localStorage.getItem('quizMode') || 'adaptive');
         updateSubjectsEnabled(0); // start locked
     </script>
+    @include('partials.global-search')
 </body>
 </html>

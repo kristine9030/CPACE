@@ -1764,9 +1764,9 @@
                     </div>
                 </div>
                 <div class="header-right">
-                    <div class="search-box">
+                    <div class="search-box gs-wrap">
                         <i class="fas fa-search"></i>
-                        <input type="text" placeholder="Search topics, questions...">
+                        <input type="text" data-gs="true" placeholder="Search topics, questions...">
                     </div>
                     <div class="header-icons">
                         <button class="icon-btn" onclick="window.location.href='{{ route('messages.index') }}'" title="Messages" aria-label="Messages">
@@ -2407,5 +2407,6 @@
             }).mount('#badgesApp');
         })();
     </script>
+    @include('partials.global-search')
 </body>
 </html>

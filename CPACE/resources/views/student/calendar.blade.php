@@ -1206,9 +1206,9 @@
                     <div class="page-subtitle">Plan your reviews and stay consistent.</div>
                 </div>
                 <div class="page-header-right">
-                    <div class="search-wrap">
+                    <div class="search-wrap gs-wrap">
                         <i class="fas fa-search"></i>
-                        <input type="text" placeholder="Search topics, questions...">
+                        <input type="text" data-gs="true" placeholder="Search topics, questions...">
                     </div>
                     <button class="notif-btn" onclick="window.location.href='{{ route('messages.index') }}'" title="Messages" aria-label="Messages">
                         <i class="fas fa-comment-dots"></i>
@@ -1790,5 +1790,6 @@
         `;
         document.head.appendChild(style);
     </script>
+    @include('partials.global-search')
 </body>
 </html>

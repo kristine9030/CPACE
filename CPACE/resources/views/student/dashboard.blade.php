@@ -187,6 +187,8 @@
             align-items: center;
             margin-bottom: 24px;
             gap: 20px;
+            position: relative;
+            z-index: 50;
         }
 
         .page-header-left { display: flex; align-items: center; gap: 14px; }
@@ -1067,9 +1069,9 @@
             </div>
         </div>
         <div class="page-header-right">
-            <div class="search-wrap">
+            <div class="search-wrap gs-wrap">
                 <i class="fas fa-search"></i>
-                <input type="text" placeholder="Search topics, questions, subjects...">
+                <input type="text" data-gs="true" placeholder="Search topics, questions, subjects...">
             </div>
             <a class="notif-btn" href="{{ route('messages.index') }}" aria-label="Messages" title="Messages" style="text-decoration:none">
                 <i class="fas fa-comment-dots"></i>
@@ -1379,5 +1381,6 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 });
 </script>
+@include('partials.global-search')
 </body>
 </html>

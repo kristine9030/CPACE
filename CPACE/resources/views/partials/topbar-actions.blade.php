@@ -5,10 +5,11 @@
         <span style="position:absolute;top:-5px;right:-5px;min-width:17px;height:17px;padding:0 4px;border-radius:9px;background:#dc2626;color:#fff;border:2px solid #fff;font-size:8px;font-weight:700;display:flex;align-items:center;justify-content:center;">{{ $unreadNotifications > 9 ? '9+' : $unreadNotifications }}</span>
     @endif
 </a>
-<div class="topbar-search">
+<div class="topbar-search gs-wrap">
     <i class="fas fa-search"></i>
-    <input type="text" placeholder="Search...">
+    <input type="text" data-gs="true" placeholder="Search...">
 </div>
+@include('partials.global-search')
 <div class="topbar-avatar-wrap" id="topbarAvatarWrap">
     <button class="topbar-avatar-btn" id="topbarAvatarBtn">
         @include('partials.avatar-content')

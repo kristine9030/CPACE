@@ -28,6 +28,7 @@ use App\Http\Controllers\CommunityController;
 use App\Http\Controllers\CommunityResourceController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\Alumni\ProfileController as AlumniProfileController;
+use App\Http\Controllers\GlobalSearchController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -58,6 +59,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/account-setup', [AccountSetupController::class, 'show'])->name('account-setup');
     Route::post('/account-setup', [AccountSetupController::class, 'store'])->name('account-setup.store');
     Route::get('/welcome-setup', [AccountSetupController::class, 'welcome'])->name('onboarding.welcome');
+
+    Route::get('/search', [GlobalSearchController::class, 'search'])->name('global.search');
 
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::post('/notifications/read-all', [NotificationController::class, 'readAll'])->name('notifications.read-all');

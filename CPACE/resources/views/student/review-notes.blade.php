@@ -745,9 +745,9 @@
                     <div class="header-subtitle">Organize your key learnings and important concepts.</div>
                 </div>
                 <div class="header-right">
-                    <div class="search-box">
+                    <div class="search-box gs-wrap">
                         <i class="fas fa-search"></i>
-                        <input type="text" id="globalSearch" placeholder="Search notes, topics, or subjects..." autocomplete="off">
+                        <input type="text" id="globalSearch" data-gs="true" placeholder="Search notes, topics, or subjects..." autocomplete="off">
                     </div>
                     <a href="{{ route('calendar') }}" class="icon-btn" title="Calendar"><i class="far fa-calendar"></i></a>
                     <a href="{{ route('messages.index') }}" class="icon-btn" title="Messages" aria-label="Messages" style="position:relative;"><i class="far fa-comment-dots"></i>@if($unreadMessages > 0)<span style="position:absolute;top:-4px;right:-4px;min-width:16px;height:16px;padding:0 4px;background:#c0392b;color:#fff;border-radius:8px;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;">{{ $unreadMessages > 9 ? '9+' : $unreadMessages }}</span>@endif</a>
@@ -2206,5 +2206,6 @@
             renderAll();
         });
     </script>
+    @include('partials.global-search')
 </body>
 </html>

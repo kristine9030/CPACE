@@ -413,9 +413,9 @@
             </div>
         </div>
         <div class="top-bar-right">
-            <div class="search-wrap">
+            <div class="search-wrap gs-wrap">
                 <i class="fas fa-search"></i>
-                <input type="text" placeholder="Search topics, questions...">
+                <input type="text" data-gs="true" placeholder="Search topics, questions...">
             </div>
             <button class="notif-btn" onclick="window.location.href='{{ route('messages.index') }}'" title="Messages" aria-label="Messages">
                 <i class="fas fa-comment-dots"></i>
@@ -500,5 +500,6 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 });
 </script>
+    @include('partials.global-search')
 </body>
 </html>
