@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Forgot Password - CPACE CPA Reviewer</title>
+    <title>Reset Password - CPACE CPA Reviewer</title>
     <link href='https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap' rel='stylesheet'>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -114,7 +114,17 @@
             font-size: 14px;
         }
 
-        input[type="email"] {
+        .input-wrap {
+            position: relative;
+        }
+
+        .input-wrap input {
+            padding-right: 42px;
+        }
+
+        input[type="email"],
+        input[type="password"],
+        .input-wrap input[type="text"] {
             width: 100%;
             padding: 12px 15px;
             border: 1px solid #ddd;
@@ -124,7 +134,39 @@
             transition: border-color 0.3s;
         }
 
-        input[type="email"]:focus {
+        input[readonly] {
+            background: #f7f7f7;
+            color: #666;
+        }
+
+        .toggle-eye {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #999;
+            font-size: 14px;
+        }
+
+        /* Hide native browser password-reveal/clear/suggest icons so they
+           don't compete with the custom eye icon and shrink the input box. */
+        input[type="password"]::-ms-reveal,
+        input[type="password"]::-ms-clear {
+            display: none;
+        }
+
+        input::-webkit-strong-password-auto-fill-button,
+        input::-webkit-credentials-auto-fill-button,
+        input::-webkit-caps-lock-indicator {
+            display: none !important;
+            visibility: hidden;
+            pointer-events: none;
+            position: absolute;
+            right: 0;
+        }
+
+        input:focus {
             outline: none;
             border-color: #7B1D1D;
             box-shadow: 0 0 0 3px rgba(123, 29, 29, 0.1);
@@ -149,22 +191,6 @@
             box-shadow: 0 5px 20px rgba(139, 58, 58, 0.3);
         }
 
-        .status-message {
-            background: #f0fdf4;
-            border: 1px solid #bbf7d0;
-            border-radius: 8px;
-            padding: 14px 16px;
-            color: #166534;
-            font-size: 13px;
-            line-height: 1.6;
-            margin-bottom: 20px;
-            display: flex;
-            gap: 10px;
-            align-items: flex-start;
-        }
-
-        .status-message i { margin-top: 2px; flex-shrink: 0; }
-
         .error-message {
             color: #ef4444;
             font-size: 13px;
@@ -175,21 +201,11 @@
             border-color: #ef4444;
         }
 
-        .info-box {
-            background: #fef9ec;
-            border: 1px solid #fde68a;
-            border-radius: 8px;
-            padding: 14px 16px;
-            color: #92400e;
+        .hint {
+            color: #888;
             font-size: 12px;
-            line-height: 1.6;
-            margin-top: 20px;
-            display: flex;
-            gap: 10px;
-            align-items: flex-start;
+            margin-top: 6px;
         }
-
-        .info-box i { margin-top: 2px; flex-shrink: 0; color: #f59e0b; }
 
         /* ── Tablet: 640px – 1024px ── */
         @media (max-width: 1024px) {
@@ -263,7 +279,8 @@
                 margin-bottom: 16px;
             }
 
-            input[type="email"] {
+            input[type="email"],
+            input[type="password"] {
                 font-size: 16px; /* prevents iOS zoom */
                 padding: 11px 13px;
             }
@@ -271,11 +288,6 @@
             .btn-submit {
                 font-size: 15px;
                 padding: 13px;
-            }
-
-            .info-box,
-            .status-message {
-                font-size: 12px;
             }
 
             .back-link {
@@ -301,17 +313,10 @@
 
                 <div class="form-container">
                     <div class="icon-circle">
-                        <i class="fas fa-lock"></i>
+                        <i class="fas fa-key"></i>
                     </div>
-                    <h3>Forgot your password?</h3>
-                    <p class="subtitle">Enter your email address and we'll let you know the next steps to recover your account.</p>
-
-                    @if (session('status'))
-                        <div class="status-message">
-                            <i class="fas fa-check-circle"></i>
-                            <span>{{ session('status') }}</span>
-                        </div>
-                    @endif
+                    <h3>Set a new password</h3>
+                    <p class="subtitle">Choose a new password for your CPACE account. Make it something you'll remember but others won't guess.</p>
 
                     @if ($errors->any())
                         <div style="background: #fee; border: 1px solid #fcc; border-radius: 6px; padding: 12px; margin-bottom: 20px;">
@@ -321,27 +326,81 @@
                         </div>
                     @endif
 
-                    <form method="POST" action="{{ route('password.email') }}">
+                    <form method="POST" action="{{ route('password.update') }}">
                         @csrf
+
+                        <input type="hidden" name="token" value="{{ $token }}">
 
                         <div class="form-group @error('email') error @enderror">
                             <label for="email">Email address</label>
-                            <input type="email" id="email" name="email" value="{{ old('email') }}" required autofocus>
+                            <input type="email" id="email" name="email" value="{{ old('email', $email) }}" required readonly>
                             @error('email')
                                 <div class="error-message">{{ $message }}</div>
                             @enderror
                         </div>
 
-                        <button type="submit" class="btn-submit">Send Reset Request</button>
-                    </form>
+                        <div class="form-group @error('password') error @enderror">
+                            <label for="password">New password</label>
+                            <div class="input-wrap">
+                                <input type="password" id="password" name="password" required autofocus minlength="8" autocomplete="new-password">
+                                <input type="text" id="password_shadow" tabindex="-1" aria-hidden="true" autocomplete="off" style="display:none">
+                                <i class="fas fa-eye toggle-eye" data-target="password"></i>
+                            </div>
+                            @error('password')
+                                <div class="error-message">{{ $message }}</div>
+                            @enderror
+                            <div class="hint">Use at least 8 characters.</div>
+                        </div>
 
-                    <div class="info-box">
-                        <i class="fas fa-info-circle"></i>
-                        <span>We'll email you a secure link to reset your password. If you don't see it within a few minutes, check your spam folder or contact your school administrator.</span>
-                    </div>
+                        <div class="form-group">
+                            <label for="password_confirmation">Confirm new password</label>
+                            <div class="input-wrap">
+                                <input type="password" id="password_confirmation" name="password_confirmation" required minlength="8" autocomplete="new-password">
+                                <input type="text" id="password_confirmation_shadow" tabindex="-1" aria-hidden="true" autocomplete="off" style="display:none">
+                                <i class="fas fa-eye toggle-eye" data-target="password_confirmation"></i>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn-submit">Change Password</button>
+                    </form>
                 </div>
             </div>
         </div>
     </div>
+
+    <script>
+        // We never mutate an input's `type` at runtime — Chromium browsers
+        // (Chrome, Brave, Edge) recompute their built-in autofill/reveal
+        // decorations when `type` changes, which visibly resizes the field.
+        // Instead, two same-styled inputs are stacked and we just swap which
+        // one is visible, keeping their values in sync.
+        document.querySelectorAll('.toggle-eye').forEach(function (icon) {
+            var realInput = document.getElementById(icon.dataset.target);
+            var shadowInput = document.getElementById(icon.dataset.target + '_shadow');
+
+            shadowInput.addEventListener('input', function () {
+                realInput.value = shadowInput.value;
+            });
+
+            icon.addEventListener('click', function () {
+                var revealing = shadowInput.style.display === 'none';
+
+                if (revealing) {
+                    shadowInput.value = realInput.value;
+                    realInput.style.display = 'none';
+                    shadowInput.style.display = 'block';
+                    shadowInput.focus();
+                } else {
+                    realInput.value = shadowInput.value;
+                    shadowInput.style.display = 'none';
+                    realInput.style.display = 'block';
+                    realInput.focus();
+                }
+
+                icon.classList.toggle('fa-eye');
+                icon.classList.toggle('fa-eye-slash');
+            });
+        });
+    </script>
 </body>
 </html>

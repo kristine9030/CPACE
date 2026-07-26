@@ -4,12 +4,15 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 
+use App\Mail\ResetPasswordMail;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rules\Password;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Password;
+use Illuminate\Validation\Rules\Password as PasswordRule;
 use Laravel\Socialite\Facades\Socialite;
 
 class AuthController extends Controller
@@ -62,7 +65,7 @@ class AuthController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:120',
             'email' => 'required|email|unique:users,email',
-            'password' => ['required', 'confirmed', Password::defaults()],
+            'password' => ['required', 'confirmed', PasswordRule::defaults()],
         ]);
 
         // The schema stores first and last name separately.
@@ -165,7 +168,9 @@ class AuthController extends Controller
     }
 
     /**
-     * Handle forgot password submission (school system — show a "contact admin" message)
+     * Handle forgot password submission: email a signed reset link if the
+     * account exists. The response message is the same either way so an
+     * attacker can't use it to discover which emails are registered.
      */
     public function sendResetLink(Request $request)
     {
@@ -173,7 +178,52 @@ class AuthController extends Controller
             'email' => 'required|email',
         ]);
 
-        return back()->with('status', 'If an account with that email exists, please contact your school administrator to reset your password.');
+        $user = User::where('email', $request->email)->first();
+
+        if ($user) {
+            $token = Password::createToken($user);
+            $resetUrl = route('password.reset', ['token' => $token]) . '?email=' . urlencode($user->email);
+
+            Mail::to($user->email)->send(new ResetPasswordMail($user, $resetUrl));
+        }
+
+        return back()->with('status', 'If an account with that email exists, we\'ve sent a password reset link to it. Please check your inbox.');
+    }
+
+    /**
+     * Show the "set a new password" form linked from the reset email.
+     */
+    public function showResetPassword(Request $request, string $token)
+    {
+        return view('auth.reset-password', [
+            'token' => $token,
+            'email' => $request->query('email', ''),
+        ]);
+    }
+
+    /**
+     * Handle the new-password submission from the reset form.
+     */
+    public function resetPassword(Request $request)
+    {
+        $validated = $request->validate([
+            'token' => 'required',
+            'email' => 'required|email',
+            'password' => ['required', 'confirmed', PasswordRule::defaults()],
+        ]);
+
+        $status = Password::reset(
+            $validated,
+            function (User $user, string $password) {
+                $user->forceFill(['password' => Hash::make($password)])->save();
+            }
+        );
+
+        if ($status === Password::PASSWORD_RESET) {
+            return redirect()->route('login')->with('status', 'Your password has been reset. You can now log in.');
+        }
+
+        return back()->withErrors(['email' => __($status)])->onlyInput('email');
     }
 
     /**
