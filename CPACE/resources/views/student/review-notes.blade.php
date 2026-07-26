@@ -111,14 +111,14 @@
         }
         .icon-btn:hover { background: #ededef; }
 
-        .profile-btn {
+        .profile-avatar {
             width: 42px; height: 42px;
             background: var(--brand);
             border: none; border-radius: 50%;
             color: #fff; font-weight: 600; cursor: pointer; font-size: 14px;
             font-family: 'Poppins', sans-serif;
         }
-        .profile-btn:hover { background: #6a1818; }
+        .profile-avatar:hover { background: #6a1818; }
 
         .dropdown-menu {
             position: absolute; top: 100%; right: 0;
@@ -753,7 +753,7 @@
                     <a href="{{ route('messages.index') }}" class="icon-btn" title="Messages" aria-label="Messages" style="position:relative;"><i class="far fa-comment-dots"></i>@if($unreadMessages > 0)<span style="position:absolute;top:-4px;right:-4px;min-width:16px;height:16px;padding:0 4px;background:#c0392b;color:#fff;border-radius:8px;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;">{{ $unreadMessages > 9 ? '9+' : $unreadMessages }}</span>@endif</a>
                     <a href="{{ route('notifications.index') }}" class="icon-btn" title="Notifications" aria-label="Notifications" style="position:relative;"><i class="far fa-bell"></i>@if($unreadNotifications > 0)<span style="position:absolute;top:-4px;right:-4px;min-width:16px;height:16px;padding:0 4px;background:#c0392b;color:#fff;border-radius:8px;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;">{{ $unreadNotifications > 9 ? '9+' : $unreadNotifications }}</span>@endif</a>
                     <div style="position: relative;">
-                        <button class="profile-btn" id="profileBtn">@include('partials.avatar-content')</button>
+                        <button class="profile-avatar" id="profileBtn">@include('partials.avatar-content')</button>
                         <div class="dropdown-menu" id="profileDropdown">
                             <a href="{{ route('performance') }}"><i class="fas fa-chart-line"></i> My Progress</a>
                             <a href="{{ route('achievements') }}"><i class="fas fa-trophy"></i> Achievements</a>

@@ -14,8 +14,19 @@
             --primary: #7B1D1D;
             --primary-hover: #6a1818;
             --primary-light: #f5e8e8;
+            --primary-mid: #c0392b;
             --accent-red: #c0392b;
             --sidebar-bg: linear-gradient(180deg, #a12626 0%, #7B1D1D 34%, #3d0c0c 74%, #1a0a0a 100%);
+            --white: #ffffff;
+            --gray-100: #f8f9fa;
+            --gray-200: #f0f0f0;
+            --gray-300: #e0e0e0;
+            --gray-500: #999999;
+            --gray-700: #555555;
+            --gray-900: #333333;
+            --green: #10b981;
+            --blue: #3b82f6;
+            --orange: #f59e0b;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -274,17 +285,34 @@
         }
 
         .subject-card {
-            background: white;
+            position: relative;
             border-radius: 16px;
             padding: 24px;
             transition: transform 0.25s, box-shadow 0.25s;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
             display: flex;
             flex-direction: column;
+            z-index: 0;
         }
+        .subject-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 16px;
+            background: white;
+            z-index: -2;
+        }
+        .subject-card::after {
+            content: '';
+            position: absolute;
+            inset: -2px;
+            border-radius: 18px;
+            background: linear-gradient(135deg, #c0392b, #7B1D1D, #a12626);
+            z-index: -3;
+        }
+        .subject-card > * { position: relative; z-index: 1; }
         .subject-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 10px 24px rgba(0,0,0,0.1);
+            box-shadow: 0 10px 24px rgba(0,0,0,0.12);
         }
 
         .subject-card-top {
@@ -298,15 +326,23 @@
             width: 72px; height: 72px;
             border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
-            font-size: 28px;
             flex-shrink: 0;
+            position: relative;
         }
-        .si-far   { background: #e8f0fd; color: #3b82f6; }
-        .si-aud   { background: #fde8f0; color: #e8567d; }
-        .si-tax   { background: #e8f7ee; color: #27ae60; }
-        .si-ms    { background: #f0e8fd; color: #9b59b6; }
-        .si-rfbt  { background: #fef3e0; color: #f39c12; }
-        .si-afar  { background: #e8f7f9; color: #17a2b8; }
+        .subject-icon-circle::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            background: var(--icon-bg, #f5e8e8);
+            z-index: 0;
+        }
+        .subject-icon-circle img {
+            width: 42px; height: 42px;
+            object-fit: contain;
+            position: relative;
+            z-index: 1;
+        }
 
         .subject-info { flex: 1; }
         .subject-abbr { font-size: 20px; font-weight: 800; color: #1a1a1a; margin-bottom: 3px; }
@@ -366,16 +402,12 @@
             cursor: pointer;
             font-family: 'Poppins', sans-serif;
             text-decoration: none;
-            transition: opacity 0.2s;
+            transition: opacity 0.2s, box-shadow 0.2s;
             margin-top: auto;
+            background: linear-gradient(135deg, rgba(192,57,43,.12) 0%, rgba(123,29,29,.12) 100%);
+            color: #7B1D1D;
         }
-        .subject-btn:hover { opacity: 0.85; }
-
-        .btn-far   { background: #e8f0fd; color: #3b82f6; }
-        .btn-aud   { background: #fde8f0; color: #e8567d; }
-        .btn-tax   { background: #e8f7ee; color: #27ae60; }
-        .btn-ms    { background: #f0e8fd; color: #9b59b6; }
-        .btn-rfbt  { background: #fef3e0; color: #f39c12; }
+        .subject-btn:hover { opacity: 0.85; box-shadow: 0 4px 14px rgba(123,29,29,.15); }
         .btn-afar  { background: #e8f7f9; color: #17a2b8; }
 
         @media (max-width: 1200px) {
@@ -403,7 +435,7 @@
             .main-content { padding: 16px 12px; }
             .subjects-grid { grid-template-columns: 1fr; gap: 14px; }
             .subject-card { padding: 18px; }
-            .subject-icon-circle { width: 56px; height: 56px; font-size: 22px; }
+            .subject-icon-circle { width: 56px; height: 56px; }
             .subject-abbr { font-size: 18px; }
             .page-title { font-size: 20px; }
         }
@@ -438,14 +470,14 @@
                 <i class="fas fa-search"></i>
                 <input type="text" data-gs="true" placeholder="Search topics, questions...">
             </div>
-            <button class="notif-btn" onclick="window.location.href='{{ route('messages.index') }}'" title="Messages" aria-label="Messages">
+            <a class="notif-btn" href="{{ route('messages.index') }}" title="Messages" aria-label="Messages">
                 <i class="fas fa-comment-dots"></i>
                 @if($unreadMessages > 0)<span class="badge">{{ $unreadMessages > 9 ? '9+' : $unreadMessages }}</span>@endif
-            </button>
-            <button class="notif-btn" onclick="window.location.href='{{ route('notifications.index') }}'" title="Notifications" aria-label="Notifications">
+            </a>
+            <a class="notif-btn" href="{{ route('notifications.index') }}" title="Notifications" aria-label="Notifications">
                 <i class="fas fa-bell"></i>
                 @if($unreadNotifications > 0)<span class="badge">{{ $unreadNotifications > 9 ? '9+' : $unreadNotifications }}</span>@endif
-            </button>
+            </a>
             <div class="header-dropdown-wrap">
                 <button class="profile-avatar" id="profileBtn">@include('partials.avatar-content')</button>
                 <div class="dropdown-menu" id="profileDropdown">
@@ -468,8 +500,8 @@
             @php $color = $subject->color ?: '#7B1D1D'; @endphp
             <div class="subject-card">
                 <div class="subject-card-top">
-                    <div class="subject-icon-circle" style="background:{{ $color }}1a; color:{{ $color }};">
-                        <i class="fas {{ $subject->icon ?: 'fa-book' }}"></i>
+                    <div class="subject-icon-circle" style="--icon-bg:{{ $color }}1a;">
+                        <img src="{{ asset('images/' . $subject->code . '.png') }}" alt="{{ $subject->code }}">
                     </div>
                     <div class="subject-info">
                         <div class="subject-abbr">{{ $subject->code }}</div>
@@ -521,8 +553,7 @@
                         <span class="stat-lbl">Weak Topics</span>
                     </div>
                 </div>
-                <a href="{{ route('subjects.show', $subject->id) }}" class="subject-btn"
-                   style="background:{{ $color }}1a; color:{{ $color }};">Review Subject <i class="fas fa-arrow-right"></i></a>
+                <a href="{{ route('subjects.show', $subject->id) }}" class="subject-btn">Review Subject <i class="fas fa-arrow-right"></i></a>
             </div>
         @empty
             <div style="grid-column:1/-1; text-align:center; padding:60px 20px; color:#aaa;">

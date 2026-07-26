@@ -3,23 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CPAce — Your Edge to Ace CPALE</title>
+    <title>CPAce — Adaptive CPALE Review System</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
         :root {
-            --maroon:      #7B1D1D;
-            --maroon-dark: #5a1414;
-            --maroon-mid:  #8B2525;
-            --maroon-pale: #f9f0f0;
+            --maroon:       #7B1D1D;
+            --maroon-dark:  #5a1414;
+            --maroon-mid:   #8B2525;
+            --maroon-bright:#a12626;
+            --maroon-pale:  #f9f0f0;
             --maroon-light: #f5e8e8;
-            --maroon-border: #e8d5d5;
-            --white:       #ffffff;
-            --dark:        #1a1a1a;
-            --gray:        #666666;
-            --light-gray:  #f8f8f8;
+            --maroon-border:#e8d5d5;
+            --accent-red:   #c0392b;
+            --white:        #ffffff;
+            --dark:         #1a1a1a;
+            --gray:         #666666;
+            --gray-light:   #f4f5f7;
+            --gray-border:  #eef0f2;
         }
 
         html { scroll-behavior: smooth; }
@@ -27,7 +30,7 @@
             font-family: 'Poppins', sans-serif;
             color: var(--dark);
             overflow-x: hidden;
-            background: #fff;
+            background: var(--gray-light);
         }
 
         /* ─── NAVBAR ──────────────────────────────────────────── */
@@ -35,54 +38,49 @@
             position: fixed; top: 0; left: 0; right: 0; z-index: 100;
             height: 68px;
             background: rgba(255,255,255,.97);
-            border-bottom: 1px solid var(--maroon-border);
+            border-bottom: 1px solid var(--gray-border);
             display: flex; align-items: center; justify-content: space-between;
-            padding: 0 6%;
+            padding: 0;
             transition: box-shadow .3s;
         }
-        nav.scrolled { box-shadow: 0 4px 24px rgba(123,29,29,.10); }
+        nav.scrolled { box-shadow: 0 4px 24px rgba(0,0,0,.08); }
 
-        .nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+        .nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; padding-left: 6%; }
         .nav-logo img { height: 40px; object-fit: contain; }
+        .nav-logo .nav-wordmark { height: 28px; object-fit: contain; }
 
-        .nav-links { display: flex; gap: 2rem; list-style: none; }
+        .nav-links { display: flex; gap: 1.8rem; list-style: none; }
         .nav-links a {
-            font-size: .88rem; font-weight: 500; color: var(--dark);
+            font-size: .85rem; font-weight: 500; color: var(--dark);
             text-decoration: none; transition: color .2s;
         }
         .nav-links a:hover { color: var(--maroon); }
 
-        .nav-actions { display: flex; gap: .75rem; align-items: center; }
+        .nav-actions { display: flex; gap: .75rem; align-items: center; padding-right: 6%; }
 
-        .btn-ghost {
-            padding: .5rem 1.2rem; font-size: .85rem; font-weight: 600;
-            color: var(--maroon); background: transparent;
-            border: 1.5px solid var(--maroon); border-radius: 6px;
-            text-decoration: none; transition: all .2s;
-        }
-        .btn-ghost:hover { background: var(--maroon); color: #fff; }
-
-        .btn-solid {
-            padding: .5rem 1.4rem; font-size: .85rem; font-weight: 600;
-            color: #fff; background: linear-gradient(135deg, var(--maroon) 0%, var(--maroon-mid) 100%);
-            border: none; border-radius: 6px; text-decoration: none;
+        .btn-login {
+            padding: .55rem 1.5rem; font-size: .85rem; font-weight: 600;
+            color: #fff; background: linear-gradient(135deg, var(--maroon) 0%, var(--maroon-dark) 100%);
+            border: none; border-radius: 10px; text-decoration: none;
+            box-shadow: 0 4px 14px rgba(123,29,29,.25);
             transition: transform .2s, box-shadow .2s;
         }
-        .btn-solid:hover { transform: translateY(-1px); box-shadow: 0 5px 20px rgba(123,29,29,.3); }
+        .btn-login:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(123,29,29,.35); }
 
         .hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; }
         .hamburger span { width: 24px; height: 2px; background: var(--dark); border-radius: 4px; }
 
         .mobile-menu {
             display: none; position: fixed; top: 68px; left: 0; right: 0;
-            background: #fff; border-bottom: 1px solid var(--maroon-border);
+            background: #fff; border-bottom: 1px solid var(--gray-border);
             padding: 1rem 6%; z-index: 99; flex-direction: column; gap: .75rem;
+            box-shadow: 0 8px 24px rgba(0,0,0,.08);
         }
         .mobile-menu.open { display: flex; }
         .mobile-menu a {
             font-size: .9rem; font-weight: 500; color: var(--dark);
-            text-decoration: none; padding: .5rem 0;
-            border-bottom: 1px solid var(--maroon-border);
+            text-decoration: none; padding: .6rem 0;
+            border-bottom: 1px solid var(--gray-border);
         }
         .mobile-menu a:last-child { border: none; }
 
@@ -92,19 +90,25 @@
             display: flex;
             align-items: center;
             padding: 118px 6% 140px;
-            background:
-                radial-gradient(ellipse 50% 42% at 92% 8%, rgba(123,29,29,.08), transparent 65%),
-                radial-gradient(ellipse 42% 38% at 0% 100%, rgba(123,29,29,.06), transparent 60%),
-                linear-gradient(160deg, #ffffff 0%, #fdf6f6 55%, #f6eaea 100%);
+            background: linear-gradient(115deg, #6a1a1a 0%, #3a1010 40%, #130707 100%);
             position: relative;
             overflow: hidden;
         }
 
-        /* dotted grid accent, top-right */
+        .hero-shapes { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
+        .hero-shapes span { position: absolute; pointer-events: none; }
+        .hero-shapes .hs1 { top: 12%; left: 5%; width: 180px; height: 180px; border: 2px solid rgba(255,255,255,.06); border-radius: 50%; }
+        .hero-shapes .hs2 { bottom: 18%; left: 8%; width: 120px; height: 120px; border: 2px solid rgba(255,215,106,.1); border-radius: 30px; transform: rotate(28deg); }
+        .hero-shapes .hs3 { top: 20%; right: 35%; width: 0; height: 0; border-left: 26px solid transparent; border-right: 26px solid transparent; border-bottom: 45px solid rgba(255,255,255,.04); transform: rotate(-18deg); }
+        .hero-shapes .hs4 { bottom: 25%; right: 8%; width: 80px; height: 80px; background: rgba(192,57,43,.18); border-radius: 20px; transform: rotate(20deg); }
+        .hero-shapes .hs5 { top: 35%; right: 5%; width: 100px; height: 100px; border: 1.5px solid rgba(255,255,255,.05); border-radius: 50%; }
+        .hero-shapes .hs6 { top: 8%; right: 22%; width: 60px; height: 60px; border: 1.5px dashed rgba(255,255,255,.08); border-radius: 50%; animation: spinSlow 30s linear infinite; }
+        @keyframes spinSlow { to { transform: rotate(360deg) } }
+
         .hero::before {
             content: ''; position: absolute; z-index: 1; pointer-events: none;
-            top: 98px; right: 3%; width: 220px; height: 160px;
-            background-image: radial-gradient(rgba(123,29,29,.2) 1.5px, transparent 1.6px);
+            top: 90px; right: 4%; width: 240px; height: 180px;
+            background-image: radial-gradient(rgba(255,255,255,.1) 1.5px, transparent 1.6px);
             background-size: 19px 19px;
             -webkit-mask-image: radial-gradient(ellipse at top right, #000 25%, transparent 78%);
                     mask-image: radial-gradient(ellipse at top right, #000 25%, transparent 78%);
@@ -112,182 +116,108 @@
 
         .hero-inner {
             width: 100%; max-width: 1280px; margin: 0 auto;
-            display: grid; grid-template-columns: 47fr 53fr;
-            gap: 3.5rem; align-items: center;
+            display: grid; grid-template-columns: 48fr 52fr;
+            gap: 4rem; align-items: center;
             position: relative; z-index: 2;
         }
 
-        /* decorative + marks matching the illustration style */
-        .hero-plus {
-            position: absolute; pointer-events: none; z-index: 1;
-            color: var(--maroon); opacity: .18; font-weight: 300;
-            line-height: 1; user-select: none;
-        }
-        .hp1 { top: 17%; left: 3%;  font-size: 1.6rem; }
-        .hp2 { top: 12%; left: 44%; font-size: 1.1rem; opacity: .12; }
-        .hp3 { bottom: 30%; left: 6%; font-size: 1rem; opacity: .12; }
-        .hp4 { top: 48%; right: 2%; font-size: 1.4rem; }
-        .hp5 { bottom: 22%; right: 5%; font-size: 1rem; opacity: .1; }
-
-        /* decorative clock ring (like in the illustration bg) */
-        .hero-deco-ring {
-            position: absolute; pointer-events: none; z-index: 1;
-            border: 2px solid rgba(123,29,29,.12);
-            border-radius: 50%;
-        }
-        .ring-sm { width: 52px; height: 52px; bottom: 32%; left: 2%; }
-        .ring-sm::after {
-            content: ''; position: absolute; top: 50%; left: 50%;
-            transform: translate(-50%,-50%);
-            width: 8px; height: 8px; border-radius: 50%;
-            background: rgba(123,29,29,.15);
-        }
-
-        /* LEFT — copy */
-        .hero-copy { max-width: 560px; }
-
-        .hero-eyebrow {
+        .hero-badge {
             display: inline-flex; align-items: center; gap: .55rem;
-            background: #fff; border: 1px solid var(--maroon-border);
-            color: var(--maroon); font-size: .75rem; font-weight: 600;
-            padding: .4rem 1.05rem .4rem .85rem; border-radius: 50px; margin-bottom: 1.6rem;
-            width: fit-content;
-            box-shadow: 0 4px 18px rgba(123,29,29,.1);
+            background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.15);
+            color: #f5a0a0; font-size: .72rem; font-weight: 600;
+            padding: .4rem 1rem .4rem .85rem; border-radius: 50px; margin-bottom: 1.5rem;
+            backdrop-filter: blur(8px);
         }
-        .pulse-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--maroon); position: relative; flex-shrink: 0; }
+        .pulse-dot { width: 7px; height: 7px; border-radius: 50%; background: #f5a0a0; position: relative; flex-shrink: 0; }
         .pulse-dot::after {
             content: ''; position: absolute; inset: -4px; border-radius: 50%;
-            background: rgba(123,29,29,.35);
+            background: rgba(245,160,160,.4);
             animation: pulseDot 2s ease-out infinite;
         }
         @keyframes pulseDot { 0% { transform: scale(.4); opacity: .9 } 70%,100% { transform: scale(1.3); opacity: 0 } }
 
         .hero-copy h1 {
-            font-size: clamp(2.4rem, 4.3vw, 3.7rem);
-            font-weight: 800; line-height: 1.1; color: var(--dark);
+            font-size: clamp(2.2rem, 4vw, 3.4rem);
+            font-weight: 800; line-height: 1.12; color: #fff;
             margin-bottom: 1.2rem; letter-spacing: -1px;
         }
-        .hero-copy h1 .h1-light { font-weight: 500; color: #3d3d3d; }
-        .h1-accent { color: var(--maroon); position: relative; display: inline-block; }
-        .h1-accent svg {
-            position: absolute; left: 0; bottom: -.26em;
-            width: 100%; height: .3em; overflow: visible;
-        }
-        .h1-accent svg path {
-            fill: none; stroke: var(--maroon); stroke-width: 6; stroke-linecap: round;
-            stroke-dasharray: 140; stroke-dashoffset: 140; opacity: .85;
-            animation: drawStroke .8s ease forwards .7s;
-        }
-        @keyframes drawStroke { to { stroke-dashoffset: 0 } }
-
+        .hero-copy h1 span { color: #ffca6a; }
         .hero-copy > p {
-            font-size: .97rem; color: var(--gray); line-height: 1.78;
-            margin-bottom: 2.3rem; max-width: 460px;
+            font-size: .95rem; color: rgba(255,255,255,.55); line-height: 1.8;
+            margin-bottom: 2.2rem; max-width: 520px;
         }
 
-        .hero-cta { display: flex; gap: .9rem; flex-wrap: wrap; margin-bottom: 2.6rem; }
+        .hero-cta { display: flex; gap: .9rem; flex-wrap: wrap; margin-bottom: 2.4rem; }
 
         .cta-primary {
             display: inline-flex; align-items: center; gap: .6rem;
             padding: .95rem 2rem;
-            background: linear-gradient(135deg, var(--maroon) 0%, var(--maroon-mid) 100%);
-            color: #fff; border-radius: 10px; font-weight: 700; font-size: .92rem;
+            background: linear-gradient(135deg, #ffca6a 0%, #e8a830 100%);
+            color: #3a1010; border-radius: 12px; font-weight: 700; font-size: .92rem;
             text-decoration: none; border: none; cursor: pointer;
-            box-shadow: 0 6px 24px rgba(123,29,29,.32);
+            box-shadow: 0 6px 24px rgba(255,202,106,.3);
             transition: transform .2s, box-shadow .2s;
         }
         .cta-primary i { transition: transform .25s; }
-        .cta-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 32px rgba(123,29,29,.42); }
+        .cta-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 32px rgba(255,202,106,.45); }
         .cta-primary:hover i { transform: translateX(4px); }
 
         .cta-secondary {
             display: inline-flex; align-items: center; gap: .6rem;
             padding: .95rem 2rem;
-            background: #fff; color: var(--maroon);
-            border: 1.5px solid var(--maroon-border); border-radius: 10px;
+            background: rgba(255,255,255,.08); color: #fff;
+            border: 1.5px solid rgba(255,255,255,.2); border-radius: 12px;
             font-weight: 600; font-size: .92rem; text-decoration: none;
-            box-shadow: 0 2px 10px rgba(0,0,0,.05);
-            transition: all .2s;
+            backdrop-filter: blur(8px); transition: all .2s;
         }
-        .cta-secondary:hover { border-color: var(--maroon); box-shadow: 0 4px 16px rgba(123,29,29,.15); }
+        .cta-secondary:hover { background: rgba(255,255,255,.15); border-color: rgba(255,255,255,.35); }
 
-        /* social proof row */
         .hero-proof {
-            display: flex; align-items: center; gap: 1.1rem;
-            padding-top: 1.9rem; border-top: 1px solid var(--maroon-border);
+            display: flex; align-items: center; gap: 1.5rem;
+            padding-top: 1.8rem; border-top: 1px solid rgba(255,255,255,.1);
         }
-        .proof-avatars { display: flex; flex-shrink: 0; }
-        .pav {
-            width: 40px; height: 40px; border-radius: 50%;
-            border: 2.5px solid #fff; margin-left: -12px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: .68rem; font-weight: 700; color: #fff;
-            box-shadow: 0 2px 8px rgba(0,0,0,.12);
-        }
-        .proof-avatars .pav:first-child { margin-left: 0; }
-        .pav1 { background: linear-gradient(135deg, #7B1D1D, #a03030); }
-        .pav2 { background: linear-gradient(135deg, #8B2525, #b54545); }
-        .pav3 { background: linear-gradient(135deg, #5a1414, #7B1D1D); }
-        .pav4 { background: linear-gradient(135deg, #3d3d3d, #1a1a1a); }
-        .pav-more { background: var(--maroon-pale); color: var(--maroon); }
-        .proof-stars { color: #f59e0b; font-size: .72rem; letter-spacing: 1.5px; }
-        .proof-stars b { color: var(--dark); font-size: .8rem; margin-left: .35rem; letter-spacing: 0; }
-        .proof-label { font-size: .78rem; color: var(--gray); margin-top: 3px; }
-        .proof-label strong { color: var(--dark); font-weight: 600; }
+        .hero-proof-item { display: flex; align-items: center; gap: .5rem; }
+        .hero-proof-item i { font-size: 1rem; color: rgba(255,255,255,.35); }
+        .hero-proof-item span { font-size: .78rem; color: rgba(255,255,255,.45); font-weight: 500; }
+        .hero-proof-item strong { color: rgba(255,255,255,.8); }
 
-        /* RIGHT — layered illustration visual */
         .hero-visual { position: relative; }
 
-        /* offset gradient panel peeking behind the frame */
         .hero-visual-back {
             position: absolute; z-index: 0;
             top: 28px; left: 30px; right: -22px; bottom: -22px;
-            border-radius: 30px;
-            transform: rotate(2.4deg);
-            background:
-                radial-gradient(circle at 20% 15%, rgba(255,255,255,.14), transparent 45%),
-                linear-gradient(135deg, var(--maroon-mid) 0%, var(--maroon-dark) 100%);
+            border-radius: 30px; transform: rotate(2.4deg);
+            background: linear-gradient(135deg, var(--maroon-bright) 0%, var(--maroon-dark) 100%);
+            box-shadow: 0 20px 60px rgba(0,0,0,.35);
         }
 
-        /* slowly spinning dashed ring, bottom-left */
         .hero-ring-spin {
             position: absolute; z-index: 1; pointer-events: none;
             width: 120px; height: 120px; bottom: -30px; left: -36px;
-            border: 1.5px dashed rgba(123,29,29,.3);
-            border-radius: 50%;
+            border: 1.5px dashed rgba(255,255,255,.15); border-radius: 50%;
             animation: spinSlow 30s linear infinite;
         }
-        @keyframes spinSlow { to { transform: rotate(360deg) } }
 
         .hero-visual-frame {
             position: relative; z-index: 2;
-            aspect-ratio: 4 / 3;
-            border-radius: 26px; overflow: hidden;
+            aspect-ratio: 4 / 3; border-radius: 26px; overflow: hidden;
             background: #fdf3f3;
-            border: 5px solid #fff;
-            box-shadow: 0 35px 90px -25px rgba(90,20,20,.45);
+            border: 5px solid rgba(255,255,255,.1);
+            box-shadow: 0 35px 90px -25px rgba(0,0,0,.55);
         }
-        .hero-visual-frame img {
-            width: 100%; height: 100%;
-            object-fit: cover; object-position: center;
-            display: block;
-        }
+        .hero-visual-frame img { width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; }
 
-        /* floating product-UI chips */
         .float-card {
             position: absolute; z-index: 3;
-            background: rgba(255,255,255,.93);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            border: 1px solid var(--maroon-border);
-            border-radius: 14px;
-            box-shadow: 0 12px 34px rgba(90,20,20,.18);
+            background: rgba(26,10,10,.55); backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,.1); border-radius: 16px;
+            box-shadow: 0 12px 34px rgba(0,0,0,.3);
             display: flex; align-items: center; gap: .7rem;
             padding: .75rem .95rem;
             animation: chipFloat 6s ease-in-out infinite;
         }
-        .float-card strong { display: block; font-size: .78rem; font-weight: 700; color: var(--dark); line-height: 1.25; white-space: nowrap; }
-        .float-card small { display: block; font-size: .66rem; color: var(--gray); white-space: nowrap; }
+        .float-card strong { display: block; font-size: .78rem; font-weight: 700; color: #fff; line-height: 1.25; white-space: nowrap; }
+        .float-card small { display: block; font-size: .66rem; color: rgba(255,255,255,.45); white-space: nowrap; }
 
         .fc-readiness { top: -24px; left: -34px; }
         .fc-streak { top: 42%; right: -26px; animation-delay: 1.6s; }
@@ -295,56 +225,33 @@
 
         .fc-ring {
             width: 46px; height: 46px; border-radius: 50%; flex-shrink: 0;
-            background: conic-gradient(var(--maroon) 0 81%, #f0dede 81% 100%);
-            display: flex; align-items: center; justify-content: center;
-            position: relative;
+            background: conic-gradient(#ffca6a 0 81%, rgba(255,255,255,.15) 81% 100%);
+            display: flex; align-items: center; justify-content: center; position: relative;
         }
-        .fc-ring::before { content: ''; position: absolute; inset: 6px; background: #fff; border-radius: 50%; }
-        .fc-ring span { position: relative; font-size: .68rem; font-weight: 800; color: var(--maroon); }
+        .fc-ring::before { content: ''; position: absolute; inset: 6px; background: rgba(26,10,10,.85); border-radius: 50%; }
+        .fc-ring span { position: relative; font-size: .68rem; font-weight: 800; color: #ffca6a; }
 
         .fc-ico {
             width: 40px; height: 40px; border-radius: 11px; flex-shrink: 0;
             display: flex; align-items: center; justify-content: center; font-size: .95rem;
         }
         .fc-ico.flame { background: linear-gradient(135deg, #7B1D1D, #a53232); color: #ffd9a0; }
-        .fc-ico.check { background: #e8f7ee; color: #16a34a; border: 1px solid #c9ecd6; }
+        .fc-ico.check { background: rgba(16,185,129,.15); color: #34d399; border: 1px solid rgba(16,185,129,.2); }
 
-        /* maroon wave transition into the subjects bar */
-        .hero-wave {
-            position: absolute; bottom: -2px; left: 0; right: 0; z-index: 4;
-            line-height: 0; pointer-events: none;
-        }
+        .hero-wave { position: absolute; bottom: -2px; left: 0; right: 0; z-index: 4; line-height: 0; pointer-events: none; }
         .hero-wave svg { display: block; width: 100%; height: 96px; }
 
         @keyframes chipFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
 
-        /* ─── SUBJECTS BAR ────────────────────────────────────── */
-        .subjects-bar {
-            background: var(--maroon);
-            padding: 1.3rem 6%;
-            display: flex; align-items: center; justify-content: center;
-            gap: 2.5rem; flex-wrap: wrap;
-            margin-top: -2px;
-        }
-        .subjects-bar span {
-            color: rgba(255,255,255,.75); font-size: .78rem; font-weight: 500;
-            display: flex; align-items: center; gap: .5rem;
-        }
-        .subjects-bar span i { color: rgba(255,255,255,.5); font-size: .7rem; }
-        .subjects-bar-label {
-            color: rgba(255,255,255,.45) !important;
-            font-size: .72rem !important; text-transform: uppercase;
-            letter-spacing: .5px;
-        }
-
-        /* ─── SECTIONS ────────────────────────────────────────── */
+        /* ─── SECTION UTILITIES ───────────────────────────────── */
         section { padding: 80px 6%; }
 
         .section-eyebrow {
             display: inline-flex; align-items: center; gap: .4rem;
-            background: var(--maroon-pale); border: 1px solid var(--maroon-border);
-            color: var(--maroon); font-size: .72rem; font-weight: 600;
-            padding: .28rem .9rem; border-radius: 50px; margin-bottom: .9rem;
+            background: linear-gradient(135deg, var(--maroon), var(--maroon-dark));
+            color: #f5a0a0; font-size: .72rem; font-weight: 600;
+            padding: .3rem .95rem; border-radius: 50px; margin-bottom: .9rem;
+            box-shadow: 0 2px 8px rgba(123,29,29,.2);
         }
         .section-title {
             font-size: clamp(1.7rem, 2.8vw, 2.4rem);
@@ -352,254 +259,319 @@
             margin-bottom: .9rem; letter-spacing: -.3px;
         }
         .section-title span { color: var(--maroon); }
-        .section-sub {
-            font-size: .92rem; color: var(--gray); line-height: 1.7; max-width: 500px;
-        }
+        .section-sub { font-size: .92rem; color: var(--gray); line-height: 1.7; max-width: 560px; }
         .text-center { text-align: center; }
         .sub-center { margin-left: auto; margin-right: auto; }
 
-        /* ─── FEATURES ────────────────────────────────────────── */
-        .features-section { background: var(--light-gray); }
+        /* ─── ABOUT ────────────────────────────────────────────── */
+        .about-section { background: #fff; }
+        .about-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 4rem;
+            align-items: center; margin-top: 3rem;
+        }
+        .about-text p { font-size: .92rem; color: var(--gray); line-height: 1.8; margin-bottom: 1rem; }
+        .about-text p strong { color: var(--dark); font-weight: 600; }
 
+        .about-cards { display: flex; flex-direction: column; gap: 1rem; }
+        .about-card {
+            background: #fff; border-radius: 16px; padding: 1.3rem 1.5rem;
+            border: 1px solid var(--gray-border);
+            box-shadow: 0 2px 10px rgba(0,0,0,.03);
+            display: flex; align-items: flex-start; gap: 1rem;
+            transition: transform .2s, box-shadow .2s;
+        }
+        .about-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(123,29,29,.08); }
+        .about-card-icon {
+            width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0;
+            background: linear-gradient(135deg, var(--maroon), var(--maroon-dark));
+            display: flex; align-items: center; justify-content: center;
+            color: #f5a0a0; font-size: 1rem;
+            box-shadow: 0 4px 12px rgba(123,29,29,.2);
+        }
+        .about-card h4 { font-size: .88rem; font-weight: 700; color: var(--dark); margin-bottom: .2rem; }
+        .about-card p { font-size: .8rem; color: var(--gray); line-height: 1.55; margin: 0; }
+
+        /* ─── FEATURES ────────────────────────────────────────── */
+        .features-section { background: var(--gray-light); }
         .features-grid {
             display: grid; grid-template-columns: repeat(3, 1fr);
             gap: 1.25rem; margin-top: 3rem;
         }
         .feature-card {
-            background: #fff; border-radius: 12px; padding: 1.8rem;
-            border: 1px solid var(--maroon-border);
-            box-shadow: 0 2px 12px rgba(0,0,0,.04);
+            background: #fff; border-radius: 18px; padding: 1.8rem;
+            border: 1px solid var(--gray-border);
+            box-shadow: 0 2px 10px rgba(0,0,0,.04);
+            transition: transform .25s, box-shadow .25s;
+            position: relative; overflow: hidden;
+        }
+        .feature-card::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
+            background: linear-gradient(90deg, var(--maroon), var(--accent-red));
+        }
+        .feature-card::after {
+            content: ''; position: absolute; top: -55px; right: -55px;
+            width: 150px; height: 150px; border-radius: 50%;
+            background: rgba(123,29,29,.04); pointer-events: none;
+        }
+        .feature-card:hover { transform: translateY(-5px); box-shadow: 0 12px 40px rgba(123,29,29,.1); }
+        .feature-icon {
+            width: 50px; height: 50px; border-radius: 14px;
+            background: linear-gradient(135deg, var(--maroon), var(--maroon-dark));
+            display: flex; align-items: center; justify-content: center;
+            color: #f5a0a0; font-size: 1.2rem; margin-bottom: 1.2rem;
+            box-shadow: 0 4px 12px rgba(123,29,29,.2);
+        }
+        .feature-card h3 { font-size: 1rem; font-weight: 700; color: var(--dark); margin-bottom: .5rem; }
+        .feature-card p { font-size: .84rem; color: var(--gray); line-height: 1.65; }
+
+        /* ─── CPALE SUBJECTS ──────────────────────────────────── */
+        .subjects-section { background: #fff; }
+        .subjects-grid {
+            display: grid; grid-template-columns: repeat(3, 1fr);
+            gap: 1.25rem; margin-top: 3rem;
+        }
+        .subject-card {
+            background: #fff; border-radius: 18px; padding: 1.6rem;
+            border: 1px solid var(--gray-border);
+            box-shadow: 0 2px 10px rgba(0,0,0,.04);
+            text-align: center;
             transition: transform .25s, box-shadow .25s, border-color .25s;
             position: relative; overflow: hidden;
         }
-        .feature-card::after {
-            content: '';
-            position: absolute; bottom: 0; left: 0; right: 0;
-            height: 3px;
-            background: linear-gradient(90deg, var(--maroon), var(--maroon-mid));
-            transform: scaleX(0); transform-origin: left; transition: transform .3s;
+        .subject-card::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
+            background: linear-gradient(90deg, var(--maroon), var(--accent-red));
         }
-        .feature-card:hover { transform: translateY(-5px); box-shadow: 0 12px 40px rgba(123,29,29,.1); border-color: #d4a0a0; }
-        .feature-card:hover::after { transform: scaleX(1); }
-
-        .feature-icon {
-            width: 48px; height: 48px; border-radius: 12px;
-            background: var(--maroon-pale); border: 1px solid var(--maroon-border);
+        .subject-card:hover { transform: translateY(-4px); box-shadow: 0 10px 32px rgba(123,29,29,.1); border-color: #e3d5d5; }
+        .subject-icon {
+            width: 56px; height: 56px; border-radius: 16px; margin: 0 auto 1rem;
+            background: linear-gradient(135deg, var(--maroon-pale), #fff);
+            border: 1px solid var(--maroon-border);
             display: flex; align-items: center; justify-content: center;
-            color: var(--maroon); font-size: 1.15rem; margin-bottom: 1.1rem;
+            color: var(--maroon); font-size: 1.4rem;
         }
-        .feature-card h3 {
-            font-size: .97rem; font-weight: 700; color: var(--dark); margin-bottom: .45rem;
-        }
-        .feature-card p { font-size: .84rem; color: var(--gray); line-height: 1.65; }
+        .subject-card h3 { font-size: .9rem; font-weight: 700; color: var(--dark); margin-bottom: .3rem; }
+        .subject-card .subject-code { font-size: .72rem; font-weight: 600; color: var(--maroon); text-transform: uppercase; letter-spacing: .5px; }
+        .subject-card p { font-size: .8rem; color: var(--gray); line-height: 1.55; margin-top: .5rem; }
 
         /* ─── HOW IT WORKS ────────────────────────────────────── */
-        .how-grid {
-            display: grid; grid-template-columns: 1fr 1fr; gap: 5rem;
-            align-items: center; margin-top: 3.5rem;
+        .how-section { background: var(--gray-light); }
+        .flow-container {
+            display: flex; align-items: flex-start; justify-content: center;
+            gap: 0; margin-top: 3rem; flex-wrap: wrap;
+            position: relative;
         }
-        .steps { display: flex; flex-direction: column; gap: 1.5rem; }
-
-        .step {
-            display: flex; gap: 1.2rem; align-items: flex-start;
-            padding: 1.3rem; border-radius: 12px;
-            border: 1px solid transparent; transition: all .25s; cursor: default;
+        .flow-step {
+            display: flex; flex-direction: column; align-items: center;
+            text-align: center; flex: 0 0 auto; width: 160px;
         }
-        .step:hover { background: #fff; border-color: var(--maroon-border); box-shadow: 0 4px 20px rgba(123,29,29,.07); }
-
-        .step-num {
-            width: 42px; height: 42px; border-radius: 10px; flex-shrink: 0;
-            background: linear-gradient(135deg, var(--maroon) 0%, var(--maroon-mid) 100%);
-            color: #fff; font-weight: 800; font-size: .85rem;
+        .flow-circle {
+            width: 64px; height: 64px; border-radius: 50%;
+            background: linear-gradient(135deg, var(--maroon), var(--maroon-dark));
             display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 4px 12px rgba(123,29,29,.25);
+            color: #fff; font-size: 1.3rem;
+            box-shadow: 0 6px 20px rgba(123,29,29,.3);
+            margin-bottom: .8rem;
+            position: relative;
         }
-        .step h3 { font-size: .95rem; font-weight: 700; color: var(--dark); margin-bottom: .3rem; }
-        .step p { font-size: .84rem; color: var(--gray); line-height: 1.6; }
+        .flow-circle .flow-num {
+            position: absolute; top: -6px; right: -6px;
+            width: 22px; height: 22px; border-radius: 50%;
+            background: #ffca6a; color: #3a1010;
+            font-size: .6rem; font-weight: 800;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .flow-step h4 { font-size: .82rem; font-weight: 700; color: var(--dark); margin-bottom: .2rem; }
+        .flow-step p { font-size: .72rem; color: var(--gray); line-height: 1.45; padding: 0 .5rem; }
+        .flow-arrow {
+            display: flex; align-items: center; padding-top: 22px;
+            color: var(--maroon-border); font-size: 1.2rem;
+        }
 
-        /* visual dashboard card */
-        .dashboard-card {
-            background: #fff; border-radius: 16px; overflow: hidden;
-            border: 1px solid var(--maroon-border);
-            box-shadow: 0 10px 40px rgba(123,29,29,.1);
-        }
-        .db-header {
-            background: linear-gradient(135deg, var(--maroon) 0%, var(--maroon-mid) 100%);
-            padding: 1.4rem 1.6rem; color: #fff;
-        }
-        .db-header h4 { font-size: .8rem; font-weight: 600; opacity: .7; text-transform: uppercase; letter-spacing: .5px; }
-        .db-score { font-size: 2.2rem; font-weight: 900; margin-top: .2rem; }
-        .db-score span { font-size: .85rem; font-weight: 400; opacity: .7; }
-
-        .db-body { padding: 1.5rem 1.6rem; }
-        .db-subject { margin-bottom: 1rem; }
-        .db-subject:last-child { margin-bottom: 0; }
-        .db-sub-header { display: flex; justify-content: space-between; margin-bottom: 5px; }
-        .db-sub-name { font-size: .78rem; font-weight: 600; color: var(--dark); }
-        .db-sub-pct { font-size: .78rem; font-weight: 700; color: var(--maroon); }
-        .db-bar-bg { height: 6px; background: var(--maroon-light); border-radius: 4px; overflow: hidden; }
-        .db-bar { height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--maroon), var(--maroon-mid)); }
-
-        .db-footer {
-            padding: 1rem 1.6rem;
-            background: var(--maroon-pale);
-            border-top: 1px solid var(--maroon-border);
-            display: flex; justify-content: space-between; align-items: center;
-        }
-        .db-badge {
-            display: inline-flex; align-items: center; gap: .4rem;
-            background: var(--maroon); color: #fff;
-            font-size: .7rem; font-weight: 600; padding: .3rem .8rem; border-radius: 50px;
-        }
-        .db-next { font-size: .72rem; color: var(--gray); }
-
-        /* ─── STATS BAND ──────────────────────────────────────── */
-        .stats-band {
-            background: linear-gradient(135deg, var(--maroon) 0%, var(--maroon-dark) 100%);
-            padding: 56px 6%;
-        }
-        .stats-grid {
-            display: grid; grid-template-columns: repeat(4,1fr); gap: 2rem; text-align: center;
-        }
-        .stat-block { color: #fff; }
-        .stat-block i { font-size: 1.5rem; opacity: .6; margin-bottom: .6rem; display: block; }
-        .stat-block .num { font-size: 2.4rem; font-weight: 900; line-height: 1; }
-        .stat-block .lbl { font-size: .78rem; opacity: .65; margin-top: .35rem; font-weight: 500; }
-
-        /* ─── TESTIMONIALS ────────────────────────────────────── */
-        .testi-section { background: var(--maroon-pale); }
-        .testi-grid {
-            display: grid; grid-template-columns: repeat(3,1fr);
+        /* ─── BENEFITS ────────────────────────────────────────── */
+        .benefits-section { background: #fff; }
+        .benefits-grid {
+            display: grid; grid-template-columns: repeat(3, 1fr);
             gap: 1.25rem; margin-top: 3rem;
         }
-        .testi-card {
-            background: #fff; border-radius: 12px; padding: 1.6rem;
-            border: 1px solid var(--maroon-border);
-            box-shadow: 0 2px 12px rgba(0,0,0,.04);
+        .benefit-card {
+            background: #fff; border-radius: 18px; padding: 1.6rem;
+            border: 1px solid var(--gray-border);
+            box-shadow: 0 2px 10px rgba(0,0,0,.04);
+            display: flex; align-items: flex-start; gap: 1rem;
             transition: transform .25s, box-shadow .25s;
-        }
-        .testi-card:hover { transform: translateY(-4px); box-shadow: 0 10px 32px rgba(123,29,29,.1); }
-        .stars { color: #f59e0b; font-size: .8rem; margin-bottom: .75rem; }
-        .testi-text {
-            font-size: .85rem; color: var(--gray); line-height: 1.7;
-            margin-bottom: 1.2rem; font-style: italic;
-        }
-        .testi-author { display: flex; align-items: center; gap: .75rem; }
-        .testi-av {
-            width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
-            background: linear-gradient(135deg, var(--maroon), var(--maroon-mid));
-            color: #fff; font-weight: 700; font-size: .8rem;
-            display: flex; align-items: center; justify-content: center;
-        }
-        .testi-name { font-size: .83rem; font-weight: 700; color: var(--dark); }
-        .testi-role { font-size: .7rem; color: var(--gray); }
-
-        /* ─── DOWNLOAD ────────────────────────────────────────── */
-        .download-section {
-            background: var(--dark);
-            padding: 80px 6%;
             position: relative; overflow: hidden;
         }
-        .download-section::before {
-            content: ''; position: absolute; top: -180px; right: -120px;
-            width: 500px; height: 500px; border-radius: 50%;
-            background: radial-gradient(circle, rgba(123,29,29,.3) 0%, transparent 65%);
+        .benefit-card::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
+            background: linear-gradient(90deg, var(--maroon), var(--accent-red));
+        }
+        .benefit-card:hover { transform: translateY(-4px); box-shadow: 0 10px 32px rgba(123,29,29,.08); }
+        .benefit-icon {
+            width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0;
+            background: linear-gradient(135deg, var(--maroon-pale), #fff);
+            border: 1px solid var(--maroon-border);
+            display: flex; align-items: center; justify-content: center;
+            color: var(--maroon); font-size: 1rem;
+        }
+        .benefit-card h4 { font-size: .88rem; font-weight: 700; color: var(--dark); margin-bottom: .3rem; }
+        .benefit-card p { font-size: .8rem; color: var(--gray); line-height: 1.55; margin: 0; }
+
+        /* ─── FAQ ─────────────────────────────────────────────── */
+        .faq-section { background: var(--gray-light); }
+        .faq-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem;
+            margin-top: 3rem; max-width: 960px; margin-left: auto; margin-right: auto;
+        }
+        .faq-item {
+            background: #fff; border-radius: 16px;
+            border: 1px solid var(--gray-border);
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,.03);
+            transition: box-shadow .2s;
+        }
+        .faq-item:hover { box-shadow: 0 6px 20px rgba(123,29,29,.06); }
+        .faq-question {
+            padding: 1.1rem 1.4rem;
+            font-size: .85rem; font-weight: 600; color: var(--dark);
+            cursor: pointer; display: flex; align-items: center; justify-content: space-between;
+            gap: .8rem; user-select: none;
+            border-left: 4px solid transparent;
+            transition: border-color .2s, background .2s;
+        }
+        .faq-question:hover { background: var(--maroon-pale); border-left-color: var(--maroon); }
+        .faq-question i { color: var(--maroon); font-size: .75rem; transition: transform .3s; flex-shrink: 0; }
+        .faq-answer {
+            max-height: 0; overflow: hidden;
+            transition: max-height .3s ease, padding .3s ease;
+        }
+        .faq-answer-inner {
+            padding: 0 1.4rem 1.1rem;
+            font-size: .82rem; color: var(--gray); line-height: 1.65;
+        }
+        .faq-item.active .faq-question i { transform: rotate(180deg); }
+        .faq-item.active .faq-answer { max-height: 200px; }
+        .faq-item.active .faq-question { background: var(--maroon-pale); border-left-color: var(--maroon); }
+
+        /* ─── CONTACT ──────────────────────────────────────────── */
+        .contact-section { background: #fff; }
+        .contact-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 3rem;
+            align-items: start; margin-top: 3rem;
+        }
+        .contact-info-cards { display: flex; flex-direction: column; gap: 1rem; }
+        .contact-card {
+            background: #fff; border-radius: 16px; padding: 1.4rem 1.6rem;
+            border: 1px solid var(--gray-border);
+            box-shadow: 0 2px 10px rgba(0,0,0,.03);
+            display: flex; align-items: flex-start; gap: 1rem;
+            transition: transform .2s;
+        }
+        .contact-card:hover { transform: translateY(-2px); }
+        .contact-card-icon {
+            width: 42px; height: 42px; border-radius: 12px; flex-shrink: 0;
+            background: linear-gradient(135deg, var(--maroon), var(--maroon-dark));
+            display: flex; align-items: center; justify-content: center;
+            color: #f5a0a0; font-size: .95rem;
+        }
+        .contact-card h4 { font-size: .85rem; font-weight: 700; color: var(--dark); margin-bottom: .15rem; }
+        .contact-card p { font-size: .8rem; color: var(--gray); line-height: 1.5; margin: 0; }
+
+        .contact-map-card {
+            background: #fff; border-radius: 18px; overflow: hidden;
+            border: 1px solid var(--gray-border);
+            box-shadow: 0 2px 10px rgba(0,0,0,.04);
+        }
+        .contact-map-header {
+            background: linear-gradient(135deg, var(--maroon), var(--maroon-dark));
+            padding: 1.2rem 1.5rem; color: #fff;
+        }
+        .contact-map-header h3 { font-size: .95rem; font-weight: 700; }
+        .contact-map-header p { font-size: .78rem; opacity: .7; margin-top: .2rem; }
+        .contact-map-body {
+            padding: 1.5rem;
+        }
+        .contact-map-body p { font-size: .82rem; color: var(--gray); line-height: 1.65; margin-bottom: .8rem; }
+        .contact-map-body p:last-child { margin-bottom: 0; }
+        .contact-map-body strong { color: var(--dark); }
+
+        /* ─── INTENDED USERS ──────────────────────────────────── */
+        .users-section { background: var(--gray-light); }
+        .users-grid {
+            display: grid; grid-template-columns: repeat(3, 1fr);
+            gap: 1.25rem; margin-top: 3rem;
+        }
+        .user-card {
+            background: #fff; border-radius: 18px; padding: 2rem;
+            border: 1px solid var(--gray-border);
+            box-shadow: 0 2px 10px rgba(0,0,0,.04);
+            text-align: center;
+            transition: transform .25s, box-shadow .25s;
+            position: relative; overflow: hidden;
+        }
+        .user-card::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
+            background: linear-gradient(90deg, var(--maroon), var(--accent-red));
+        }
+        .user-card:hover { transform: translateY(-5px); box-shadow: 0 12px 40px rgba(123,29,29,.1); }
+        .user-avatar {
+            width: 72px; height: 72px; border-radius: 50%; margin: 0 auto 1.2rem;
+            background: linear-gradient(135deg, var(--maroon), var(--maroon-dark));
+            display: flex; align-items: center; justify-content: center;
+            color: #f5a0a0; font-size: 1.8rem;
+            box-shadow: 0 6px 20px rgba(123,29,29,.25);
+        }
+        .user-card h3 { font-size: 1.05rem; font-weight: 700; color: var(--dark); margin-bottom: .5rem; }
+        .user-card p { font-size: .82rem; color: var(--gray); line-height: 1.6; }
+
+        /* ─── SECURITY & DEVICES ──────────────────────────────── */
+        .info-banner {
+            background: linear-gradient(135deg, var(--maroon) 0%, var(--maroon-dark) 100%);
+            padding: 50px 6%;
+            position: relative; overflow: hidden;
+        }
+        .info-banner::before {
+            content: ''; position: absolute; inset: 0;
+            background: radial-gradient(circle at 80% 50%, rgba(192,57,43,.2), transparent 50%);
             pointer-events: none;
         }
-
-        .download-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5rem; align-items: center; }
-
-        .dl-eyebrow { color: #f5a0a0 !important; background: rgba(123,29,29,.25) !important; border-color: rgba(123,29,29,.3) !important; }
-        .download-grid .section-title { color: #fff; }
-        .download-grid .section-sub { color: rgba(255,255,255,.5); }
-
-        .btn-download {
-            display: inline-flex; align-items: center; gap: 1rem;
-            padding: 1rem 2rem; margin-top: 2rem;
-            background: linear-gradient(135deg, var(--maroon) 0%, var(--maroon-mid) 100%);
-            color: #fff; border-radius: 10px; text-decoration: none; border: none; cursor: pointer;
-            box-shadow: 0 8px 28px rgba(123,29,29,.45);
-            transition: transform .2s, box-shadow .2s;
+        .info-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;
+            max-width: 960px; margin: 0 auto; position: relative; z-index: 1;
         }
-        .btn-download:hover { transform: translateY(-2px); box-shadow: 0 12px 36px rgba(123,29,29,.6); }
-        .btn-download i { font-size: 1.5rem; }
-        .btn-download-text small { display: block; font-size: .68rem; opacity: .75; font-weight: 400; }
-        .btn-download-text strong { display: block; font-size: .95rem; font-weight: 700; margin-top: 1px; }
-
-        .dl-checklist { margin-top: 1.6rem; display: flex; flex-direction: column; gap: .6rem; }
-        .dl-check { display: flex; align-items: center; gap: .7rem; font-size: .85rem; color: rgba(255,255,255,.55); }
-        .dl-check i { color: #4ade80; font-size: .8rem; flex-shrink: 0; }
-
-        /* APK info card */
-        .apk-wrap { display: flex; flex-direction: column; gap: 1.1rem; }
-        .apk-card {
-            background: rgba(255,255,255,.06);
-            border: 1px solid rgba(255,255,255,.1);
-            border-radius: 14px; padding: 1.4rem;
+        .info-card {
+            background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.12);
+            border-radius: 16px; padding: 1.6rem;
+            backdrop-filter: blur(8px);
         }
-        .apk-card-top { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; }
-        .apk-icon {
-            width: 50px; height: 50px; border-radius: 12px;
-            background: linear-gradient(135deg, var(--maroon), var(--maroon-mid));
+        .info-card-icon {
+            width: 44px; height: 44px; border-radius: 12px; margin-bottom: 1rem;
+            background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.15);
             display: flex; align-items: center; justify-content: center;
-            font-size: 1.3rem; color: #fff; flex-shrink: 0;
+            color: #f5a0a0; font-size: 1.1rem;
         }
-        .apk-name { font-size: .92rem; font-weight: 700; color: #fff; }
-        .apk-desc { font-size: .72rem; color: rgba(255,255,255,.4); }
-        .apk-meta { display: flex; gap: 2rem; }
-        .apk-meta-item strong { display: block; font-size: .82rem; font-weight: 600; color: rgba(255,255,255,.8); }
-        .apk-meta-item span { font-size: .7rem; color: rgba(255,255,255,.4); }
-
-        .install-card {
-            background: rgba(255,255,255,.04);
-            border: 1px solid rgba(255,255,255,.08);
-            border-radius: 14px; padding: 1.4rem;
-        }
-        .install-title {
-            font-size: .72rem; font-weight: 600; color: rgba(255,255,255,.5);
-            text-transform: uppercase; letter-spacing: .5px; margin-bottom: .9rem;
-            display: flex; align-items: center; gap: .4rem;
-        }
-        .install-title i { color: #f5a0a0; }
-        .install-steps { display: flex; flex-direction: column; gap: .6rem; }
-        .install-step { display: flex; gap: .7rem; align-items: center; }
-        .install-n {
-            width: 20px; height: 20px; border-radius: 5px; flex-shrink: 0;
-            background: var(--maroon); color: #fff; font-size: .6rem; font-weight: 700;
-            display: flex; align-items: center; justify-content: center;
-        }
-        .install-step span { font-size: .78rem; color: rgba(255,255,255,.5); }
+        .info-card h3 { font-size: 1rem; font-weight: 700; color: #fff; margin-bottom: .4rem; }
+        .info-card p { font-size: .82rem; color: rgba(255,255,255,.55); line-height: 1.65; }
 
         /* ─── FOOTER ──────────────────────────────────────────── */
         footer {
-            background: #111; padding: 56px 6% 28px;
-            color: rgba(255,255,255,.45);
+            background: linear-gradient(180deg, #111 0%, #080404 100%);
+            padding: 56px 6% 28px; color: rgba(255,255,255,.4);
         }
         .footer-grid {
             display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 3rem;
-            padding-bottom: 2.5rem; border-bottom: 1px solid rgba(255,255,255,.07);
+            padding-bottom: 2.5rem; border-bottom: 1px solid rgba(255,255,255,.06);
             margin-bottom: 1.5rem;
         }
         .footer-brand img { height: 36px; filter: brightness(0) invert(1); margin-bottom: .9rem; }
         .footer-brand p { font-size: .82rem; line-height: 1.7; }
-
-        .footer-col h4 { font-size: .82rem; font-weight: 700; color: rgba(255,255,255,.8); margin-bottom: .9rem; }
+        .footer-col h4 { font-size: .82rem; font-weight: 700; color: rgba(255,255,255,.75); margin-bottom: .9rem; }
         .footer-col ul { list-style: none; display: flex; flex-direction: column; gap: .45rem; }
-        .footer-col ul a { font-size: .8rem; color: rgba(255,255,255,.35); text-decoration: none; transition: color .2s; }
+        .footer-col ul a { font-size: .8rem; color: rgba(255,255,255,.3); text-decoration: none; transition: color .2s; }
         .footer-col ul a:hover { color: #f5a0a0; }
-
-        .footer-socials { display: flex; gap: .6rem; margin-top: 1rem; }
-        .footer-socials a {
-            width: 32px; height: 32px; border-radius: 8px;
-            background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.09);
-            display: flex; align-items: center; justify-content: center;
-            color: rgba(255,255,255,.4); font-size: .78rem; text-decoration: none; transition: all .2s;
-        }
-        .footer-socials a:hover { background: var(--maroon); border-color: var(--maroon); color: #fff; }
-
         .footer-bottom {
             display: flex; justify-content: space-between; align-items: center;
-            font-size: .75rem; flex-wrap: wrap; gap: .5rem;
+            font-size: .72rem; flex-wrap: wrap; gap: .5rem;
         }
         .footer-bottom a { color: #f5a0a0; text-decoration: none; }
 
@@ -610,30 +582,29 @@
         /* ─── RESPONSIVE ──────────────────────────────────────── */
         @media (max-width: 1024px) {
             .hero { padding: 104px 6% 150px; }
-            .hero-inner { grid-template-columns: 1fr; gap: 4rem; }
+            .hero-inner { grid-template-columns: 1fr; gap: 3.5rem; }
             .hero-copy { margin: 0 auto; text-align: center; }
-            .hero-eyebrow { margin-left: auto; margin-right: auto; }
+            .hero-badge { margin-left: auto; margin-right: auto; }
             .hero-copy > p { margin-left: auto; margin-right: auto; }
             .hero-cta { justify-content: center; }
-            .hero-proof { justify-content: center; }
-            .hero-visual { max-width: 560px; width: 100%; margin: 0 auto; }
+            .hero-proof { justify-content: center; flex-wrap: wrap; }
+            .hero-visual { max-width: 520px; width: 100%; margin: 0 auto; }
             .section-sub { margin-left: auto; margin-right: auto; }
-            .features-grid { grid-template-columns: 1fr 1fr; }
-            .how-grid { grid-template-columns: 1fr; gap: 2.5rem; }
-            .stats-grid { grid-template-columns: 1fr 1fr; }
-            .testi-grid { grid-template-columns: 1fr 1fr; }
-            .download-grid { grid-template-columns: 1fr; gap: 2.5rem; }
+            .features-grid, .benefits-grid { grid-template-columns: 1fr 1fr; }
+            .subjects-grid { grid-template-columns: 1fr 1fr; }
+            .about-grid, .contact-grid { grid-template-columns: 1fr; }
+            .faq-grid { grid-template-columns: 1fr; }
+            .users-grid { grid-template-columns: 1fr 1fr; }
             .footer-grid { grid-template-columns: 1fr 1fr; }
         }
         @media (max-width: 768px) {
-            .nav-links, .nav-actions { display: none; }
+            .nav-links { display: none; }
             .hamburger { display: flex; }
-            .features-grid, .testi-grid { grid-template-columns: 1fr; }
-            .stats-grid { grid-template-columns: 1fr 1fr; }
+            .features-grid, .benefits-grid, .subjects-grid, .users-grid, .testi-grid { grid-template-columns: 1fr; }
             .footer-grid { grid-template-columns: 1fr; }
             .footer-bottom { flex-direction: column; text-align: center; }
             .hero { padding-bottom: 120px; }
-            .hero-proof { flex-direction: column; gap: .8rem; }
+            .hero-proof { flex-direction: column; gap: .6rem; }
             .float-card { padding: .55rem .7rem; border-radius: 12px; }
             .float-card strong { font-size: .7rem; }
             .float-card small { font-size: .6rem; }
@@ -644,8 +615,12 @@
             .fc-ring::before { inset: 5px; }
             .fc-ico { width: 34px; height: 34px; font-size: .85rem; }
             .hero-wave svg { height: 64px; }
-            .hero-plus, .hero-deco-ring, .hero-ring-spin { display: none; }
+            .hero-shapes { display: none; }
             .hero::before { display: none; }
+            .flow-container { flex-direction: column; align-items: center; }
+            .flow-arrow { transform: rotate(90deg); padding: .5rem 0; }
+            .flow-step { width: 100%; }
+            .info-grid { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -654,16 +629,18 @@
 <!-- NAVBAR -->
 <nav id="navbar">
     <a href="/" class="nav-logo">
-        <img src="{{ asset('images/cpace_logo.png') }}" alt="CPAce Logo">
+        <img src="{{ asset('images/logo-icon.png') }}" alt="CPAce">
+        <img src="{{ asset('images/wordmark-cropped.png') }}" alt="CPAce" class="nav-wordmark">
     </a>
     <ul class="nav-links">
+        <li><a href="#about">About</a></li>
         <li><a href="#features">Features</a></li>
+        <li><a href="#subjects">Subjects</a></li>
         <li><a href="#how-it-works">How It Works</a></li>
-        <li><a href="#download">Download</a></li>
+        <li><a href="#contact">Contact</a></li>
     </ul>
     <div class="nav-actions">
-        <a href="{{ route('login') }}" class="btn-ghost">Log In</a>
-        <a href="{{ route('signup') }}" class="btn-solid">Get Started Free</a>
+        <a href="{{ route('login') }}" class="btn-login">Login</a>
     </div>
     <div class="hamburger" onclick="toggleMenu()">
         <span></span><span></span><span></span>
@@ -671,73 +648,64 @@
 </nav>
 
 <div class="mobile-menu" id="mobileMenu">
+    <a href="#about" onclick="toggleMenu()">About</a>
     <a href="#features" onclick="toggleMenu()">Features</a>
+    <a href="#subjects" onclick="toggleMenu()">Subjects</a>
     <a href="#how-it-works" onclick="toggleMenu()">How It Works</a>
-    <a href="#download" onclick="toggleMenu()">Download APK</a>
-    <a href="{{ route('login') }}">Log In</a>
-    <a href="{{ route('signup') }}">Get Started &rarr;</a>
+    <a href="#contact" onclick="toggleMenu()">Contact</a>
+    <a href="{{ route('login') }}">Login &rarr;</a>
 </div>
 
 <!-- HERO -->
 <div class="hero">
-
-    <!-- decorative plus marks (matching illustration style) -->
-    <span class="hero-plus hp1" aria-hidden="true">+</span>
-    <span class="hero-plus hp2" aria-hidden="true">+</span>
-    <span class="hero-plus hp3" aria-hidden="true">+</span>
-    <span class="hero-plus hp4" aria-hidden="true">+</span>
-    <span class="hero-plus hp5" aria-hidden="true">+</span>
-    <div class="hero-deco-ring ring-sm" aria-hidden="true"></div>
+    <div class="hero-shapes" aria-hidden="true">
+        <span class="hs1"></span><span class="hs2"></span><span class="hs3"></span>
+        <span class="hs4"></span><span class="hs5"></span><span class="hs6"></span>
+    </div>
 
     <div class="hero-inner">
-
-        <!-- LEFT: copy -->
         <div class="hero-copy">
-            <div class="hero-eyebrow reveal">
+            <div class="hero-badge reveal">
                 <span class="pulse-dot"></span>
-                CPA Licensure Exam Reviewer
+                Institutional Review System
             </div>
             <h1 class="reveal">
-                <span class="h1-light">Your edge to</span><br>
-                <span class="h1-accent">ace<svg viewBox="0 0 130 14" preserveAspectRatio="none" aria-hidden="true"><path d="M4 10 C 35 4, 95 3, 126 7"/></svg></span> the CPA<br>
-                board exam
+                CPAce:<br>
+                <span>Adaptive CPALE</span><br>
+                Review System
             </h1>
             <p class="reveal">
-                CPAce is your all-in-one CPALE reviewer — adaptive quizzes, mock exams, real-time analytics, and smart study tools built for serious CPA candidates.
+                A web-based adaptive review platform developed to support Bachelor of Science in Accountancy students through personalized learning, performance analytics, and intelligent review scheduling.
             </p>
             <div class="hero-cta reveal">
-                <a href="{{ route('signup') }}" class="cta-primary">
-                    Start Reviewing Free <i class="fas fa-arrow-right"></i>
+                <a href="{{ route('login') }}" class="cta-primary">
+                    Login <i class="fas fa-arrow-right"></i>
                 </a>
-                <a href="#download" class="cta-secondary">
-                    <i class="fab fa-android"></i> Download APK
+                <a href="#about" class="cta-secondary">
+                    <i class="fas fa-info-circle"></i> Learn More
                 </a>
             </div>
             <div class="hero-proof reveal">
-                <div class="proof-avatars" aria-hidden="true">
-                    <span class="pav pav1">AM</span>
-                    <span class="pav pav2">RD</span>
-                    <span class="pav pav3">KC</span>
-                    <span class="pav pav4">JT</span>
-                    <span class="pav pav-more">2k+</span>
+                <div class="hero-proof-item">
+                    <i class="fas fa-university"></i>
+                    <span><strong>Batangas State University</strong></span>
                 </div>
-                <div>
-                    <div class="proof-stars">
-                        <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
-                        <b>4.9</b>
-                    </div>
-                    <div class="proof-label">Trusted by <strong>2,000+ reviewees</strong> nationwide</div>
+                <div class="hero-proof-item">
+                    <i class="fas fa-graduation-cap"></i>
+                    <span>ARASOF-Nasugbu</span>
+                </div>
+                <div class="hero-proof-item">
+                    <i class="fas fa-shield-alt"></i>
+                    <span>Institutional Access</span>
                 </div>
             </div>
         </div>
 
-        <!-- RIGHT: layered illustration + floating UI chips -->
         <div class="hero-visual reveal">
             <div class="hero-visual-back" aria-hidden="true"></div>
             <div class="hero-ring-spin" aria-hidden="true"></div>
             <div class="hero-visual-frame">
-                <img src="{{ asset('images/hero_section.png') }}"
-                     alt="CPAce students — FAR, MAS, Taxation, Auditing">
+                <img src="{{ asset('images/hero-section.png') }}" alt="CPAce Dashboard Preview">
             </div>
 
             <div class="float-card fc-readiness">
@@ -764,271 +732,427 @@
         </div>
     </div>
 
-    <!-- maroon wave transition into the subjects bar -->
     <div class="hero-wave" aria-hidden="true">
         <svg viewBox="0 0 1440 100" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M0,64 C180,94 400,34 640,54 C880,74 1080,26 1260,44 C1340,52 1400,50 1440,54 L1440,100 L0,100 Z" fill="rgba(123,29,29,.10)"/>
-            <path d="M0,76 C240,104 480,46 720,68 C960,90 1200,42 1440,66 L1440,100 L0,100 Z" fill="#7B1D1D"/>
+            <path d="M0,64 C180,94 400,34 640,54 C880,74 1080,26 1260,44 C1340,52 1400,50 1440,54 L1440,100 L0,100 Z" fill="rgba(0,0,0,.15)"/>
+            <path d="M0,76 C240,104 480,46 720,68 C960,90 1200,42 1440,66 L1440,100 L0,100 Z" fill="#f4f5f7"/>
         </svg>
     </div>
 </div>
 
-<!-- SUBJECTS BAR -->
-<div class="subjects-bar">
-    <span class="subjects-bar-label">Covering all CPALE subjects</span>
-    <span><i class="fas fa-circle"></i> Financial Accounting & Reporting</span>
-    <span><i class="fas fa-circle"></i> Advanced Financial Accounting</span>
-    <span><i class="fas fa-circle"></i> Auditing & Assurance</span>
-    <span><i class="fas fa-circle"></i> Taxation</span>
-    <span><i class="fas fa-circle"></i> Management Advisory Services</span>
-    <span><i class="fas fa-circle"></i> Regulatory Framework</span>
-</div>
+<!-- ABOUT -->
+<section class="about-section" id="about">
+    <div class="text-center reveal">
+        <div class="section-eyebrow"><i class="fas fa-info-circle"></i> About the System</div>
+        <h2 class="section-title">What is <span>CPAce?</span></h2>
+    </div>
+    <div class="about-grid">
+        <div class="about-text reveal">
+            <p>
+                <strong>CPAce</strong> is an institutional review system designed for Bachelor of Science in Accountancy students at Batangas State University ARASOF-Nasugbu. It assists learners in preparing for the CPA Licensure Examination through adaptive quizzes, personalized recommendations, and comprehensive performance monitoring.
+            </p>
+            <p>
+                The system leverages adaptive learning algorithms to identify each student's knowledge gaps and dynamically adjust quiz difficulty, ensuring focused and efficient review sessions tailored to individual learning needs.
+            </p>
+            <p>
+                Developed as a capstone project, CPAce aims to bridge the gap between traditional review methods and technology-driven learning, providing students with a intelligent study companion throughout their CPALE preparation journey.
+            </p>
+        </div>
+        <div class="about-cards reveal">
+            <div class="about-card">
+                <div class="about-card-icon"><i class="fas fa-bullseye"></i></div>
+                <div>
+                    <h4>Purpose</h4>
+                    <p>To support BSA students in their CPALE preparation through an adaptive, data-driven review system.</p>
+                </div>
+            </div>
+            <div class="about-card">
+                <div class="about-card-icon"><i class="fas fa-users"></i></div>
+                <div>
+                    <h4>Institutional Use</h4>
+                    <p>Exclusively available to authorized students and faculty of the Department of Accountancy.</p>
+                </div>
+            </div>
+            <div class="about-card">
+                <div class="about-card-icon"><i class="fas fa-cogs"></i></div>
+                <div>
+                    <h4>Technology</h4>
+                    <p>Built with adaptive algorithms, real-time analytics, and a comprehensive CPALE question bank.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
 
 <!-- FEATURES -->
 <section class="features-section" id="features">
     <div class="text-center reveal">
         <div class="section-eyebrow"><i class="fas fa-star"></i> Core Features</div>
-        <h2 class="section-title">Everything you need to <span>pass</span></h2>
-        <p class="section-sub sub-center">A complete CPA review ecosystem designed around how board exam candidates actually study and retain knowledge.</p>
+        <h2 class="section-title">Intelligent review, <span>designed for CPALE</span></h2>
+        <p class="section-sub sub-center">CPAce combines adaptive learning technology with comprehensive CPALE review tools to help students study smarter, not harder.</p>
     </div>
     <div class="features-grid">
         <div class="feature-card reveal">
             <div class="feature-icon"><i class="fas fa-brain"></i></div>
-            <h3>Adaptive Quizzes</h3>
-            <p>AI-powered quizzes that adjust difficulty based on your performance, automatically focusing more time on your weak areas.</p>
+            <h3>Adaptive Quiz Engine</h3>
+            <p>Generates quizzes dynamically based on the learner's performance, adjusting difficulty to target knowledge gaps.</p>
         </div>
         <div class="feature-card reveal">
-            <div class="feature-icon"><i class="fas fa-chart-bar"></i></div>
-            <h3>Performance Analytics</h3>
-            <p>Real-time dashboards showing your score trends, subject-level breakdown, and board exam readiness score.</p>
+            <div class="feature-icon"><i class="fas fa-search-plus"></i></div>
+            <h3>Weakness Detection</h3>
+            <p>Identifies specific topics and subtopics requiring further review through continuous performance analysis.</p>
         </div>
         <div class="feature-card reveal">
-            <div class="feature-icon"><i class="fas fa-sticky-note"></i></div>
-            <h3>Review Notes</h3>
-            <p>Create, organize, and favorite personal study notes that sync instantly across web and mobile.</p>
+            <div class="feature-icon"><i class="fas fa-sync-alt"></i></div>
+            <h3>Spaced Repetition</h3>
+            <p>Schedules review sessions using spaced repetition principles to improve long-term knowledge retention.</p>
         </div>
         <div class="feature-card reveal">
-            <div class="feature-icon"><i class="fas fa-file-alt"></i></div>
-            <h3>Mock Exams</h3>
-            <p>Full-length timed mock exams that simulate the actual CPALE experience, with detailed post-exam reports.</p>
+            <div class="feature-icon"><i class="fas fa-file-signature"></i></div>
+            <h3>Mock CPALE Examination</h3>
+            <p>Provides board exam simulation with timed conditions, replicating the actual CPALE testing experience.</p>
         </div>
         <div class="feature-card reveal">
-            <div class="feature-icon"><i class="fas fa-calendar-check"></i></div>
-            <h3>Study Calendar</h3>
-            <p>Visualize your study schedule, track completed sessions, and plan your review timeline leading to board day.</p>
+            <div class="feature-icon"><i class="fas fa-chart-line"></i></div>
+            <h3>Performance Dashboard</h3>
+            <p>Displays progress, mastery levels, and quiz statistics through an intuitive real-time analytics dashboard.</p>
         </div>
         <div class="feature-card reveal">
-            <div class="feature-icon"><i class="fas fa-trophy"></i></div>
-            <h3>Achievements</h3>
-            <p>Stay motivated with streak tracking, completion badges, and leaderboard standings that gamify your review.</p>
+            <div class="feature-icon"><i class="fas fa-database"></i></div>
+            <h3>Question Bank</h3>
+            <p>Comprehensive collection of review questions organized by CPALE subject, continuously updated for relevance.</p>
+        </div>
+    </div>
+</section>
+
+<!-- CPALE SUBJECTS -->
+<section class="subjects-section" id="subjects">
+    <div class="text-center reveal">
+        <div class="section-eyebrow"><i class="fas fa-book-open"></i> CPALE Subjects</div>
+        <h2 class="section-title">Covering all <span>six CPALE subjects</span></h2>
+        <p class="section-sub sub-center">CPAce provides comprehensive coverage of all subjects tested in the CPA Licensure Examination.</p>
+    </div>
+    <div class="subjects-grid">
+        <div class="subject-card reveal">
+            <div class="subject-icon"><i class="fas fa-calculator"></i></div>
+            <h3>Financial Accounting and Reporting</h3>
+            <div class="subject-code">FAR</div>
+            <p>Comprehensive coverage of financial accounting standards, reporting frameworks, and financial statement preparation.</p>
+        </div>
+        <div class="subject-card reveal">
+            <div class="subject-icon"><i class="fas fa-chart-pie"></i></div>
+            <h3>Advanced Financial Accounting and Reporting</h3>
+            <div class="subject-code">AFAR</div>
+            <p>Advanced topics including consolidations, partnerships, government accounting, and foreign currency transactions.</p>
+        </div>
+        <div class="subject-card reveal">
+            <div class="subject-icon"><i class="fas fa-receipt"></i></div>
+            <h3>Taxation</h3>
+            <div class="subject-code">TAX</div>
+            <p>Income taxation, transfer taxes, VAT, and tax compliance for individuals and corporations under Philippine tax law.</p>
+        </div>
+        <div class="subject-card reveal">
+            <div class="subject-icon"><i class="fas fa-balance-scale"></i></div>
+            <h3>Regulatory Framework for Business Transactions</h3>
+            <div class="subject-code">RFBT</div>
+            <p>Commercial law, obligations, contracts, negotiable instruments, and regulatory frameworks governing business.</p>
+        </div>
+        <div class="subject-card reveal">
+            <div class="subject-icon"><i class="fas fa-search"></i></div>
+            <h3>Auditing</h3>
+            <div class="subject-code">AUD</div>
+            <p>Audit principles, procedures, standards, internal control evaluation, and assurance engagement practices.</p>
+        </div>
+        <div class="subject-card reveal">
+            <div class="subject-icon"><i class="fas fa-lightbulb"></i></div>
+            <h3>Management Advisory Services</h3>
+            <div class="subject-code">MAS</div>
+            <p>Management consulting, financial management, strategic planning, and business decision-making techniques.</p>
         </div>
     </div>
 </section>
 
 <!-- HOW IT WORKS -->
-<section id="how-it-works">
-    <div class="reveal">
-        <div class="section-eyebrow"><i class="fas fa-map"></i> How It Works</div>
-        <h2 class="section-title">Pass the board in <span>4 simple steps</span></h2>
+<section class="how-section" id="how-it-works">
+    <div class="text-center reveal">
+        <div class="section-eyebrow"><i class="fas fa-route"></i> How It Works</div>
+        <h2 class="section-title">Your journey to <span>CPA success</span></h2>
+        <p class="section-sub sub-center">CPAce follows a systematic adaptive learning process to maximize your review efficiency.</p>
     </div>
-    <div class="how-grid">
-        <div class="steps">
-            <div class="step reveal">
-                <div class="step-num">01</div>
-                <div>
-                    <h3>Create Your Account</h3>
-                    <p>Sign up in seconds using your email, Google, or Microsoft account. Progress syncs instantly across all your devices.</p>
-                </div>
+    <div class="flow-container reveal">
+        <div class="flow-step">
+            <div class="flow-circle">
+                <i class="fas fa-sign-in-alt"></i>
+                <span class="flow-num">1</span>
             </div>
-            <div class="step reveal">
-                <div class="step-num">02</div>
-                <div>
-                    <h3>Take a Diagnostic Quiz</h3>
-                    <p>Complete a quick subject assessment. CPAce maps your strengths and gaps to build your personalized study path.</p>
-                </div>
+            <h4>Login</h4>
+            <p>Access your account using institutional credentials</p>
+        </div>
+        <div class="flow-arrow"><i class="fas fa-chevron-right"></i></div>
+        <div class="flow-step">
+            <div class="flow-circle">
+                <i class="fas fa-clipboard-list"></i>
+                <span class="flow-num">2</span>
             </div>
-            <div class="step reveal">
-                <div class="step-num">03</div>
-                <div>
-                    <h3>Study & Review Daily</h3>
-                    <p>Practice adaptive quizzes, create notes, and follow your calendar — daily sessions that compound over time.</p>
-                </div>
+            <h4>Diagnostic Quiz</h4>
+            <p>Take an initial assessment to establish your baseline</p>
+        </div>
+        <div class="flow-arrow"><i class="fas fa-chevron-right"></i></div>
+        <div class="flow-step">
+            <div class="flow-circle">
+                <i class="fas fa-crosshairs"></i>
+                <span class="flow-num">3</span>
             </div>
-            <div class="step reveal">
-                <div class="step-num">04</div>
-                <div>
-                    <h3>Track & Ace the Exam</h3>
-                    <p>Monitor your weekly readiness score. When CPAce says you're ready — walk into that exam room with confidence.</p>
-                </div>
+            <h4>Weakness Detection</h4>
+            <p>System identifies topics requiring focused review</p>
+        </div>
+        <div class="flow-arrow"><i class="fas fa-chevron-right"></i></div>
+        <div class="flow-step">
+            <div class="flow-circle">
+                <i class="fas fa-map-signs"></i>
+                <span class="flow-num">4</span>
+            </div>
+            <h4>Personalized Plan</h4>
+            <p>Receive a customized study plan based on your gaps</p>
+        </div>
+        <div class="flow-arrow"><i class="fas fa-chevron-right"></i></div>
+        <div class="flow-step">
+            <div class="flow-circle">
+                <i class="fas fa-dumbbell"></i>
+                <span class="flow-num">5</span>
+            </div>
+            <h4>Adaptive Practice</h4>
+            <p>Practice with quizzes that adjust to your level</p>
+        </div>
+        <div class="flow-arrow"><i class="fas fa-chevron-right"></i></div>
+        <div class="flow-step">
+            <div class="flow-circle">
+                <i class="fas fa-chart-area"></i>
+                <span class="flow-num">6</span>
+            </div>
+            <h4>Progress Monitoring</h4>
+            <p>Track your improvement with real-time analytics</p>
+        </div>
+    </div>
+</section>
+
+<!-- BENEFITS -->
+<section class="benefits-section" id="benefits">
+    <div class="text-center reveal">
+        <div class="section-eyebrow"><i class="fas fa-check-double"></i> Benefits</div>
+        <h2 class="section-title">Why use <span>CPAce?</span></h2>
+        <p class="section-sub sub-center">CPAce provides institutional-level advantages for CPALE preparation that traditional review methods cannot match.</p>
+    </div>
+    <div class="benefits-grid">
+        <div class="benefit-card reveal">
+            <div class="benefit-icon"><i class="fas fa-user-graduate"></i></div>
+            <div>
+                <h4>Personalized Learning</h4>
+                <p>Adaptive algorithms tailor quiz difficulty and content to each student's unique learning profile.</p>
             </div>
         </div>
-
-        <div class="dashboard-card reveal">
-            <div class="db-header">
-                <h4>Your Performance Overview</h4>
-                <div class="db-score">81% <span>Overall Readiness</span></div>
+        <div class="benefit-card reveal">
+            <div class="benefit-icon"><i class="fas fa-chart-bar"></i></div>
+            <div>
+                <h4>Data-Driven Monitoring</h4>
+                <p>Real-time analytics provide actionable insights into student performance and readiness levels.</p>
             </div>
-            <div class="db-body">
-                <div class="db-subject">
-                    <div class="db-sub-header">
-                        <span class="db-sub-name">Financial Accounting</span>
-                        <span class="db-sub-pct">88%</span>
-                    </div>
-                    <div class="db-bar-bg"><div class="db-bar" style="width:88%"></div></div>
-                </div>
-                <div class="db-subject">
-                    <div class="db-sub-header">
-                        <span class="db-sub-name">Auditing & Assurance</span>
-                        <span class="db-sub-pct">75%</span>
-                    </div>
-                    <div class="db-bar-bg"><div class="db-bar" style="width:75%"></div></div>
-                </div>
-                <div class="db-subject">
-                    <div class="db-sub-header">
-                        <span class="db-sub-name">Taxation</span>
-                        <span class="db-sub-pct">69%</span>
-                    </div>
-                    <div class="db-bar-bg"><div class="db-bar" style="width:69%"></div></div>
-                </div>
-                <div class="db-subject">
-                    <div class="db-sub-header">
-                        <span class="db-sub-name">Management Advisory Services</span>
-                        <span class="db-sub-pct">91%</span>
-                    </div>
-                    <div class="db-bar-bg"><div class="db-bar" style="width:91%"></div></div>
-                </div>
-                <div class="db-subject">
-                    <div class="db-sub-header">
-                        <span class="db-sub-name">Regulatory Framework</span>
-                        <span class="db-sub-pct">82%</span>
-                    </div>
-                    <div class="db-bar-bg"><div class="db-bar" style="width:82%"></div></div>
-                </div>
+        </div>
+        <div class="benefit-card reveal">
+            <div class="benefit-icon"><i class="fas fa-calendar-alt"></i></div>
+            <div>
+                <h4>Efficient Review Scheduling</h4>
+                <p>Spaced repetition ensures optimal review timing for maximum knowledge retention.</p>
             </div>
-            <div class="db-footer">
-                <div class="db-badge"><i class="fas fa-fire"></i> 7-day streak</div>
-                <span class="db-next"><i class="fas fa-calendar-alt"></i> Next: Taxation — Today 3PM</span>
+        </div>
+        <div class="benefit-card reveal">
+            <div class="benefit-icon"><i class="fas fa-redo"></i></div>
+            <div>
+                <h4>Continuous Assessment</h4>
+                <p>Ongoing performance evaluation helps students and faculty track progress throughout the review period.</p>
+            </div>
+        </div>
+        <div class="benefit-card reveal">
+            <div class="benefit-icon"><i class="fas fa-trophy"></i></div>
+            <div>
+                <h4>Exam Readiness Support</h4>
+                <p>Mock examinations simulate actual board exam conditions to build confidence and familiarity.</p>
+            </div>
+        </div>
+        <div class="benefit-card reveal">
+            <div class="benefit-icon"><i class="fas fa-mobile-alt"></i></div>
+            <div>
+                <h4>Multi-Device Access</h4>
+                <p>Review anytime, anywhere — accessible on desktops, tablets, and smartphones.</p>
             </div>
         </div>
     </div>
 </section>
 
-<!-- STATS BAND -->
-<div class="stats-band">
-    <div class="stats-grid">
-        <div class="stat-block reveal">
-            <i class="fas fa-users"></i>
-            <div class="num">2,000+</div>
-            <div class="lbl">Active Reviewees</div>
+<!-- INTENDED USERS -->
+<section class="users-section">
+    <div class="text-center reveal">
+        <div class="section-eyebrow"><i class="fas fa-users"></i> Intended Users</div>
+        <h2 class="section-title">Designed for <span>the academic community</span></h2>
+        <p class="section-sub sub-center">CPAce serves distinct roles within the Department of Accountancy.</p>
+    </div>
+    <div class="users-grid">
+        <div class="user-card reveal">
+            <div class="user-avatar"><i class="fas fa-user-graduate"></i></div>
+            <h3>Students</h3>
+            <p>BSA students preparing for the CPA Licensure Examination. Access adaptive quizzes, track progress, and follow personalized study plans.</p>
         </div>
-        <div class="stat-block reveal">
-            <i class="fas fa-question-circle"></i>
-            <div class="num">5,000+</div>
-            <div class="lbl">Practice Questions</div>
+        <div class="user-card reveal">
+            <div class="user-avatar"><i class="fas fa-chalkboard-teacher"></i></div>
+            <h3>Faculty</h3>
+            <p>Accountancy faculty members who monitor student performance, review analytics, and guide the review process.</p>
         </div>
-        <div class="stat-block reveal">
-            <i class="fas fa-medal"></i>
-            <div class="num">98%</div>
-            <div class="lbl">Satisfaction Rate</div>
+        <div class="user-card reveal">
+            <div class="user-avatar"><i class="fas fa-user-shield"></i></div>
+            <h3>Administrator</h3>
+            <p>System administrators who manage accounts, question banks, subject configurations, and overall system maintenance.</p>
         </div>
-        <div class="stat-block reveal">
-            <i class="fas fa-clock"></i>
-            <div class="num">24/7</div>
-            <div class="lbl">Study Anytime</div>
+    </div>
+</section>
+
+<!-- SECURITY & DEVICES -->
+<div class="info-banner">
+    <div class="info-grid">
+        <div class="info-card reveal">
+            <div class="info-card-icon"><i class="fas fa-lock"></i></div>
+            <h3>Secure Institutional Access</h3>
+            <p>Access to CPAce is restricted to authorized institutional users only. All student progress and performance data are securely stored and protected within the university's system infrastructure.</p>
+        </div>
+        <div class="info-card reveal">
+            <div class="info-card-icon"><i class="fas fa-laptop"></i></div>
+            <h3>Device Compatibility</h3>
+            <p>CPAce is fully responsive and accessible across desktops, tablets, and smartphones — allowing students to review anytime and anywhere with an internet connection.</p>
         </div>
     </div>
 </div>
 
-<!-- TESTIMONIALS -->
-<section class="testi-section">
+<!-- FAQ -->
+<section class="faq-section" id="faq">
     <div class="text-center reveal">
-        <div class="section-eyebrow"><i class="fas fa-heart"></i> Student Stories</div>
-        <h2 class="section-title">Trusted by thousands of <span>reviewees</span></h2>
+        <div class="section-eyebrow"><i class="fas fa-question-circle"></i> FAQ</div>
+        <h2 class="section-title">Frequently Asked <span>Questions</span></h2>
     </div>
-    <div class="testi-grid">
-        <div class="testi-card reveal">
-            <div class="stars"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
-            <p class="testi-text">"The adaptive quiz feature is a game-changer. It felt like having a personal tutor that knew exactly what I needed to focus on. Passed on my first take!"</p>
-            <div class="testi-author">
-                <div class="testi-av">AM</div>
-                <div>
-                    <div class="testi-name">Angela M.</div>
-                    <div class="testi-role">CPA Passer, May 2025</div>
+    <div class="faq-grid">
+        <div class="faq-item reveal">
+            <div class="faq-question" onclick="toggleFaq(this)">
+                Who can access CPAce?
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="faq-answer">
+                <div class="faq-answer-inner">
+                    CPAce is exclusively available to authorized users of the Department of Accountancy at Batangas State University ARASOF-Nasugbu, including BSA students, faculty members, and designated administrators.
                 </div>
             </div>
         </div>
-        <div class="testi-card reveal">
-            <div class="stars"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
-            <p class="testi-text">"I used CPAce for 3 months before the board exam. The performance analytics showed me exactly which topics were dragging my score down — fixed them all."</p>
-            <div class="testi-author">
-                <div class="testi-av">RD</div>
-                <div>
-                    <div class="testi-name">Renz D.</div>
-                    <div class="testi-role">CPA Passer, October 2025</div>
+        <div class="faq-item reveal">
+            <div class="faq-question" onclick="toggleFaq(this)">
+                How do I obtain my account?
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="faq-answer">
+                <div class="faq-answer-inner">
+                    Accounts are created by the system administrator. Contact the Department of Accountancy to receive your login credentials. Self-registration is not available as access is institution-controlled.
                 </div>
             </div>
         </div>
-        <div class="testi-card reveal">
-            <div class="stars"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
-            <p class="testi-text">"Being able to review on my phone with the Android app made a huge difference. I could study anywhere and pick up right where I left off on my laptop."</p>
-            <div class="testi-author">
-                <div class="testi-av">KC</div>
-                <div>
-                    <div class="testi-name">Kristine C.</div>
-                    <div class="testi-role">CPA Passer, May 2026</div>
+        <div class="faq-item reveal">
+            <div class="faq-question" onclick="toggleFaq(this)">
+                Can I review using my mobile phone?
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="faq-answer">
+                <div class="faq-answer-inner">
+                    Yes. CPAce is fully responsive and works on any device with a modern web browser, including smartphones and tablets.
+                </div>
+            </div>
+        </div>
+        <div class="faq-item reveal">
+            <div class="faq-question" onclick="toggleFaq(this)">
+                Are quiz attempts recorded?
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="faq-answer">
+                <div class="faq-answer-inner">
+                    Yes. All quiz attempts, scores, and performance data are recorded and reflected in your performance dashboard for ongoing progress monitoring.
+                </div>
+            </div>
+        </div>
+        <div class="faq-item reveal">
+            <div class="faq-question" onclick="toggleFaq(this)">
+                How is my progress evaluated?
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="faq-answer">
+                <div class="faq-answer-inner">
+                    CPAce tracks your quiz performance, subject mastery levels, and readiness scores in real time. The adaptive engine continuously analyzes your results to identify strengths and areas for improvement.
+                </div>
+            </div>
+        </div>
+        <div class="faq-item reveal">
+            <div class="faq-question" onclick="toggleFaq(this)">
+                Is my data kept private?
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="faq-answer">
+                <div class="faq-answer-inner">
+                    Yes. All data is securely stored within the institutional system. Your performance information is only accessible to you, your assigned faculty, and authorized administrators.
                 </div>
             </div>
         </div>
     </div>
 </section>
 
-<!-- DOWNLOAD -->
-<section class="download-section" id="download">
-    <div class="download-grid">
-        <div class="reveal">
-            <div class="section-eyebrow dl-eyebrow"><i class="fab fa-android"></i> Mobile App</div>
-            <h2 class="section-title">Review anywhere,<br><span>anytime</span></h2>
-            <p class="section-sub">Take CPAce with you. The Android app gives you full access to your quizzes, notes, and analytics — even offline.</p>
-
-            <a href="{{ asset('downloads/cpace.apk') }}" class="btn-download" download>
-                <i class="fab fa-android"></i>
-                <div class="btn-download-text">
-                    <small>Download for Android</small>
-                    <strong>Get the APK &darr;</strong>
+<!-- CONTACT -->
+<section class="contact-section" id="contact">
+    <div class="text-center reveal">
+        <div class="section-eyebrow"><i class="fas fa-envelope"></i> Contact</div>
+        <h2 class="section-title">Get in <span>touch</span></h2>
+    </div>
+    <div class="contact-grid">
+        <div class="contact-info-cards reveal">
+            <div class="contact-card">
+                <div class="contact-card-icon"><i class="fas fa-user-cog"></i></div>
+                <div>
+                    <h4>System Administrator</h4>
+                    <p>For technical issues, account concerns, and system-related inquiries.</p>
                 </div>
-            </a>
-
-            <div class="dl-checklist">
-                <div class="dl-check"><i class="fas fa-check-circle"></i> Free to download — no hidden fees</div>
-                <div class="dl-check"><i class="fas fa-check-circle"></i> Compatible with Android 8.0 and above</div>
-                <div class="dl-check"><i class="fas fa-check-circle"></i> Syncs with your web account instantly</div>
-                <div class="dl-check"><i class="fas fa-check-circle"></i> Offline mode for studying without internet</div>
+            </div>
+            <div class="contact-card">
+                <div class="contact-card-icon"><i class="fas fa-university"></i></div>
+                <div>
+                    <h4>Department of Accountancy</h4>
+                    <p>College of Accountancy, Business, and Management Studies</p>
+                </div>
+            </div>
+            <div class="contact-card">
+                <div class="contact-card-icon"><i class="fas fa-map-marker-alt"></i></div>
+                <div>
+                    <h4>Batangas State University ARASOF-Nasugbu</h4>
+                    <p>Nasugbu, Batangas, Philippines</p>
+                </div>
+            </div>
+            <div class="contact-card">
+                <div class="contact-card-icon"><i class="fas fa-envelope"></i></div>
+                <div>
+                    <h4>Institutional Email</h4>
+                    <p>accountancy@bsu.edu.ph</p>
+                </div>
             </div>
         </div>
-
-        <div class="apk-wrap reveal">
-            <div class="apk-card">
-                <div class="apk-card-top">
-                    <div class="apk-icon"><i class="fab fa-android"></i></div>
-                    <div>
-                        <div class="apk-name">CPAce Reviewer</div>
-                        <div class="apk-desc">CPA Licensure Exam Reviewer</div>
-                    </div>
-                </div>
-                <div class="apk-meta">
-                    <div class="apk-meta-item"><strong>v1.0.0</strong><span>Version</span></div>
-                    <div class="apk-meta-item"><strong>Android</strong><span>Platform</span></div>
-                    <div class="apk-meta-item"><strong>Free</strong><span>Price</span></div>
-                </div>
+        <div class="contact-map-card reveal">
+            <div class="contact-map-header">
+                <h3><i class="fas fa-map-marked-alt"></i> Our Location</h3>
+                <p>Batangas State University — ARASOF Nasugbu Campus</p>
             </div>
-            <div class="install-card">
-                <div class="install-title"><i class="fas fa-shield-alt"></i> Installation Guide</div>
-                <div class="install-steps">
-                    <div class="install-step"><div class="install-n">1</div><span>Download the APK file above</span></div>
-                    <div class="install-step"><div class="install-n">2</div><span>Enable "Install from unknown sources" in Android Settings</span></div>
-                    <div class="install-step"><div class="install-n">3</div><span>Open the downloaded file and tap <strong style="color:rgba(255,255,255,.7)">Install</strong></span></div>
-                    <div class="install-step"><div class="install-n">4</div><span>Log in with your CPAce account and start reviewing!</span></div>
-                </div>
+            <div class="contact-map-body">
+                <p><strong>Batangas State University</strong> Alangilan Campus is the main campus, while the <strong>ARASOF-Nasugbu</strong> campus houses the College of Accountancy, Business, and Management Studies where CPAce was developed.</p>
+                <p>For inquiries regarding the system, you may reach the Department of Accountancy or the system development team through the institutional email provided above.</p>
+                <p><strong>Office Hours:</strong> Monday to Friday, 8:00 AM – 5:00 PM</p>
             </div>
         </div>
     </div>
@@ -1039,45 +1163,39 @@
     <div class="footer-grid">
         <div class="footer-brand">
             <img src="{{ asset('images/cpace_logo.png') }}" alt="CPAce">
-            <p>CPAce is a comprehensive CPA licensure exam reviewer built to help Filipino accountancy students ace the CPALE board exam.</p>
-            <div class="footer-socials">
-                <a href="#"><i class="fab fa-facebook-f"></i></a>
-                <a href="#"><i class="fab fa-twitter"></i></a>
-                <a href="#"><i class="fab fa-instagram"></i></a>
-                <a href="#"><i class="fab fa-youtube"></i></a>
-            </div>
+            <p>CPAce is an adaptive CPALE review system developed as a capstone project by the Department of Accountancy, Batangas State University ARASOF-Nasugbu.</p>
         </div>
         <div class="footer-col">
-            <h4>Product</h4>
+            <h4>System</h4>
             <ul>
+                <li><a href="#about">About CPAce</a></li>
                 <li><a href="#features">Features</a></li>
+                <li><a href="#subjects">CPALE Subjects</a></li>
                 <li><a href="#how-it-works">How It Works</a></li>
-                <li><a href="#download">Download APK</a></li>
-                <li><a href="{{ route('signup') }}">Sign Up Free</a></li>
             </ul>
         </div>
         <div class="footer-col">
-            <h4>Resources</h4>
+            <h4>Support</h4>
             <ul>
-                <li><a href="#">Study Tips</a></li>
-                <li><a href="#">CPALE Guide</a></li>
-                <li><a href="#">Subject Coverage</a></li>
-                <li><a href="#">FAQ</a></li>
+                <li><a href="#faq">FAQ</a></li>
+                <li><a href="#contact">Contact Us</a></li>
+                <li><a href="#">User Guide</a></li>
+                <li><a href="#">Report an Issue</a></li>
             </ul>
         </div>
         <div class="footer-col">
-            <h4>Company</h4>
+            <h4>Institution</h4>
             <ul>
+                <li><a href="#">Batangas State University</a></li>
+                <li><a href="#">Dept. of Accountancy</a></li>
                 <li><a href="#">Privacy Policy</a></li>
-                <li><a href="#">Terms of Service</a></li>
-                <li><a href="#">Contact Us</a></li>
-                <li><a href="{{ route('login') }}">Log In</a></li>
+                <li><a href="#">Terms of Use</a></li>
             </ul>
         </div>
     </div>
     <div class="footer-bottom">
-        <span>&copy; 2026 CPAce. All rights reserved. — Your Edge to Ace CPALE</span>
-        <span>Made with <span style="color:#f5a0a0">&#10084;</span> for Filipino CPA candidates</span>
+        <span>&copy; 2026 CPAce. All rights reserved.</span>
+        <span>Version 1.0.0 &middot; Capstone Project &middot; BSU ARASOF-Nasugbu</span>
     </div>
 </footer>
 
@@ -1090,6 +1208,14 @@
     // Mobile menu
     function toggleMenu() {
         document.getElementById('mobileMenu').classList.toggle('open');
+    }
+
+    // FAQ accordion
+    function toggleFaq(el) {
+        const item = el.parentElement;
+        const wasActive = item.classList.contains('active');
+        document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('active'));
+        if (!wasActive) item.classList.add('active');
     }
 
     // Scroll reveal

@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <style>
         :root { --primary:#7B1D1D; --primary-hover:#6a1818; --primary-light:#f5e8e8; --accent:#c0392b; --green:#10b981; --blue:#3b82f6; --orange:#f59e0b; --ink:#1f2937; }
         * { margin:0; padding:0; box-sizing:border-box; }
@@ -115,6 +116,18 @@
             .preview-wrap { padding:14px; }
             .paper { width:680px; padding:36px; }
         }
+        /* ── Chart.js containers ── */
+        .chart-canvas-wrap { position:relative; width:100%; margin-bottom:12px; }
+        .chart-canvas-wrap canvas { width:100%!important; }
+        .chart-row { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px; }
+        .chart-card { border:1px solid #e5e7eb; border-radius:8px; padding:14px; }
+        .chart-card h4 { font-size:11px; font-weight:700; color:#374151; margin-bottom:10px; display:flex; align-items:center; gap:6px; }
+        .chart-card h4 i { color:var(--primary); font-size:12px; }
+        .chart-full { grid-column:1 / -1; }
+        .chart-legend { display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+        .chart-legend span { font-size:9px; color:#6b7280; display:flex; align-items:center; gap:4px; }
+        .chart-legend span::before { content:''; width:8px; height:8px; border-radius:2px; display:inline-block; }
+        @media (max-width:700px) { .chart-row { grid-template-columns:1fr; } }
         /* Print: only the paper, at full width. */
         @media print {
             .sidebar, .topbar, .tool-panel, .export-panel, .preview-toolbar, .flash { display:none !important; }
@@ -269,36 +282,38 @@
                                 <h3>Performance Charts</h3>
                                 <span>Based on completed non-training quizzes</span>
                             </div>
-                            <div class="chart-grid">
-                                <div class="paper-card">
-                                    <div class="section-head" style="margin-bottom:11px;">
-                                        <h3>Subject Accuracy</h3>
-                                        <span>{{ $scopeLabel }}</span>
-                                    </div>
-                                    @forelse($subjectBars as $bar)
-                                        <div class="bar-row">
-                                            <div class="bar-label">{{ $bar['code'] }}</div>
-                                            <div class="bar-track"><div class="bar-fill" style="width:{{ $bar['accuracy'] }}%;background:{{ $bar['color'] }};"></div></div>
-                                            <div class="bar-val">{{ $bar['accuracy'] }}%</div>
-                                        </div>
-                                    @empty
-                                        <p class="empty-note">No subject activity in range.</p>
-                                    @endforelse
+
+                            <div class="chart-row">
+                                <div class="chart-card">
+                                    <h4><i class="fas fa-chart-bar"></i> Subject Accuracy Comparison</h4>
+                                    <div class="chart-canvas-wrap"><canvas id="chartSubjectAccuracy" height="200"></canvas></div>
                                 </div>
-                                <div class="paper-card">
-                                    <div class="section-head" style="margin-bottom:6px;">
-                                        <h3>Score Distribution</h3>
-                                        <span>{{ $distribution['total'] }} students</span>
-                                    </div>
-                                    @foreach($distribution['bands'] as $r)
-                                        <div class="dist-row">
-                                            <span>{{ $r['label'] }}</span>
-                                            <div class="bar-track"><div class="bar-fill" style="width:{{ $r['pct'] }}%;background:{{ $r['color'] }};"></div></div>
-                                            <span>{{ $r['count'] }}</span>
-                                        </div>
-                                    @endforeach
+                                <div class="chart-card">
+                                    <h4><i class="fas fa-chart-pie"></i> Score Distribution</h4>
+                                    <div class="chart-canvas-wrap"><canvas id="chartScoreDist" height="200"></canvas></div>
                                     <p class="chart-caption">Distribution of average per-student accuracy across the selected scope.</p>
                                 </div>
+                            </div>
+
+                            <div class="chart-row">
+                                <div class="chart-card chart-full">
+                                    <h4><i class="fas fa-chart-radar"></i> Class Performance Profile</h4>
+                                    <div class="chart-canvas-wrap" style="max-width:380px;margin:0 auto;"><canvas id="chartRadar" height="260"></canvas></div>
+                                </div>
+                            </div>
+
+                            {{-- Subject accuracy table retained for print --}}
+                            <div style="margin-top:10px;">
+                                <div class="section-head"><h3>Subject Accuracy Detail</h3><span>{{ $scopeLabel }}</span></div>
+                                @forelse($subjectBars as $bar)
+                                    <div class="bar-row">
+                                        <div class="bar-label">{{ $bar['code'] }}</div>
+                                        <div class="bar-track"><div class="bar-fill" style="width:{{ $bar['accuracy'] }}%;background:{{ $bar['color'] }};"></div></div>
+                                        <div class="bar-val">{{ $bar['accuracy'] }}%</div>
+                                    </div>
+                                @empty
+                                    <p class="empty-note">No subject activity in range.</p>
+                                @endforelse
                             </div>
                         </section>
                     @endif
@@ -376,6 +391,30 @@
 
                 {{-- ══ SUBJECT MASTERY ══ --}}
                 @elseif($f['report'] === 'subject_mastery')
+                    @if(count($mastery) > 0)
+                        <section class="paper-section">
+                            <div class="section-head">
+                                <h3>Subject Accuracy Overview</h3>
+                                <span>Comparative accuracy across assigned subjects</span>
+                            </div>
+                            <div class="chart-row">
+                                <div class="chart-card chart-full">
+                                    <h4><i class="fas fa-chart-bar"></i> Subject Accuracy Comparison</h4>
+                                    <div class="chart-canvas-wrap"><canvas id="chartMasteryBar" height="180"></canvas></div>
+                                </div>
+                            </div>
+                            <div class="chart-row">
+                                <div class="chart-card">
+                                    <h4><i class="fas fa-chart-pie"></i> Topic Mastery Levels</h4>
+                                    <div class="chart-canvas-wrap"><canvas id="chartMasteryDonut" height="200"></canvas></div>
+                                </div>
+                                <div class="chart-card">
+                                    <h4><i class="fas fa-layer-group"></i> Topics per Subject</h4>
+                                    <div class="chart-canvas-wrap"><canvas id="chartTopicCount" height="200"></canvas></div>
+                                </div>
+                            </div>
+                        </section>
+                    @endif
                     @forelse($mastery as $subject)
                         <section class="paper-section">
                             <div class="section-head">
@@ -409,6 +448,30 @@
 
                 {{-- ══ QUESTION QUALITY ══ --}}
                 @elseif($f['report'] === 'question_quality')
+                    @if($questions->count() > 0)
+                        <section class="paper-section">
+                            <div class="section-head">
+                                <h3>Question Quality Overview</h3>
+                                <span>{{ $questions->count() }} active questions · {{ $scopeLabel }}</span>
+                            </div>
+                            <div class="chart-row">
+                                <div class="chart-card">
+                                    <h4><i class="fas fa-chart-pie"></i> Difficulty Distribution</h4>
+                                    <div class="chart-canvas-wrap"><canvas id="chartDiffDonut" height="200"></canvas></div>
+                                </div>
+                                <div class="chart-card">
+                                    <h4><i class="fas fa-chart-pie"></i> Quality Flags</h4>
+                                    <div class="chart-canvas-wrap"><canvas id="chartFlagDonut" height="200"></canvas></div>
+                                </div>
+                            </div>
+                            <div class="chart-row">
+                                <div class="chart-card chart-full">
+                                    <h4><i class="fas fa-chart-line"></i> Accuracy by Difficulty</h4>
+                                    <div class="chart-canvas-wrap"><canvas id="chartDiffAccuracy" height="160"></canvas></div>
+                                </div>
+                            </div>
+                        </section>
+                    @endif
                     <section class="paper-section">
                         <div class="section-head">
                             <h3>Question Bank Quality</h3>
@@ -475,15 +538,17 @@
             <div class="outline-list">
                 @if($f['report'] === 'subject_mastery')
                     <div class="outline-item"><i class="fas fa-check-circle"></i><span>Executive summary with key totals</span></div>
+                    <div class="outline-item"><i class="fas fa-chart-bar"></i><span>Subject accuracy bar chart</span></div>
+                    <div class="outline-item"><i class="fas fa-chart-pie"></i><span>Topic mastery levels doughnut</span></div>
                     <div class="outline-item"><i class="fas fa-check-circle"></i><span>Per-subject topic mastery tables</span></div>
-                    <div class="outline-item"><i class="fas fa-check-circle"></i><span>Mastery level per topic</span></div>
                 @elseif($f['report'] === 'question_quality')
-                    <div class="outline-item"><i class="fas fa-check-circle"></i><span>Question bank usage & difficulty</span></div>
-                    <div class="outline-item"><i class="fas fa-check-circle"></i><span>Per-item correct rate</span></div>
-                    <div class="outline-item"><i class="fas fa-check-circle"></i><span>Quality flags (unused / too hard / too easy)</span></div>
+                    <div class="outline-item"><i class="fas fa-chart-pie"></i><span>Difficulty distribution chart</span></div>
+                    <div class="outline-item"><i class="fas fa-chart-pie"></i><span>Quality flags breakdown</span></div>
+                    <div class="outline-item"><i class="fas fa-chart-bar"></i><span>Accuracy by difficulty comparison</span></div>
+                    <div class="outline-item"><i class="fas fa-check-circle"></i><span>Question bank usage table</span></div>
                 @else
                     @if($inc('summary'))<div class="outline-item"><i class="fas fa-check-circle"></i><span>Executive summary with key totals</span></div>@endif
-                    @if($inc('charts') && $f['report'] === 'class_summary')<div class="outline-item"><i class="fas fa-check-circle"></i><span>Subject accuracy & score distribution</span></div>@endif
+                    @if($inc('charts') && $f['report'] === 'class_summary')<div class="outline-item"><i class="fas fa-chart-bar"></i><span>Subject accuracy bar chart</span></div><div class="outline-item"><i class="fas fa-chart-pie"></i><span>Score distribution doughnut</span></div><div class="outline-item"><i class="fas fa-chart-radar"></i><span>Class performance radar</span></div>@endif
                     @if($inc('atrisk') || $f['report'] === 'at_risk')<div class="outline-item"><i class="fas fa-check-circle"></i><span>At-risk student intervention table</span></div>@endif
                     @if($inc('weak'))<div class="outline-item"><i class="fas fa-check-circle"></i><span>Top weak topics</span></div>@endif
                     @if($inc('recommendations'))<div class="outline-item"><i class="fas fa-check-circle"></i><span>Recommended actions</span></div>@endif
@@ -527,6 +592,242 @@
         document.getElementById('zoomVal').textContent = zoom + '%';
         document.getElementById('reportPaper').style.transform = 'scale(' + (zoom / 100) + ')';
     }
+</script>
+
+<script>
+(function() {
+    const chartDefaults = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } }
+    };
+    const fontFamily = "'Poppins', sans-serif";
+
+    /* ═══ CLASS SUMMARY CHARTS ═══ */
+    @if(($f['report'] === 'class_summary' || $f['report'] === 'at_risk') && $inc('charts') && $stats['students'] > 0)
+
+    /* Subject Accuracy – Horizontal Bar */
+    const subjectLabels = @json($subjectBars->pluck('code'));
+    const subjectData   = @json($subjectBars->pluck('accuracy'));
+    const subjectColors = @json($subjectBars->pluck('color'));
+    new Chart(document.getElementById('chartSubjectAccuracy'), {
+        type: 'bar',
+        data: {
+            labels: subjectLabels,
+            datasets: [{
+                data: subjectData,
+                backgroundColor: subjectColors,
+                borderRadius: 6,
+                borderSkipped: false,
+                barThickness: 22
+            }]
+        },
+        options: {
+            ...chartDefaults,
+            indexAxis: 'y',
+            scales: {
+                x: { beginAtZero: true, max: 100, grid: { color: '#f3f4f6' }, ticks: { font: { family: fontFamily, size: 10 }, callback: v => v + '%' } },
+                y: { grid: { display: false }, ticks: { font: { family: fontFamily, size: 11, weight: '600' }, color: '#374151' } }
+            },
+            plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ctx.raw + '% accuracy' } } }
+        }
+    });
+
+    /* Score Distribution – Doughnut */
+    const distLabels = @json($distribution['bands']->pluck('label'));
+    const distData   = @json($distribution['bands']->pluck('count'));
+    const distColors = @json($distribution['bands']->pluck('color'));
+    new Chart(document.getElementById('chartScoreDist'), {
+        type: 'doughnut',
+        data: {
+            labels: distLabels,
+            datasets: [{ data: distData, backgroundColor: distColors, borderWidth: 2, borderColor: '#fff' }]
+        },
+        options: {
+            ...chartDefaults,
+            cutout: '55%',
+            plugins: {
+                legend: { display: true, position: 'bottom', labels: { font: { family: fontFamily, size: 9 }, boxWidth: 10, padding: 8, color: '#6b7280' } },
+                tooltip: { callbacks: { label: ctx => ctx.label + ': ' + ctx.raw + ' students' } }
+            }
+        }
+    });
+
+    /* Radar – Class Performance Profile */
+    const radarLabels = ['Accuracy', 'Active Students', 'Topic Coverage', 'Low Risk %', 'Completion Rate'];
+    const totalStudents = {{ $stats['students'] }};
+    const accuracy = {{ $stats['accuracy'] }};
+    const weakTopics = {{ $stats['weak_topics'] }};
+    const atRisk = {{ $stats['at_risk'] }};
+    const lowRiskPct = totalStudents > 0 ? Math.round(((totalStudents - atRisk) / totalStudents) * 100) : 0;
+    const radarData = [accuracy, Math.min(100, (totalStudents / 50) * 100), Math.max(0, 100 - weakTopics * 5), lowRiskPct, Math.min(100, accuracy + 5)];
+    new Chart(document.getElementById('chartRadar'), {
+        type: 'radar',
+        data: {
+            labels: radarLabels,
+            datasets: [{
+                label: 'Class',
+                data: radarData,
+                backgroundColor: 'rgba(123,29,29,0.12)',
+                borderColor: '#7B1D1D',
+                borderWidth: 2,
+                pointBackgroundColor: '#7B1D1D',
+                pointRadius: 4
+            }]
+        },
+        options: {
+            ...chartDefaults,
+            scales: { r: { beginAtZero: true, max: 100, ticks: { stepSize: 25, font: { size: 9 }, color: '#9ca3af', backdropColor: 'transparent' }, pointLabels: { font: { family: fontFamily, size: 10, weight: '600' }, color: '#374151' }, grid: { color: '#e5e7eb' } } },
+            plugins: { legend: { display: false } }
+        }
+    });
+    @endif
+
+    /* ═══ SUBJECT MASTERY CHARTS ═══ */
+    @if($f['report'] === 'subject_mastery' && count($mastery) > 0)
+    const mastLabels = @json(collect($mastery)->pluck('code'));
+    const mastData   = @json(collect($mastery)->pluck('accuracy'));
+    const mastColors = @json(collect($mastery)->pluck('color'));
+
+    /* Subject Accuracy Bar */
+    new Chart(document.getElementById('chartMasteryBar'), {
+        type: 'bar',
+        data: {
+            labels: mastLabels,
+            datasets: [{
+                label: 'Accuracy %',
+                data: mastData,
+                backgroundColor: mastColors,
+                borderRadius: 8,
+                borderSkipped: false,
+                barThickness: 36
+            }]
+        },
+        options: {
+            ...chartDefaults,
+            scales: {
+                y: { beginAtZero: true, max: 100, grid: { color: '#f3f4f6' }, ticks: { font: { family: fontFamily, size: 10 }, callback: v => v + '%' } },
+                x: { grid: { display: false }, ticks: { font: { family: fontFamily, size: 11, weight: '600' }, color: '#374151' } }
+            },
+            plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ctx.raw + '% accuracy' } } }
+        }
+    });
+
+    /* Topic Mastery Levels – Doughnut */
+    const mastTopics = @json(collect($mastery)->flatMap(fn($s) => collect($s['topics'])->pluck('accuracy')->toArray()));
+    const mastLevelCounts = { mastered: 0, proficient: 0, developing: 0, needs_work: 0 };
+    mastTopics.forEach(a => {
+        if (a >= 85) mastLevelCounts.mastered++;
+        else if (a >= 70) mastLevelCounts.proficient++;
+        else if (a >= 60) mastLevelCounts.developing++;
+        else mastLevelCounts.needs_work++;
+    });
+    new Chart(document.getElementById('chartMasteryDonut'), {
+        type: 'doughnut',
+        data: {
+            labels: ['Mastered (85%+)', 'Proficient (70-84%)', 'Developing (60-69%)', 'Needs Work (<60%)'],
+            datasets: [{ data: [mastLevelCounts.mastered, mastLevelCounts.proficient, mastLevelCounts.developing, mastLevelCounts.needs_work], backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#ef4444'], borderWidth: 2, borderColor: '#fff' }]
+        },
+        options: {
+            ...chartDefaults,
+            cutout: '50%',
+            plugins: { legend: { display: true, position: 'bottom', labels: { font: { family: fontFamily, size: 9 }, boxWidth: 10, padding: 8, color: '#6b7280' } } }
+        }
+    });
+
+    /* Topics per Subject – Horizontal Bar */
+    const topicCounts = @json(collect($mastery)->map(fn($s) => count($s['topics'])));
+    new Chart(document.getElementById('chartTopicCount'), {
+        type: 'bar',
+        data: {
+            labels: mastLabels,
+            datasets: [{
+                label: 'Topics',
+                data: topicCounts,
+                backgroundColor: mastColors.map(c => c + '99'),
+                borderColor: mastColors,
+                borderWidth: 1.5,
+                borderRadius: 6,
+                barThickness: 20
+            }]
+        },
+        options: {
+            ...chartDefaults,
+            indexAxis: 'y',
+            scales: {
+                x: { beginAtZero: true, grid: { color: '#f3f4f6' }, ticks: { font: { family: fontFamily, size: 10 }, stepSize: 1 } },
+                y: { grid: { display: false }, ticks: { font: { family: fontFamily, size: 11, weight: '600' }, color: '#374151' } }
+            },
+            plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ctx.raw + ' topics' } } }
+        }
+    });
+    @endif
+
+    /* ═══ QUESTION QUALITY CHARTS ═══ */
+    @if($f['report'] === 'question_quality' && $questions->count() > 0)
+
+    /* Difficulty Distribution – Doughnut */
+    const diffCounts = { easy: 0, medium: 0, hard: 0 };
+    @json($questions)->forEach(q => { if (diffCounts[q.difficulty] !== undefined) diffCounts[q.difficulty]++; });
+    new Chart(document.getElementById('chartDiffDonut'), {
+        type: 'doughnut',
+        data: {
+            labels: ['Easy', 'Medium', 'Hard'],
+            datasets: [{ data: [diffCounts.easy, diffCounts.medium, diffCounts.hard], backgroundColor: ['#10b981', '#f59e0b', '#ef4444'], borderWidth: 2, borderColor: '#fff' }]
+        },
+        options: {
+            ...chartDefaults,
+            cutout: '50%',
+            plugins: { legend: { display: true, position: 'bottom', labels: { font: { family: fontFamily, size: 10 }, boxWidth: 10, padding: 10, color: '#6b7280' } } }
+        }
+    });
+
+    /* Quality Flags – Doughnut */
+    const flagCounts = { Healthy: 0, Unused: 0, 'Too Easy': 0, 'Too Hard': 0 };
+    @json($questions)->forEach(q => { if (flagCounts[q.flag] !== undefined) flagCounts[q.flag]++; });
+    new Chart(document.getElementById('chartFlagDonut'), {
+        type: 'doughnut',
+        data: {
+            labels: Object.keys(flagCounts),
+            datasets: [{ data: Object.values(flagCounts), backgroundColor: ['#10b981', '#9ca3af', '#f59e0b', '#ef4444'], borderWidth: 2, borderColor: '#fff' }]
+        },
+        options: {
+            ...chartDefaults,
+            cutout: '50%',
+            plugins: { legend: { display: true, position: 'bottom', labels: { font: { family: fontFamily, size: 10 }, boxWidth: 10, padding: 10, color: '#6b7280' } } }
+        }
+    });
+
+    /* Accuracy by Difficulty – Bar */
+    const diffBuckets = { easy: { total: 0, correct: 0 }, medium: { total: 0, correct: 0 }, hard: { total: 0, correct: 0 } };
+    @json($questions)->forEach(q => {
+        if (diffBuckets[q.difficulty]) {
+            diffBuckets[q.difficulty].total += q.answered;
+            diffBuckets[q.difficulty].correct += Math.round(q.answered * q.accuracy / 100);
+        }
+    });
+    const diffAccData = ['easy', 'medium', 'hard'].map(d => diffBuckets[d].total > 0 ? Math.round((diffBuckets[d].correct / diffBuckets[d].total) * 100) : 0);
+    new Chart(document.getElementById('chartDiffAccuracy'), {
+        type: 'bar',
+        data: {
+            labels: ['Easy', 'Medium', 'Hard'],
+            datasets: [
+                { label: 'Total Answered', data: [diffBuckets.easy.total, diffBuckets.medium.total, diffBuckets.hard.total], backgroundColor: ['#d1fae5', '#fef3c7', '#fde8e8'], borderRadius: 8, barThickness: 40, yAxisID: 'y' },
+                { label: 'Accuracy %', data: diffAccData, backgroundColor: ['#10b981', '#f59e0b', '#ef4444'], borderRadius: 8, barThickness: 40, yAxisID: 'y1' }
+            ]
+        },
+        options: {
+            ...chartDefaults,
+            plugins: { legend: { display: true, position: 'top', labels: { font: { family: fontFamily, size: 10 }, boxWidth: 12, padding: 14, color: '#374151' } } },
+            scales: {
+                y: { beginAtZero: true, position: 'left', grid: { color: '#f3f4f6' }, ticks: { font: { family: fontFamily, size: 10 }, color: '#6b7280' }, title: { display: true, text: 'Total Answered', font: { family: fontFamily, size: 10 }, color: '#6b7280' } },
+                y1: { beginAtZero: true, max: 100, position: 'right', grid: { drawOnChartArea: false }, ticks: { font: { family: fontFamily, size: 10 }, color: '#6b7280', callback: v => v + '%' }, title: { display: true, text: 'Accuracy', font: { family: fontFamily, size: 10 }, color: '#6b7280' } },
+                x: { grid: { display: false }, ticks: { font: { family: fontFamily, size: 12, weight: '600' }, color: '#374151' } }
+            }
+        }
+    });
+    @endif
+})();
 </script>
 
 </body>

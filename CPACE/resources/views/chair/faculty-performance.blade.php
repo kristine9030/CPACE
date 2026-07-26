@@ -7,7 +7,14 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    @include('partials.chart-kit')
     <style>
+        .tab-bar { display:flex; gap:0; margin-bottom:18px; background:white; border-radius:12px; padding:4px; border:1px solid #eee; width:fit-content; }
+        .tab-btn { padding:9px 22px; border-radius:9px; font-size:13px; font-weight:600; font-family:'Poppins',sans-serif; cursor:pointer; border:none; background:transparent; color:#888; transition:all .2s; display:flex; align-items:center; gap:7px; }
+        .tab-btn:hover { color:#555; background:#f8f8fa; }
+        .tab-btn.active { background:var(--primary); color:white; box-shadow:0 2px 8px rgba(123,29,29,0.25); }
+        .tab-panel { display:none; }
+        .tab-panel.active { display:block; }
         .report-grid { display:grid; grid-template-columns:minmax(0,1.35fr) minmax(320px,.65fr); gap:18px; }
         .report-table-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; }
         .report-table-wrap table { min-width:780px; }
@@ -54,6 +61,12 @@
         <div class="stat-card"><div class="stat-top"><div><div class="stat-num">{{ $stats['flags'] }}</div><div class="stat-lbl">Questions Needing Review</div></div><div class="stat-icon si-orange"><i class="fas fa-triangle-exclamation"></i></div></div></div>
     </div>
 
+    <div class="tab-bar" role="tablist">
+        <button class="tab-btn active" role="tab" aria-selected="true" onclick="switchTab('overview', this)"><i class="fas fa-table-columns"></i> Overview</button>
+        <button class="tab-btn" role="tab" aria-selected="false" onclick="switchTab('visualization', this)"><i class="fas fa-chart-line"></i> Visualization</button>
+    </div>
+
+    <div id="tab-overview" class="tab-panel active">
     <div class="report-grid">
         <div class="card">
             <div class="card-head">
@@ -119,6 +132,152 @@
             <div class="legend-note"><strong>Quality review:</strong> flags questions that are unused, below 40% accuracy, or above 95% accuracy after at least five student answers. These are review signals, not faculty grades.</div>
         </div>
     </div>
+    </div><!-- /tab-overview -->
+
+    <div id="tab-visualization" class="tab-panel">
+        <div class="viz-grid-layout">
+            <div class="viz-card full">
+                <h4><i class="fas fa-user-pen"></i> Test-Bank Contributions per Faculty</h4>
+                <div class="viz-sub">Drafted questions do not reach students until they are activated, so both states are shown.</div>
+                <div class="chart-canvas-wrap h-lg"><canvas id="vizFacultyContrib"></canvas></div>
+            </div>
+
+            <div class="viz-card">
+                <h4><i class="fas fa-triangle-exclamation"></i> Questions Flagged for Review</h4>
+                <div class="viz-sub">Unused, or answered at under 40% / over 95% after five attempts.</div>
+                <div class="chart-canvas-wrap h-md"><canvas id="vizFacultyFlags"></canvas></div>
+            </div>
+
+            <div class="viz-card">
+                <h4><i class="fas fa-bullseye"></i> Student Accuracy on Each Subject's Questions</h4>
+                <div class="viz-sub">A calibration signal for the bank, not a ranking of faculty.</div>
+                <div class="chart-canvas-wrap h-md"><canvas id="vizSubjectAccuracy"></canvas></div>
+            </div>
+
+            <div class="viz-card full">
+                <h4><i class="fas fa-people-arrows"></i> Authoring Capacity per Subject</h4>
+                <div class="viz-sub">Assigned faculty against those who have actually written questions — a gap here is an unstaffed subject.</div>
+                <div class="chart-canvas-wrap h-md"><canvas id="vizCapacity"></canvas></div>
+            </div>
+        </div>
+
+        <div class="legend-note" style="margin-top:16px;">Every value plotted here is also listed as a table on the <strong>Overview</strong> tab.</div>
+    </div><!-- /tab-visualization -->
 </main>
+
+<script>
+(function () {
+    const P = Viz.palette;
+    const faculty = @json($facultyRows);
+    const subjects = @json($subjectRows);
+    const pluck = (rows, key) => rows.map((row) => row[key]);
+
+    const contributors = faculty.filter((member) => member.questions > 0);
+    const flagged = faculty.filter((member) => member.quality_flags > 0);
+
+    /* ── Contributions per faculty ──────────────────────────────────────── */
+    if (contributors.length) {
+        Viz.chart('vizFacultyContrib', {
+            type: 'bar',
+            data: {
+                labels: pluck(contributors, 'name'),
+                datasets: [
+                    Viz.stacked({ label: 'Active', data: pluck(contributors, 'active'), backgroundColor: P.s1, maxBarThickness: 20 }),
+                    Viz.stacked({ label: 'Draft', data: pluck(contributors, 'draft'), backgroundColor: P.s2, maxBarThickness: 20 }),
+                ],
+            },
+            options: {
+                indexAxis: 'y',
+                scales: {
+                    x: Viz.countAxis({ stacked: true, title: { display: true, text: 'Questions written', color: P.muted } }),
+                    y: Viz.catAxis({ stacked: true }),
+                },
+                plugins: {
+                    legend: { position: 'bottom' },
+                    tooltip: { mode: 'index', callbacks: { afterBody: (items) => {
+                        const member = contributors[items[0].dataIndex];
+                        return member.variants + ' variants · ' + (member.accuracy === null ? 'no answers yet' : member.accuracy + '% student accuracy');
+                    } } },
+                },
+            },
+        });
+    } else {
+        document.getElementById('vizFacultyContrib').outerHTML = '<div class="viz-empty">No faculty member has contributed a question yet.</div>';
+    }
+
+    /* ── Questions flagged for review ───────────────────────────────────── */
+    if (flagged.length) {
+        Viz.chart('vizFacultyFlags', {
+            type: 'bar',
+            data: {
+                labels: pluck(flagged, 'name'),
+                datasets: [Viz.bar({ label: 'Flagged', data: pluck(flagged, 'quality_flags'), backgroundColor: P.s1, maxBarThickness: 20 })],
+            },
+            options: {
+                indexAxis: 'y',
+                layout: { padding: { right: 34 } },
+                scales: { x: Viz.countAxis(), y: Viz.catAxis() },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { callbacks: { label: (c) => {
+                        const member = flagged[c.dataIndex];
+                        return member.quality_flags + ' of ' + member.active + ' active questions flagged · ' + member.unused + ' never used';
+                    } } },
+                },
+            },
+            plugins: [Viz.endLabels()],
+        });
+    } else {
+        document.getElementById('vizFacultyFlags').outerHTML = '<div class="viz-empty">No question is currently flagged for review.</div>';
+    }
+
+    /* ── Student accuracy per subject ───────────────────────────────────── */
+    Viz.chart('vizSubjectAccuracy', {
+        type: 'bar',
+        data: {
+            labels: pluck(subjects, 'code'),
+            datasets: [Viz.bar({
+                label: 'Accuracy',
+                data: subjects.map((s) => s.accuracy === null ? 0 : s.accuracy),
+                backgroundColor: P.s1,
+            })],
+        },
+        options: {
+            scales: { y: Viz.percentAxis(), x: Viz.catAxis() },
+            plugins: {
+                legend: { display: false },
+                tooltip: { callbacks: { label: (c) => {
+                    const s = subjects[c.dataIndex];
+                    return s.accuracy === null
+                        ? 'No answers recorded yet'
+                        : s.accuracy + '% across ' + s.answered.toLocaleString() + ' answers';
+                } } },
+            },
+        },
+    });
+
+    /* ── Authoring capacity per subject ─────────────────────────────────── */
+    Viz.chart('vizCapacity', {
+        type: 'bar',
+        data: {
+            labels: pluck(subjects, 'code'),
+            datasets: [
+                Viz.bar({ label: 'Assigned faculty', data: pluck(subjects, 'assigned_faculty'), backgroundColor: P.s1 }),
+                Viz.bar({ label: 'Faculty who have written questions', data: pluck(subjects, 'contributors'), backgroundColor: P.s2 }),
+            ],
+        },
+        options: {
+            scales: { y: Viz.countAxis(), x: Viz.catAxis() },
+            plugins: {
+                legend: { position: 'bottom' },
+                tooltip: { mode: 'index', callbacks: { afterBody: (items) => {
+                    const s = subjects[items[0].dataIndex];
+                    return s.questions.toLocaleString() + ' questions in the bank (' + s.active + ' active)';
+                } } },
+            },
+        },
+    });
+})();
+</script>
 </body>
 </html>

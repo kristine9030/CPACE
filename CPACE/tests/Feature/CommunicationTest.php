@@ -24,6 +24,11 @@ class CommunicationTest extends TestCase
             $table->string('email')->unique();
             $table->string('password');
             $table->boolean('is_active')->default(true);
+            $table->boolean('email_verified')->default(true);
+            $table->timestamp('last_login_at')->nullable();
+            $table->timestamp('setup_completed_at')->nullable();
+            $table->string('temp_password')->nullable();
+            $table->string('profile_photo')->nullable();
             $table->rememberToken();
             $table->timestamps();
         });
@@ -78,10 +83,40 @@ class CommunicationTest extends TestCase
             $table->boolean('is_read')->default(false);
             $table->timestamps();
         });
+
+        // Creating a student fires User::booted(), which drops them into the
+        // default community group, and the global view composer counts unread
+        // messages — so the chat tables have to exist here too.
+        Schema::create('conversations', function (Blueprint $table) {
+            $table->id();
+            $table->string('type')->default('group');
+            $table->string('name')->nullable();
+            $table->boolean('is_default_group')->default(false);
+            $table->unsignedBigInteger('created_by')->nullable();
+            $table->timestamps();
+        });
+        Schema::create('conversation_participants', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('conversation_id');
+            $table->unsignedBigInteger('user_id');
+            $table->timestamp('joined_at')->nullable();
+            $table->timestamp('last_read_at')->nullable();
+            $table->timestamps();
+        });
+        Schema::create('messages', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('conversation_id');
+            $table->unsignedBigInteger('sender_id');
+            $table->text('body')->nullable();
+            $table->timestamps();
+        });
     }
 
     protected function tearDown(): void
     {
+        Schema::dropIfExists('messages');
+        Schema::dropIfExists('conversation_participants');
+        Schema::dropIfExists('conversations');
         Schema::dropIfExists('notifications');
         Schema::dropIfExists('faculty_subjects');
         Schema::dropIfExists('subjects');
@@ -199,6 +234,8 @@ class CommunicationTest extends TestCase
 
     private function user(int $roleId, string $email, bool $active = true): User
     {
+        // setup_completed_at is set so EnsureAccountSetup does not divert these
+        // requests into first-login onboarding before role checks are reached.
         return User::create([
             'role_id' => $roleId,
             'first_name' => 'Test',
@@ -206,6 +243,7 @@ class CommunicationTest extends TestCase
             'email' => $email,
             'password' => Hash::make('password'),
             'is_active' => $active,
+            'setup_completed_at' => now(),
         ]);
     }
 }
