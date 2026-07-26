@@ -23,6 +23,10 @@
         .ab-toggle:hover { background:#fde68a; }
         .ab-activity { background:#d1fae5; color:#059669; }
         .ab-activity:hover { background:#a7f3d0; }
+        .otp-cell { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
+        .temp-pass { font-family: 'Courier New', monospace; font-weight: 700; color: #7B1D1D; background: #f8eaea; padding: 2px 8px; border-radius: 6px; font-size: 11px; letter-spacing: .5px; }
+        .otp-reveal, .copy-mini { background: none; border: none; color: #bbb; cursor: pointer; font-size: 11px; }
+        .otp-reveal:hover, .copy-mini:hover { color: var(--primary); }
 
         /* ── Faculty page responsive ── */
         .faculty-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
@@ -85,10 +89,30 @@
                         @endforelse
                     </td>
                     <td>
-                        @if ($f->is_active)
-                            <span class="pill pill-on"><i class="fas fa-check"></i> Active</span>
-                        @else
+                        @if (! $f->is_active)
                             <span class="pill pill-off"><i class="fas fa-ban"></i> Inactive</span>
+                        @elseif ($f->setup_completed_at === null)
+                            <span class="pill pill-pending" title="Faculty hasn't changed their one-time password yet">
+                                <i class="fas fa-hourglass-half"></i> Setup Pending
+                            </span>
+                            @if ($f->temp_password)
+                                <div class="otp-cell">
+                                    <span class="temp-pass otp-masked" data-otp="{{ $f->temp_password }}">••••••••</span>
+                                    <button type="button" class="otp-reveal" title="Show one-time password" onclick="toggleOtp(this)"><i class="fas fa-eye"></i></button>
+                                    <button type="button" class="copy-mini" title="Copy" onclick="navigator.clipboard.writeText('{{ $f->temp_password }}')"><i class="fas fa-copy"></i></button>
+                                </div>
+                            @else
+                                <div class="otp-cell">
+                                    <form method="POST" action="{{ route('chair.faculty.regenerate-otp', $f->id) }}">
+                                        @csrf
+                                        <button type="submit" class="otp-reveal" title="No recoverable OTP on file — issue a new one">
+                                            <i class="fas fa-rotate"></i> Regenerate OTP
+                                        </button>
+                                    </form>
+                                </div>
+                            @endif
+                        @else
+                            <span class="pill pill-on"><i class="fas fa-check"></i> Active</span>
                         @endif
                     </td>
                     <td style="text-align:right; white-space:nowrap;">
@@ -154,6 +178,14 @@
     }
     function closeAssign() { assignModal.classList.remove('open'); }
     assignModal.addEventListener('click', e => { if (e.target === assignModal) closeAssign(); });
+
+    function toggleOtp(btn) {
+        const span = btn.previousElementSibling;
+        const icon = btn.querySelector('i');
+        const revealed = span.textContent === span.dataset.otp;
+        span.textContent = revealed ? '••••••••' : span.dataset.otp;
+        icon.className = revealed ? 'fas fa-eye' : 'fas fa-eye-slash';
+    }
 </script>
 </body>
 </html>

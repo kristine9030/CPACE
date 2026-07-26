@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Chair;
 
+use App\Http\Controllers\Concerns\GeneratesOneTimePassword;
 use App\Http\Controllers\Controller;
 use App\Models\AlumniProfile;
 use App\Models\QuizSession;
@@ -16,10 +17,11 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\Rules\Password;
 
 class StudentManagementController extends Controller
 {
+    use GeneratesOneTimePassword;
+
     private const PER_PAGE = 15;
 
     private const INACTIVE_DAYS = 7;
@@ -125,22 +127,25 @@ class StudentManagementController extends Controller
     public function store(Request $request)
     {
         $data = $this->validateStudent($request);
-        $student = DB::transaction(function () use ($data) {
+        $tempPassword = $this->generateOneTimePassword();
+        $student = DB::transaction(function () use ($data, $tempPassword) {
             $student = User::create([
                 'role_id' => Role::STUDENT,
                 'first_name' => $data['first_name'],
                 'last_name' => $data['last_name'],
                 'email' => $data['email'],
-                'password' => Hash::make($data['password']),
+                'password' => Hash::make($tempPassword),
                 'is_active' => (bool) $data['is_active'],
                 'email_verified' => true,
+                'setup_completed_at' => null,
+                'temp_password' => $tempPassword,
             ]);
             $this->saveProfile($student, $data);
 
             return $student;
         });
 
-        return redirect()->route('chair.students.show', $student)->with('status', 'Student account enrolled successfully.');
+        return redirect()->route('chair.students.show', $student)->with('status', 'Student account enrolled successfully. One-time password: ' . $tempPassword);
     }
 
     public function edit(int $id)
@@ -164,9 +169,6 @@ class StudentManagementController extends Controller
                 // out regardless of what the "account enabled" toggle said.
                 'is_active' => ! empty($data['is_shifted']) ? false : (bool) $data['is_active'],
             ]);
-            if (! empty($data['password'])) {
-                $student->update(['password' => Hash::make($data['password'])]);
-            }
             $this->saveProfile($student, $data);
         });
 
@@ -179,6 +181,29 @@ class StudentManagementController extends Controller
         $student->update(['is_active' => ! $student->is_active]);
 
         return back()->with('status', $student->is_active ? 'Student account enabled.' : 'Student account disabled.');
+    }
+
+    /**
+     * Issue a fresh one-time password for a student who is still pending
+     * first-login setup. Covers accounts enrolled before OTPs were persisted
+     * (only the bcrypt hash was kept, so the original can't be recovered) as
+     * well as a student who simply lost their original OTP.
+     */
+    public function regenerateOtp(int $id)
+    {
+        $student = User::where('role_id', Role::STUDENT)->findOrFail($id);
+
+        if ($student->setup_completed_at !== null) {
+            return back()->with('error', 'This account has already completed setup.');
+        }
+
+        $tempPassword = $this->generateOneTimePassword();
+        $student->update([
+            'password' => Hash::make($tempPassword),
+            'temp_password' => $tempPassword,
+        ]);
+
+        return back()->with('status', "New one-time password generated for {$student->name}.");
     }
 
     /**
@@ -243,7 +268,7 @@ class StudentManagementController extends Controller
             }
 
             try {
-                $tempPassword = $this->generatePassword();
+                $tempPassword = $this->generateOneTimePassword();
                 DB::transaction(function () use ($firstName, $lastName, $email, $studentNumber, $section, $tempPassword) {
                     $student = User::create([
                         'role_id' => Role::STUDENT,
@@ -254,6 +279,7 @@ class StudentManagementController extends Controller
                         'is_active' => true,
                         'email_verified' => true,
                         'setup_completed_at' => null, // must run first-login Account Setup
+                        'temp_password' => $tempPassword,
                     ]);
                     StudentProfile::updateOrCreate(
                         ['user_id' => $student->id],
@@ -311,18 +337,6 @@ class StudentManagementController extends Controller
         $base = $slug($first) . '.' . $slug($last);
 
         return $base . '@cpace.edu';
-    }
-
-    /**
-     * Human-readable one-time password, e.g. "Kf7p-Rq3m".
-     */
-    private function generatePassword(): string
-    {
-        $chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
-        $pick = fn() => $chars[random_int(0, strlen($chars) - 1)];
-        $block = fn() => implode('', array_map($pick, range(1, 4)));
-
-        return $block() . '-' . $block();
     }
 
     public function exportCsv(Request $request)
@@ -410,6 +424,7 @@ class StudentManagementController extends Controller
                     'at_risk' => $student->is_active && ($low || $inactive),
                     'is_active' => (bool) $student->is_active,
                     'setup_completed' => $student->setup_completed_at !== null,
+                    'temp_password' => $student->setup_completed_at === null ? $student->temp_password : null,
                 ];
             });
     }
@@ -467,7 +482,6 @@ class StudentManagementController extends Controller
             'first_name' => ['required', 'string', 'max:60'],
             'last_name' => ['required', 'string', 'max:60'],
             'email' => ['required', 'email', 'max:120', Rule::unique('users', 'email')->ignore($student?->id)],
-            'password' => $student ? ['nullable', 'confirmed', Password::defaults()] : ['required', 'confirmed', Password::defaults()],
             'student_number' => ['nullable', 'string', 'max:30', Rule::unique('student_profiles', 'student_number')->ignore($student?->id, 'user_id')],
             'year_level' => ['nullable', 'integer', 'between:1,6'],
             'section' => ['nullable', 'string', 'max:30'],

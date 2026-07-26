@@ -176,17 +176,13 @@
                         required
                     >
                 </div>
-                <div class="form-group">
-                    <label>
-                        Password {{ $editMode ? '(leave blank to keep current)' : '' }}
-                    </label>
-                    <input type="password" name="password" {{ $editMode ? '' : 'required' }}>
-                </div>
-                <div class="form-group">
-                    <label>Confirm Password</label>
-                    <input type="password" name="password_confirmation" {{ $editMode ? '' : 'required' }}>
-                </div>
             </div>
+            @unless ($editMode)
+                <div class="hint" style="margin-top:10px;">
+                    <i class="fas fa-circle-info"></i>
+                    A one-time password will be generated automatically and shown after the account is created.
+                </div>
+            @endunless
         </div>
 
         <!-- Enrollment and grouping -->

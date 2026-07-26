@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Chair;
 
+use App\Http\Controllers\Concerns\GeneratesOneTimePassword;
 use App\Http\Controllers\Controller;
 
 use App\Models\Role;
@@ -15,10 +16,11 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\Rules\Password;
 
 class ProgramChairController extends Controller
 {
+    use GeneratesOneTimePassword;
+
     private const INACTIVITY_DAYS = 7;
 
     /**
@@ -165,22 +167,25 @@ class ProgramChairController extends Controller
             'first_name'      => 'required|string|max:60',
             'last_name'       => 'required|string|max:60',
             'email'           => 'required|email|max:120|unique:users,email',
-            'password'        => ['required', 'confirmed', Password::defaults()],
             'employee_number' => 'nullable|string|max:20',
             'department'      => 'nullable|string|max:100',
             'subjects'        => 'array',
             'subjects.*'      => 'integer|exists:subjects,id',
         ]);
 
-        DB::transaction(function () use ($data, $request) {
+        $tempPassword = $this->generateOneTimePassword();
+
+        DB::transaction(function () use ($data, $request, $tempPassword) {
             $user = User::create([
-                'role_id'        => Role::FACULTY,
-                'first_name'     => $data['first_name'],
-                'last_name'      => $data['last_name'],
-                'email'          => $data['email'],
-                'password'       => Hash::make($data['password']),
-                'is_active'      => true,
-                'email_verified' => true,
+                'role_id'            => Role::FACULTY,
+                'first_name'         => $data['first_name'],
+                'last_name'          => $data['last_name'],
+                'email'              => $data['email'],
+                'password'           => Hash::make($tempPassword),
+                'is_active'          => true,
+                'email_verified'     => true,
+                'setup_completed_at' => null,
+                'temp_password'      => $tempPassword,
             ]);
 
             $user->facultyProfile()->create([
@@ -192,7 +197,7 @@ class ProgramChairController extends Controller
         });
 
         return redirect()->route('chair.faculty')
-            ->with('status', 'Faculty account created. They can now log in with their email and password.');
+            ->with('status', 'Faculty account created. One-time password: ' . $tempPassword);
     }
 
     /**
@@ -223,7 +228,6 @@ class ProgramChairController extends Controller
             'first_name'      => 'required|string|max:60',
             'last_name'       => 'required|string|max:60',
             'email'           => ['required', 'email', 'max:120', Rule::unique('users', 'email')->ignore($faculty->id)],
-            'password'        => ['nullable', 'confirmed', Password::defaults()],
             'employee_number' => 'nullable|string|max:20',
             'department'      => 'nullable|string|max:100',
             'is_active'       => 'nullable|boolean',
@@ -238,10 +242,6 @@ class ProgramChairController extends Controller
                 'email'      => $data['email'],
                 'is_active'  => $request->boolean('is_active'),
             ]);
-
-            if (!empty($data['password'])) {
-                $faculty->update(['password' => Hash::make($data['password'])]);
-            }
 
             $faculty->facultyProfile()->updateOrCreate(
                 ['user_id' => $faculty->id],
@@ -297,6 +297,29 @@ class ProgramChairController extends Controller
         return back()->with('status', $faculty->is_active
             ? "{$faculty->name}'s account is now active."
             : "{$faculty->name}'s account has been deactivated.");
+    }
+
+    /**
+     * Issue a fresh one-time password for a faculty account still pending
+     * first-login setup. Covers accounts created before OTPs were persisted
+     * (only the bcrypt hash was kept, so the original can't be recovered) as
+     * well as a faculty member who simply lost their original OTP.
+     */
+    public function regenerateFacultyOtp(int $id)
+    {
+        $faculty = User::where('role_id', Role::FACULTY)->findOrFail($id);
+
+        if ($faculty->setup_completed_at !== null) {
+            return back()->with('error', 'This account has already completed setup.');
+        }
+
+        $tempPassword = $this->generateOneTimePassword();
+        $faculty->update([
+            'password' => Hash::make($tempPassword),
+            'temp_password' => $tempPassword,
+        ]);
+
+        return back()->with('status', "New one-time password generated for {$faculty->name}.");
     }
 
     /**

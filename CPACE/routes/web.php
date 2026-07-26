@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Student\AchievementController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Auth\AccountSetupController;
+use App\Http\Controllers\Auth\FacultyAccountSetupController;
 use App\Http\Controllers\Student\CalendarController;
 use App\Http\Controllers\Student\DashboardController;
 use App\Http\Controllers\Faculty\FacultyDashboardController;
@@ -90,6 +91,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/students/{id}/edit', [StudentManagementController::class, 'edit'])->name('students.edit');
         Route::put('/students/{id}', [StudentManagementController::class, 'update'])->name('students.update');
         Route::post('/students/{id}/toggle', [StudentManagementController::class, 'toggle'])->name('students.toggle');
+        Route::post('/students/{id}/regenerate-otp', [StudentManagementController::class, 'regenerateOtp'])->name('students.regenerate-otp');
 
         // Faculty account management
         Route::get('/faculty', [ProgramChairController::class, 'faculty'])->name('faculty');
@@ -99,6 +101,7 @@ Route::middleware('auth')->group(function () {
         Route::put('/faculty/{id}', [ProgramChairController::class, 'updateFaculty'])->name('faculty.update');
         Route::post('/faculty/{id}/assign', [ProgramChairController::class, 'assignSubjects'])->name('faculty.assign');
         Route::post('/faculty/{id}/toggle', [ProgramChairController::class, 'toggleFaculty'])->name('faculty.toggle');
+        Route::post('/faculty/{id}/regenerate-otp', [ProgramChairController::class, 'regenerateFacultyOtp'])->name('faculty.regenerate-otp');
         Route::get('/faculty-performance', [FacultyOversightController::class, 'performance'])->name('faculty.performance');
         Route::get('/faculty/{id}/activity', [FacultyOversightController::class, 'activity'])->name('faculty.activity');
 
@@ -120,6 +123,10 @@ Route::middleware('auth')->group(function () {
 
     // Faculty Routes
     Route::prefix('faculty')->name('faculty.')->middleware('faculty')->group(function () {
+        // First-login forced password change (replaces the OTP from the Program Chair)
+        Route::get('/account-setup', [FacultyAccountSetupController::class, 'show'])->name('account-setup');
+        Route::post('/account-setup', [FacultyAccountSetupController::class, 'store'])->name('account-setup.store');
+
         Route::get('/dashboard', [FacultyDashboardController::class, 'index'])->name('dashboard');
         Route::get('/test-bank', [TestBankController::class, 'index'])->name('test-bank');
         Route::get('/test-bank/export', [TestBankController::class, 'export'])->name('test-bank.export');

@@ -43,6 +43,7 @@ class User extends Authenticatable
         'email_verified',
         'last_login_at',
         'setup_completed_at',
+        'temp_password',
     ];
 
     /**
@@ -53,6 +54,7 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+        'temp_password',
     ];
 
     /**
@@ -68,6 +70,7 @@ class User extends Authenticatable
             'last_login_at' => 'datetime',
             'setup_completed_at' => 'datetime',
             'password' => 'hashed',
+            'temp_password' => 'encrypted',
         ];
     }
 
@@ -216,6 +219,6 @@ class User extends Authenticatable
      */
     public function needsSetup(): bool
     {
-        return $this->isStudent() && $this->setup_completed_at === null;
+        return ($this->isStudent() || $this->isFaculty()) && $this->setup_completed_at === null;
     }
 }

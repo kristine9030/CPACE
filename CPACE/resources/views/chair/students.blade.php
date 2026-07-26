@@ -228,6 +228,10 @@
             padding-left: 18px;
             margin-top: 5px;
         }
+        .otp-cell { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
+        .temp-pass { font-family: 'Courier New', monospace; font-weight: 700; color: #7B1D1D; background: #f8eaea; padding: 2px 8px; border-radius: 6px; font-size: 11px; letter-spacing: .5px; }
+        .otp-reveal, .copy-mini { background: none; border: none; color: #bbb; cursor: pointer; font-size: 11px; }
+        .otp-reveal:hover, .copy-mini:hover { color: var(--primary); }
         @media (max-width: 768px) {
             .filter-card { align-items: stretch; }
             .filter-card select,
@@ -454,6 +458,22 @@
                                     <span class="pill pill-pending" title="Student hasn't completed first-login Account Setup yet">
                                         <i class="fas fa-hourglass-half"></i> Setup Pending
                                     </span>
+                                    @if ($student['temp_password'])
+                                        <div class="otp-cell">
+                                            <span class="temp-pass otp-masked" data-otp="{{ $student['temp_password'] }}">••••••••</span>
+                                            <button type="button" class="otp-reveal" title="Show one-time password" onclick="toggleOtp(this)"><i class="fas fa-eye"></i></button>
+                                            <button type="button" class="copy-mini" title="Copy" onclick="navigator.clipboard.writeText('{{ $student['temp_password'] }}')"><i class="fas fa-copy"></i></button>
+                                        </div>
+                                    @else
+                                        <div class="otp-cell">
+                                            <form method="POST" action="{{ route('chair.students.regenerate-otp', $student['id']) }}">
+                                                @csrf
+                                                <button type="submit" class="otp-reveal" title="No recoverable OTP on file — issue a new one">
+                                                    <i class="fas fa-rotate"></i> Regenerate OTP
+                                                </button>
+                                            </form>
+                                        </div>
+                                    @endif
                                 @elseif ($student['at_risk'])
                                     <span class="risk-pill">
                                         <i class="fas fa-triangle-exclamation"></i> At Risk
@@ -569,6 +589,14 @@
     importModal.addEventListener('click', event => {
         if (event.target === importModal) closeImportModal();
     });
+
+    function toggleOtp(btn) {
+        const span = btn.previousElementSibling;
+        const icon = btn.querySelector('i');
+        const revealed = span.textContent === span.dataset.otp;
+        span.textContent = revealed ? '••••••••' : span.dataset.otp;
+        icon.className = revealed ? 'fas fa-eye' : 'fas fa-eye-slash';
+    }
 </script>
 </body>
 </html>

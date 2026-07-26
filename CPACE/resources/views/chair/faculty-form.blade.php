@@ -79,20 +79,11 @@
             </div>
         </div>
 
-        <div class="card">
-            <div class="card-head"><span class="card-title"><i class="fas fa-key" style="color:var(--primary);"></i> {{ $editMode ? 'Reset Password' : 'Set Password' }}</span></div>
-            <div class="form-grid">
-                <div class="form-group">
-                    <label>Password {{ $editMode ? '' : '*' }}</label>
-                    <input type="password" name="password" {{ $editMode ? '' : 'required' }} autocomplete="new-password">
-                    @if ($editMode)<div class="hint">Leave blank to keep the current password.</div>@endif
-                </div>
-                <div class="form-group">
-                    <label>Confirm Password {{ $editMode ? '' : '*' }}</label>
-                    <input type="password" name="password_confirmation" {{ $editMode ? '' : 'required' }} autocomplete="new-password">
-                </div>
+        @unless ($editMode)
+            <div class="card">
+                <div class="hint"><i class="fas fa-circle-info"></i> A one-time password will be generated automatically and shown after the account is created.</div>
             </div>
-        </div>
+        @endunless
 
         <div class="card">
             <div class="card-head"><span class="card-title"><i class="fas fa-layer-group" style="color:var(--primary);"></i> Assigned Subjects</span></div>
