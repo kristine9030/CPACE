@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Chair;
 
 use App\Http\Controllers\Controller;
+use App\Mail\CommunicationMail;
 use App\Models\Communication;
 use App\Models\Role;
 use App\Models\Subject;
@@ -11,6 +12,8 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rule;
 
 class CommunicationController extends Controller
@@ -90,7 +93,8 @@ class CommunicationController extends Controller
         $roleId = $data['audience'] === 'students' ? Role::STUDENT : Role::FACULTY;
         $recipients = User::query()->where('role_id', $roleId)->where('is_active', true);
         $this->applyTarget($recipients, $data);
-        $recipientIds = $recipients->pluck('id');
+        $recipientUsers = $recipients->get(['id', 'first_name', 'last_name', 'email']);
+        $recipientIds = $recipientUsers->pluck('id');
 
         if ($recipientIds->isEmpty()) {
             return back()->withInput()->withErrors(['audience' => 'No active recipients matched that selection.']);
@@ -136,8 +140,45 @@ class CommunicationController extends Controller
             return $communication;
         });
 
+        $senderName = Auth::user()->name;
+        $ctaUrl = $data['link'] ? url($data['link']) : null;
+
+        // Real SMTP email to each recipient, mirroring the in-app notification
+        // above. Failures (bad address, mail server down, etc.) are logged and
+        // skipped so one bad recipient doesn't block the rest of the batch.
+        $emailed = 0;
+        $failed = 0;
+        foreach ($recipientUsers as $recipientUser) {
+            if (empty($recipientUser->email)) {
+                continue;
+            }
+
+            try {
+                Mail::to($recipientUser->email)->send(new CommunicationMail(
+                    recipientName: $recipientUser->first_name,
+                    senderName: $senderName,
+                    title: $data['title'],
+                    body: $data['message'],
+                    priority: $data['priority'],
+                    ctaUrl: $ctaUrl,
+                ));
+                $emailed++;
+            } catch (\Throwable $e) {
+                $failed++;
+                Log::warning('Failed to send communication email', [
+                    'communication_id' => $communication->id,
+                    'recipient_id' => $recipientUser->id,
+                    'email' => $recipientUser->email,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        $status = "Message sent to {$communication->recipient_count} recipient" . ($communication->recipient_count === 1 ? '' : 's')
+            . " ({$emailed} email" . ($emailed === 1 ? '' : 's') . ' delivered' . ($failed ? ", {$failed} failed" : '') . ').';
+
         return redirect()->route('chair.communications', ['tab' => 'history'])
-            ->with('status', "Message sent to {$communication->recipient_count} recipient" . ($communication->recipient_count === 1 ? '' : 's') . '.');
+            ->with('status', $status);
     }
 
     private function applyTarget(Builder $query, array $data): void

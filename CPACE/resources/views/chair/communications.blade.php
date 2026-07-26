@@ -58,6 +58,15 @@
         .history-pagination span { color:#bbb; }
         @media(max-width:900px){ .compose-grid{grid-template-columns:1fr}.summary-card{position:static} }
         @media(max-width:600px){ .communication-tabs{width:100%;overflow:auto}.communication-tab span{display:none}.communication-tab{flex:1}.target-options,.field-row{grid-template-columns:1fr}.communication-card{padding:16px}.history-wrap{overflow-x:auto}.history-table{min-width:700px} }
+        .modal-overlay { display:none; position:fixed; inset:0; background:rgba(20,10,10,.5); align-items:center; justify-content:center; z-index:1000; padding:20px; }
+        .modal-overlay.visible { display:flex; }
+        .modal-box { background:#fff; border-radius:14px; padding:28px; max-width:380px; width:100%; text-align:center; box-shadow:0 20px 60px rgba(0,0,0,.25); }
+        .modal-icon { width:52px; height:52px; border-radius:50%; background:#f5e8e8; color:var(--primary); display:flex; align-items:center; justify-content:center; font-size:22px; margin:0 auto 16px; }
+        .modal-title { font-size:16px; font-weight:700; color:#222; margin-bottom:8px; }
+        .modal-text { font-size:12.5px; color:#777; line-height:1.6; margin-bottom:22px; }
+        .modal-actions { display:flex; gap:10px; justify-content:center; }
+        .modal-actions button { flex:1; padding:11px; border-radius:9px; font-size:12.5px; font-weight:600; cursor:pointer; border:1px solid #e2e5e9; background:#fff; color:#555; }
+        .modal-actions .btn-confirm { border:none; background:var(--primary); color:#fff; }
     </style>
 </head>
 <body>
@@ -145,6 +154,18 @@
                 </aside>
             </div>
         </form>
+
+        <div class="modal-overlay" id="sendConfirmModal">
+            <div class="modal-box">
+                <div class="modal-icon"><i class="fas fa-paper-plane"></i></div>
+                <div class="modal-title">Send this message?</div>
+                <div class="modal-text">It will go out to <strong id="modalRecipientCount">0</strong> recipient<span id="modalRecipientPlural">s</span> as an in-app notification and email.</div>
+                <div class="modal-actions">
+                    <button type="button" id="modalCancelBtn">Cancel</button>
+                    <button type="button" class="btn-confirm" id="modalConfirmBtn">Yes, Send</button>
+                </div>
+            </div>
+        </div>
     @else
         <section class="communication-card">
             <div class="card-heading">Sent History</div><div class="card-sub">Messages sent from your Program Chair account and their current read totals.</div>
@@ -198,9 +219,27 @@
     people.forEach(p => p.querySelector('input').addEventListener('change', updateCount));
     [year, section, subject].filter(Boolean).forEach(el => el.addEventListener('change', updateCount));
     if (search) search.addEventListener('input', () => { const q = search.value.toLowerCase(); people.forEach(p => p.style.display = p.dataset.search.includes(q) ? '' : 'none'); });
-    document.getElementById('communicationForm').addEventListener('submit', function (event) {
+    const form = document.getElementById('communicationForm');
+    const modal = document.getElementById('sendConfirmModal');
+    const modalCount = document.getElementById('modalRecipientCount');
+    const modalPlural = document.getElementById('modalRecipientPlural');
+    let confirmed = false;
+
+    form.addEventListener('submit', function (event) {
+        if (confirmed) return;
         const n = Number(count.textContent);
-        if (!n || !confirm(`Send this message to ${n} recipient${n === 1 ? '' : 's'}?`)) event.preventDefault();
+        if (!n) { event.preventDefault(); return; }
+        event.preventDefault();
+        modalCount.textContent = n;
+        modalPlural.textContent = n === 1 ? '' : 's';
+        modal.classList.add('visible');
+    });
+    document.getElementById('modalCancelBtn').addEventListener('click', () => modal.classList.remove('visible'));
+    modal.addEventListener('click', (event) => { if (event.target === modal) modal.classList.remove('visible'); });
+    document.getElementById('modalConfirmBtn').addEventListener('click', () => {
+        confirmed = true;
+        modal.classList.remove('visible');
+        form.requestSubmit();
     });
     updatePanels();
 })();
