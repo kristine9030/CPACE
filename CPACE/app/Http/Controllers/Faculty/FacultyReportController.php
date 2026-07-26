@@ -442,7 +442,7 @@ class FacultyReportController extends Controller
             $b['pct'] = $total > 0 ? round($b['count'] / $total * 100, 1) : 0;
         }
 
-        return ['total' => $total, 'bands' => $bands];
+        return ['total' => $total, 'bands' => collect($bands)];
     }
 
     /**

@@ -8,6 +8,7 @@ use App\Http\Controllers\Auth\FacultyAccountSetupController;
 use App\Http\Controllers\Student\CalendarController;
 use App\Http\Controllers\Student\DashboardController;
 use App\Http\Controllers\Faculty\FacultyDashboardController;
+use App\Http\Controllers\Faculty\FacultySettingsController;
 use App\Http\Controllers\Faculty\FacultyPerformanceController;
 use App\Http\Controllers\Faculty\FacultyReportController;
 use App\Http\Controllers\Chair\ProgramChairController;
@@ -152,6 +153,12 @@ Route::middleware('auth')->group(function () {
         Route::post('/performance/remind', [FacultyPerformanceController::class, 'sendReminder'])->name('performance.remind');
         Route::get('/reports', [FacultyReportController::class, 'index'])->name('reports');
         Route::get('/reports/export', [FacultyReportController::class, 'export'])->name('reports.export');
+
+        // Settings & profile
+        Route::get('/settings', [FacultySettingsController::class, 'edit'])->name('settings');
+        Route::post('/settings/profile', [FacultySettingsController::class, 'update'])->name('settings.profile');
+        Route::post('/settings/details', [FacultySettingsController::class, 'updateDetails'])->name('settings.details');
+        Route::post('/settings/password', [FacultySettingsController::class, 'updatePassword'])->name('settings.password');
     });
 
     // Alumni Routes

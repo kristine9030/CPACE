@@ -1126,7 +1126,7 @@
                 <div class="contact-card-icon"><i class="fas fa-university"></i></div>
                 <div>
                     <h4>Department of Accountancy</h4>
-                    <p>College of Accountancy, Business, and Management Studies</p>
+                    <p>College of Accountancy, Business, Economics, and International Hospitality Management</p>
                 </div>
             </div>
             <div class="contact-card">
@@ -1150,7 +1150,7 @@
                 <p>Batangas State University — ARASOF Nasugbu Campus</p>
             </div>
             <div class="contact-map-body">
-                <p><strong>Batangas State University</strong> Alangilan Campus is the main campus, while the <strong>ARASOF-Nasugbu</strong> campus houses the College of Accountancy, Business, and Management Studies where CPAce was developed.</p>
+                <p><strong>Batangas State University</strong> Pablo Borbon Campus is the main campus, while the <strong>ARASOF-Nasugbu</strong> campus houses the College of Accountancy, Business, Economics, and International Hospitality Management where CPAce was developed.</p>
                 <p>For inquiries regarding the system, you may reach the Department of Accountancy or the system development team through the institutional email provided above.</p>
                 <p><strong>Office Hours:</strong> Monday to Friday, 8:00 AM – 5:00 PM</p>
             </div>

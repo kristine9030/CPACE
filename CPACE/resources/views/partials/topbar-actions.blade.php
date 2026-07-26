@@ -15,7 +15,7 @@
         @include('partials.avatar-content')
     </button>
     <div class="topbar-dropdown" id="topbarDropdown">
-        <a href="#"><i class="fas fa-user"></i> Profile Settings</a>
+        <a href="#" id="topbarProfileLink"><i class="fas fa-user"></i> Profile Settings</a>
         <a href="#"><i class="fas fa-question-circle"></i> Help &amp; Support</a>
         <form method="POST" action="{{ route('logout') }}" style="margin:0;padding:0;">
             @csrf

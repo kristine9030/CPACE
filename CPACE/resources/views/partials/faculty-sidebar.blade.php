@@ -234,6 +234,74 @@
     .topbar-dropdown button i { color: var(--primary); width: 16px; text-align: center; }
     .tda-logout { color: #e53e3e !important; }
     .tda-logout i { color: #e53e3e !important; }
+
+    /* ── Profile modal ── */
+    .fp-modal-overlay {
+        display: none; position: fixed; inset: 0;
+        background: rgba(15, 5, 5, 0.55);
+        z-index: 3000; align-items: center; justify-content: center;
+        padding: 20px;
+    }
+    .fp-modal-overlay.open { display: flex; }
+    .fp-modal {
+        background: #fff; border-radius: 16px;
+        width: 100%; max-width: 420px;
+        max-height: 90vh; overflow-y: auto;
+        box-shadow: 0 20px 60px rgba(0,0,0,.3);
+    }
+    .fp-modal-head {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 18px 22px; border-bottom: 1px solid #f0f0f0;
+    }
+    .fp-modal-head h3 { font-size: 16px; font-weight: 600; color: #1a1a1a; margin: 0; }
+    .fp-modal-close {
+        width: 30px; height: 30px; border: none; background: #f4f5f7;
+        border-radius: 8px; color: #666; cursor: pointer; font-size: 13px;
+    }
+    .fp-modal-close:hover { background: #e9eaed; }
+    .fp-modal-body { padding: 22px; }
+    .fp-avatar-row { display: flex; align-items: center; gap: 16px; margin-bottom: 18px; }
+    .fp-avatar-preview {
+        width: 64px; height: 64px; border-radius: 14px;
+        background: var(--primary); color: #fff;
+        display: flex; align-items: center; justify-content: center;
+        font-weight: 700; font-size: 20px; overflow: hidden; position: relative; flex-shrink: 0;
+    }
+    .fp-avatar-preview img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+    .fp-upload-btn {
+        display: inline-flex; align-items: center; gap: 7px;
+        padding: 8px 14px; border-radius: 8px; border: 1.5px solid var(--primary);
+        background: #fff; color: var(--primary); font-size: 12.5px; font-weight: 600;
+        cursor: pointer; font-family: 'Poppins', sans-serif;
+    }
+    .fp-upload-btn:hover { background: var(--primary-light, #f5e8e8); }
+    .fp-field { margin-bottom: 14px; }
+    .fp-field label { display: block; font-size: 12.5px; font-weight: 500; color: #555; margin-bottom: 6px; }
+    .fp-field input {
+        width: 100%; padding: 10px 12px; border: 1px solid #e0e0e0; border-radius: 8px;
+        font-size: 13.5px; font-family: 'Poppins', sans-serif; color: #1a1a1a; outline: none;
+    }
+    .fp-field input:focus { border-color: var(--primary); }
+    .fp-row-2 { display: flex; gap: 12px; }
+    .fp-row-2 .fp-field { flex: 1; }
+    .fp-modal-footer { display: flex; justify-content: flex-end; gap: 10px; padding-top: 6px; }
+    .fp-btn {
+        padding: 10px 20px; border-radius: 8px; border: none;
+        font-size: 13px; font-weight: 600; font-family: 'Poppins', sans-serif; cursor: pointer;
+    }
+    .fp-btn-cancel { background: #f4f5f7; color: #555; }
+    .fp-btn-cancel:hover { background: #e9eaed; }
+    .fp-btn-save { background: var(--primary); color: #fff; }
+    .fp-btn-save:hover { background: #6a1818; }
+    .fp-status {
+        margin-bottom: 14px; padding: 10px 14px; border-radius: 8px;
+        font-size: 12.5px; background: #ecfdf5; color: #047857; display: none;
+    }
+    .fp-status.show { display: block; }
+    .fp-errors {
+        margin-bottom: 14px; padding: 10px 14px; border-radius: 8px;
+        font-size: 12.5px; background: #fef2f2; color: #b91c1c;
+    }
 </style>
 
 <aside class="sidebar" id="sidebar">
@@ -262,7 +330,7 @@
         <li><a href="{{ route('faculty.reports') }}" class="{{ $active === 'reports' ? 'active' : '' }}"><i class="fas fa-chart-line"></i><span>Reports</span></a></li>
 
         <li class="nav-label">System</li>
-        <li><a href="#"><i class="fas fa-cog"></i><span>Settings</span></a></li>
+        <li><a href="{{ route('faculty.settings') }}" class="{{ $active === 'settings' ? 'active' : '' }}"><i class="fas fa-cog"></i><span>Settings</span></a></li>
     </ul>
 
     <div class="sidebar-footer">
@@ -278,6 +346,7 @@
                 <i class="fas fa-chevron-down chevron-icon"></i>
             </div>
             <div class="user-dropdown" id="userDropdown">
+                <button type="button" id="sidebarProfileLink"><i class="fas fa-id-badge"></i><span>Profile</span></button>
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
                     <button type="submit"><i class="fas fa-sign-out-alt"></i><span>Logout</span></button>
@@ -286,6 +355,55 @@
         </div>
     </div>
 </aside>
+
+<div class="fp-modal-overlay" id="fpModalOverlay">
+    <div class="fp-modal">
+        <div class="fp-modal-head">
+            <h3>Profile</h3>
+            <button type="button" class="fp-modal-close" id="fpModalClose"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="fp-modal-body">
+            <div class="fp-status" id="fpStatus"></div>
+            @if ($errors->any())
+                <div class="fp-errors">
+                    @foreach ($errors->all() as $error)
+                        <div>{{ $error }}</div>
+                    @endforeach
+                </div>
+            @endif
+            <form method="POST" action="{{ route('faculty.settings.profile') }}" enctype="multipart/form-data" id="fpForm">
+                @csrf
+                <div class="fp-avatar-row">
+                    <div class="fp-avatar-preview" id="fpAvatarPreview">
+                        @include('partials.avatar-content')
+                    </div>
+                    <div>
+                        <label class="fp-upload-btn" for="fpPhotoInput"><i class="fas fa-camera"></i> Change photo</label>
+                        <input type="file" name="photo" id="fpPhotoInput" accept="image/*" style="display:none;">
+                    </div>
+                </div>
+                <div class="fp-row-2">
+                    <div class="fp-field">
+                        <label>First name</label>
+                        <input type="text" name="first_name" value="{{ old('first_name', Auth::user()->first_name) }}" required>
+                    </div>
+                    <div class="fp-field">
+                        <label>Last name</label>
+                        <input type="text" name="last_name" value="{{ old('last_name', Auth::user()->last_name) }}" required>
+                    </div>
+                </div>
+                <div class="fp-field">
+                    <label>Email</label>
+                    <input type="email" name="email" value="{{ old('email', Auth::user()->email) }}" required>
+                </div>
+                <div class="fp-modal-footer">
+                    <button type="button" class="fp-btn fp-btn-cancel" id="fpCancelBtn">Cancel</button>
+                    <button type="submit" class="fp-btn fp-btn-save">Save changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 
 <script>
 (function () {
@@ -314,6 +432,62 @@
                 dropdown.classList.toggle('open');
             });
             document.addEventListener('click', function() { dropdown.classList.remove('open'); });
+        }
+
+        /* profile modal */
+        const overlay  = document.getElementById('fpModalOverlay');
+        const openBtns = [document.getElementById('topbarProfileLink'), document.getElementById('sidebarProfileLink')];
+        const closeBtn = document.getElementById('fpModalClose');
+        const cancelBtn = document.getElementById('fpCancelBtn');
+        const photoInput = document.getElementById('fpPhotoInput');
+        const avatarPreview = document.getElementById('fpAvatarPreview');
+        const form = document.getElementById('fpForm');
+        const statusEl = document.getElementById('fpStatus');
+
+        function openModal() {
+            if (overlay) overlay.classList.add('open');
+        }
+        function closeModal() {
+            if (overlay) overlay.classList.remove('open');
+        }
+
+        openBtns.forEach(function(btn) {
+            if (!btn) return;
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                openModal();
+            });
+        });
+        if (closeBtn) closeBtn.addEventListener('click', closeModal);
+        if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
+        if (overlay) overlay.addEventListener('click', function(e) { if (e.target === overlay) closeModal(); });
+
+        if (photoInput && avatarPreview) {
+            photoInput.addEventListener('change', function() {
+                const file = photoInput.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    avatarPreview.innerHTML = '<img src="' + e.target.result + '" alt="Preview">';
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        if (form) {
+            form.addEventListener('submit', function() {
+                sessionStorage.setItem('fpModalReopen', '1');
+            });
+        }
+
+        if (sessionStorage.getItem('fpModalReopen') === '1') {
+            sessionStorage.removeItem('fpModalReopen');
+            @if (session('status'))
+                statusEl.textContent = @json(session('status'));
+                statusEl.classList.add('show');
+            @endif
+            openModal();
         }
     });
 })();
