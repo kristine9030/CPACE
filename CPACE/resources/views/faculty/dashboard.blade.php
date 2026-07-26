@@ -30,6 +30,7 @@
         .topbar {
             display:flex; justify-content:space-between; align-items:center;
             margin-bottom:24px; gap:16px;
+            position:relative; z-index:50;
         }
         .topbar-left { display:flex; align-items:center; gap:12px; }
         .page-title { font-size:26px; font-weight:700; color:#1a1a1a; }

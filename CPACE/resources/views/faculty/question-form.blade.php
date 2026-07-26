@@ -18,7 +18,7 @@
         .sidebar.collapsed ~ .main { margin-left:70px; }
 
         /* TOPBAR */
-        .topbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; }
+        .topbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; position:relative; z-index:100; }
         .topbar-left { display:flex; align-items:center; gap:12px; }
         .topbar-right { display:flex; align-items:center; gap:10px; }
         .page-title { font-size:26px; font-weight:700; color:#1a1a1a; }

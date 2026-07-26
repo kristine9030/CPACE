@@ -15,7 +15,7 @@
         .main { margin-left:230px; padding:26px 30px; min-height:100vh; transition:margin-left .3s; }
         .sidebar.collapsed ~ .main { margin-left:70px; }
 
-        .topbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:22px; gap:16px; }
+        .topbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:22px; gap:16px; position:relative; z-index:100; }
         .topbar-left { display:flex; align-items:center; gap:12px; }
         .topbar-right { display:flex; align-items:center; gap:10px; }
         .page-title { font-size:24px; font-weight:700; color:#1a1a1a; }
