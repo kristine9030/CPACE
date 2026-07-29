@@ -70,7 +70,7 @@ class Topic extends Model
             ->contains('id', $candidateId);
     }
 
-    private static function flatten(Topic $topic): Collection
+    private static function flatten(Topic $topic): \Illuminate\Support\Collection
     {
         return collect([$topic])->merge($topic->children->flatMap(fn (Topic $t) => static::flatten($t)));
     }
