@@ -447,13 +447,12 @@ class QuizApiController extends Controller
                 $totalAttempts    = $record->total_attempts + $tally['attempts'];
                 $correctCount     = $record->correct_count + $tally['correct'];
                 $consecutiveWrong = $wrong === 0 ? 0 : $record->consecutive_wrong + $wrong;
-                [$isWeak]         = $weakness->evaluate((object) compact('total_attempts', 'correct_count') + ['consecutive_wrong' => $consecutiveWrong]);
-                // reuse evaluated values
                 [$isWeak] = $weakness->evaluate((object) ['total_attempts' => $totalAttempts, 'correct_count' => $correctCount, 'consecutive_wrong' => $consecutiveWrong]);
                 DB::table('performance_records')->where('id', $record->id)->update([
                     'total_attempts'    => $totalAttempts,
                     'correct_count'     => $correctCount,
                     'consecutive_wrong' => $consecutiveWrong,
+                    'accuracy_rate'     => round($correctCount / max($totalAttempts, 1) * 100, 2),
                     'is_weak_area'      => $isWeak,
                     'last_attempted'    => now(),
                 ]);
@@ -465,6 +464,7 @@ class QuizApiController extends Controller
                     'total_attempts'    => $tally['attempts'],
                     'correct_count'     => $tally['correct'],
                     'consecutive_wrong' => $wrong,
+                    'accuracy_rate'     => round($tally['correct'] / max($tally['attempts'], 1) * 100, 2),
                     'is_weak_area'      => $isWeak,
                     'last_attempted'    => now(),
                 ]);
