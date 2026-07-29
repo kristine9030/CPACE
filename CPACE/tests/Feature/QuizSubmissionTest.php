@@ -137,6 +137,7 @@ class QuizSubmissionTest extends TestCase
             $table->unsignedBigInteger('topic_id');
             $table->integer('correct_count')->default(0);
             $table->integer('total_attempts')->default(0);
+            $table->decimal('accuracy_rate', 5, 2)->default(0);
             $table->integer('consecutive_wrong')->default(0);
             $table->boolean('is_weak_area')->default(false);
             $table->timestamp('last_attempted')->nullable();
@@ -246,6 +247,34 @@ class QuizSubmissionTest extends TestCase
         $this->assertSame(2, $record->consecutive_wrong);
         // 2 wrong in a row is below both weak thresholds (needs 3-in-a-row or 5 attempts).
         $this->assertFalse((bool) $record->is_weak_area);
+    }
+
+    public function test_accuracy_rate_is_persisted_on_insert_and_kept_in_sync_on_update(): void
+    {
+        $student = $this->student();
+        [$topicId, $questions] = $this->seedTwoQuestionTopic();
+
+        // First sitting: 1/2 correct -> 50%.
+        $session1 = $this->beginQuizSession($student->id, $topicId, $questions);
+        $this->actingAs($student)->post(route('quiz.submit', $session1), [
+            'answers' => [
+                $questions[0]['id'] => $questions[0]['correct_choice_id'],
+                $questions[1]['id'] => $questions[1]['wrong_choice_id'],
+            ],
+        ]);
+        $record = DB::table('performance_records')->where('student_id', $student->id)->where('topic_id', $topicId)->first();
+        $this->assertEquals(50.00, $record->accuracy_rate);
+
+        // Second sitting: both correct -> cumulative 3/4 = 75%.
+        $session2 = $this->beginQuizSession($student->id, $topicId, $questions);
+        $this->actingAs($student)->post(route('quiz.submit', $session2), [
+            'answers' => [
+                $questions[0]['id'] => $questions[0]['correct_choice_id'],
+                $questions[1]['id'] => $questions[1]['correct_choice_id'],
+            ],
+        ]);
+        $record = DB::table('performance_records')->where('student_id', $student->id)->where('topic_id', $topicId)->first();
+        $this->assertEquals(75.00, $record->accuracy_rate);
     }
 
     public function test_three_consecutive_wrong_sessions_flag_the_topic_as_weak_and_open_a_report(): void
