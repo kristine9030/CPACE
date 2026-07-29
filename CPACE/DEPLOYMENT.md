@@ -55,8 +55,13 @@ from a SQL dump, not artisan migrations, and has no `sessions`/`cache`/
 - `QUEUE_CONNECTION=sync` (not `database` — no `jobs` table exists)
 - `DB_DATABASE=u562417869_CPACE`, `DB_USERNAME=u562417869_CPACE_username`
   (Hostinger prefixes db/user names with the account ID), `DB_HOST=localhost`
-- `APP_KEY` — generate fresh on the server, don't reuse the local one:
-  `php artisan key:generate --force`
+- `APP_KEY` — **must match the local `.env` key exactly, do NOT regenerate
+  on the server.** The Hostinger DB was loaded from a SQL dump containing
+  data (`users.temp_password`) encrypted under the local key; running
+  `php artisan key:generate --force` on the server breaks decryption of
+  that existing data (`DecryptException: The MAC is invalid`). Copy the
+  local `APP_KEY` value once, don't treat it as a per-deploy default. See
+  `documents/CPAce_Update_Patch_Process.docx` for details.
 - Google OAuth: add `https://cpace.site/auth/google/callback` as an
   authorized redirect URI in Google Cloud Console before relying on it in
   prod — the local callback URL won't work there.
