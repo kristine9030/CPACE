@@ -137,7 +137,11 @@ class QuizSubmissionTest extends TestCase
             $table->unsignedBigInteger('topic_id');
             $table->integer('correct_count')->default(0);
             $table->integer('total_attempts')->default(0);
-            $table->decimal('accuracy_rate', 5, 2)->default(0);
+            // Matches production exactly: a real STORED generated column, not
+            // a plain writable one - the app must never write to this column.
+            $table->decimal('accuracy_rate', 5, 2)->storedAs(
+                'CASE WHEN total_attempts = 0 THEN 0 ELSE ROUND((correct_count * 100.0) / total_attempts, 2) END'
+            );
             $table->integer('consecutive_wrong')->default(0);
             $table->boolean('is_weak_area')->default(false);
             $table->timestamp('last_attempted')->nullable();

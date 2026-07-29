@@ -94,7 +94,11 @@ class StudentDashboardTest extends TestCase
             $table->unsignedBigInteger('topic_id');
             $table->integer('correct_count')->default(0);
             $table->integer('total_attempts')->default(0);
-            $table->decimal('accuracy_rate', 5, 2)->default(0);
+            // Matches production exactly: a real STORED generated column, not
+            // a plain writable one.
+            $table->decimal('accuracy_rate', 5, 2)->storedAs(
+                'CASE WHEN total_attempts = 0 THEN 0 ELSE ROUND((correct_count * 100.0) / total_attempts, 2) END'
+            );
         });
         Schema::create('quiz_sessions', function (Blueprint $table) {
             $table->id();
@@ -241,12 +245,14 @@ class StudentDashboardTest extends TestCase
             'subject_id' => $subjectId, 'name' => $topicName, 'created_at' => now(), 'updated_at' => now(),
         ]);
 
+        // accuracy_rate is DB-generated from correct_count/total_attempts, so
+        // $accuracy must be achievable exactly with these two integers -
+        // every caller in this file uses attempts=10 for a clean percentage.
         DB::table('performance_records')->insert([
             'student_id' => $studentId,
             'topic_id' => $topicId,
             'correct_count' => $correct ?? (int) round($accuracy / 100 * $attempts),
             'total_attempts' => $attempts,
-            'accuracy_rate' => $accuracy,
         ]);
     }
 

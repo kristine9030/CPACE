@@ -587,13 +587,15 @@ class QuizController extends Controller
                     'consecutive_wrong' => $consecutiveWrong,
                 ]);
 
+                // accuracy_rate is a STORED generated column in the database
+                // (computed from correct_count / total_attempts), so it is
+                // never written here - the DB keeps it in sync automatically.
                 DB::table('performance_records')
                     ->where('id', $record->id)
                     ->update([
                         'total_attempts'    => $totalAttempts,
                         'correct_count'     => $correctCount,
                         'consecutive_wrong' => $consecutiveWrong,
-                        'accuracy_rate'     => round($correctCount / max($totalAttempts, 1) * 100, 2),
                         'is_weak_area'      => $isWeak,
                         'last_attempted'    => now(),
                     ]);
@@ -610,7 +612,6 @@ class QuizController extends Controller
                     'total_attempts'    => $tally['attempts'],
                     'correct_count'     => $tally['correct'],
                     'consecutive_wrong' => $wrong,
-                    'accuracy_rate'     => round($tally['correct'] / max($tally['attempts'], 1) * 100, 2),
                     'is_weak_area'      => $isWeak,
                     'last_attempted'    => now(),
                 ]);
