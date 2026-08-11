@@ -64,7 +64,7 @@
             box-shadow:0 1px 4px rgba(0,0,0,0.08); text-decoration:none;
         }
         .notif-btn:hover { background:#f0f0f0; }
-        .badge {
+        .notif-badge {
             position:absolute; top:-3px; right:-3px;
             width:18px; height:18px; background:var(--accent-red);
             color:white; border-radius:50%; font-size:10px; font-weight:700;
@@ -237,11 +237,11 @@
                 </div>
                 <a class="notif-btn" href="{{ route('messages.index') }}" title="Messages" aria-label="Messages">
                     <i class="fas fa-comment-dots"></i>
-                    @if($unreadMessages > 0)<span class="badge">{{ $unreadMessages > 9 ? '9+' : $unreadMessages }}</span>@endif
+                    @if($unreadMessages > 0)<span class="notif-badge">{{ $unreadMessages > 9 ? '9+' : $unreadMessages }}</span>@endif
                 </a>
                 <a class="notif-btn" href="{{ route('notifications.index') }}" title="Notifications" aria-label="Notifications">
                     <i class="fas fa-bell"></i>
-                    @if($unreadNotifications > 0)<span class="badge">{{ $unreadNotifications > 9 ? '9+' : $unreadNotifications }}</span>@endif
+                    @if($unreadNotifications > 0)<span class="notif-badge">{{ $unreadNotifications > 9 ? '9+' : $unreadNotifications }}</span>@endif
                 </a>
                 <div class="header-dropdown-wrap">
                     <button class="profile-avatar" id="profileBtn">@include('partials.avatar-content')</button>
