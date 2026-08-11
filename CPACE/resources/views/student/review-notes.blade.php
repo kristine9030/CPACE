@@ -948,6 +948,8 @@
     <!-- AI TUTOR (floating chat + highlight-to-ask) -->
     @include('partials.student-ai-tutor')
 
+    @include('partials.alerts')
+
     <script>
         const CSRF     = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
         const NOTES     = @json($notes);
@@ -1834,8 +1836,6 @@
     </div>
     <div class="content">${renderContent(n.content)}</div>
     <div class="foot">CPACE Review Notes &mdash; ${printedOn}</div>
-
-    @include('partials.alerts')
 </body>
 </html>`;
         }
