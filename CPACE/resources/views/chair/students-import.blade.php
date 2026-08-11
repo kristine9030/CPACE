@@ -99,6 +99,8 @@
         .row-tag { font-size:10px; font-weight:700; padding:2px 8px; border-radius:20px; }
         .rt-ok { background:#d1fae5; color:#059669; }
         .rt-dup { background:#fef3c7; color:#d97706; }
+        .rt-exists { background:#fee2e2; color:#b91c1c; }
+        .rt-checking { background:#f1f1f1; color:#999; }
 
         /* Results panel */
         .results-panel { display:none; margin-top: 22px; }
@@ -164,7 +166,7 @@
                     <div class="fs-ic"><i class="fas fa-robot"></i></div>
                     <div class="fs-n">Step 2</div>
                     <div class="fs-t">System creates accounts</div>
-                    <div class="fs-d">GSuite emails are provisioned with a secure one-time password each.</div>
+                    <div class="fs-d">GSuite emails are provisioned and a one-time password is sent straight to each student's inbox.</div>
                 </div>
                 <div class="flow-step">
                     <div class="fs-ic"><i class="fas fa-user-gear"></i></div>
@@ -218,7 +220,7 @@
                     <li><i class="fas fa-circle-check"></i><span><b>first_name</b> — student given name</span></li>
                     <li><i class="fas fa-circle-check"></i><span><b>last_name</b> — student surname</span></li>
                     <li><i class="fas fa-circle-check"></i><span><b>email</b> — GSuite address (or leave blank to auto-generate)</span></li>
-                    <li><i class="fas fa-circle-check"></i><span><b>student_number</b> <span style="color:#aaa;">(optional)</span></span></li>
+                    <li><i class="fas fa-circle-check"></i><span><b>student_number</b> <span style="color:#aaa;">(optional) — SR-Code, e.g. 23-00001</span></span></li>
                     <li><i class="fas fa-circle-check"></i><span><b>section</b> <span style="color:#aaa;">(optional)</span></span></li>
                 </ul>
                 <div class="gsuite-note">
@@ -248,29 +250,36 @@
 
         <!-- Results (rendered after the server creates the accounts) -->
         @if (session('created_credentials') && count(session('created_credentials')))
-            @php $creds = session('created_credentials'); @endphp
+            @php
+                $creds = session('created_credentials');
+                $failedCreds = collect($creds)->reject(fn ($r) => $r['mailed']);
+            @endphp
             <div class="results-panel show" id="resultsPanel">
                 <div class="result-banner">
                     <div class="rb-ic"><i class="fas fa-circle-check"></i></div>
                     <div>
                         <h3>{{ count($creds) }} account{{ count($creds) === 1 ? '' : 's' }} created</h3>
-                        <p>GSuite logins are ready. Share the one-time passwords securely with your students.</p>
-                    </div>
-                    <div class="rb-actions">
-                        <button class="btn btn-onwhite" id="downloadCreds"><i class="fas fa-file-arrow-down"></i> Download credentials</button>
+                        <p>GSuite logins are ready — each student's one-time password was emailed straight to their own inbox.</p>
                     </div>
                 </div>
 
                 <div class="cred-note">
-                    <i class="fas fa-triangle-exclamation"></i>
-                    <span>These one-time passwords are shown <b>once</b>. Download or copy them now — students will be asked to set a new password when they first open CPACE.</span>
+                    <i class="fas fa-shield-halved"></i>
+                    <span>One-time passwords are never shown here — they go directly to each student's GSuite inbox. Students will be asked to set a new password when they first open CPACE.</span>
                 </div>
+
+                @if ($failedCreds->isNotEmpty())
+                    <div class="cred-note" style="background:#fef2f2; border-color:#fecaca; color:#b91c1c;">
+                        <i class="fas fa-triangle-exclamation"></i>
+                        <span>{{ $failedCreds->count() }} credential email{{ $failedCreds->count() === 1 ? '' : 's' }} couldn't be sent. These one-time passwords are shown below as a fallback — deliver them to the student securely, then they won't be shown again.</span>
+                    </div>
+                @endif
 
                 <div class="card" style="padding:0; overflow:hidden;">
                     <div class="tbl-scroll">
                         <table>
                             <thead>
-                                <tr><th>Student</th><th>GSuite Email</th><th>One-Time Password</th><th>Setup Status</th></tr>
+                                <tr><th>Student</th><th>GSuite Email</th><th>Credential Status</th><th>Setup Status</th></tr>
                             </thead>
                             <tbody>
                                 @foreach ($creds as $r)
@@ -286,8 +295,12 @@
                                         </td>
                                         <td>{{ $r['email'] }}</td>
                                         <td>
-                                            <span class="temp-pass">{{ $r['temp_password'] }}</span>
-                                            <button type="button" class="copy-mini" title="Copy" onclick="navigator.clipboard.writeText('{{ $r['temp_password'] }}')"><i class="fas fa-copy"></i></button>
+                                            @if ($r['mailed'])
+                                                <span class="pill pill-on"><i class="fas fa-paper-plane"></i> Emailed</span>
+                                            @else
+                                                <span class="temp-pass">{{ $r['temp_password'] }}</span>
+                                                <button type="button" class="copy-mini" title="Copy" onclick="navigator.clipboard.writeText('{{ $r['temp_password'] }}')"><i class="fas fa-copy"></i></button>
+                                            @endif
                                         </td>
                                         <td><span class="pill pill-off"><i class="fas fa-hourglass-half"></i> Awaiting setup</span></td>
                                     </tr>
@@ -301,7 +314,6 @@
                     <a href="{{ route('chair.students') }}" class="btn btn-primary btn-lg"><i class="fas fa-users"></i> Go to Student List</a>
                 </div>
             </div>
-            <script>window._creds = @json($creds);</script>
         @endif
     </div>
 </main>
@@ -366,9 +378,17 @@
             if (!email && sn) email = sn.toLowerCase().replace(/[^a-z0-9\-]/g, '') + '@g.batstate-u.edu.ph';
             if (!email && fn && ln) email = (fn + '.' + ln).toLowerCase().replace(/\s+/g,'') + '@cpace.edu';
             const dup = seen.has(email); seen.add(email);
-            return { first_name: fn, last_name: ln, email, student_number: g('student_number'), section: g('section'), dup };
+            return { first_name: fn, last_name: ln, email, student_number: g('student_number'), section: g('section'), dup, exists: null };
         }).filter(r => r.first_name || r.last_name);
         renderPreview();
+        checkExistingEmails();
+    }
+
+    function statusTag(r) {
+        if (r.dup) return '<span class="row-tag rt-dup">Duplicate in file</span>';
+        if (r.exists === true) return '<span class="row-tag rt-exists">Already registered</span>';
+        if (r.exists === null) return '<span class="row-tag rt-checking">Checking…</span>';
+        return '<span class="row-tag rt-ok">Ready</span>';
     }
 
     function renderPreview() {
@@ -380,21 +400,67 @@
                 <td>${esc(r.email)}</td>
                 <td>${esc(r.student_number) || '—'}</td>
                 <td>${esc(r.section) || '—'}</td>
-                <td>${r.dup ? '<span class="row-tag rt-dup">Duplicate</span>' : '<span class="row-tag rt-ok">Ready</span>'}</td>
+                <td>${statusTag(r)}</td>
             </tr>`).join('');
         rowCount.textContent = rows.length;
         previewWrap.classList.add('show');
         createBtn.disabled = rows.length === 0;
     }
 
+    // Cross-checks each (non in-file-duplicate) email against accounts already
+    // in the system, so the chair sees "Already registered" before submitting
+    // instead of only finding out from a skipped-row error afterwards.
+    let checkingEmails = false;
+
+    async function checkExistingEmails() {
+        checkingEmails = true;
+        createBtn.disabled = true;
+        const uniqueEmails = [...new Set(rows.filter(r => !r.dup && r.email).map(r => r.email))];
+        const cache = {};
+
+        await Promise.all(uniqueEmails.map(async email => {
+            try {
+                const res = await fetch('{{ route('chair.check-email') }}?email=' + encodeURIComponent(email), {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                });
+                const data = await res.json();
+                cache[email] = !!data.taken;
+            } catch (e) {
+                cache[email] = false;
+            }
+        }));
+
+        rows.forEach(r => { r.exists = r.dup || !r.email ? false : (cache[r.email] || false); });
+        checkingEmails = false;
+        renderPreview();
+    }
+
     // Real submit — the server creates the accounts and returns credentials.
     createBtn.addEventListener('click', () => {
         if (!input.files.length) return;
+
+        if (checkingEmails) {
+            CPACE.warning('Still checking emails', 'Hang on a moment while we finish checking these addresses against existing accounts.');
+            return;
+        }
+
+        const dupCount = rows.filter(r => r.dup).length;
+        const existsCount = rows.filter(r => r.exists === true).length;
+        if (dupCount > 0 || existsCount > 0) {
+            const parts = [];
+            if (dupCount > 0) parts.push(dupCount + ' row' + (dupCount === 1 ? '' : 's') + ' repeat the same email within the file');
+            if (existsCount > 0) parts.push(existsCount + ' row' + (existsCount === 1 ? '' : 's') + ' use an email already registered to another account');
+            CPACE.error(
+                'Fix the flagged rows before continuing',
+                parts.join(' and ') + '. Correct or remove those rows from your file and re-upload before creating accounts.'
+            );
+            return;
+        }
+
         const n = rows.length;
         CPACE.confirm({
             title: 'Create ' + n + ' student account' + (n === 1 ? '' : 's') + '?',
-            html: 'Each student gets a one-time password that is shown only once on the next screen.'
-                + '<div class="cpace-note">Download the credentials file before leaving that screen &mdash; the passwords cannot be retrieved again.</div>',
+            html: 'Each student\'s one-time password will be emailed straight to their own GSuite inbox — it is never shown here.',
             icon: 'question',
             confirmText: 'Yes, create accounts',
             cancelText: 'Review the list again',
@@ -407,22 +473,7 @@
         });
     });
 
-    // Download the credentials the server just generated (shown once).
-    const dl = document.getElementById('downloadCreds');
-    if (dl) {
-        dl.addEventListener('click', () => {
-            const creds = window._creds || [];
-            const esc = v => '"' + String(v ?? '').replace(/"/g, '""') + '"';
-            const csv = 'first_name,last_name,email,student_number,section,one_time_password\n' +
-                creds.map(r => [r.first_name, r.last_name, r.email, r.student_number, r.section, r.temp_password].map(esc).join(',')).join('\n');
-            const blob = new Blob([csv], { type: 'text/csv' });
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = 'cpace-student-credentials.csv';
-            a.click();
-        });
-        document.getElementById('resultsPanel')?.scrollIntoView({ behavior: 'smooth' });
-    }
+    document.getElementById('resultsPanel')?.scrollIntoView({ behavior: 'smooth' });
 
     function esc(s) { return (s||'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 })();

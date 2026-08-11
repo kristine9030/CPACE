@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Chair;
 use App\Http\Controllers\Concerns\GeneratesOneTimePassword;
 use App\Http\Controllers\Controller;
 
+use App\Mail\AccountCredentialsMail;
 use App\Models\Role;
 use App\Models\Subject;
 use App\Models\User;
@@ -15,6 +16,8 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rule;
 
 class ProgramChairController extends Controller
@@ -175,7 +178,7 @@ class ProgramChairController extends Controller
 
         $tempPassword = $this->generateOneTimePassword();
 
-        DB::transaction(function () use ($data, $request, $tempPassword) {
+        $user = DB::transaction(function () use ($data, $request, $tempPassword) {
             $user = User::create([
                 'role_id'            => Role::FACULTY,
                 'first_name'         => $data['first_name'],
@@ -194,10 +197,18 @@ class ProgramChairController extends Controller
             ]);
 
             $this->syncSubjects($user, $request->input('subjects', []));
+
+            return $user;
         });
 
-        return redirect()->route('chair.faculty')
-            ->with('status', 'Faculty account created. One-time password: ' . $tempPassword);
+        $mailed = $this->mailCredentials($user, $tempPassword, 'faculty');
+
+        return redirect()->route('chair.faculty')->with(
+            'status',
+            $mailed
+                ? "Faculty account created. The one-time password was emailed to {$user->email}."
+                : "Faculty account created, but the credentials email couldn't be sent. Use \"Resend OTP\" on this account's row to try again."
+        );
     }
 
     /**
@@ -319,7 +330,36 @@ class ProgramChairController extends Controller
             'temp_password' => $tempPassword,
         ]);
 
-        return back()->with('status', "New one-time password generated for {$faculty->name}.");
+        $mailed = $this->mailCredentials($faculty, $tempPassword, 'faculty', reissue: true);
+
+        return back()->with(
+            'status',
+            $mailed
+                ? "A new one-time password was emailed to {$faculty->name} ({$faculty->email})."
+                : "A new one-time password was generated for {$faculty->name}, but the email couldn't be sent. Try \"Resend OTP\" again."
+        );
+    }
+
+    /**
+     * Emails the OTP straight to the account owner's inbox — the Program
+     * Chair never sees it. Failures are swallowed (and logged) so a mail
+     * outage doesn't block account creation.
+     */
+    private function mailCredentials(User $user, string $tempPassword, string $roleLabel, bool $reissue = false): bool
+    {
+        try {
+            Mail::to($user->email)->send(new AccountCredentialsMail($user, $tempPassword, $roleLabel, $reissue));
+
+            return true;
+        } catch (\Throwable $exception) {
+            Log::error('Failed to email account credentials.', [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'error' => $exception->getMessage(),
+            ]);
+
+            return false;
+        }
     }
 
     /**

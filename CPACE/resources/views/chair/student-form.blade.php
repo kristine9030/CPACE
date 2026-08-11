@@ -168,16 +168,20 @@
                     <label>Email Address</label>
                     <input
                         type="email"
+                        id="studentEmail"
                         name="email"
                         value="{{ old('email', $editMode ? $student->email : '') }}"
+                        @unless ($editMode) placeholder="e.g. 2x-00001@g.batstate-u.edu.ph" @endunless
+                        autocomplete="off"
                         required
                     >
+                    <div id="emailWarning" style="display:none; margin-top:6px; font-size:12px; border-radius:8px; padding:8px 11px;"></div>
                 </div>
             </div>
             @unless ($editMode)
                 <div class="hint" style="margin-top:10px;">
                     <i class="fas fa-circle-info"></i>
-                    A one-time password will be generated automatically and shown after the account is created.
+                    A one-time password will be generated automatically and emailed directly to the student — it is never shown to you.
                 </div>
             @endunless
         </div>
@@ -194,7 +198,7 @@
                         type="text"
                         name="student_number"
                         value="{{ old('student_number', $profile?->student_number) }}"
-                        placeholder="e.g. 2026-0001"
+                        placeholder="e.g. 23-00001"
                     >
                 </div>
                 <div class="form-group">
@@ -333,6 +337,87 @@
         </div>
     </form>
 </main>
+
+    <script>
+        (function () {
+            var emailInput = document.getElementById('studentEmail');
+            var warning = document.getElementById('emailWarning');
+            var currentUserId = {{ $editMode ? $student->id : 'null' }};
+
+            @unless ($editMode)
+            // Auto-suggest a GSuite address from student number (or name) so the
+            // chair doesn't have to hand-type it. Stops once the chair edits the
+            // field themselves.
+            var firstNameInput = document.querySelector('input[name="first_name"]');
+            var lastNameInput = document.querySelector('input[name="last_name"]');
+            var studentNumberInput = document.querySelector('input[name="student_number"]');
+            var userEditedEmail = false;
+
+            function slug(value) {
+                return (value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+            }
+
+            function suggestEmail() {
+                if (userEditedEmail) return;
+                var num = (studentNumberInput.value || '').trim();
+                var slugNumber = num.toLowerCase().replace(/[^a-z0-9\-]/g, '');
+                var suggestion = '';
+                if (slugNumber) {
+                    suggestion = slugNumber + '@g.batstate-u.edu.ph';
+                } else if (firstNameInput.value.trim() && lastNameInput.value.trim()) {
+                    suggestion = slug(firstNameInput.value) + '.' + slug(lastNameInput.value) + '@g.batstate-u.edu.ph';
+                }
+                if (suggestion) {
+                    emailInput.value = suggestion;
+                    checkEmail();
+                }
+            }
+
+            emailInput.addEventListener('input', function () {
+                // Only treat it as a manual edit if the value no longer matches
+                // what we last auto-filled in.
+                userEditedEmail = true;
+            });
+            [firstNameInput, lastNameInput, studentNumberInput].forEach(function (el) {
+                el.addEventListener('input', suggestEmail);
+            });
+            @endunless
+
+            var debounceTimer = null;
+            function checkEmail() {
+                var email = emailInput.value.trim();
+                warning.style.display = 'none';
+                if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return;
+
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(function () {
+                    var url = '{{ route('chair.check-email') }}?email=' + encodeURIComponent(email)
+                        + (currentUserId ? '&exclude_id=' + currentUserId : '');
+                    fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                        .then(function (r) { return r.json(); })
+                        .then(function (data) {
+                            if (data.taken) {
+                                warning.style.display = 'block';
+                                warning.style.background = '#fef2f2';
+                                warning.style.border = '1px solid #fecaca';
+                                warning.style.color = '#b91c1c';
+                                warning.innerHTML = '<i class="fas fa-triangle-exclamation"></i> This email is already registered to another account.';
+                            } else if (data.valid_format && data.mx_ok === false) {
+                                warning.style.display = 'block';
+                                warning.style.background = '#fffbeb';
+                                warning.style.border = '1px solid #fde68a';
+                                warning.style.color = '#92400e';
+                                warning.innerHTML = '<i class="fas fa-circle-exclamation"></i> This domain doesn\'t appear to accept email — double-check the address.';
+                            }
+                        })
+                        .catch(function () {});
+                }, 400);
+            }
+
+            emailInput.addEventListener('input', checkEmail);
+            emailInput.addEventListener('blur', checkEmail);
+        })();
+    </script>
 
     @include('partials.alerts')
 </body>

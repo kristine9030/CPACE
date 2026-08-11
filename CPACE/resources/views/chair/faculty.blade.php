@@ -93,26 +93,18 @@
                             <span class="pill pill-pending" title="Faculty hasn't changed their one-time password yet">
                                 <i class="fas fa-hourglass-half"></i> Setup Pending
                             </span>
-                            @if ($f->temp_password)
-                                <div class="otp-cell">
-                                    <span class="temp-pass otp-masked" data-otp="{{ $f->temp_password }}">••••••••</span>
-                                    <button type="button" class="otp-reveal" title="Show one-time password" onclick="toggleOtp(this)"><i class="fas fa-eye"></i></button>
-                                    <button type="button" class="copy-mini" title="Copy" onclick="navigator.clipboard.writeText('{{ $f->temp_password }}')"><i class="fas fa-copy"></i></button>
-                                </div>
-                            @else
-                                <div class="otp-cell">
-                                    <form method="POST" action="{{ route('chair.faculty.regenerate-otp', $f->id) }}"
-                                          data-confirm="A new one-time password will be issued for {{ $f->name }}. Any password they were given earlier stops working."
-                                          data-confirm-title="Regenerate one-time password?"
-                                          data-confirm-ok="Yes, regenerate"
-                                          data-confirm-icon="question">
-                                        @csrf
-                                        <button type="submit" class="otp-reveal" title="No recoverable OTP on file — issue a new one">
-                                            <i class="fas fa-rotate"></i> Regenerate OTP
-                                        </button>
-                                    </form>
-                                </div>
-                            @endif
+                            <div class="otp-cell">
+                                <form method="POST" action="{{ route('chair.faculty.regenerate-otp', $f->id) }}"
+                                      data-confirm="A new one-time password will be emailed to {{ $f->name }} ({{ $f->email }}). Any password they were given earlier stops working."
+                                      data-confirm-title="Resend one-time password?"
+                                      data-confirm-ok="Yes, resend"
+                                      data-confirm-icon="question">
+                                    @csrf
+                                    <button type="submit" class="otp-reveal" title="Email a fresh one-time password to this faculty member">
+                                        <i class="fas fa-paper-plane"></i> Resend OTP
+                                    </button>
+                                </form>
+                            </div>
                         @else
                             <span class="pill pill-on"><i class="fas fa-check"></i> Active</span>
                         @endif
@@ -192,13 +184,6 @@
     function closeAssign() { assignModal.classList.remove('open'); }
     assignModal.addEventListener('click', e => { if (e.target === assignModal) closeAssign(); });
 
-    function toggleOtp(btn) {
-        const span = btn.previousElementSibling;
-        const icon = btn.querySelector('i');
-        const revealed = span.textContent === span.dataset.otp;
-        span.textContent = revealed ? '••••••••' : span.dataset.otp;
-        icon.className = revealed ? 'fas fa-eye' : 'fas fa-eye-slash';
-    }
 </script>
 
     @include('partials.alerts')
