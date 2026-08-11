@@ -1649,10 +1649,52 @@ let violations  = 0;
 let frozen      = false;
 let timerRunning = true;
 
+let violationAudioCtx = null;
+function playViolationSound() {
+    try {
+        violationAudioCtx = violationAudioCtx || new (window.AudioContext || window.webkitAudioContext)();
+        const ctx = violationAudioCtx;
+        if (ctx.state === 'suspended') ctx.resume();
+        [0, 0.16].forEach(function (delay) {
+            const osc  = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'square';
+            osc.frequency.value = 880;
+            gain.gain.setValueAtTime(0.0001, ctx.currentTime + delay);
+            gain.gain.exponentialRampToValueAtTime(0.25, ctx.currentTime + delay + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + delay + 0.14);
+            osc.connect(gain).connect(ctx.destination);
+            osc.start(ctx.currentTime + delay);
+            osc.stop(ctx.currentTime + delay + 0.15);
+        });
+    } catch (e) {}
+}
+function playTerminationSound() {
+    try {
+        violationAudioCtx = violationAudioCtx || new (window.AudioContext || window.webkitAudioContext)();
+        const ctx = violationAudioCtx;
+        if (ctx.state === 'suspended') ctx.resume();
+        [660, 495, 330].forEach(function (freq, i) {
+            const delay = i * 0.18;
+            const osc  = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.value = freq;
+            gain.gain.setValueAtTime(0.0001, ctx.currentTime + delay);
+            gain.gain.exponentialRampToValueAtTime(0.3, ctx.currentTime + delay + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + delay + 0.22);
+            osc.connect(gain).connect(ctx.destination);
+            osc.start(ctx.currentTime + delay);
+            osc.stop(ctx.currentTime + delay + 0.23);
+        });
+    } catch (e) {}
+}
+
 function freeze() {
     if (frozen) return;
     frozen = true; timerRunning = false;
     document.body.classList.add('quiz-frozen');
+    playViolationSound();
 }
 function unfreeze() {
     frozen = false; timerRunning = true;
@@ -1722,6 +1764,7 @@ function showViolationOverlay() {
     const label = document.getElementById('violationLabel');
 
     if (violations >= MAX_VIOLATIONS) {
+        playTerminationSound();
         icon.className  = 'tab-overlay-icon crit';
         icon.innerHTML  = '<i class="fas fa-ban"></i>';
         title.textContent = 'Quiz Terminated';
