@@ -240,5 +240,7 @@ function addTopic(si, color) {
     inp.focus();
 }
 </script>
+
+    @include('partials.alerts')
 </body>
 </html>

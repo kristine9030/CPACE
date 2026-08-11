@@ -146,5 +146,7 @@
     }
 })();
 </script>
+
+    @include('partials.alerts')
 </body>
 </html>

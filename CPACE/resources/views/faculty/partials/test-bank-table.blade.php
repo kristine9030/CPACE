@@ -45,7 +45,11 @@
                     <i class="fas fa-shuffle"></i>@if($q->variants_count)<span class="var-count">{{ $q->variants_count }}</span>@endif
                 </a>
                 <a href="{{ route('faculty.question.edit', $q->id) }}" class="action-btn ab-edit" style="margin-left:4px;" title="Edit"><i class="fas fa-pen"></i></a>
-                <form method="POST" action="{{ route('faculty.question.destroy', $q->id) }}" style="display:inline;" onsubmit="return confirm('Delete this question?');">
+                <form method="POST" action="{{ route('faculty.question.destroy', $q->id) }}" style="display:inline;"
+                      data-confirm="This question and all of its variants will be permanently removed from the test bank."
+                      data-confirm-title="Delete this question?"
+                      data-confirm-ok="Yes, delete it"
+                      data-confirm-danger>
                     @csrf
                     @method('DELETE')
                     <button type="submit" class="action-btn ab-del" style="margin-left:4px;" title="Delete"><i class="fas fa-trash"></i></button>

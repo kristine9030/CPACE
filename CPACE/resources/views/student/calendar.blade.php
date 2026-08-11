@@ -1224,7 +1224,11 @@
                             <a href="{{ route('settings') }}"><i class="fas fa-user"></i> Profile Settings</a>
                             <a href="{{ route('performance') }}"><i class="fas fa-chart-line"></i> My Progress</a>
                             <a href="{{ route('achievements') }}"><i class="fas fa-trophy"></i> Achievements</a>
-                            <form method="POST" action="{{ route('logout') }}" style="margin:0;padding:0;">
+                            <form method="POST" action="{{ route('logout') }}"
+                          data-confirm="You will be signed out of CPACE and returned to the login page."
+                          data-confirm-title="Log out of CPACE?"
+                          data-confirm-ok="Yes, log me out"
+                          data-confirm-icon="question" style="margin:0;padding:0;">
                                 @csrf
                                 <button type="submit" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</button>
                             </form>
@@ -1517,7 +1521,12 @@
                     </div>
                 </div>
 
-                <form method="POST" action="{{ route('quiz.start') }}" id="evExamForm">
+                <form method="POST" action="{{ route('quiz.start') }}" id="evExamForm"
+                      data-confirm="This starts a timed, graded attempt on this topic. Leaving the quiz tab counts as a violation."
+                      data-confirm-title="Start as exam?"
+                      data-confirm-ok="Yes, start exam"
+                      data-confirm-icon="question"
+                      data-loading="Building your exam...">
                     @csrf
                     <input type="hidden" name="subject_id" id="evSubjectId">
                     <input type="hidden" name="topic_id" id="evTopicId">
@@ -1538,7 +1547,10 @@
                 </div>
 
                 <form method="POST" id="evDeleteForm" style="display:none;"
-                      onsubmit="return confirm('Remove this study block from your calendar?');">
+                      data-confirm="This study block will be removed from your calendar."
+                      data-confirm-title="Remove study block?"
+                      data-confirm-ok="Yes, remove it"
+                      data-confirm-danger>
                     @csrf
                     @method('DELETE')
                     <button type="submit" class="modal-btn ghost"><i class="fas fa-trash-can"></i> Remove this study block</button>
@@ -1555,10 +1567,12 @@
                 <button type="button" class="modal-close" data-close="addModal"><i class="fas fa-xmark"></i></button>
             </div>
             <div class="modal-body">
-                @if($errors->any())
-                    <div class="empty-note" style="color:var(--accent-red);padding-top:0;">{{ $errors->first() }}</div>
-                @endif
-                <form method="POST" action="{{ route('calendar.plan.store') }}">
+                {{-- Validation errors surface as a SweetAlert popup via partials.alerts --}}
+                <form method="POST" action="{{ route('calendar.plan.store') }}"
+                      data-confirm="This study block will be added to your calendar and included in your study plan reminders."
+                      data-confirm-title="Add this study block?"
+                      data-confirm-ok="Yes, add it"
+                      data-confirm-icon="question">
                     @csrf
                     <div class="form-row">
                         <label>Topic to study</label>
@@ -1611,9 +1625,7 @@
         </div>
     </div>
 
-    @if(session('status'))
-        <div class="toast" id="statusToast"><i class="fas fa-circle-check"></i> {{ session('status') }}</div>
-    @endif
+    {{-- Status messages surface as SweetAlert toasts via partials.alerts --}}
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
@@ -1772,9 +1784,6 @@
                 });
             });
 
-            // Status toast fades out on its own.
-            const toast = document.getElementById('statusToast');
-            if (toast) setTimeout(() => toast.remove(), 4000);
         });
 
         const style = document.createElement('style');
@@ -1787,5 +1796,7 @@
         document.head.appendChild(style);
     </script>
     @include('partials.global-search')
+
+    @include('partials.alerts')
 </body>
 </html>

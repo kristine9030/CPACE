@@ -168,9 +168,7 @@
         </div>
     </div>
 
-    @if(session('status'))
-        <div class="flash">{{ session('status') }}</div>
-    @endif
+    {{-- Status and validation messages surface as SweetAlert popups via partials.alerts --}}
 
     <div class="report-shell a1">
         <aside class="tool-panel">
@@ -830,5 +828,7 @@
 })();
 </script>
 
+
+    @include('partials.alerts')
 </body>
 </html>

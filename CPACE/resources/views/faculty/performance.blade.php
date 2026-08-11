@@ -187,7 +187,12 @@
         </div>
         <div class="topbar-right">
             <a href="{{ route('faculty.performance.export', $activeQuery) }}" id="exportBtn" class="btn btn-ghost"><i class="fas fa-file-export"></i> Export</a>
-            <form method="POST" action="{{ route('faculty.performance.remind') }}" id="sendReportForm" style="display:inline;" onsubmit="return confirm('Send a performance check-in to all listed students?');">
+            <form method="POST" action="{{ route('faculty.performance.remind') }}" id="sendReportForm" style="display:inline;"
+                  data-confirm="Every student in the current view will receive a performance check-in email. This cannot be unsent."
+                  data-confirm-title="Send performance report?"
+                  data-confirm-ok="Yes, send it"
+                  data-confirm-icon="question"
+                  data-loading="Sending check-in emails...">
                 @csrf
                 <input type="hidden" name="scope" value="all">
                 <button type="submit" class="btn btn-primary"><i class="fas fa-envelope"></i> Send Report</button>
@@ -196,9 +201,7 @@
         </div>
     </div>
 
-    @if(session('status'))
-        <div class="flash"><i class="fas fa-check-circle"></i> {{ session('status') }}</div>
-    @endif
+    {{-- Status and validation messages surface as SweetAlert popups via partials.alerts --}}
 
     <!-- STATS (above the filter bar) -->
     @include('faculty.partials.performance-stats')
@@ -405,5 +408,7 @@
     hydratePerf();
     syncTopbar(window.location.href);
 </script>
+
+    @include('partials.alerts')
 </body>
 </html>

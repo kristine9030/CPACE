@@ -98,14 +98,13 @@
     <h2 class="step-h">Welcome, {{ $first }}!</h2>
     <p class="step-sub">You logged in with a one-time password from your Program Chair. Choose a new password only you know before continuing.</p>
 
-    @if ($errors->any())
-        <div style="background:#fde8e8; border:1px solid #f5c2c2; color:#991b1b; border-radius:11px; padding:12px 15px; font-size:12.5px; margin-bottom:16px; display:flex; gap:9px; align-items:flex-start;">
-            <i class="fas fa-circle-exclamation" style="margin-top:2px;"></i>
-            <div>{{ $errors->first() }}</div>
-        </div>
-    @endif
+    {{-- Validation errors surface as a SweetAlert popup via partials.alerts --}}
 
-    <form method="POST" action="{{ route('faculty.account-setup.store') }}">
+    <form method="POST" action="{{ route('faculty.account-setup.store') }}"
+          data-confirm="This becomes your permanent password. Your one-time password stops working right after this."
+          data-confirm-title="Set this password?"
+          data-confirm-ok="Yes, set my password"
+          data-confirm-icon="question">
         @csrf
 
         <div class="fld">
@@ -170,5 +169,7 @@
         h.style.color = a === b ? '#059669' : '#ef4444';
     });
 </script>
+
+    @include('partials.alerts')
 </body>
 </html>

@@ -448,15 +448,14 @@
                 <h3>Create your account</h3>
                 <p>Join CPACE and start your CPA review journey today.</p>
 
-                @if ($errors->any())
-                    <div style="background: #fee; border: 1px solid #fcc; border-radius: 6px; padding: 12px; margin-bottom: 20px;">
-                        @foreach ($errors->all() as $error)
-                            <div style="color: #c33; font-size: 13px;">{{ $error }}</div>
-                        @endforeach
-                    </div>
-                @endif
+                {{-- Validation errors surface as a SweetAlert popup via partials.alerts --}}
 
-                <form method="POST" action="{{ route('signup') }}">
+                <form method="POST" action="{{ route('signup') }}"
+                      data-confirm="Double-check your name and email — they are used for your CPACE account and sign-in."
+                      data-confirm-title="Create your account?"
+                      data-confirm-ok="Yes, create account"
+                      data-confirm-icon="question"
+                      data-loading="Creating your account...">
                     @csrf
 
                     <div class="form-group @error('name') error @enderror">
@@ -553,6 +552,8 @@ function togglePassword(id, btn) {
     }
 }
 </script>
+
+    @include('partials.alerts')
 </body>
 </html>
 

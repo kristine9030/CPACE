@@ -757,7 +757,11 @@
                         <div class="dropdown-menu" id="profileDropdown">
                             <a href="{{ route('performance') }}"><i class="fas fa-chart-line"></i> My Progress</a>
                             <a href="{{ route('achievements') }}"><i class="fas fa-trophy"></i> Achievements</a>
-                            <form method="POST" action="{{ route('logout') }}" style="margin:0;padding:0;">
+                            <form method="POST" action="{{ route('logout') }}"
+                          data-confirm="You will be signed out of CPACE and returned to the login page."
+                          data-confirm-title="Log out of CPACE?"
+                          data-confirm-ok="Yes, log me out"
+                          data-confirm-icon="question" style="margin:0;padding:0;">
                                 @csrf
                                 <button type="submit" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</button>
                             </form>
@@ -1103,11 +1107,12 @@
 
             el.querySelectorAll('.folder-item').forEach(item => {
                 item.addEventListener('click', () => {
-                    if (!maybeExitEdit()) return;
-                    const raw = item.dataset.folder;
-                    const val = raw === 'other' || raw === 'trash' ? raw : Number(raw);
-                    state.folder = state.folder === val ? null : val;
-                    renderAll();
+                    maybeExitEdit(() => {
+                        const raw = item.dataset.folder;
+                        const val = raw === 'other' || raw === 'trash' ? raw : Number(raw);
+                        state.folder = state.folder === val ? null : val;
+                        renderAll();
+                    });
                 });
             });
         }
@@ -1406,13 +1411,22 @@
             body.scrollTop = 0;
         }
 
-        // Returns false (and keeps the editor open) if the user wants to stay.
-        function maybeExitEdit() {
-            if (!state.editing) return true;
-            if (!confirm('Discard unsaved changes to this note?')) return false;
-            state.editing = false;
-            renderPreview();
-            return true;
+        // Runs `proceed` once it is safe to leave the editor. With unsaved edits
+        // the student is asked first, and `proceed` only runs if they discard.
+        function maybeExitEdit(proceed) {
+            if (!state.editing) { proceed(); return; }
+            CPACE.confirm({
+                title: 'Discard unsaved changes?',
+                text: 'Your edits to this note have not been saved yet and will be lost.',
+                confirmText: 'Discard changes',
+                cancelText: 'Keep editing',
+                danger: true,
+            }).then(ok => {
+                if (!ok) return;
+                state.editing = false;
+                renderPreview();
+                proceed();
+            });
         }
 
         function applyHighlight(name) {
@@ -1745,7 +1759,8 @@
         }
 
         function selectNote(id) {
-            if (state.editing && id !== state.selectedId && !maybeExitEdit()) return;
+            // Ask about unsaved edits first, then re-enter with a clean editor.
+            if (state.editing && id !== state.selectedId) { maybeExitEdit(() => selectNote(id)); return; }
             state.selectedId = id;
             document.getElementById('workspace').classList.add('preview-open');
             renderList();
@@ -1819,6 +1834,8 @@
     </div>
     <div class="content">${renderContent(n.content)}</div>
     <div class="foot">CPACE Review Notes &mdash; ${printedOn}</div>
+
+    @include('partials.alerts')
 </body>
 </html>`;
         }
@@ -1947,7 +1964,13 @@
 
         async function trashNote(id) {
             const n = byId(id);
-            if (!confirm(`Move "${n.title}" to Trash?`)) return;
+            const ok = await CPACE.confirm({
+                title: 'Move note to Trash?',
+                text: `"${n.title}" will be moved to Trash. You can restore it from there later.`,
+                confirmText: 'Yes, move to Trash',
+                danger: true,
+            });
+            if (!ok) return;
             try {
                 const d = await api(`${ROUTES.base}/${id}`, { method: 'POST', body: JSON.stringify({ _method: 'DELETE' }) });
                 if (d.note) Object.assign(n, d.note); else n.trashed = true;
@@ -1969,7 +1992,13 @@
 
         async function deleteForever(id) {
             const n = byId(id);
-            if (!confirm(`Permanently delete "${n.title}"? This cannot be undone.`)) return;
+            const ok = await CPACE.confirm({
+                title: 'Delete note permanently?',
+                text: `"${n.title}" will be erased for good. This cannot be undone.`,
+                confirmText: 'Yes, delete forever',
+                danger: true,
+            });
+            if (!ok) return;
             try {
                 await api(`${ROUTES.base}/${id}`, { method: 'POST', body: JSON.stringify({ _method: 'DELETE' }) });
                 NOTES.splice(NOTES.indexOf(n), 1);
@@ -2015,7 +2044,7 @@
         function openEditModal(id) {
             const n = byId(id);
             if (!n) return;
-            if (!maybeExitEdit()) return;
+            if (state.editing) { maybeExitEdit(() => openEditModal(id)); return; }
             clearErrors();
             document.getElementById('noteModalTitle').textContent = 'Edit Note';
             document.getElementById('noteId').value = n.id;
@@ -2097,12 +2126,13 @@
             // Tabs
             document.querySelectorAll('#tabsBar .tab-btn').forEach(btn => {
                 btn.addEventListener('click', () => {
-                    if (!maybeExitEdit()) return;
-                    document.querySelectorAll('#tabsBar .tab-btn').forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-                    state.tab = btn.dataset.tab;
-                    if (state.folder === 'trash') state.folder = null;
-                    renderAll();
+                    maybeExitEdit(() => {
+                        document.querySelectorAll('#tabsBar .tab-btn').forEach(b => b.classList.remove('active'));
+                        btn.classList.add('active');
+                        state.tab = btn.dataset.tab;
+                        if (state.folder === 'trash') state.folder = null;
+                        renderAll();
+                    });
                 });
             });
 
@@ -2140,8 +2170,7 @@
                 if (state.selectedId) openMenu(e.currentTarget, state.selectedId);
             });
             document.getElementById('pvCloseBtn').addEventListener('click', () => {
-                if (!maybeExitEdit()) return;
-                closePreview();
+                maybeExitEdit(closePreview);
             });
 
             // Document editor toolbar

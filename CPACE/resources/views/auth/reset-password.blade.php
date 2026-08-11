@@ -318,15 +318,13 @@
                     <h3>Set a new password</h3>
                     <p class="subtitle">Choose a new password for your CPACE account. Make it something you'll remember but others won't guess.</p>
 
-                    @if ($errors->any())
-                        <div style="background: #fee; border: 1px solid #fcc; border-radius: 6px; padding: 12px; margin-bottom: 20px;">
-                            @foreach ($errors->all() as $error)
-                                <div style="color: #c33; font-size: 13px;">{{ $error }}</div>
-                            @endforeach
-                        </div>
-                    @endif
+                    {{-- Validation errors surface as a SweetAlert popup via partials.alerts --}}
 
-                    <form method="POST" action="{{ route('password.update') }}">
+                    <form method="POST" action="{{ route('password.update') }}"
+                          data-confirm="Your old password stops working immediately and you will sign in with the new one."
+                          data-confirm-title="Reset your password?"
+                          data-confirm-ok="Yes, reset it"
+                          data-confirm-icon="question">
                         @csrf
 
                         <input type="hidden" name="token" value="{{ $token }}">
@@ -402,5 +400,7 @@
             });
         });
     </script>
+
+    @include('partials.alerts')
 </body>
 </html>

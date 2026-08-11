@@ -147,19 +147,7 @@
     </div>
 
     <div class="import-shell">
-        @if (session('error'))
-            <div class="cred-note" style="background:#fde8e8; border-color:#f5c2c2; color:#991b1b;">
-                <i class="fas fa-circle-exclamation"></i><span>{{ session('error') }}</span>
-            </div>
-        @endif
-        @if (session('import_errors') && count(session('import_errors')))
-            <div class="cred-note" style="background:#fffbeb; border-color:#fde68a; color:#92400e; display:block;">
-                <div style="display:flex; gap:10px; align-items:flex-start; margin-bottom:6px;"><i class="fas fa-triangle-exclamation" style="margin-top:2px;"></i><b>{{ count(session('import_errors')) }} row(s) were skipped:</b></div>
-                <ul style="margin:0 0 0 26px; font-size:11.5px;">
-                    @foreach (session('import_errors') as $err)<li>{{ $err }}</li>@endforeach
-                </ul>
-            </div>
-        @endif
+        {{-- Errors and skipped import rows surface as SweetAlert popups via partials.alerts --}}
 
         <!-- How the new enrollment flow works -->
         <div class="flow-hero">
@@ -402,9 +390,21 @@
     // Real submit — the server creates the accounts and returns credentials.
     createBtn.addEventListener('click', () => {
         if (!input.files.length) return;
-        createBtn.disabled = true;
-        createBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating accounts…';
-        document.getElementById('importForm').submit();
+        const n = rows.length;
+        CPACE.confirm({
+            title: 'Create ' + n + ' student account' + (n === 1 ? '' : 's') + '?',
+            html: 'Each student gets a one-time password that is shown only once on the next screen.'
+                + '<div class="cpace-note">Download the credentials file before leaving that screen &mdash; the passwords cannot be retrieved again.</div>',
+            icon: 'question',
+            confirmText: 'Yes, create accounts',
+            cancelText: 'Review the list again',
+        }).then(ok => {
+            if (!ok) return;
+            createBtn.disabled = true;
+            createBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating accounts…';
+            CPACE.loading('Creating accounts...', 'Generating one-time passwords for ' + n + ' student' + (n === 1 ? '' : 's') + '.');
+            document.getElementById('importForm').submit();
+        });
     });
 
     // Download the credentials the server just generated (shown once).
@@ -427,5 +427,7 @@
     function esc(s) { return (s||'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 })();
 </script>
+
+    @include('partials.alerts')
 </body>
 </html>

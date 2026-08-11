@@ -104,7 +104,12 @@
                 <div class="muted-empty"><i class="fas fa-check-circle" style="color:#10b981;margin-right:5px;"></i>No at-risk students in this view.</div>
             @endforelse
             @if($atRisk->isNotEmpty())
-            <form method="POST" action="{{ route('faculty.performance.remind') }}" onsubmit="return confirm('Send a study reminder to all at-risk students?');">
+            <form method="POST" action="{{ route('faculty.performance.remind') }}"
+                  data-confirm="All {{ $atRisk->count() }} at-risk student(s) in this view will receive a study reminder email."
+                  data-confirm-title="Send study reminders?"
+                  data-confirm-ok="Yes, send reminders"
+                  data-confirm-icon="question"
+                  data-loading="Sending reminders...">
                 @csrf
                 @foreach($activeQuery as $k => $v)<input type="hidden" name="{{ $k }}" value="{{ $v }}">@endforeach
                 <input type="hidden" name="scope" value="at_risk">

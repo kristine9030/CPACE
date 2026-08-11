@@ -240,12 +240,14 @@
         <div class="modal">
             <h3><i class="fas fa-users" style="color:var(--fb-blue);"></i> {{ $active->displayNameFor(Auth::user()) }}</h3>
 
-            @if(session('status'))
-                <div style="background:#e8f7ee;color:#1e7e46;border:1px solid #bfead0;padding:9px 12px;border-radius:9px;font-size:12px;margin-bottom:12px;">{{ session('status') }}</div>
-            @endif
+            {{-- Status and validation messages surface as SweetAlert popups via partials.alerts --}}
 
             @if($canManageGroup)
-                <form method="POST" action="{{ route('messages.rename', $active->id) }}" style="display:flex; gap:8px; margin-bottom:14px;">
+                <form method="POST" action="{{ route('messages.rename', $active->id) }}" style="display:flex; gap:8px; margin-bottom:14px;"
+                      data-confirm="Everyone in this conversation will see the new name."
+                      data-confirm-title="Rename this group?"
+                      data-confirm-ok="Yes, rename it"
+                      data-confirm-icon="question">
                     @csrf @method('PUT')
                     <input type="text" name="name" value="{{ $active->name }}" required style="flex:1;margin-bottom:0;">
                     <button type="submit" class="btn-primary" style="flex-shrink:0;"><i class="fas fa-pen"></i></button>
@@ -269,7 +271,11 @@
             </div>
 
             @if($canManageGroup && $addableCandidates->isNotEmpty())
-                <form method="POST" action="{{ route('messages.members.add', $active->id) }}" style="margin-bottom:14px;">
+                <form method="POST" action="{{ route('messages.members.add', $active->id) }}" style="margin-bottom:14px;"
+                      data-confirm="The people you selected will be added to this group and can read new messages from now on."
+                      data-confirm-title="Add these members?"
+                      data-confirm-ok="Yes, add them"
+                      data-confirm-icon="question">
                     @csrf
                     <div style="font-size:11.5px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Add Members</div>
                     <input type="text" id="addMemberSearch" placeholder="Search students / alumni..." oninput="filterPick('addMemberSearch','addMemberPickList')">
@@ -288,7 +294,11 @@
 
             <div class="modal-actions" style="justify-content:space-between;">
                 @if(!$active->is_default_group)
-                    <form method="POST" action="{{ route('messages.leave', $active->id) }}" onsubmit="return confirm('Leave this group chat?');">
+                    <form method="POST" action="{{ route('messages.leave', $active->id) }}"
+                          data-confirm="You will stop receiving messages from &quot;{{ $active->displayNameFor(Auth::user()) }}&quot; and will need to be re-added to rejoin."
+                          data-confirm-title="Leave this group chat?"
+                          data-confirm-ok="Yes, leave group"
+                          data-confirm-danger>
                         @csrf
                         <button type="submit" class="btn-ghost" style="color:var(--accent);"><i class="fas fa-right-from-bracket"></i> Leave Group</button>
                     </form>
@@ -329,7 +339,11 @@
     <div class="modal-overlay" id="newGroupModal">
         <div class="modal">
             <h3>New Group Chat</h3>
-            <form method="POST" action="{{ route('messages.group.create') }}">
+            <form method="POST" action="{{ route('messages.group.create') }}"
+                  data-confirm="A group conversation will be created and everyone you picked will be added to it."
+                  data-confirm-title="Create this group chat?"
+                  data-confirm-ok="Yes, create group"
+                  data-confirm-icon="question">
                 @csrf
                 <input type="text" name="name" placeholder="Group name" required>
                 <input type="text" id="groupSearch" placeholder="Search students / alumni..." oninput="filterPick('groupSearch','groupPickList')">
@@ -500,5 +514,7 @@ document.querySelectorAll('.modal-overlay').forEach(function (ov) {
     setInterval(poll, 4000);
 })();
 </script>
+
+    @include('partials.alerts')
 </body>
 </html>

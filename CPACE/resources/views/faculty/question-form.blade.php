@@ -161,18 +161,17 @@
         </div>
     </div>
 
-    <form action="{{ $editMode ? route('faculty.question.update', $question->id) : route('faculty.question.store') }}" method="POST" id="questionForm">
+    <form action="{{ $editMode ? route('faculty.question.update', $question->id) : route('faculty.question.store') }}" method="POST" id="questionForm"
+          data-confirm="{{ $editMode
+              ? 'Your changes go live immediately and affect quizzes generated from this point on.'
+              : 'This question is added to the test bank and can be served to students right away.' }}"
+          data-confirm-title="{{ $editMode ? 'Save changes to this question?' : 'Publish this question?' }}"
+          data-confirm-ok="{{ $editMode ? 'Yes, save changes' : 'Yes, publish it' }}"
+          data-confirm-icon="question">
         @csrf
         @if($editMode) @method('PUT') @endif
 
-        @if($errors->any())
-            <div style="background:#fde8e8;color:var(--accent);padding:12px 18px;border-radius:10px;margin-bottom:18px;font-size:13px;">
-                <strong><i class="fas fa-exclamation-circle"></i> Please fix the following:</strong>
-                <ul style="margin:6px 0 0 18px;">
-                    @foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach
-                </ul>
-            </div>
-        @endif
+        {{-- Validation errors surface as a SweetAlert popup via partials.alerts --}}
 
         @php
             $choicesByLabel = $editMode ? $question->choices->keyBy('choice_label') : collect();
@@ -388,9 +387,21 @@ function loadTopics(subjectId) {
 }
 
 function saveDraft() {
-    document.querySelector('input[name="is_active"]').checked = false;
-    document.getElementById('questionForm').submit();
+    CPACE.confirm({
+        title: 'Save as draft?',
+        text: 'The question is stored but stays inactive, so students will not see it until you publish it.',
+        icon: 'question',
+        confirmText: 'Yes, save draft',
+    }).then(ok => {
+        if (!ok) return;
+        document.querySelector('input[name="is_active"]').checked = false;
+        // Native submit() intentionally skips the form's data-confirm handler —
+        // this flow has already been confirmed above.
+        document.getElementById('questionForm').submit();
+    });
 }
 </script>
+
+    @include('partials.alerts')
 </body>
 </html>

@@ -1067,7 +1067,11 @@
                                 <a href="#"><i class="fas fa-user"></i> Profile Settings</a>
                                 <a href="#"><i class="fas fa-chart-line"></i> My Progress</a>
                                 <a href="#"><i class="fas fa-question-circle"></i> Help &amp; Support</a>
-                                <form method="POST" action="{{ route('logout') }}" style="margin:0;padding:0;">
+                                <form method="POST" action="{{ route('logout') }}"
+                          data-confirm="You will be signed out of CPACE and returned to the login page."
+                          data-confirm-title="Log out of CPACE?"
+                          data-confirm-ok="Yes, log me out"
+                          data-confirm-icon="question" style="margin:0;padding:0;">
                                     @csrf
                                     <button type="submit" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</button>
                                 </form>
@@ -1077,9 +1081,7 @@
                 </div>
             </div>
 
-            @if(session('status'))
-                <div class="mock-flash"><i class="fas fa-circle-check"></i> {{ session('status') }}</div>
-            @endif
+            {{-- Status and validation messages surface as SweetAlert popups via partials.alerts --}}
 
             <div class="mock-area">
 
@@ -1109,7 +1111,11 @@
                             <div class="lock-error"><i class="fas fa-circle-exclamation"></i> {{ $errors->first('access_code') }}</div>
                         @endif
 
-                        <form method="POST" action="{{ route('mock-exams.unlock') }}" class="lock-form">
+                        <form method="POST" action="{{ route('mock-exams.unlock') }}" class="lock-form"
+                              data-confirm="Make sure the code came from your proctor. An incorrect code is recorded as a failed unlock attempt."
+                              data-confirm-title="Submit this access code?"
+                              data-confirm-ok="Yes, unlock exam"
+                              data-confirm-icon="question">
                             @csrf
                             <label class="lock-label">Enter Access Code</label>
                             <div class="lock-inputrow">
@@ -1211,5 +1217,7 @@
         }
     </script>
     @include('partials.global-search')
+
+    @include('partials.alerts')
 </body>
 </html>

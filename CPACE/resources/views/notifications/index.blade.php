@@ -36,9 +36,13 @@
 
 <main class="notification-main">
     <header class="notification-head"><div><div class="notification-title">Notifications</div><div class="notification-sub">Announcements, reminders, and updates sent to your account.</div></div>
-        @if($unreadCount > 0)<form method="POST" action="{{ route('notifications.read-all') }}">@csrf<button class="read-all" type="submit"><i class="fas fa-check-double"></i> Mark all read ({{ $unreadCount }})</button></form>@endif
+        @if($unreadCount > 0)<form method="POST" action="{{ route('notifications.read-all') }}"
+            data-confirm="All {{ $unreadCount }} unread notification{{ $unreadCount === 1 ? '' : 's' }} will be marked as read. This cannot be undone."
+            data-confirm-title="Mark everything as read?"
+            data-confirm-ok="Yes, mark all read"
+            data-confirm-icon="question">@csrf<button class="read-all" type="submit"><i class="fas fa-check-double"></i> Mark all read ({{ $unreadCount }})</button></form>@endif
     </header>
-    @if(session('status'))<div class="status">{{ session('status') }}</div>@endif
+    {{-- Status messages surface as SweetAlert toasts via partials.alerts --}}
     <section class="notification-card">
         @forelse($notifications as $notification)
             @php $sender = trim(($notification->sender_first_name ?? '').' '.($notification->sender_last_name ?? '')) ?: 'CPACE'; @endphp
@@ -55,5 +59,7 @@
     </section>
     @if($notifications->hasPages())<div class="pager">@if($notifications->onFirstPage())<span>Previous</span>@else<a href="{{ $notifications->previousPageUrl() }}">Previous</a>@endif <span>Page {{ $notifications->currentPage() }} of {{ $notifications->lastPage() }}</span> @if($notifications->hasMorePages())<a href="{{ $notifications->nextPageUrl() }}">Next</a>@else<span>Next</span>@endif</div>@endif
 </main>
+
+    @include('partials.alerts')
 </body>
 </html>

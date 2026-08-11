@@ -202,13 +202,17 @@
             </a>
         </div>
         <div class="more-drawer-item">
-            <a href="#" onclick="event.preventDefault(); document.getElementById('bottomNavLogoutForm').submit();">
+            <a href="#" onclick="event.preventDefault(); document.getElementById('bottomNavLogoutForm').requestSubmit();">
                 <i class="fas fa-sign-out-alt" style="background:#fde8e8; color:#e53e3e;"></i>
                 Logout
             </a>
         </div>
     </div>
-    <form id="bottomNavLogoutForm" method="POST" action="{{ route('logout') }}" style="display:none;">@csrf</form>
+    <form id="bottomNavLogoutForm" method="POST" action="{{ route('logout') }}" style="display:none;"
+          data-confirm="You will be signed out of CPACE and returned to the login page."
+          data-confirm-title="Log out of CPACE?"
+          data-confirm-ok="Yes, log me out"
+          data-confirm-icon="question">@csrf</form>
 </div>
 
 <!-- Bottom Nav Bar -->

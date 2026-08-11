@@ -1192,7 +1192,11 @@
                         <div class="dropdown-menu" id="profileDropdown">
                             <a href="{{ route('settings') }}"><i class="fas fa-user"></i> Profile Settings</a>
                             <a href="{{ route('achievements') }}"><i class="fas fa-trophy"></i> Achievements</a>
-                            <form method="POST" action="{{ route('logout') }}" style="margin: 0; padding: 0;">
+                            <form method="POST" action="{{ route('logout') }}"
+                          data-confirm="You will be signed out of CPACE and returned to the login page."
+                          data-confirm-title="Log out of CPACE?"
+                          data-confirm-ok="Yes, log me out"
+                          data-confirm-icon="question" style="margin: 0; padding: 0;">
                                 @csrf
                                 <button type="submit" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</button>
                             </form>
@@ -1785,5 +1789,7 @@
         })();
     </script>
     @include('partials.global-search')
+
+    @include('partials.alerts')
 </body>
 </html>

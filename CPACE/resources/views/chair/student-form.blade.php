@@ -122,21 +122,18 @@
         </div>
     </div>
 
-    @if (isset($errors) && $errors->any())
-        <div class="alert alert-error">
-            <i class="fas fa-circle-exclamation"></i>
-            <ul>
-                @foreach ($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
-        </div>
-    @endif
+    {{-- Validation errors surface as a SweetAlert popup via partials.alerts --}}
 
     <form
         class="form-shell"
         method="POST"
         action="{{ $editMode ? route('chair.students.update', $student) : route('chair.students.store') }}"
+        data-confirm="{{ $editMode
+            ? 'The changes you made to this student account will be saved.'
+            : 'A student account will be created and issued a one-time password for their first sign-in.' }}"
+        data-confirm-title="{{ $editMode ? 'Save changes?' : 'Create this student account?' }}"
+        data-confirm-ok="{{ $editMode ? 'Yes, save changes' : 'Yes, create account' }}"
+        data-confirm-icon="question"
     >
         @csrf
         @if ($editMode)
@@ -336,5 +333,7 @@
         </div>
     </form>
 </main>
+
+    @include('partials.alerts')
 </body>
 </html>

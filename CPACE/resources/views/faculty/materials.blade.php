@@ -114,12 +114,7 @@
         </div>
     </div>
 
-    @if(session('status'))
-        <div class="flash"><i class="fas fa-circle-check"></i> {{ session('status') }}</div>
-    @endif
-    @if($errors->any())
-        <div class="flash err"><i class="fas fa-circle-exclamation"></i> {{ $errors->first() }}</div>
-    @endif
+    {{-- Status and validation messages surface as SweetAlert popups via partials.alerts --}}
 
     @if($subjects->isEmpty())
         <div class="panel"><div class="empty" style="padding:50px 20px;">
@@ -180,7 +175,11 @@
                                 </div>
                                 <div class="mat-actions">
                                     <a class="mat-btn mb-view" href="{{ $m->url() }}" target="_blank" title="Open"><i class="fas fa-up-right-from-square"></i></a>
-                                    <form method="POST" action="{{ route('faculty.materials.destroy', $m->id) }}" onsubmit="return confirm('Delete this material?');">
+                                    <form method="POST" action="{{ route('faculty.materials.destroy', $m->id) }}"
+                                          data-confirm="&quot;{{ $m->title }}&quot; will be permanently deleted and students will lose access to it."
+                                          data-confirm-title="Delete this material?"
+                                          data-confirm-ok="Yes, delete it"
+                                          data-confirm-danger>
                                         @csrf @method('DELETE')
                                         <button class="mat-btn mb-del" title="Delete"><i class="fas fa-trash"></i></button>
                                     </form>
@@ -194,7 +193,12 @@
                     {{-- Upload / add form --}}
                     <div class="upload-box">
                         <h4><i class="fas fa-cloud-arrow-up"></i> Add material to “{{ $selectedTopic->name }}”</h4>
-                        <form method="POST" action="{{ route('faculty.materials.store') }}" enctype="multipart/form-data" id="matForm">
+                        <form method="POST" action="{{ route('faculty.materials.store') }}" enctype="multipart/form-data" id="matForm"
+                              data-confirm="This material will be published to &ldquo;{{ $selectedTopic->name }}&rdquo; and becomes visible to every student taking this topic."
+                              data-confirm-title="Publish this material?"
+                              data-confirm-ok="Yes, publish it"
+                              data-confirm-icon="question"
+                              data-loading="Uploading material...">
                             @csrf
                             <input type="hidden" name="topic_id" value="{{ $selectedTopic->id }}">
 
@@ -279,5 +283,7 @@
     }
 })();
 </script>
+
+    @include('partials.alerts')
 </body>
 </html>

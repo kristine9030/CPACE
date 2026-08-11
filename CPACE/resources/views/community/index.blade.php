@@ -218,12 +218,8 @@
             </div>
         @endif
 
-        @if(session('status'))
-            <div class="flash"><i class="fas fa-circle-check"></i> {{ session('status') }}</div>
-        @endif
-        @if($errors->any())
-            <div class="flash err"><i class="fas fa-circle-exclamation"></i> {{ $errors->first() }}</div>
-        @endif
+
+        {{-- Status and validation messages surface as SweetAlert popups via partials.alerts --}}
 
         @if(Auth::user()->hasAlumniAccess() || Auth::user()->isChair())
             @php $meInitials = strtoupper(substr(Auth::user()->first_name,0,1).substr(Auth::user()->last_name,0,1)); @endphp
@@ -235,7 +231,12 @@
 
                 <div class="composer-full" id="composerFull">
                     <h4><i class="fas fa-pen"></i> Share something with the community</h4>
-                    <form method="POST" action="{{ route('community.posts.store') }}" enctype="multipart/form-data" id="composerForm">
+                    <form method="POST" action="{{ route('community.posts.store') }}" enctype="multipart/form-data" id="composerForm"
+                          data-confirm="Your post will be visible to everyone in the CPACE community feed."
+                          data-confirm-title="Publish this post?"
+                          data-confirm-ok="Yes, publish it"
+                          data-confirm-icon="question"
+                          data-loading="Publishing your post...">
                         @csrf
                         <div class="kind-toggle">
                             <div class="kind-opt">
@@ -329,7 +330,11 @@
                                 <button type="button" onclick="openFbChat({{ $author->id }}, '{{ addslashes($author->name ?? 'User') }}')"><i class="fas fa-comment-dots"></i> Message {{ $author->first_name }}</button>
                             @endif
                             @if($canDelete)
-                                <form method="POST" action="{{ route('community.posts.destroy', $post->id) }}" onsubmit="return confirm('Delete this post?');">
+                                <form method="POST" action="{{ route('community.posts.destroy', $post->id) }}"
+                                      data-confirm="This post and all of its comments will be permanently removed from the community feed."
+                                      data-confirm-title="Delete this post?"
+                                      data-confirm-ok="Yes, delete it"
+                                      data-confirm-danger>
                                     @csrf @method('DELETE')
                                     <button type="submit" class="danger"><i class="fas fa-trash"></i> Delete post</button>
                                 </form>
@@ -398,7 +403,11 @@
                                 <span class="comment-name">{{ $comment->author->name ?? 'User' }}</span><span class="comment-text">{{ $comment->body }}</span>
                             </div>
                             @if($comment->author_id === Auth::id())
-                                <form method="POST" action="{{ route('community.comments.destroy', $comment->id) }}" onsubmit="return confirm('Delete this comment?');">
+                                <form method="POST" action="{{ route('community.comments.destroy', $comment->id) }}"
+                                      data-confirm="Your comment will be permanently removed."
+                                      data-confirm-title="Delete this comment?"
+                                      data-confirm-ok="Yes, delete it"
+                                      data-confirm-danger>
                                     @csrf @method('DELETE')
                                     <button class="comment-del" title="Delete"><i class="fas fa-times"></i></button>
                                 </form>
@@ -514,5 +523,7 @@ document.addEventListener('click', function (e) {
     // Comments are shown by default; clicking "Comment" toggles them away/back.
     document.querySelectorAll('.comments').forEach(function (el) { el.classList.remove('open-hidden'); });
 </script>
+
+    @include('partials.alerts')
 </body>
 </html>

@@ -277,5 +277,7 @@
         <span>{{ $stats['total'] }} student records</span>
     </div>
 </main>
+
+    @include('partials.alerts')
 </body>
 </html>

@@ -60,9 +60,7 @@
         </div>
     </div>
 
-    @if (session('status'))
-        <div class="alert alert-success"><i class="fas fa-check-circle"></i> {{ session('status') }}</div>
-    @endif
+    {{-- Flash messages surface as SweetAlert popups via partials.alerts --}}
 
     <div class="card">
         <div class="card-head"><span class="card-title">All Faculty ({{ $faculty->count() }})</span></div>
@@ -103,7 +101,11 @@
                                 </div>
                             @else
                                 <div class="otp-cell">
-                                    <form method="POST" action="{{ route('chair.faculty.regenerate-otp', $f->id) }}">
+                                    <form method="POST" action="{{ route('chair.faculty.regenerate-otp', $f->id) }}"
+                                          data-confirm="A new one-time password will be issued for {{ $f->name }}. Any password they were given earlier stops working."
+                                          data-confirm-title="Regenerate one-time password?"
+                                          data-confirm-ok="Yes, regenerate"
+                                          data-confirm-icon="question">
                                         @csrf
                                         <button type="submit" class="otp-reveal" title="No recoverable OTP on file — issue a new one">
                                             <i class="fas fa-rotate"></i> Regenerate OTP
@@ -122,7 +124,14 @@
                             <i class="fas fa-layer-group"></i>
                         </button>
                         <a href="{{ route('chair.faculty.edit', $f->id) }}" class="action-btn ab-edit" title="Edit account"><i class="fas fa-pen"></i></a>
-                        <form method="POST" action="{{ route('chair.faculty.toggle', $f->id) }}" style="display:inline;">
+                        <form method="POST" action="{{ route('chair.faculty.toggle', $f->id) }}" style="display:inline;"
+                              data-confirm="{{ $f->is_active
+                                  ? $f->name . ' will be deactivated and can no longer sign in or manage their subjects.'
+                                  : $f->name . ' will be reactivated and can sign in to CPACE again.' }}"
+                              data-confirm-title="{{ $f->is_active ? 'Deactivate this faculty account?' : 'Activate this faculty account?' }}"
+                              data-confirm-ok="{{ $f->is_active ? 'Yes, deactivate' : 'Yes, activate' }}"
+                              data-confirm-icon="question"
+                              @if ($f->is_active) data-confirm-danger @endif>
                             @csrf
                             <button type="submit" class="action-btn ab-toggle" title="{{ $f->is_active ? 'Deactivate' : 'Activate' }}">
                                 <i class="fas fa-power-off"></i>
@@ -144,7 +153,11 @@
     <div class="modal">
         <h3>Assign Subjects</h3>
         <p class="sub" id="assignSub">Select the CPALE subjects for this faculty member.</p>
-        <form method="POST" id="assignForm">
+        <form method="POST" id="assignForm"
+              data-confirm="This faculty member's subject access will be replaced with exactly the subjects ticked here."
+              data-confirm-title="Save subject assignments?"
+              data-confirm-ok="Yes, save assignments"
+              data-confirm-icon="question">
             @csrf
             <div class="check-grid">
                 @foreach ($subjects as $s)
@@ -187,5 +200,7 @@
         icon.className = revealed ? 'fas fa-eye' : 'fas fa-eye-slash';
     }
 </script>
+
+    @include('partials.alerts')
 </body>
 </html>
