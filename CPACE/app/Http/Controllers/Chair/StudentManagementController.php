@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Chair;
 
 use App\Http\Controllers\Concerns\GeneratesOneTimePassword;
 use App\Http\Controllers\Controller;
+use App\Mail\AccountCredentialsMail;
 use App\Models\AlumniProfile;
 use App\Models\QuizSession;
 use App\Models\Role;
@@ -15,6 +16,8 @@ use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 
@@ -145,7 +148,14 @@ class StudentManagementController extends Controller
             return $student;
         });
 
-        return redirect()->route('chair.students.show', $student)->with('status', 'Student account enrolled successfully. One-time password: ' . $tempPassword);
+        $mailed = $this->mailCredentials($student, $tempPassword, 'student');
+
+        return redirect()->route('chair.students.show', $student)->with(
+            'status',
+            $mailed
+                ? "Student account enrolled successfully. The one-time password was emailed to {$student->email}."
+                : "Student account enrolled, but the credentials email couldn't be sent. Use \"Resend OTP\" on this student's row to try again."
+        );
     }
 
     public function edit(int $id)
@@ -203,7 +213,36 @@ class StudentManagementController extends Controller
             'temp_password' => $tempPassword,
         ]);
 
-        return back()->with('status', "New one-time password generated for {$student->name}.");
+        $mailed = $this->mailCredentials($student, $tempPassword, 'student', reissue: true);
+
+        return back()->with(
+            'status',
+            $mailed
+                ? "A new one-time password was emailed to {$student->name} ({$student->email})."
+                : "A new one-time password was generated for {$student->name}, but the email couldn't be sent. Try \"Resend OTP\" again."
+        );
+    }
+
+    /**
+     * Emails the OTP straight to the account owner's inbox — the Program
+     * Chair never sees it. Failures are swallowed (and logged) so a mail
+     * outage doesn't block account creation.
+     */
+    private function mailCredentials(User $user, string $tempPassword, string $roleLabel, bool $reissue = false): bool
+    {
+        try {
+            Mail::to($user->email)->send(new AccountCredentialsMail($user, $tempPassword, $roleLabel, $reissue));
+
+            return true;
+        } catch (\Throwable $exception) {
+            Log::error('Failed to email account credentials.', [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'error' => $exception->getMessage(),
+            ]);
+
+            return false;
+        }
     }
 
     /**
@@ -269,7 +308,7 @@ class StudentManagementController extends Controller
 
             try {
                 $tempPassword = $this->generateOneTimePassword();
-                DB::transaction(function () use ($firstName, $lastName, $email, $studentNumber, $section, $tempPassword) {
+                $student = DB::transaction(function () use ($firstName, $lastName, $email, $studentNumber, $section, $tempPassword) {
                     $student = User::create([
                         'role_id' => Role::STUDENT,
                         'first_name' => $firstName,
@@ -285,7 +324,11 @@ class StudentManagementController extends Controller
                         ['user_id' => $student->id],
                         ['student_number' => $studentNumber, 'section' => $section]
                     );
+
+                    return $student;
                 });
+
+                $mailed = $this->mailCredentials($student, $tempPassword, 'student');
 
                 $created[] = [
                     'first_name' => $firstName,
@@ -293,7 +336,9 @@ class StudentManagementController extends Controller
                     'email' => $email,
                     'student_number' => $studentNumber,
                     'section' => $section,
-                    'temp_password' => $tempPassword,
+                    'mailed' => $mailed,
+                    // Only ever exposed to the chair as a manual fallback when the email failed to send.
+                    'temp_password' => $mailed ? null : $tempPassword,
                 ];
             } catch (\Throwable $exception) {
                 $errors[] = "Row {$line}: could not be imported.";
@@ -301,9 +346,15 @@ class StudentManagementController extends Controller
         }
         fclose($handle);
 
+        $failedMail = count(array_filter($created, fn($row) => ! $row['mailed']));
+        $status = count($created) . ' account' . (count($created) === 1 ? '' : 's') . ' created.';
+        if ($failedMail > 0) {
+            $status .= " {$failedMail} credential email" . ($failedMail === 1 ? '' : 's') . " couldn't be sent — see the flagged rows below.";
+        }
+
         return back()
             ->with('created_credentials', $created)
-            ->with('status', count($created) . ' account' . (count($created) === 1 ? '' : 's') . ' created.')
+            ->with('status', $status)
             ->with('import_errors', array_slice($errors, 0, 25));
     }
 
@@ -312,8 +363,8 @@ class StudentManagementController extends Controller
         return response()->streamDownload(function () {
             $out = fopen('php://output', 'w');
             fputcsv($out, ['first_name', 'last_name', 'email', 'student_number', 'section']);
-            fputcsv($out, ['Juan', 'Dela Cruz', 'juan.delacruz@cpace.edu', '2026-0001', 'BSA-4A']);
-            fputcsv($out, ['Maria', 'Santos', '', '2026-0002', 'BSA-4A']);
+            fputcsv($out, ['Juan', 'Dela Cruz', '', '23-00001', 'BSA-4A']);
+            fputcsv($out, ['Maria', 'Santos', '', '23-00002', 'BSA-4A']);
             fclose($out);
         }, 'student-import-template.csv', ['Content-Type' => 'text/csv']);
     }
@@ -424,7 +475,6 @@ class StudentManagementController extends Controller
                     'at_risk' => $student->is_active && ($low || $inactive),
                     'is_active' => (bool) $student->is_active,
                     'setup_completed' => $student->setup_completed_at !== null,
-                    'temp_password' => $student->setup_completed_at === null ? $student->temp_password : null,
                 ];
             });
     }

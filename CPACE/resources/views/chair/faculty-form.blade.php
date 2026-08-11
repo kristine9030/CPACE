@@ -67,7 +67,8 @@
                 </div>
                 <div class="form-group">
                     <label>Email (login) <span style="color:var(--accent)">*</span></label>
-                    <input type="email" name="email" value="{{ $old('email', $editMode ? $faculty->email : '') }}" required>
+                    <input type="email" id="facultyEmail" name="email" value="{{ $old('email', $editMode ? $faculty->email : '') }}" autocomplete="off" required>
+                    <div id="emailWarning" style="display:none; margin-top:6px; font-size:12px; border-radius:8px; padding:8px 11px;"></div>
                 </div>
                 <div class="form-group">
                     <label>Employee Number</label>
@@ -82,7 +83,7 @@
 
         @unless ($editMode)
             <div class="card">
-                <div class="hint"><i class="fas fa-circle-info"></i> A one-time password will be generated automatically and shown after the account is created.</div>
+                <div class="hint"><i class="fas fa-circle-info"></i> A one-time password will be generated automatically and emailed directly to the faculty member — it is never shown to you.</div>
             </div>
         @endunless
 
@@ -117,6 +118,48 @@
         </div>
     </form>
 </main>
+
+    <script>
+        (function () {
+            var emailInput = document.getElementById('facultyEmail');
+            var warning = document.getElementById('emailWarning');
+            var currentUserId = {{ $editMode ? $faculty->id : 'null' }};
+            var debounceTimer = null;
+
+            function checkEmail() {
+                var email = emailInput.value.trim();
+                warning.style.display = 'none';
+                if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return;
+
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(function () {
+                    var url = '{{ route('chair.check-email') }}?email=' + encodeURIComponent(email)
+                        + (currentUserId ? '&exclude_id=' + currentUserId : '');
+                    fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                        .then(function (r) { return r.json(); })
+                        .then(function (data) {
+                            if (data.taken) {
+                                warning.style.display = 'block';
+                                warning.style.background = '#fef2f2';
+                                warning.style.border = '1px solid #fecaca';
+                                warning.style.color = '#b91c1c';
+                                warning.innerHTML = '<i class="fas fa-triangle-exclamation"></i> This email is already registered to another account.';
+                            } else if (data.valid_format && data.mx_ok === false) {
+                                warning.style.display = 'block';
+                                warning.style.background = '#fffbeb';
+                                warning.style.border = '1px solid #fde68a';
+                                warning.style.color = '#92400e';
+                                warning.innerHTML = '<i class="fas fa-circle-exclamation"></i> This domain doesn\'t appear to accept email — double-check the address.';
+                            }
+                        })
+                        .catch(function () {});
+                }, 400);
+            }
+
+            emailInput.addEventListener('input', checkEmail);
+            emailInput.addEventListener('blur', checkEmail);
+        })();
+    </script>
 
     @include('partials.alerts')
 </body>

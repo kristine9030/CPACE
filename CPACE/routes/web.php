@@ -11,6 +11,7 @@ use App\Http\Controllers\Faculty\FacultyDashboardController;
 use App\Http\Controllers\Faculty\FacultySettingsController;
 use App\Http\Controllers\Faculty\FacultyPerformanceController;
 use App\Http\Controllers\Faculty\FacultyReportController;
+use App\Http\Controllers\Chair\EmailAvailabilityController;
 use App\Http\Controllers\Chair\ProgramChairController;
 use App\Http\Controllers\Chair\FacultyOversightController;
 use App\Http\Controllers\Chair\SubjectManagementController;
@@ -77,6 +78,9 @@ Route::middleware('auth')->group(function () {
             Route::get('/performance', [AnalyticsController::class, 'performance'])->name('performance');
             Route::get('/test-bank-coverage', [AnalyticsController::class, 'testBankCoverage'])->name('test-bank-coverage');
         });
+
+        // Live email availability/format check used by the student & faculty forms
+        Route::get('/check-email', [EmailAvailabilityController::class, 'check'])->name('check-email');
 
         // Student enrollment, monitoring and reporting
         Route::get('/students', [StudentManagementController::class, 'index'])->name('students');
