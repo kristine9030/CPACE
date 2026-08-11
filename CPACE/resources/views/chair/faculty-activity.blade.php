@@ -148,5 +148,7 @@
         </div>
     </div>
 </main>
+
+    @include('partials.alerts')
 </body>
 </html>

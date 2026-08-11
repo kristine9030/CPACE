@@ -272,32 +272,8 @@
         </div>
     </div>
 
-    <!-- Feedback messages -->
-    @if (session('status'))
-        <div class="alert alert-success">
-            <i class="fas fa-check-circle"></i> {{ session('status') }}
-        </div>
-    @endif
-    @if (session('error'))
-        <div class="alert alert-error">
-            <i class="fas fa-triangle-exclamation"></i> {{ session('error') }}
-        </div>
-    @endif
-    @if (session('import_errors'))
-        <div class="import-errors">
-            <strong>Some rows were skipped:</strong>
-            <ul>
-                @foreach (session('import_errors') as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
-        </div>
-    @endif
-    @if (isset($errors) && $errors->any())
-        <div class="alert alert-error">
-            <i class="fas fa-circle-exclamation"></i> {{ $errors->first() }}
-        </div>
-    @endif
+    {{-- Feedback messages (status, errors, skipped import rows) surface as
+         SweetAlert popups via partials.alerts --}}
 
     <!-- Roster summary -->
     <div class="stats-row">
@@ -466,7 +442,11 @@
                                         </div>
                                     @else
                                         <div class="otp-cell">
-                                            <form method="POST" action="{{ route('chair.students.regenerate-otp', $student['id']) }}">
+                                            <form method="POST" action="{{ route('chair.students.regenerate-otp', $student['id']) }}"
+                                                  data-confirm="A new one-time password will be issued for {{ $student['name'] }}. Any password they were given earlier stops working."
+                                                  data-confirm-title="Regenerate one-time password?"
+                                                  data-confirm-ok="Yes, regenerate"
+                                                  data-confirm-icon="question">
                                                 @csrf
                                                 <button type="submit" class="otp-reveal" title="No recoverable OTP on file — issue a new one">
                                                     <i class="fas fa-rotate"></i> Regenerate OTP
@@ -497,6 +477,13 @@
                                     method="POST"
                                     action="{{ route('chair.students.toggle', $student['id']) }}"
                                     style="display:inline;"
+                                    data-confirm="{{ $student['is_active']
+                                        ? $student['name'] . ' will be disabled and can no longer sign in to CPACE.'
+                                        : $student['name'] . ' will be re-enabled and can sign in to CPACE again.' }}"
+                                    data-confirm-title="{{ $student['is_active'] ? 'Disable this account?' : 'Enable this account?' }}"
+                                    data-confirm-ok="{{ $student['is_active'] ? 'Yes, disable' : 'Yes, enable' }}"
+                                    data-confirm-icon="question"
+                                    @if ($student['is_active']) data-confirm-danger @endif
                                 >
                                     @csrf
                                     <button
@@ -556,7 +543,12 @@
             email, and password. Optional grouping columns are student_number, year_level,
             section, and is_active.
         </div>
-        <form method="POST" action="{{ route('chair.students.import') }}" enctype="multipart/form-data">
+        <form method="POST" action="{{ route('chair.students.import') }}" enctype="multipart/form-data"
+              data-confirm="Every valid row in the file becomes a student account with its own one-time password. Rows with problems are skipped and reported."
+              data-confirm-title="Import these students?"
+              data-confirm-ok="Yes, import them"
+              data-confirm-icon="question"
+              data-loading="Importing students...">
             @csrf
             <div class="upload-box">
                 <i class="fas fa-cloud-arrow-up"></i>
@@ -598,5 +590,7 @@
         icon.className = revealed ? 'fas fa-eye' : 'fas fa-eye-slash';
     }
 </script>
+
+    @include('partials.alerts')
 </body>
 </html>

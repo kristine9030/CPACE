@@ -86,9 +86,7 @@
         </div>
     </div>
 
-    @if (session('status'))
-        <div class="alert alert-success"><i class="fas fa-check-circle"></i> {{ session('status') }}</div>
-    @endif
+    {{-- Flash messages surface as SweetAlert popups via partials.alerts --}}
 
     <div class="stats-row">
         <div class="stat-card">
@@ -336,5 +334,7 @@
     });
 })();
 </script>
+
+    @include('partials.alerts')
 </body>
 </html>

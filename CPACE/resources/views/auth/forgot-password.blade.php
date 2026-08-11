@@ -590,25 +590,14 @@
                     <h3>Forgot your password?</h3>
                     <p class="subtitle">Enter your email address and we'll let you know the next steps to recover your account.</p>
 
-                    @if (session('status'))
-                        <div class="status-message">
-                            <i class="fas fa-circle-check"></i>
-                            <span>{{ session('status') }}</span>
-                        </div>
-                    @endif
+                    {{-- Status and validation messages surface as SweetAlert popups via partials.alerts --}}
 
-                    @if ($errors->any())
-                        <div class="alert-error">
-                            <i class="fas fa-circle-exclamation"></i>
-                            <div>
-                                @foreach ($errors->all() as $error)
-                                    <div>{{ $error }}</div>
-                                @endforeach
-                            </div>
-                        </div>
-                    @endif
-
-                    <form method="POST" action="{{ route('password.email') }}">
+                    <form method="POST" action="{{ route('password.email') }}"
+                          data-confirm="A password reset link will be emailed to the address above."
+                          data-confirm-title="Send the reset link?"
+                          data-confirm-ok="Yes, send it"
+                          data-confirm-icon="question"
+                          data-loading="Sending reset link...">
                         @csrf
 
                         <div class="form-group @error('email') error @enderror">
@@ -634,5 +623,7 @@
             </div>
         </div>
     </div>
+
+    @include('partials.alerts')
 </body>
 </html>

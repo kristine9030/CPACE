@@ -61,6 +61,7 @@
             flex-direction:column;
             flex:1;
             overflow:hidden;
+            position:relative;   /* anchors the live-room toasts */
         }
 
         /* ══════════ HEADER ══════════ */
@@ -483,6 +484,133 @@
         .snav-btn.flagged .flag-dot { display:block; }
         .snav-btn.current .flag-dot { background:rgba(255,255,255,.85); }
 
+        /* ══════════ LIVE ROOM (AI pace rivals) ══════════ */
+        .room-block { display:none; }
+        .room-block.on { display:block; }
+
+        .room-head {
+            display:flex; align-items:center; justify-content:space-between;
+            gap:8px; margin-bottom:10px;
+        }
+        .room-live {
+            display:inline-flex; align-items:center; gap:5px;
+            background:#fee2e2; color:#b91c1c;
+            border-radius:20px; padding:2px 9px;
+            font-size:9px; font-weight:700; letter-spacing:.6px;
+        }
+        .room-live .live-dot {
+            width:6px; height:6px; border-radius:50%; background:#ef4444;
+            animation:pulseDot 1.4s infinite;
+        }
+        @keyframes pulseDot { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.3;transform:scale(.6)} }
+
+        /* Rank + momentum hero */
+        .room-hero {
+            background:linear-gradient(135deg,#7B1D1D 0%,#c0392b 100%);
+            border-radius:14px; padding:13px 14px; color:#fff; margin-bottom:12px;
+            box-shadow:0 4px 14px rgba(123,29,29,.25);
+        }
+        .room-hero-top { display:flex; align-items:flex-end; justify-content:space-between; gap:10px; }
+        .room-rank { font-size:27px; font-weight:700; line-height:1; letter-spacing:-.5px; }
+        .room-rank-sub { font-size:10px; opacity:.8; margin-top:3px; }
+        .room-streak {
+            display:inline-flex; align-items:center; gap:4px;
+            background:rgba(255,255,255,.18); border-radius:20px;
+            padding:5px 11px; font-size:12px; font-weight:700;
+        }
+        .room-streak.hot { background:#fbbf24; color:#7c2d12; }
+        .room-mom { margin-top:11px; }
+        .room-mom-label {
+            display:flex; justify-content:space-between;
+            font-size:9.5px; font-weight:600; opacity:.85; margin-bottom:5px;
+            text-transform:uppercase; letter-spacing:.5px;
+        }
+        .room-mom-track { height:6px; background:rgba(255,255,255,.22); border-radius:4px; overflow:hidden; }
+        .room-mom-fill {
+            display:block; height:100%; width:0;
+            background:linear-gradient(90deg,#fbbf24,#fde68a);
+            border-radius:4px; transition:width .45s cubic-bezier(.34,1.3,.64,1);
+        }
+
+        /* Rival rows */
+        .room-row {
+            display:flex; align-items:center; gap:9px;
+            padding:7px 0;
+            transition:opacity .3s;
+        }
+        .room-row.done { opacity:.55; }
+        .room-av {
+            width:28px; height:28px; border-radius:50%;
+            display:flex; align-items:center; justify-content:center;
+            color:#fff; font-size:11px; font-weight:700; flex-shrink:0;
+        }
+        .room-row-body { flex:1; min-width:0; }
+        .room-row-top {
+            display:flex; align-items:baseline; justify-content:space-between; gap:8px;
+        }
+        .room-name {
+            font-size:11.5px; font-weight:600; color:#374151;
+            white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+        }
+        .room-row.you .room-name { color:var(--primary); font-weight:700; }
+        .room-tag { font-size:9px; color:#9ca3af; font-weight:500; }
+        .room-q { font-size:10px; font-weight:700; color:#6b7280; flex-shrink:0; }
+        .room-bar { height:5px; background:#eceef1; border-radius:3px; margin-top:5px; overflow:hidden; }
+        .room-bar span { display:block; height:100%; width:0; border-radius:3px; transition:width .6s ease; }
+
+        /* Feed */
+        .room-feed {
+            margin-top:10px; padding-top:9px;
+            border-top:1px dashed #e8e8e8;
+            display:flex; flex-direction:column; gap:6px;
+        }
+        .room-feed-item {
+            display:flex; align-items:flex-start; gap:6px;
+            font-size:10.5px; color:#7a7a7a; line-height:1.45;
+            animation:feedIn .3s ease;
+        }
+        .room-feed-item i { color:#bbb; font-size:9px; margin-top:3px; flex-shrink:0; }
+        @keyframes feedIn { from{opacity:0;transform:translateY(-4px)} to{opacity:1;transform:none} }
+        .room-note {
+            margin-top:10px; font-size:9px; color:#b0b0b0;
+            display:flex; align-items:center; gap:5px; line-height:1.4;
+        }
+
+        /* Toasts */
+        .room-toasts {
+            position:absolute; top:10px; left:50%; transform:translateX(-50%);
+            z-index:60; display:flex; flex-direction:column; align-items:center; gap:7px;
+            pointer-events:none; width:max-content; max-width:90%;
+        }
+        .room-toast {
+            display:flex; align-items:center; gap:8px;
+            background:rgba(17,24,39,.94); color:#fff;
+            border-radius:22px; padding:9px 16px;
+            font-size:12px; font-weight:600; white-space:nowrap;
+            box-shadow:0 8px 26px rgba(0,0,0,.28);
+            animation:toastIn .32s cubic-bezier(.34,1.56,.64,1);
+            transition:opacity .3s, transform .3s;
+        }
+        .room-toast.good { background:linear-gradient(135deg,#047857,#10b981); }
+        .room-toast.warn { background:linear-gradient(135deg,#b45309,#f59e0b); }
+        .room-toast.fire { background:linear-gradient(135deg,#7B1D1D,#e11d48); }
+        .room-toast.out  { opacity:0; transform:translateY(-10px); }
+        @keyframes toastIn { from{opacity:0;transform:translateY(-12px) scale(.9)} to{opacity:1;transform:none} }
+
+        /* Mobile trigger pill (in the counter strip) */
+        .room-pill {
+            display:none; align-items:center; gap:5px;
+            background:var(--primary); color:#fff;
+            border:none; border-radius:20px; padding:4px 10px;
+            font-size:10px; font-weight:700; font-family:'Poppins',sans-serif;
+            cursor:pointer;
+        }
+        .room-pill.on { display:inline-flex; }
+        .room-pill .pill-streak { opacity:.85; }
+
+        /* Mobile room sheet reuses the navigator sheet shell */
+        .room-sheet-body { padding:16px 18px 26px; overflow-y:auto; }
+
         /* ══════════ DESKTOP LAYOUT (≥ 900px) ══════════ */
         @media (min-width:900px) {
             html, body { overflow:hidden; background:#f0f2f5; }
@@ -532,6 +660,15 @@
                 overflow:hidden;
                 background:#f4f5f7;
             }
+
+            /* The room lives in the sidebar on desktop; the mobile pill + sheet
+               are redundant there. */
+            .room-pill.on { display:none; }
+            #roomSheet { display:none !important; }
+
+            /* Keep the sidebar copy compact so the question map stays in reach. */
+            .quiz-sidebar .room-row { padding:5px 0; }
+            .quiz-sidebar .room-feed-item:nth-child(n+3) { display:none; }
 
             /* Counter strip hidden (stats live in sidebar) */
             .q-counter-strip { display:none; }
@@ -632,6 +769,37 @@
         <!-- ── DESKTOP SIDEBAR (hidden on mobile) ── -->
         <aside class="quiz-sidebar">
 
+            <!-- ── LIVE ROOM: AI pace rivals racing you through the quiz ── -->
+            <div class="room-block" id="roomD">
+                <div class="room-head">
+                    <div class="qs-section-title" style="margin:0;">Live Room</div>
+                    <span class="room-live"><span class="live-dot"></span> LIVE</span>
+                </div>
+
+                <div class="room-hero">
+                    <div class="room-hero-top">
+                        <div>
+                            <div class="room-rank" data-room="rank">#1</div>
+                            <div class="room-rank-sub" data-room="ranksub">of 5 in the room</div>
+                        </div>
+                        <span class="room-streak" data-room="streak"><i class="fas fa-bolt"></i> 0</span>
+                    </div>
+                    <div class="room-mom">
+                        <div class="room-mom-label">
+                            <span>Momentum</span><span data-room="momlabel">Warming up</span>
+                        </div>
+                        <div class="room-mom-track"><span class="room-mom-fill" data-room="momfill"></span></div>
+                    </div>
+                </div>
+
+                <div data-room="roster"></div>
+                <div class="room-feed" data-room="feed"></div>
+                <div class="room-note">
+                    <i class="fas fa-robot"></i>
+                    <span>AI pace partners, tuned to stay ahead of you &mdash; not real students.</span>
+                </div>
+            </div>
+
             <div>
                 <div class="qs-section-title">Your Progress</div>
                 <div class="qs-stats-row">
@@ -673,10 +841,18 @@
         <!-- ── MAIN QUIZ AREA ── -->
         <div class="quiz-main">
 
+            <!-- Live-room toasts (overtakes, streaks, milestones) -->
+            <div class="room-toasts" id="roomToasts"></div>
+
             <!-- Counter strip (mobile only; hidden on desktop) -->
             <div class="q-counter-strip">
                 <span class="q-counter-num" id="qCounterNum">Question 1 of {{ $total }}</span>
                 <div class="q-counter-stats">
+                    <button type="button" class="room-pill" id="roomPill" onclick="openRoomSheet()" title="Live Room">
+                        <i class="fas fa-tower-broadcast"></i>
+                        <span data-room="rank">#1</span>
+                        <span class="pill-streak"><i class="fas fa-bolt"></i><span data-room="streaknum">0</span></span>
+                    </button>
                     <span class="q-chip ans"><i class="fas fa-check"></i><span id="statAnswered">0</span></span>
                     <span class="q-chip flag"><i class="fas fa-flag"></i><span id="statFlagged">0</span></span>
                     <span class="q-chip left"><i class="fas fa-minus"></i><span id="statLeft">{{ $total }}</span></span>
@@ -817,6 +993,41 @@
     </div>
 </div>
 
+<!-- ══════ LIVE ROOM SHEET (mobile only; the sidebar shows it on desktop) ══════ -->
+<div class="sheet-overlay" id="roomOverlay" onclick="closeRoomSheet()"></div>
+<div class="nav-sheet" id="roomSheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">
+        <span><i class="fas fa-tower-broadcast" style="color:var(--primary);margin-right:7px;"></i>Live Room</span>
+        <button class="sheet-close" onclick="closeRoomSheet()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="room-sheet-body">
+        <div class="room-block on">
+            <div class="room-hero">
+                <div class="room-hero-top">
+                    <div>
+                        <div class="room-rank" data-room="rank">#1</div>
+                        <div class="room-rank-sub" data-room="ranksub">of 5 in the room</div>
+                    </div>
+                    <span class="room-streak" data-room="streak"><i class="fas fa-bolt"></i> 0</span>
+                </div>
+                <div class="room-mom">
+                    <div class="room-mom-label">
+                        <span>Momentum</span><span data-room="momlabel">Warming up</span>
+                    </div>
+                    <div class="room-mom-track"><span class="room-mom-fill" data-room="momfill"></span></div>
+                </div>
+            </div>
+            <div data-room="roster"></div>
+            <div class="room-feed" data-room="feed"></div>
+            <div class="room-note">
+                <i class="fas fa-robot"></i>
+                <span>AI pace partners, tuned to stay ahead of you &mdash; not real students.</span>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- ══════ END QUIZ MODAL ══════ -->
 <div class="modal-overlay" id="endModal" onclick="if(event.target===this)closeModal()">
     <div class="modal">
@@ -827,9 +1038,10 @@
             <span class="q-chip ans" style="font-size:12px;padding:5px 12px;"><i class="fas fa-check-circle"></i> <span id="mAnswered">0</span> Answered</span>
             <span class="q-chip flag" style="font-size:12px;padding:5px 12px;"><i class="fas fa-flag"></i> <span id="mFlagged">0</span> For Review</span>
             <span class="q-chip left" style="font-size:12px;padding:5px 12px;"><i class="fas fa-minus-circle"></i> <span id="mLeft">0</span> Remaining</span>
+            <span class="q-chip flag" id="mRoomChip" style="display:none;font-size:12px;padding:5px 12px;"><i class="fas fa-medal"></i> Room place <span id="mRoomPlace">#1</span></span>
         </div>
         <div class="modal-actions">
-            <button class="modal-btn primary" onclick="submitQuiz()"><i class="fas fa-check"></i> Submit Now</button>
+            <button class="modal-btn primary" onclick="confirmSubmitQuiz()"><i class="fas fa-check"></i> Submit Now</button>
             <button class="modal-btn ghost"   onclick="closeModal()">Go Back</button>
         </div>
     </div>
@@ -841,6 +1053,404 @@ const SESSION_TYPE = '{{ $session->session_type }}';
 let current   = 0;
 const flagged  = new Set();
 const answered = new Set();
+
+/* ══════════════════════════════════════════════════════════════════
+   LIVE ROOM — AI pace rivals
+   Four simulated candidates work through the same quiz alongside the
+   student so practice carries the pulse of a real exam hall: someone
+   is always a question ahead, and passing them is a moment worth
+   chasing. The roster is seeded from the session id, so one sitting
+   always draws the same rivals while a retake draws a fresh set.
+
+   This layer is purely cosmetic — it never touches grading, points,
+   the spaced-repetition schedule, or what gets submitted.
+   ══════════════════════════════════════════════════════════════════ */
+const ROOM_ON   = localStorage.getItem('quizLiveRoom') !== '0';
+const QUIZ_MODE = '{{ $session->mode }}';
+const ROOM_SEED = {{ $session->id }};
+
+const Room = {
+    rivals: [], feed: [], streak: 0, bestStreak: 0,
+    lastAnswerAt: 0, place: 1, closed: false,
+    t: 0, youDoneAt: null,   // room clock, used to break ties at the finish line
+    paceSamples: [], youCorrect: 0,
+    lastPlace: null, lastRankToastAt: -99,
+
+    /* Rival personalities. Every one of them is a strong candidate — this is
+       a topnotcher's room, not a random crowd — but the seconds-per-question
+       and accuracy still give each a recognisable rhythm. */
+    POOL: [
+        { name:'Aria', tag:'Speedster',  color:'#ef4444', spq:13, acc:0.81 },
+        { name:'Dex',  tag:'Risk-taker', color:'#f59e0b', spq:15, acc:0.78 },
+        { name:'Mira', tag:'Methodical', color:'#3b82f6', spq:24, acc:0.93 },
+        { name:'Kip',  tag:'Steady',     color:'#10b981', spq:19, acc:0.87 },
+        { name:'Nova', tag:'Clutch',     color:'#8b5cf6', spq:17, acc:0.90 },
+        { name:'Rio',  tag:'Grinder',    color:'#0ea5e9', spq:21, acc:0.85 },
+        { name:'Sage', tag:'Precise',    color:'#14b8a6', spq:26, acc:0.95 },
+        { name:'Zed',  tag:'Sprinter',   color:'#e11d48', spq:11, acc:0.76 },
+    ],
+
+    /* How much faster than the student each rival aims to be, strongest first.
+       Training is ranked on accuracy, so every rival can out-pace you there and
+       the room is still winnable by answering well. Testing is ranked on pace
+       alone, so the last rival sits a hair behind you — without someone to
+       actually catch, that panel would be pure discouragement. */
+    EDGES:         [0.72, 0.82, 0.90, 0.98],
+    EDGES_TESTING: [0.76, 0.86, 0.94, 1.05],
+
+    /* Small deterministic PRNG (mulberry32) — same session, same roster. */
+    rng(seed) {
+        let a = seed >>> 0;
+        return function () {
+            a = (a + 0x6D2B79F5) | 0;
+            let t = Math.imul(a ^ (a >>> 15), 1 | a);
+            t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+            return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+        };
+    },
+
+    init() {
+        // A 1–2 question quiz is over before a race can mean anything.
+        if (!ROOM_ON || TOTAL < 3) return;
+
+        const rand = this.rng(Math.imul(ROOM_SEED || 1, 2654435761));
+        // Harder questions slow everyone down; Timed mode speeds them up.
+        const pace = QUIZ_MODE === 'challenge' ? 1.4 : (QUIZ_MODE === 'timed' ? 0.8 : 1);
+
+        this.rivals = this.POOL
+            .map(p => ({ p: p, k: rand() }))
+            .sort((a, b) => a.k - b.k)
+            .slice(0, 4)
+            .map(function (entry) {
+                const p = entry.p;
+                return {
+                    name: p.name, tag: p.tag, color: p.color, acc: p.acc,
+                    spq: p.spq * pace * (0.85 + rand() * 0.3),
+                    progress: 0, correct: 0, elapsed: 0, next: 0, ahead: false, done: false
+                };
+            });
+
+        // The naturally quickest rival gets the sharpest edge over the student,
+        // so a personality's character and its pressure point the same way.
+        const edges = SESSION_TYPE === 'training' ? this.EDGES : this.EDGES_TESTING;
+        this.rivals
+            .slice()
+            .sort((a, b) => a.spq - b.spq)
+            .forEach((r, i) => { r.edge = edges[i]; });
+
+        this.rivals.forEach(r => { r.next = r.spq * (0.5 + rand() * 0.4); });
+
+        document.getElementById('roomD').classList.add('on');
+        document.getElementById('roomPill').classList.add('on');
+        this.say('Room open — 4 top-scoring candidates seated with you.', 'fa-door-open');
+        this.render();
+        setInterval(() => this.tick(), 1000);
+    },
+
+    /** The student's recent seconds-per-question (last 3 answers). */
+    myPace() {
+        if (!this.paceSamples.length) return null;
+        const recent = this.paceSamples.slice(-3);
+        const mean = recent.reduce((a, b) => a + b, 0) / recent.length;
+        return Math.max(4, Math.min(mean, 180));
+    },
+
+    /**
+     * How long this rival takes on its next question. Rivals chase the
+     * student's own pace with an edge, so speeding up drags the whole room
+     * faster and you never simply out-run them — but each stays within reach
+     * of its own character, and nobody goes inhumanly fast.
+     */
+    target(r) {
+        const mine = this.myPace();
+        if (mine === null) return r.spq;                 // no read yet
+        return Math.max(5, Math.min(mine * r.edge, r.spq * 1.8));
+    },
+
+    /**
+     * Rival accuracy. In Training the student's own accuracy is on screen, so
+     * rivals hold a margin above it — they are the standard to chase. Capped
+     * below 100% so a near-perfect run still wins the room.
+     */
+    effAcc(r) {
+        if (SESSION_TYPE !== 'training' || !answered.size) return r.acc;
+        return Math.min(0.97, Math.max(r.acc, this.youCorrect / answered.size + 0.05));
+    },
+
+    /** One second of rival progress. Pauses whenever the quiz isn't live. */
+    tick() {
+        if (!this.rivals.length || this.closed) return;
+        if (!started || frozen || timeUp || submitting) return;
+
+        this.t++;
+        const milestone = Math.max(3, Math.round(TOTAL / 4));
+        let moved = false;
+
+        this.rivals.forEach(r => {
+            if (r.done) return;
+            r.elapsed++;
+            if (r.elapsed < r.next) return;
+
+            r.elapsed = 0;
+            r.next = this.target(r) * (0.8 + Math.random() * 0.4);   // human-ish jitter
+            r.progress++;
+            if (Math.random() < this.effAcc(r)) r.correct++;
+            moved = true;
+
+            if (r.progress >= TOTAL) {
+                r.progress = TOTAL;
+                r.done = true;
+                r.doneAt = this.t;
+                this.say(r.name + ' submitted their quiz.', 'fa-flag-checkered');
+            } else if (r.progress % milestone === 0) {
+                this.say(r.name + ' reached Q' + r.progress + '.', 'fa-forward');
+            }
+        });
+
+        if (moved) this.checkOvertakes();
+        this.render();
+    },
+
+    /**
+     * Note a rival pulling ahead. This lands in the quiet feed only, and only
+     * the first time each rival does it: against a room that out-paces you,
+     * every crossing would fire a dozen times a quiz and read as nagging.
+     * The toasts come from announceRank(), which fires on real standing moves.
+     */
+    checkOvertakes() {
+        const you = answered.size;
+        this.rivals.forEach(r => {
+            const ahead = r.progress > you;
+            if (ahead && !r.ahead && you > 0 && !r.passNoted) {
+                r.passNoted = true;
+                this.say(r.name + ' moved ahead of you.', 'fa-angles-up');
+            }
+            r.ahead = ahead;
+        });
+    },
+
+    /** Toast when the student's actual placing changes, at most every ~12s. */
+    announceRank(place) {
+        if (this.lastPlace === null) { this.lastPlace = place; return; }
+        if (place === this.lastPlace) return;
+
+        const improved = place < this.lastPlace;
+        const quiet = (this.t - this.lastRankToastAt) < 12;
+        this.lastPlace = place;
+        if (quiet) return;
+
+        this.lastRankToastAt = this.t;
+        if (improved) {
+            this.toast('Climbed to #' + place + ' in the room!', 'good', 'fa-angles-up');
+        } else {
+            this.toast('Slipped to #' + place + ' — the room is pulling ahead', 'warn', 'fa-angles-down');
+        }
+    },
+
+    /** Called whenever the student answers a question. */
+    onAnswer(isCorrect) {
+        if (!this.rivals.length || this.closed) return;
+
+        const now = Date.now();
+        const gap = this.lastAnswerAt ? (now - this.lastAnswerAt) / 1000 : null;
+        this.lastAnswerAt = now;
+        if (gap !== null) this.paceSamples.push(gap);   // feeds the rivals' pacing
+        if (isCorrect) this.youCorrect++;
+        if (answered.size >= TOTAL && this.youDoneAt === null) this.youDoneAt = this.t;
+
+        // Training reveals correctness, so the streak can reward accuracy.
+        // Testing must never leak it, so there the streak rewards pace only.
+        const keepsStreak = SESSION_TYPE === 'training' ? isCorrect : true;
+
+        if (keepsStreak) {
+            this.streak++;
+            this.bestStreak = Math.max(this.bestStreak, this.streak);
+            if (this.streak === 3) {
+                this.toast('3 in a row — you\'re heating up!', 'fire', 'fa-fire');
+            } else if (this.streak === 5 || (this.streak > 5 && this.streak % 5 === 0)) {
+                this.toast(this.streak + ' straight — unstoppable!', 'fire', 'fa-fire-flame-curved');
+                this.say('You hit a ' + this.streak + '-answer streak.', 'fa-fire');
+            }
+        } else {
+            if (this.streak >= 3) this.toast('Streak broken at ' + this.streak, 'warn', 'fa-heart-crack');
+            this.streak = 0;
+        }
+
+        if (gap !== null && gap < 20) {
+            this.toast('Quick answer — ' + Math.round(gap) + 's', 'good', 'fa-bolt');
+        }
+
+        // Passing a rival is the payoff moment the whole panel exists for.
+        const you = answered.size;
+        this.rivals.forEach(r => {
+            if (r.ahead && you > r.progress) {
+                r.ahead = false;
+                this.toast('You passed ' + r.name + '!', 'good', 'fa-angles-up');
+                this.say('You overtook ' + r.name + '.', 'fa-angles-up');
+            }
+        });
+
+        this.render();
+    },
+
+    /**
+     * Current placing. Training grades the room on correct answers — racing
+     * ahead while getting them wrong should not out-rank a careful rival.
+     * Testing has no visible correctness, so there it is pure progress.
+     */
+    standing() {
+        const you = answered.size;
+        const youDone = this.youDoneAt === null ? Infinity : this.youDoneAt;
+        const byScore = SESSION_TYPE === 'training';
+        const mine = byScore ? this.youCorrect : you;
+
+        const ahead = this.rivals.filter(function (r) {
+            const theirs = byScore ? r.correct : r.progress;
+            if (theirs !== mine) return theirs > mine;
+            // Training is graded on accuracy, and the rivals are always the
+            // faster ones — so a tie on score goes to the student. That keeps
+            // topping this room hard but genuinely reachable: answer
+            // everything right and it is yours.
+            if (byScore) return false;
+            // Testing: level on progress, so further along / finished sooner.
+            return r.done && you >= TOTAL && r.doneAt < youDone;
+        }).length;
+
+        return {
+            you: you, correct: this.youCorrect, byScore: byScore,
+            place: ahead + 1, total: this.rivals.length + 1
+        };
+    },
+
+    /* ── rendering (the same markup feeds the sidebar and the mobile sheet) ── */
+    set(key, html) {
+        document.querySelectorAll('[data-room="' + key + '"]').forEach(n => { n.innerHTML = html; });
+    },
+
+    render() {
+        if (!this.rivals.length) return;
+
+        const s = this.standing();
+        this.place = s.place;
+        this.announceRank(s.place);
+
+        this.set('rank', '#' + s.place);
+        this.set('ranksub', 'of ' + s.total + ' in the room');
+        this.set('streak', '<i class="fas fa-bolt"></i> ' + this.streak);
+        this.set('streaknum', this.streak);
+        document.querySelectorAll('[data-room="streak"]').forEach(n => {
+            n.classList.toggle('hot', this.streak >= 3);
+        });
+
+        const labels = ['Warming up', 'Rolling', 'Rolling', 'On fire', 'On fire', 'Unstoppable'];
+        this.set('momlabel', labels[Math.min(this.streak, 5)]);
+        document.querySelectorAll('[data-room="momfill"]').forEach(n => {
+            n.style.width = (Math.min(this.streak, 6) / 6 * 100) + '%';
+        });
+
+        // Ordered exactly like the rank number: the ranking metric first, then
+        // progress, then who crossed the line earlier (UNFINISHED keeps ties
+        // neutral while the room is still running).
+        const UNFINISHED = 1e12;
+        const rows = this.rivals.map(r => ({
+            name: r.name, tag: r.tag, color: r.color,
+            progress: r.progress, correct: r.correct, done: r.done,
+            at: r.done ? r.doneAt : UNFINISHED, you: false
+        }));
+        rows.push({
+            name: 'You', tag: 'your pace', color: '#7B1D1D',
+            progress: s.you, correct: this.youCorrect, done: false,
+            at: this.youDoneAt === null ? UNFINISHED : this.youDoneAt, you: true
+        });
+
+        const key = s.byScore ? 'correct' : 'progress';
+        rows.sort((a, b) => (b[key] - a[key]) || (b.progress - a.progress)
+                         || (a.at - b.at) || (a.you ? -1 : 1));
+
+        this.set('roster', rows.map(function (r) {
+            const pct = TOTAL > 0 ? Math.round(r.progress / TOTAL * 100) : 0;
+            // Training shows accuracy too, so "better than you" is visible in
+            // both dimensions rather than just who is further down the page.
+            const stat = (s.byScore && r.progress > 0)
+                ? r.progress + '/' + TOTAL + ' · ' + Math.round(r.correct / r.progress * 100) + '%'
+                : r.progress + '/' + TOTAL;
+            return '<div class="room-row' + (r.you ? ' you' : '') + (r.done ? ' done' : '') + '">'
+                 +   '<div class="room-av" style="background:' + r.color + '">' + r.name.charAt(0) + '</div>'
+                 +   '<div class="room-row-body">'
+                 +     '<div class="room-row-top">'
+                 +       '<span class="room-name">' + r.name + ' <span class="room-tag">· ' + (r.done ? 'finished' : r.tag) + '</span></span>'
+                 +       '<span class="room-q">' + stat + '</span>'
+                 +     '</div>'
+                 +     '<div class="room-bar"><span style="width:' + pct + '%;background:' + r.color + '"></span></div>'
+                 +   '</div>'
+                 + '</div>';
+        }).join(''));
+
+        this.renderFeed();
+    },
+
+    renderFeed() {
+        this.set('feed', this.feed.map(function (f) {
+            return '<div class="room-feed-item"><i class="fas ' + f.icon + '"></i><span>' + f.text + '</span></div>';
+        }).join(''));
+    },
+
+    say(text, icon) {
+        this.feed.unshift({ text: text, icon: icon || 'fa-circle-info' });
+        this.feed = this.feed.slice(0, 4);
+        this.renderFeed();
+    },
+
+    toast(text, kind, icon) {
+        const host = document.getElementById('roomToasts');
+        if (!host) return;
+        while (host.children.length >= 3) host.removeChild(host.firstChild);
+
+        const node = document.createElement('div');
+        node.className = 'room-toast ' + (kind || '');
+        node.innerHTML = '<i class="fas ' + (icon || 'fa-bolt') + '"></i><span>' + text + '</span>';
+        host.appendChild(node);
+
+        setTimeout(function () {
+            node.classList.add('out');
+            setTimeout(function () { node.remove(); }, 320);
+        }, 2400);
+    },
+
+    /** Freeze the race and hand the final placing to the results page. */
+    finish() {
+        if (!this.rivals.length || this.closed) return;
+        this.closed = true;
+
+        const s = this.standing();
+        try {
+            sessionStorage.setItem('cpaceRoom' + ROOM_SEED, JSON.stringify({
+                place: s.place,
+                total: s.total,
+                streak: this.bestStreak,
+                answered: s.you,
+                correct: s.byScore ? this.youCorrect : null,
+                byScore: s.byScore,
+                questions: TOTAL,
+                youAt: this.youDoneAt,
+                rivals: this.rivals.map(r => ({
+                    name: r.name, color: r.color, progress: r.progress,
+                    correct: s.byScore ? r.correct : null,
+                    at: r.done ? r.doneAt : null
+                }))
+            }));
+        } catch (e) { /* private mode — the room summary is simply skipped */ }
+    }
+};
+
+function openRoomSheet() {
+    document.getElementById('roomOverlay').classList.add('open');
+    document.getElementById('roomSheet').classList.add('open');
+}
+function closeRoomSheet() {
+    document.getElementById('roomOverlay').classList.remove('open');
+    document.getElementById('roomSheet').classList.remove('open');
+}
 
 /* Detect desktop to show the inline counter */
 const isDesktop = () => window.innerWidth >= 900;
@@ -892,6 +1502,8 @@ document.getElementById('quizForm').addEventListener('change', function(e) {
     slide.querySelectorAll('.choice').forEach(c => c.classList.remove('selected'));
     const chosen = e.target.closest('.choice');
     chosen.classList.add('selected');
+    // Changing an existing answer must not feed the Live Room a second time.
+    const firstAnswer = !answered.has(current);
     answered.add(current);
 
     // Once a flagged question is answered correctly there's no need to keep it
@@ -906,6 +1518,7 @@ document.getElementById('quizForm').addEventListener('change', function(e) {
 
     refreshNav();
     refreshStats();
+    if (firstAnswer) Room.onAnswer(chosen.dataset.correct === '1');
 
     if (SESSION_TYPE === 'training' && !slide.classList.contains('revealed')) {
         slide.classList.add('revealed');
@@ -987,7 +1600,16 @@ function closeSheet() {
 }
 
 /* ── End quiz modal ── */
-function openModal()  { refreshStats(); document.getElementById('endModal').classList.add('open'); }
+function openModal()  {
+    refreshStats();
+    // Show where the student stands in the room before they commit.
+    if (Room.rivals.length) {
+        const s = Room.standing();
+        document.getElementById('mRoomPlace').textContent = '#' + s.place + ' of ' + s.total;
+        document.getElementById('mRoomChip').style.display = '';
+    }
+    document.getElementById('endModal').classList.add('open');
+}
 function closeModal() { document.getElementById('endModal').classList.remove('open'); }
 document.getElementById('endQuizBtn').addEventListener('click', openModal);
 
@@ -997,7 +1619,28 @@ let timeUp = false;
 let submitting = false;
 function submitQuiz() {
     submitting = true;
+    Room.finish();
+    CPACE.loading('Submitting your quiz...', 'Scoring your answers, hang tight.');
     document.getElementById('quizForm').submit();
+}
+
+/* Guarded submit used by the "Submit Now" button: unanswered questions get one
+   last confirmation before the attempt is locked in. */
+function confirmSubmitQuiz() {
+    const left = TOTAL - answered.size;
+    if (left <= 0) { submitQuiz(); return; }
+
+    closeModal();
+    CPACE.confirm({
+        title: 'Submit with blanks?',
+        text: left + ' question' + (left > 1 ? 's are' : ' is') + ' still unanswered and will be marked incorrect. This cannot be undone.',
+        confirmText: 'Submit anyway',
+        cancelText: 'Keep answering',
+        danger: true,
+    }).then(function (ok) {
+        if (ok) submitQuiz();
+        else openModal();
+    });
 }
 
 /* ══════════ ANTI-CHEAT ══════════ */
@@ -1047,6 +1690,11 @@ function startQuiz() {
     started = true;
     enterFullscreen();
     document.getElementById('startOverlay').classList.add('hidden');
+    if (Room.rivals.length) {
+        Room.lastAnswerAt = Date.now();
+        Room.say('The room started together. They set a fast pace — go!', 'fa-flag-checkered');
+        Room.toast('Race started — this room is quick. Keep up!', 'fire', 'fa-tower-broadcast');
+    }
 }
 
 /* Treat exiting fullscreen as leaving the quiz. */
@@ -1082,7 +1730,7 @@ function showViolationOverlay() {
         label.textContent = 'Maximum violations reached';
         document.getElementById('resumeBtn').style.display = 'none';
         document.getElementById('tabOverlay').classList.add('show');
-        setTimeout(function() { submitting = true; document.getElementById('quizForm').submit(); }, 3000);
+        setTimeout(submitQuiz, 3000);
         return;
     }
     icon.className  = 'tab-overlay-icon warn';
@@ -1097,9 +1745,13 @@ function showViolationOverlay() {
 }
 
 function confirmLeave() {
-    if (!confirm('Leave the quiz? Your current answers will be submitted.')) return;
-    submitting = true;
-    document.getElementById('quizForm').submit();
+    CPACE.confirm({
+        title: 'Leave the quiz?',
+        text: 'Your attempt ends here and the answers you have so far will be submitted for scoring.',
+        confirmText: 'Yes, submit and leave',
+        cancelText: 'Stay in the quiz',
+        danger: true,
+    }).then(function (ok) { if (ok) submitQuiz(); });
 }
 
 document.addEventListener('visibilitychange', function() {
@@ -1139,8 +1791,7 @@ window.addEventListener('beforeunload', function(e) {
         if (!timerRunning) { setTimeout(tick, 500); return; }
         if (remaining <= 0) {
             timeUp = true; label.textContent = '0:00';
-            submitting = true;
-            document.getElementById('quizForm').submit(); return;
+            submitQuiz(); return;
         }
         render(); remaining--; setTimeout(tick, 1000);
     }
@@ -1158,6 +1809,9 @@ window.addEventListener('beforeunload', function(e) {
 })();
 
 refreshStats();
+Room.init();
 </script>
+
+    @include('partials.alerts')
 </body>
 </html>

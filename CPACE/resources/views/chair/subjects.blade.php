@@ -93,11 +93,7 @@
         </div>
     </div>
 
-    @if(session('status'))<div class="alert alert-success"><i class="fas fa-check-circle"></i>{{ session('status') }}</div>@endif
-    @if(session('error'))<div class="alert alert-error"><i class="fas fa-triangle-exclamation"></i>{{ session('error') }}</div>@endif
-    @if(isset($errors) && $errors->any())
-        <div class="alert alert-error"><i class="fas fa-circle-exclamation"></i><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>
-    @endif
+    {{-- Status and validation messages surface as SweetAlert popups via partials.alerts --}}
 
     <div class="summary-row">
         <div class="sum-card"><div class="sum-icon total"><i class="fas fa-layer-group"></i></div><div><div class="sum-num">{{ $subjectsColl->count() }}</div><div class="sum-lbl">Total Subjects</div></div></div>
@@ -158,7 +154,11 @@
 <div class="modal-overlay" id="subjectModal">
     <div class="modal">
         <h3 id="subjectModalTitle">Add Subject</h3><div class="modal-sub">Configure the subject and the score students need for readiness.</div>
-        <form method="POST" id="subjectForm" action="{{ route('chair.subjects.store') }}">@csrf <input type="hidden" name="_method" id="subjectMethod" value="POST">
+        <form method="POST" id="subjectForm" action="{{ route('chair.subjects.store') }}"
+              data-confirm="This subject and its passing threshold will be saved and applied across quizzes and readiness reports."
+              data-confirm-title="Save this subject?"
+              data-confirm-ok="Yes, save subject"
+              data-confirm-icon="question">@csrf <input type="hidden" name="_method" id="subjectMethod" value="POST">
             <div class="modal-grid">
                 <div class="form-group"><label>Subject Code</label><input type="text" name="code" maxlength="20" required placeholder="e.g. FAR"></div>
                 <div class="form-group"><label>Subject Name</label><input type="text" name="name" required placeholder="Full subject name"></div>
@@ -175,7 +175,11 @@
 <div class="modal-overlay" id="topicModal">
     <div class="modal">
         <h3 id="topicModalTitle">Add Topic</h3><div class="modal-sub" id="topicModalSub">Add a curriculum topic to this subject.</div>
-        <form method="POST" id="topicForm">@csrf <input type="hidden" name="_method" id="topicMethod" value="POST">
+        <form method="POST" id="topicForm"
+              data-confirm="This topic will be saved to the curriculum and become available to questions and quizzes."
+              data-confirm-title="Save this topic?"
+              data-confirm-ok="Yes, save topic"
+              data-confirm-icon="question">@csrf <input type="hidden" name="_method" id="topicMethod" value="POST">
             <div class="modal-grid">
                 <div class="form-group"><label>Topic Name</label><input type="text" name="name" required placeholder="Topic name"></div>
                 <div class="form-group"><label>Display Order</label><input type="number" name="sort_order" min="0" max="9999" value="0" required></div>
@@ -188,20 +192,9 @@
     </div>
 </div>
 
-<div class="modal-overlay" id="confirmModal" style="z-index:2100;">
-    <div class="modal" style="max-width:420px;text-align:center;">
-        <div style="font-size:32px;margin-bottom:8px;" id="confirmIcon"><i class="fas fa-triangle-exclamation" style="color:#b91c1c;"></i></div>
-        <h3 id="confirmTitle">Remove Topic</h3>
-        <div class="modal-sub" id="confirmMsg">Are you sure?</div>
-        <div id="confirmNote"></div>
-        <form method="POST" id="confirmForm" style="display:inline-block;">@csrf <input type="hidden" name="_method" id="confirmMethod" value="DELETE">
-            <div class="modal-actions" style="justify-content:center;">
-                <button type="button" class="btn btn-ghost" onclick="closeModal('confirmModal')">Cancel</button>
-                <button class="btn btn-danger" id="confirmBtn"><i class="fas fa-trash"></i> Remove</button>
-            </div>
-        </form>
-    </div>
-</div>
+{{-- Carrier form for the destructive curriculum actions; the confirmation itself
+     is a SweetAlert dialog raised by openTopicDelete / openSubjectDelete / openTopicToggle. --}}
+<form method="POST" id="confirmForm" hidden>@csrf <input type="hidden" name="_method" id="confirmMethod" value="DELETE"></form>
 
 <script>
 function getTopicForm() { return document.getElementById('topicForm'); }
@@ -323,53 +316,55 @@ function toggleTopicChildren(button) {
     if (children) children.hidden = !children.hidden;
 }
 
+/* Points the carrier form at `action`/`method`, then submits it once the
+   chair confirms the dialog. */
+function askThenSubmit(action, method, dialog) {
+    CPACE.confirm(dialog).then(ok => {
+        if (!ok) return;
+        const f = document.getElementById('confirmForm');
+        f.action = action;
+        document.getElementById('confirmMethod').value = method;
+        f.submit();
+    });
+}
+
 function openTopicDelete(subjectId, topicId, topicName) {
-    document.getElementById('confirmIcon').innerHTML = '<i class="fas fa-triangle-exclamation" style="color:#b91c1c;"></i>';
-    document.getElementById('confirmTitle').textContent = 'Remove Topic';
-    document.getElementById('confirmMsg').textContent = `Remove "${topicName}" from this subject?`;
-    document.getElementById('confirmNote').innerHTML = '<div class="del-warn"><i class="fas fa-shield-halved"></i><span>Topics containing questions or subtopics are protected and cannot be removed. Mark them inactive instead.</span></div>';
-    document.getElementById('confirmForm').action = `/chair/subjects/${subjectId}/topics/${topicId}`;
-    document.getElementById('confirmMethod').value = 'DELETE';
-    document.getElementById('confirmBtn').className = 'btn btn-danger';
-    document.getElementById('confirmBtn').innerHTML = '<i class="fas fa-trash"></i> Remove';
-    document.getElementById('confirmModal').classList.add('open');
+    askThenSubmit(`/chair/subjects/${subjectId}/topics/${topicId}`, 'DELETE', {
+        title: 'Remove this topic?',
+        html: `"${topicName}" will be removed from this subject.`
+            + '<div class="cpace-note">Topics containing questions or subtopics are protected and cannot be removed &mdash; mark them inactive instead.</div>',
+        confirmText: 'Yes, remove topic',
+        danger: true,
+    });
 }
 
 function openSubjectDelete(subjectId, subjectCode) {
-    document.getElementById('confirmIcon').innerHTML = '<i class="fas fa-triangle-exclamation" style="color:#b91c1c;"></i>';
-    document.getElementById('confirmTitle').textContent = 'Remove Subject';
-    document.getElementById('confirmMsg').textContent = `Remove "${subjectCode}"? Subjects with topics or assigned faculty are protected.`;
-    document.getElementById('confirmNote').innerHTML = '<div class="del-warn"><i class="fas fa-shield-halved"></i><span>Subjects containing topics or assigned faculty cannot be removed. Remove those links first, or mark the subject inactive.</span></div>';
-    document.getElementById('confirmForm').action = `/chair/subjects/${subjectId}`;
-    document.getElementById('confirmMethod').value = 'DELETE';
-    document.getElementById('confirmBtn').className = 'btn btn-danger';
-    document.getElementById('confirmBtn').innerHTML = '<i class="fas fa-trash"></i> Remove';
-    document.getElementById('confirmModal').classList.add('open');
+    askThenSubmit(`/chair/subjects/${subjectId}`, 'DELETE', {
+        title: 'Remove this subject?',
+        html: `"${subjectCode}" will be removed from the curriculum.`
+            + '<div class="cpace-note">Subjects containing topics or assigned faculty cannot be removed. Unlink those first, or mark the subject inactive.</div>',
+        confirmText: 'Yes, remove subject',
+        danger: true,
+    });
 }
 
 function openTopicToggle(subjectId, topicId, topicName, makeActive) {
-    const action = makeActive ? 'Enable' : 'Disable';
-    const from = makeActive ? 'inactive' : 'active';
-    document.getElementById('confirmIcon').innerHTML = makeActive
-        ? '<i class="fas fa-eye" style="color:#059669;"></i>'
-        : '<i class="fas fa-eye-slash" style="color:#d97706;"></i>';
-    document.getElementById('confirmTitle').textContent = action + ' Topic';
-    document.getElementById('confirmMsg').textContent = `${action} "${topicName}"?`;
-    document.getElementById('confirmNote').innerHTML = makeActive
-        ? '<div class="info-note"><i class="fas fa-info-circle"></i><span>This topic will become visible and available for questions and quizzes.</span></div>'
-        : '<div class="del-warn"><i class="fas fa-info-circle"></i><span>This topic will be hidden. Existing questions and subtopics remain but won\'t appear in quizzes.</span></div>';
-    document.getElementById('confirmForm').action = `/chair/subjects/${subjectId}/topics/${topicId}/toggle`;
-    document.getElementById('confirmMethod').value = 'PATCH';
-    document.getElementById('confirmBtn').className = makeActive ? 'btn btn-success' : 'btn btn-warning';
-    document.getElementById('confirmBtn').innerHTML = makeActive
-        ? '<i class="fas fa-eye"></i> Enable'
-        : '<i class="fas fa-eye-slash"></i> Disable';
-    document.getElementById('confirmModal').classList.add('open');
+    askThenSubmit(`/chair/subjects/${subjectId}/topics/${topicId}/toggle`, 'PATCH', {
+        title: (makeActive ? 'Enable' : 'Disable') + ' this topic?',
+        html: makeActive
+            ? `"${topicName}" will become visible and available for questions and quizzes.`
+            : `"${topicName}" will be hidden. Existing questions and subtopics stay, but won't appear in quizzes.`,
+        icon: makeActive ? 'question' : 'warning',
+        confirmText: makeActive ? 'Yes, enable it' : 'Yes, disable it',
+        danger: !makeActive,
+    });
 }
 
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 document.querySelectorAll('.modal-overlay').forEach(modal => modal.addEventListener('click', event => { if (event.target === modal) modal.classList.remove('open'); }));
 document.addEventListener('keydown', event => { if (event.key === 'Escape') document.querySelectorAll('.modal-overlay.open').forEach(modal => modal.classList.remove('open')); });
 </script>
+
+    @include('partials.alerts')
 </body>
 </html>

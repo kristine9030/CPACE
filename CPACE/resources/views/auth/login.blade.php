@@ -639,16 +639,7 @@
                     <h3>Welcome back!</h3>
                     <p>Log in to continue your <strong>CPA review</strong> journey.</p>
 
-                    @if ($errors->any())
-                        <div class="alert-error">
-                            <i class="fas fa-circle-exclamation"></i>
-                            <div>
-                                @foreach ($errors->all() as $error)
-                                    <div>{{ $error }}</div>
-                                @endforeach
-                            </div>
-                        </div>
-                    @endif
+                    {{-- Validation errors surface as a SweetAlert popup via partials.alerts --}}
 
                     <form method="POST" action="{{ route('login') }}">
                         @csrf
@@ -723,5 +714,7 @@ function togglePassword(id, btn) {
     }
 }
 </script>
+
+    @include('partials.alerts')
 </body>
 </html>

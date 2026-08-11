@@ -278,7 +278,11 @@
                 <i class="fas fa-chevron-down chevron-icon"></i>
             </div>
             <div class="user-dropdown" id="userDropdown">
-                <form method="POST" action="{{ route('logout') }}">
+                <form method="POST" action="{{ route('logout') }}"
+                          data-confirm="You will be signed out of CPACE and returned to the login page."
+                          data-confirm-title="Log out of CPACE?"
+                          data-confirm-ok="Yes, log me out"
+                          data-confirm-icon="question">
                     @csrf
                     <button type="submit"><i class="fas fa-sign-out-alt"></i><span>Logout</span></button>
                 </form>

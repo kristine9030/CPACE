@@ -280,7 +280,7 @@
 
         .meet-layout {
             display: grid;
-            grid-template-columns: minmax(0, 1fr) 360px;
+            grid-template-columns: minmax(0, 1fr);
             gap: 16px;
             min-height: 0;
         }
@@ -481,92 +481,7 @@
 
         .map-cell.current { border-color: #7b1d1d; color: #7b1d1d; background: #fff6f6; }
         .map-cell.answered { background: #dcfae6; border-color: #75e0a7; color: #027a48; }
-
-        .side-panel {
-            display: grid;
-            grid-template-rows: minmax(0, 1fr);
-            gap: 16px;
-            min-width: 0;
-            min-height: 0;
-        }
-
-        .panel {
-            background: rgba(255, 255, 255, 0.86);
-            border: 1px solid rgba(255, 255, 255, 0.52);
-            border-radius: 8px;
-            padding: 16px;
-            box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
-            min-width: 0;
-            min-height: 0;
-            overflow-y: auto;
-            animation: fadeLiftedPanel 0.34s ease 0.1s both;
-        }
-
-        .panel-title {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 10px;
-            font-size: 14px;
-            font-weight: 700;
-            color: #111827;
-            margin-bottom: 12px;
-        }
-
-        .competitor-row,
-        .rank-row,
-        .feed-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            padding: 10px 0;
-            border-bottom: 1px solid #eef0f2;
-            font-size: 12px;
-        }
-
-        .competitor-row:last-child,
-        .rank-row:last-child,
-        .feed-row:last-child { border-bottom: none; }
-
-        .progress-line {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-            min-width: 0;
-        }
-
-        .progress-name {
-            font-weight: 700;
-            color: #111827;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .progress-sub {
-            color: #667085;
-            font-size: 11px;
-        }
-
-        .rank-score {
-            font-weight: 700;
-            color: #027a48;
-            white-space: nowrap;
-        }
-
-        .feed {
-            max-height: 230px;
-            overflow: hidden;
-        }
-
-        .feed-row {
-            justify-content: flex-start;
-            color: #475467;
-            animation: fadeIn 0.25s ease;
-        }
-
-        .feed-row i { color: #7b1d1d; width: 16px; }
+        .map-cell.flagged { background: #fffaeb; border-color: #fedf89; color: #92400e; }
 
         .stress-banner {
             border-radius: 8px;
@@ -765,8 +680,7 @@
                 padding: 0;
             }
 
-            .question-stage,
-            .side-panel {
+            .question-stage {
                 grid-template-columns: 1fr;
             }
 
@@ -797,8 +711,7 @@
 
         @media (max-width: 520px) {
             .exam-simulation-page .main-content { padding: 0; }
-            .top-stats,
-            .side-panel { grid-template-columns: 1fr; }
+            .top-stats { grid-template-columns: 1fr; }
             .exam-name { white-space: normal; }
             .question-text { font-size: 17px; }
             .map-grid { grid-template-columns: repeat(6, 1fr); }
@@ -815,7 +728,7 @@
                         <i class="fas fa-video"></i>
                         <div>
                             <div class="exam-name" id="examName">{{ request('exam', 'Full CPALE Mock Exam') }}</div>
-                            <div class="exam-meta">Live simulation room · 1,000 examinees · board exam atmosphere</div>
+                            <div class="exam-meta">Proctored session · board exam conditions</div>
                         </div>
                     </div>
 
@@ -829,12 +742,12 @@
                             <div class="stat-value"><span id="yourQuestion">1</span>/70</div>
                         </div>
                         <div class="stat-pill">
-                            <div class="stat-label">Live Takers</div>
-                            <div class="stat-value good" id="liveTakers">1,000</div>
+                            <div class="stat-label">Answered</div>
+                            <div class="stat-value good" id="answeredCount">0</div>
                         </div>
                         <div class="stat-pill">
-                            <div class="stat-label">Current Rank</div>
-                            <div class="stat-value" id="currentRank">#3</div>
+                            <div class="stat-label">For Review</div>
+                            <div class="stat-value" id="flaggedCount">0</div>
                         </div>
                     </div>
                 </div>
@@ -903,27 +816,10 @@
                         </div>
                     </section>
 
-                    <aside class="side-panel">
-                        <div class="panel">
-                            <div class="panel-title">Current Rank</div>
-                            <div id="rankList">
-                                <div class="rank-row"><span>1 Candidate</span><span class="rank-score">99%</span></div>
-                                <div class="rank-row"><span>2 Candidate</span><span class="rank-score">98%</span></div>
-                                <div class="rank-row"><span>3 You</span><span class="rank-score">97%</span></div>
-                            </div>
-
-                            <div class="panel-title" style="margin-top:16px;">Live Pressure Feed</div>
-                            <div class="feed" id="pressureFeed">
-                                <div class="feed-row"><i class="fas fa-circle-info"></i> Waiting room locked. Exam has started.</div>
-                                <div class="feed-row"><i class="fas fa-user-clock"></i> 1,000 takers connected.</div>
-                            </div>
-                        </div>
-                    </aside>
-
                     <div class="control-bar">
                         <div class="control-left">
-                            <span class="control-chip"><i class="fas fa-shield-halved"></i> Difficulty-driven pressure</span>
-                            <span class="control-chip"><i class="fas fa-users"></i> 1,000 simulated takers</span>
+                            <span class="control-chip"><i class="fas fa-user-shield"></i> Faculty-proctored session</span>
+                            <span class="control-chip"><i class="fas fa-hourglass-half"></i> Auto-submits at 0:00</span>
                         </div>
                         <div class="control-right">
                             <a href="{{ route('mock-exams') }}" class="btn btn-soft"><i class="fas fa-arrow-left"></i> Back</a>
@@ -984,18 +880,13 @@
         ];
 
         const state = {
-            mode: 'easy',
             question: 1,
-            candidateQuestion: 5,
             secondsLeft: 4 * 60 * 60,
             running: false,
             examStarted: false,
             answered: new Set(),
-            selected: {},
-            rank: 3,
-            liveTakers: 1000,
-            lastModeQuestion: null,
-            feed: ['Waiting room locked. Exam has started.', '1,000 takers connected.']
+            flagged: new Set(),
+            selected: {}
         };
 
         const el = {
@@ -1006,15 +897,13 @@
             putDownBtn: document.getElementById('putDownBtn'),
             timeLeft: document.getElementById('timeLeft'),
             yourQuestion: document.getElementById('yourQuestion'),
-            currentRank: document.getElementById('currentRank'),
-            liveTakers: document.getElementById('liveTakers'),
+            answeredCount: document.getElementById('answeredCount'),
+            flaggedCount: document.getElementById('flaggedCount'),
             questionNo: document.getElementById('questionNo'),
             questionText: document.getElementById('questionText'),
             difficultyBadge: document.getElementById('difficultyBadge'),
             choices: document.getElementById('choices'),
             questionMap: document.getElementById('questionMap'),
-            rankList: document.getElementById('rankList'),
-            pressureFeed: document.getElementById('pressureFeed'),
             stressBanner: document.getElementById('stressBanner'),
             stressText: document.getElementById('stressText'),
             pauseBtn: document.getElementById('pauseBtn'),
@@ -1086,43 +975,8 @@
             return questions[(state.question - 1) % questions.length];
         }
 
-        function modeForDifficulty(difficulty) {
-            const value = difficulty.toLowerCase();
-
-            if (value.includes('very') || value.includes('difficult') || value.includes('board')) {
-                return 'pressure';
-            }
-
-            if (value.includes('average') || value.includes('moderate') || value.includes('computation')) {
-                return 'normal';
-            }
-
-            return 'easy';
-        }
-
-        function syncMode(data) {
-            const nextMode = modeForDifficulty(data.difficulty);
-            const changedQuestion = state.lastModeQuestion !== state.question;
-            state.mode = nextMode;
-
-            if (changedQuestion) {
-                state.lastModeQuestion = state.question;
-
-                if (state.mode === 'normal') {
-                    addFeed(`Question ${state.question} difficulty: ${data.difficulty}. Countdown pressure increased.`, 'fa-hourglass-half');
-                }
-
-                if (state.mode === 'pressure') {
-                    const message = `Question ${state.question} difficulty: ${data.difficulty}. Pressure simulation activated.`;
-                    addFeed(message, 'fa-bolt');
-                    showStress(message);
-                }
-            }
-        }
-
         function renderQuestion() {
             const data = currentQuestionData();
-            syncMode(data);
             el.questionNo.textContent = state.question;
             el.yourQuestion.textContent = state.question;
             el.questionText.textContent = data.text;
@@ -1150,52 +1004,28 @@
                 const number = index + 1;
                 cell.classList.toggle('current', number === state.question);
                 cell.classList.toggle('answered', state.answered.has(number));
+                cell.classList.toggle('flagged', state.flagged.has(number));
             });
         }
 
-        function renderCompetitors() {
-            const yourAccuracy = Math.max(74, 98 - Math.floor(state.answered.size / 8));
-            const candidateAccuracy = Math.max(88, 99 - Math.floor(state.candidateQuestion / 26));
-            state.rank = state.mode === 'pressure'
-                ? Math.max(3, Math.min(27, 3 + Math.floor((state.candidateQuestion - state.question) / 2)))
-                : Math.max(3, Math.min(9, 3 + Math.floor((state.candidateQuestion - state.question) / 8)));
-
-            el.currentRank.textContent = `#${state.rank}`;
-            el.liveTakers.textContent = state.liveTakers.toLocaleString();
-
-            const secondRank = state.mode === 'easy' ? 96 : 98;
-            el.rankList.innerHTML = `
-                <div class="rank-row"><span>1 Candidate</span><span class="rank-score">${candidateAccuracy}%</span></div>
-                <div class="rank-row"><span>2 Candidate</span><span class="rank-score">${secondRank}%</span></div>
-                <div class="rank-row"><span>${state.rank} You</span><span class="rank-score">${yourAccuracy}%</span></div>
-            `;
+        function renderCounts() {
+            el.answeredCount.textContent = state.answered.size;
+            el.flaggedCount.textContent = state.flagged.size;
         }
 
-        function addFeed(message, icon = 'fa-circle-info') {
-            if (state.mode === 'easy' && state.feed.length > 3) return;
-            state.feed.unshift(message);
-            state.feed = state.feed.slice(0, 8);
-            el.pressureFeed.innerHTML = state.feed.map(item => (
-                `<div class="feed-row"><i class="fas ${icon}"></i> ${item}</div>`
-            )).join('');
-        }
-
-        function showStress(message) {
-            if (state.mode === 'easy') {
-                el.stressBanner.classList.add('hidden');
-                return;
-            }
+        /** Proctor-style notice banner: time warnings, submissions, lockouts. */
+        function announce(message) {
             el.stressText.textContent = message;
             el.stressBanner.classList.remove('hidden');
-            window.clearTimeout(showStress.timeout);
-            showStress.timeout = window.setTimeout(() => el.stressBanner.classList.add('hidden'), 5200);
+            window.clearTimeout(announce.timeout);
+            announce.timeout = window.setTimeout(() => el.stressBanner.classList.add('hidden'), 5200);
         }
 
         function render() {
             el.timeLeft.textContent = formatTime(state.secondsLeft);
             renderQuestion();
             renderMap();
-            renderCompetitors();
+            renderCounts();
         }
 
         function freezeExam() {
@@ -1236,7 +1066,6 @@
                 el.mockViolationLabel.className = 'violation-label critical';
                 el.mockViolationLabel.textContent = 'Maximum violations reached';
                 el.resumeLockBtn.style.display = 'none';
-                addFeed('Mock exam terminated after maximum lockout violations.', 'fa-ban');
                 el.lockOverlay.classList.add('show');
                 return;
             }
@@ -1257,7 +1086,7 @@
             enterFullscreen();
             unfreezeExam();
             el.pauseBtn.innerHTML = '<i class="fas fa-pause"></i> Pause';
-            addFeed('Mock exam resumed after lockout.', 'fa-play');
+            announce('Mock exam resumed after lockout.');
         }
 
         function handleFullscreenChange() {
@@ -1276,7 +1105,7 @@
             el.examShell.classList.add('exam-lifted');
             el.testView.classList.remove('hidden');
             el.pauseBtn.innerHTML = '<i class="fas fa-pause"></i> Pause';
-            addFeed('You lifted the test booklet. Timer started.', 'fa-file-lines');
+            announce('You lifted the test booklet. The timer has started.');
             render();
         }
 
@@ -1284,7 +1113,6 @@
             el.testView.classList.add('hidden');
             el.examShell.classList.remove('exam-lifted');
             document.body.classList.remove('mock-test-active');
-            addFeed(`You put the test down at Question ${state.question}.`, 'fa-eye');
         }
 
         function tick() {
@@ -1292,33 +1120,9 @@
 
             state.secondsLeft = Math.max(0, state.secondsLeft - 1);
 
-            if (state.mode !== 'easy' && Math.random() > 0.62) {
-                state.candidateQuestion = Math.min(totalQuestions, state.candidateQuestion + 1);
-            }
-
-            if (state.mode === 'pressure' && Math.random() > 0.72) {
-                state.liveTakers = Math.max(910, state.liveTakers - Math.floor(Math.random() * 4));
-            }
-
-            if (state.mode === 'normal' && state.secondsLeft % 45 === 0) {
-                addFeed('Countdown check: pace yourself before the next section.', 'fa-hourglass-half');
-            }
-
-            if (state.mode === 'pressure' && state.secondsLeft % 18 === 0) {
-                const events = [
-                    'Candidates submitting in other rooms.',
-                    'Current rank changed after AI candidate update.',
-                    'Time warning: your pace is being compared live.',
-                    'Another candidate moved ahead by two questions.'
-                ];
-                const event = events[Math.floor(Math.random() * events.length)];
-                addFeed(event, 'fa-bolt');
-                showStress(event);
-            }
-
-            if (state.secondsLeft === 15 * 60 || state.secondsLeft === 5 * 60) {
-                showStress(`${Math.floor(state.secondsLeft / 60)} minutes remaining.`);
-                addFeed(`${Math.floor(state.secondsLeft / 60)} minutes remaining.`, 'fa-triangle-exclamation');
+            // Proctor time calls, mirroring how the real sitting is announced.
+            if ([60 * 60, 30 * 60, 15 * 60, 5 * 60].includes(state.secondsLeft)) {
+                announce(`${Math.floor(state.secondsLeft / 60)} minutes remaining.`);
             }
 
             render();
@@ -1327,9 +1131,6 @@
         document.getElementById('nextBtn').addEventListener('click', () => {
             state.answered.add(state.question);
             state.question = Math.min(totalQuestions, state.question + 1);
-            if (state.mode === 'pressure' && state.question % 5 === 0) {
-                addFeed(`You reached Question ${state.question}. Other candidates are moving quickly.`, 'fa-users');
-            }
             render();
         });
 
@@ -1339,7 +1140,13 @@
         });
 
         document.getElementById('flagBtn').addEventListener('click', () => {
-            addFeed(`Question ${state.question} flagged for review.`, 'fa-flag');
+            if (state.flagged.has(state.question)) {
+                state.flagged.delete(state.question);
+            } else {
+                state.flagged.add(state.question);
+                announce(`Question ${state.question} marked for review.`);
+            }
+            render();
         });
 
         el.openExamBtn.addEventListener('click', openExam);
@@ -1353,17 +1160,30 @@
 
             state.running = !state.running;
             el.pauseBtn.innerHTML = state.running ? '<i class="fas fa-pause"></i> Pause' : '<i class="fas fa-play"></i> Resume';
-            addFeed(state.running ? 'Simulation resumed.' : 'Simulation paused.', state.running ? 'fa-play' : 'fa-pause');
+            announce(state.running ? 'Examination resumed.' : 'Examination paused.');
         });
 
         document.getElementById('submitBtn').addEventListener('click', () => {
-            intentionalLeave = true;
-            state.running = false;
-            showStress('Exam submitted. Results simulation complete.');
-            addFeed(`You submitted with ${state.answered.size}/${totalQuestions} questions answered.`, 'fa-paper-plane');
-            el.pauseBtn.innerHTML = '<i class="fas fa-play"></i> Resume';
-            document.body.classList.remove('mock-test-active');
-            exitFullscreen();
+            const left = totalQuestions - state.answered.size;
+            CPACE.confirm({
+                title: 'Submit your examination?',
+                html: `You have answered <strong>${state.answered.size}</strong> of <strong>${totalQuestions}</strong> questions.`
+                    + (left > 0
+                        ? `<div class="cpace-note">${left} unanswered question${left > 1 ? 's' : ''} will be marked incorrect. Submitting ends the exam and cannot be undone.</div>`
+                        : '<div class="cpace-note">Submitting ends the exam and cannot be undone.</div>'),
+                confirmText: 'Yes, submit exam',
+                cancelText: 'Keep working',
+                danger: true,
+            }).then(ok => {
+                if (!ok) return;
+                intentionalLeave = true;
+                state.running = false;
+                announce(`Exam submitted with ${state.answered.size}/${totalQuestions} questions answered.`);
+                el.pauseBtn.innerHTML = '<i class="fas fa-play"></i> Resume';
+                document.body.classList.remove('mock-test-active');
+                exitFullscreen();
+                CPACE.success('Examination submitted', 'Your answers have been recorded.');
+            });
         });
 
         el.resumeLockBtn.addEventListener('click', resumeLockedExam);
@@ -1416,5 +1236,7 @@
         render();
         window.setInterval(tick, 1000);
     </script>
+
+    @include('partials.alerts')
 </body>
 </html>

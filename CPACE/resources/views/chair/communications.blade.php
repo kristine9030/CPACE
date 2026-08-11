@@ -78,8 +78,7 @@
         <div class="topbar-right">@include('partials.topbar-actions')</div>
     </div>
 
-    @if(session('status'))<div class="alert alert-success"><i class="fas fa-circle-check"></i> {{ session('status') }}</div>@endif
-    @if($errors->any())<div class="alert alert-error"><i class="fas fa-circle-exclamation"></i> {{ $errors->first() }}</div>@endif
+    {{-- Status and validation messages surface as SweetAlert popups via partials.alerts --}}
 
     <nav class="communication-tabs" aria-label="Communication sections">
         <a class="communication-tab {{ $tab === 'students' ? 'active' : '' }}" href="{{ route('chair.communications', ['tab' => 'students']) }}"><i class="fas fa-user-graduate"></i><span>Student Announcements</span></a>
@@ -155,17 +154,6 @@
             </div>
         </form>
 
-        <div class="modal-overlay" id="sendConfirmModal">
-            <div class="modal-box">
-                <div class="modal-icon"><i class="fas fa-paper-plane"></i></div>
-                <div class="modal-title">Send this message?</div>
-                <div class="modal-text">It will go out to <strong id="modalRecipientCount">0</strong> recipient<span id="modalRecipientPlural">s</span> as an in-app notification and email.</div>
-                <div class="modal-actions">
-                    <button type="button" id="modalCancelBtn">Cancel</button>
-                    <button type="button" class="btn-confirm" id="modalConfirmBtn">Yes, Send</button>
-                </div>
-            </div>
-        </div>
     @else
         <section class="communication-card">
             <div class="card-heading">Sent History</div><div class="card-sub">Messages sent from your Program Chair account and their current read totals.</div>
@@ -220,30 +208,39 @@
     [year, section, subject].filter(Boolean).forEach(el => el.addEventListener('change', updateCount));
     if (search) search.addEventListener('input', () => { const q = search.value.toLowerCase(); people.forEach(p => p.style.display = p.dataset.search.includes(q) ? '' : 'none'); });
     const form = document.getElementById('communicationForm');
-    const modal = document.getElementById('sendConfirmModal');
-    const modalCount = document.getElementById('modalRecipientCount');
-    const modalPlural = document.getElementById('modalRecipientPlural');
     let confirmed = false;
 
+    // The recipient count is live, so the confirmation is built at submit time
+    // rather than declared with data-confirm.
     form.addEventListener('submit', function (event) {
         if (confirmed) return;
-        const n = Number(count.textContent);
-        if (!n) { event.preventDefault(); return; }
         event.preventDefault();
-        modalCount.textContent = n;
-        modalPlural.textContent = n === 1 ? '' : 's';
-        modal.classList.add('visible');
-    });
-    document.getElementById('modalCancelBtn').addEventListener('click', () => modal.classList.remove('visible'));
-    modal.addEventListener('click', (event) => { if (event.target === modal) modal.classList.remove('visible'); });
-    document.getElementById('modalConfirmBtn').addEventListener('click', () => {
-        confirmed = true;
-        modal.classList.remove('visible');
-        form.requestSubmit();
+
+        const n = Number(count.textContent);
+        if (!n) {
+            CPACE.warning('No recipients selected', 'Pick at least one active recipient before sending this message.');
+            return;
+        }
+
+        CPACE.confirm({
+            title: 'Send this message?',
+            text: 'It will go out to ' + n + ' recipient' + (n === 1 ? '' : 's')
+                + ' as an in-app notification and email. Sent messages cannot be recalled.',
+            icon: 'question',
+            confirmText: 'Yes, send it',
+            cancelText: 'Keep editing',
+        }).then(function (ok) {
+            if (!ok) return;
+            confirmed = true;
+            CPACE.loading('Sending your message...');
+            form.requestSubmit();
+        });
     });
     updatePanels();
 })();
 </script>
 @endif
+
+    @include('partials.alerts')
 </body>
 </html>

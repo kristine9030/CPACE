@@ -271,12 +271,7 @@
         </div>
         <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
 
-        @if ($errors->any())
-            <div style="background:#fde8e8; border:1px solid #f5c2c2; color:#991b1b; border-radius:11px; padding:12px 15px; font-size:12.5px; margin-bottom:16px; display:flex; gap:9px; align-items:flex-start;">
-                <i class="fas fa-circle-exclamation" style="margin-top:2px;"></i>
-                <div>{{ $errors->first() }}</div>
-            </div>
-        @endif
+        {{-- Validation errors surface as a SweetAlert popup via partials.alerts --}}
 
         <form id="setupForm" method="POST" action="{{ route('account-setup.store') }}">
             @csrf
@@ -590,15 +585,26 @@
         document.getElementById('sumSubjects').textContent = state.subjects.length ? state.subjects.join(', ') : 'None selected';
     }
 
-    /* ---- finish: mirror state → verify → real submit (server redirects to welcome) ---- */
+    /* ---- finish: confirm → mirror state → verify → real submit (server redirects to welcome) ---- */
     function finish() {
-        document.getElementById('hidStudyDays').value = state.days.join(',');
-        document.getElementById('hidStudyTime').value = state.time;
-        document.getElementById('hidIntensity').value = state.intensity;
-        document.getElementById('hidSubjects').value = state.subjects.join(',');
+        CPACE.confirm({
+            title: 'Finish setting up your account?',
+            html: 'Your new password replaces the one-time password you signed in with, and your study plan is saved.'
+                + '<div class="cpace-note">Make sure you can remember the new password &mdash; the one-time password stops working after this.</div>',
+            icon: 'question',
+            confirmText: 'Yes, finish setup',
+            cancelText: 'Review my answers',
+        }).then(function (ok) {
+            if (!ok) return;
 
-        document.getElementById('verifyOverlay').classList.add('show');
-        setTimeout(() => { document.getElementById('setupForm').submit(); }, 1400);
+            document.getElementById('hidStudyDays').value = state.days.join(',');
+            document.getElementById('hidStudyTime').value = state.time;
+            document.getElementById('hidIntensity').value = state.intensity;
+            document.getElementById('hidSubjects').value = state.subjects.join(',');
+
+            document.getElementById('verifyOverlay').classList.add('show');
+            setTimeout(function () { document.getElementById('setupForm').submit(); }, 1400);
+        });
     }
 
     /* ---- helpers ---- */
@@ -635,5 +641,7 @@
     render();
 })();
 </script>
+
+    @include('partials.alerts')
 </body>
 </html>

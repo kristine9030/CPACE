@@ -178,11 +178,7 @@
         </div>
     </div>
 
-    @if(session('status'))
-        <div style="background:#d1fae5;color:#059669;padding:12px 18px;border-radius:10px;margin-bottom:16px;font-size:13px;font-weight:600;">
-            <i class="fas fa-check-circle"></i> {{ session('status') }}
-        </div>
-    @endif
+    {{-- Status and validation messages surface as SweetAlert popups via partials.alerts --}}
 
     <!-- STATS -->
     <div class="stats-row a1">
@@ -346,5 +342,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 </script>
+
+    @include('partials.alerts')
 </body>
 </html>

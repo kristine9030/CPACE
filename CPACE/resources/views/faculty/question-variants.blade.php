@@ -136,16 +136,7 @@
         </div>
     </div>
 
-    @if(session('status'))
-        <div style="background:#d1fae5;color:#059669;padding:12px 18px;border-radius:10px;margin-bottom:16px;font-size:13px;font-weight:600;">
-            <i class="fas fa-check-circle"></i> {{ session('status') }}
-        </div>
-    @endif
-    @if($errors->any())
-        <div style="background:#fee2e2;color:#b91c1c;padding:12px 18px;border-radius:10px;margin-bottom:16px;font-size:13px;font-weight:600;">
-            <i class="fas fa-exclamation-circle"></i> {{ $errors->first() }}
-        </div>
-    @endif
+    {{-- Status and validation messages surface as SweetAlert popups via partials.alerts --}}
 
     @php
         $subjectCode = $question->topic->subject->code ?? '';
@@ -188,13 +179,23 @@
                                 <span class="vsrc {{ $v->source }}">{{ $v->source }}{{ $v->is_active ? '' : ' · hidden' }}</span>
                             </div>
                             <div class="vacts">
-                                <form method="POST" action="{{ route('faculty.question.variants.toggle', [$question->id, $v->id]) }}">
+                                <form method="POST" action="{{ route('faculty.question.variants.toggle', [$question->id, $v->id]) }}"
+                                      data-confirm="{{ $v->is_active
+                                          ? 'This variant will be hidden and will stop appearing in student quizzes.'
+                                          : 'This variant will be shown to students and can appear in their quizzes.' }}"
+                                      data-confirm-title="{{ $v->is_active ? 'Hide this variant?' : 'Show this variant?' }}"
+                                      data-confirm-ok="{{ $v->is_active ? 'Yes, hide it' : 'Yes, show it' }}"
+                                      data-confirm-icon="question">
                                     @csrf
                                     <button class="icon-btn ib-toggle" title="{{ $v->is_active ? 'Hide from students' : 'Show to students' }}">
                                         <i class="fas {{ $v->is_active ? 'fa-eye' : 'fa-eye-slash' }}"></i>
                                     </button>
                                 </form>
-                                <form method="POST" action="{{ route('faculty.question.variants.destroy', [$question->id, $v->id]) }}" onsubmit="return confirm('Delete this variant?');">
+                                <form method="POST" action="{{ route('faculty.question.variants.destroy', [$question->id, $v->id]) }}"
+                                      data-confirm="This variant will be permanently removed from the question. This cannot be undone."
+                                      data-confirm-title="Delete this variant?"
+                                      data-confirm-ok="Yes, delete it"
+                                      data-confirm-danger>
                                     @csrf
                                     @method('DELETE')
                                     <button class="icon-btn ib-del" title="Delete"><i class="fas fa-trash"></i></button>
@@ -213,7 +214,11 @@
             <div class="card">
                 <div class="card-title"><i class="fas fa-plus" style="color:var(--green);"></i> Add a Variant</div>
                 <div class="card-sub">Re-word the question while keeping the meaning and the same correct answer.</div>
-                <form method="POST" action="{{ route('faculty.question.variants.store', $question->id) }}">
+                <form method="POST" action="{{ route('faculty.question.variants.store', $question->id) }}"
+                      data-confirm="This wording will be saved as a variant and may be served to students in place of the original question."
+                      data-confirm-title="Save this variant?"
+                      data-confirm-ok="Yes, save variant"
+                      data-confirm-icon="question">
                     @csrf
                     <textarea name="variant_text" id="variantInput" placeholder="Type an alternative wording of the question here...">{{ old('variant_text') }}</textarea>
                     <div class="form-row">
@@ -326,7 +331,7 @@
             input.value = data.draft || ORIGINAL;
             input.focus();
         } catch (e) {
-            alert('Could not generate a draft. Please try again.');
+            CPACE.error('Draft not generated', 'We could not generate a variant draft right now. Please try again.');
         } finally {
             suggestBtn.disabled = false;
             suggestBtn.innerHTML = original;
@@ -334,5 +339,7 @@
     });
 
 </script>
+
+    @include('partials.alerts')
 </body>
 </html>

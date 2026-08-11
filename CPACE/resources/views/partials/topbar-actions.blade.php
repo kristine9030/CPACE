@@ -17,7 +17,11 @@
     <div class="topbar-dropdown" id="topbarDropdown">
         <a href="#"><i class="fas fa-user"></i> Profile Settings</a>
         <a href="#"><i class="fas fa-question-circle"></i> Help &amp; Support</a>
-        <form method="POST" action="{{ route('logout') }}" style="margin:0;padding:0;">
+        <form method="POST" action="{{ route('logout') }}"
+                          data-confirm="You will be signed out of CPACE and returned to the login page."
+                          data-confirm-title="Log out of CPACE?"
+                          data-confirm-ok="Yes, log me out"
+                          data-confirm-icon="question" style="margin:0;padding:0;">
             @csrf
             <button type="submit" class="tda-logout"><i class="fas fa-sign-out-alt"></i> Logout</button>
         </form>

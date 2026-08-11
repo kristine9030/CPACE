@@ -1783,7 +1783,11 @@
                                 <a href="#"><i class="fas fa-user"></i> Profile Settings</a>
                                 <a href="#"><i class="fas fa-chart-line"></i> My Progress</a>
                                 <a href="#"><i class="fas fa-question-circle"></i> Help &amp; Support</a>
-                                <form method="POST" action="{{ route('logout') }}" style="margin:0;padding:0;">
+                                <form method="POST" action="{{ route('logout') }}"
+                          data-confirm="You will be signed out of CPACE and returned to the login page."
+                          data-confirm-title="Log out of CPACE?"
+                          data-confirm-ok="Yes, log me out"
+                          data-confirm-icon="question" style="margin:0;padding:0;">
                                     @csrf
                                     <button type="submit" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</button>
                                 </form>
@@ -2398,7 +2402,7 @@
                             link.remove();
                         } catch (err) {
                             console.error('Badge save failed:', err);
-                            alert('Sorry, the badge could not be saved.');
+                            CPACE.error('Badge not saved', 'We could not save that badge image. Please try again.');
                         } finally {
                             this.saving = false;
                         }
@@ -2408,5 +2412,7 @@
         })();
     </script>
     @include('partials.global-search')
+
+    @include('partials.alerts')
 </body>
 </html>

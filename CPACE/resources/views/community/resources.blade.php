@@ -110,17 +110,18 @@
             </div>
         </div>
 
-        @if(session('status'))
-            <div class="flash"><i class="fas fa-circle-check"></i> {{ session('status') }}</div>
-        @endif
-        @if($errors->any())
-            <div class="flash err"><i class="fas fa-circle-exclamation"></i> {{ $errors->first() }}</div>
-        @endif
+
+        {{-- Status and validation messages surface as SweetAlert popups via partials.alerts --}}
 
         @if(Auth::user()->hasAlumniAccess() || Auth::user()->isChair())
             <div class="card composer">
                 <h4><i class="fas fa-cloud-arrow-up"></i> Upload a material</h4>
-                <form method="POST" action="{{ route('community.resources.store') }}" enctype="multipart/form-data" id="uploadForm">
+                <form method="POST" action="{{ route('community.resources.store') }}" enctype="multipart/form-data" id="uploadForm"
+                      data-confirm="This file will be added to the shared library and can be downloaded by everyone in the community."
+                      data-confirm-title="Share this material?"
+                      data-confirm-ok="Yes, share it"
+                      data-confirm-icon="question"
+                      data-loading="Uploading material...">
                     @csrf
                     <div class="field">
                         <label>Title <span style="color:var(--accent);">*</span></label>
@@ -192,7 +193,11 @@
                                 <div class="res-meta">{{ strtoupper($res->file_category) }} · {{ $res->humanSize() }} · {{ $res->created_at?->diffForHumans() }}</div>
                             </div>
                             @if($canDelete)
-                                <form method="POST" action="{{ route('community.resources.destroy', $res->id) }}" class="res-del" onsubmit="return confirm('Remove this material from the library?');">
+                                <form method="POST" action="{{ route('community.resources.destroy', $res->id) }}" class="res-del"
+                                      data-confirm="&quot;{{ $res->title }}&quot; will be removed from the shared library for everyone."
+                                      data-confirm-title="Remove this material?"
+                                      data-confirm-ok="Yes, remove it"
+                                      data-confirm-danger>
                                     @csrf @method('DELETE')
                                     <button class="icon-btn" title="Delete"><i class="fas fa-trash"></i></button>
                                 </form>
@@ -246,5 +251,7 @@
     }
 })();
 </script>
+
+    @include('partials.alerts')
 </body>
 </html>

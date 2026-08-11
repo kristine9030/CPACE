@@ -98,5 +98,7 @@
     <div class="empty">No questions match the current filters.</div>
 @endforelse
 
+
+    @include('partials.alerts')
 </body>
 </html>

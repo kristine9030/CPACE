@@ -952,6 +952,52 @@
         .summary-cta .ready { color: #27AE60; }
         .summary-cta i { font-size: 15px; }
 
+        /* LIVE ROOM TOGGLE */
+        .live-room-toggle {
+            display: flex; align-items: center; gap: 14px;
+            margin-top: 18px; padding: 14px 16px;
+            background: #fbfbfc; border: 1.5px solid #eee; border-radius: 14px;
+            cursor: pointer; transition: all .22s; user-select: none;
+        }
+        .live-room-toggle:hover { border-color: #ddd; }
+        .live-room-toggle.on {
+            border-color: #7B1D1D;
+            background: linear-gradient(135deg, #fdf4f4 0%, #ffffff 70%);
+        }
+        .lrt-icon {
+            width: 42px; height: 42px; border-radius: 12px; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+            background: #f1f2f4; color: #b3b7bd; font-size: 17px; transition: all .22s;
+        }
+        .live-room-toggle.on .lrt-icon {
+            background: linear-gradient(135deg, #c0392b, #7B1D1D); color: #fff;
+            box-shadow: 0 4px 12px rgba(123,29,29,.28);
+        }
+        .lrt-body { flex: 1; min-width: 0; }
+        .lrt-title {
+            font-size: 14px; font-weight: 700; color: #333;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .lrt-badge {
+            background: #fee2e2; color: #b91c1c;
+            border-radius: 20px; padding: 2px 8px;
+            font-size: 9px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase;
+        }
+        .lrt-desc { font-size: 12px; color: #8b9096; margin-top: 4px; line-height: 1.5; }
+        .lrt-switch {
+            position: relative; flex-shrink: 0;
+            width: 44px; height: 25px; border-radius: 20px;
+            background: #dcdfe3; transition: background .25s;
+        }
+        .lrt-switch span {
+            position: absolute; top: 3px; left: 3px;
+            width: 19px; height: 19px; border-radius: 50%;
+            background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.28);
+            transition: transform .25s;
+        }
+        .live-room-toggle.on .lrt-switch { background: #7B1D1D; }
+        .live-room-toggle.on .lrt-switch span { transform: translateX(19px); }
+
         /* RESPONSIVE */
         @media (max-width: 1150px) {
             .flow-layout { grid-template-columns: 1fr; }
@@ -1018,7 +1064,11 @@
                                 <a href="#"><i class="fas fa-user"></i> Profile Settings</a>
                                 <a href="#"><i class="fas fa-chart-line"></i> My Progress</a>
                                 <a href="#"><i class="fas fa-question-circle"></i> Help &amp; Support</a>
-                                <form method="POST" action="{{ route('logout') }}" style="margin:0;padding:0;">
+                                <form method="POST" action="{{ route('logout') }}"
+                          data-confirm="You will be signed out of CPACE and returned to the login page."
+                          data-confirm-title="Log out of CPACE?"
+                          data-confirm-ok="Yes, log me out"
+                          data-confirm-icon="question" style="margin:0;padding:0;">
                                     @csrf
                                     <button type="submit" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</button>
                                 </form>
@@ -1111,6 +1161,16 @@
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Live Room: simulated AI candidates race you through the quiz -->
+                        <div class="live-room-toggle" id="liveRoomToggle" onclick="toggleLiveRoom()">
+                            <div class="lrt-icon"><i class="fas fa-tower-broadcast"></i></div>
+                            <div class="lrt-body">
+                                <div class="lrt-title">Live Room <span class="lrt-badge">New</span></div>
+                                <div class="lrt-desc">Four AI candidates take the quiz alongside you &mdash; and they are <strong>meant to beat you</strong>. They read your pace and stay a step ahead, so you have to push to climb the room. Never affects your score.</div>
+                            </div>
+                            <div class="lrt-switch"><span></span></div>
+                        </div>
                     </div>
 
                     <!-- STEP 2 : SESSION TYPE -->
@@ -1168,11 +1228,7 @@
                         </div>
                         <div class="step-desc">Pick <strong>one or more</strong> subjects &mdash; mix 2, 3, or all of them for a combined quiz &mdash; then hit the big <strong>Start Quiz</strong> button.</div>
 
-                        @if(session('error') || $errors->any())
-                            <div style="background:#fee2e2;color:#b91c1c;padding:12px 18px;border-radius:10px;margin-bottom:18px;font-size:13px;font-weight:600;">
-                                <i class="fas fa-exclamation-circle"></i> {{ session('error') ?? $errors->first() }}
-                            </div>
-                        @endif
+                        {{-- Errors surface as SweetAlert popups via partials.alerts --}}
 
                         <div id="lengthHint" class="subject-lock-note">
                             <i class="fas fa-lock"></i> Choose how many questions in Step 3 to unlock the subjects.
@@ -1310,6 +1366,7 @@
             <div class="summary-chips">
                 <div class="sum-chip"><i class="fas fa-chart-line"></i> <span class="sum-key">Mode</span> <span id="sumMode">Adaptive</span></div>
                 <div class="sum-chip"><i class="fas fa-sliders"></i> <span class="sum-key">Format</span> <span id="sumStype">Training</span></div>
+                <div class="sum-chip"><i class="fas fa-tower-broadcast"></i> <span class="sum-key">Live Room</span> <span id="sumRoom">On</span></div>
                 <div class="sum-chip pending" id="sumCountChip"><i class="fas fa-list-ol"></i> <span class="sum-key">Length</span> <span id="sumCount">Not set</span></div>
                 <div class="sum-chip pending" id="sumSubjectChip"><i class="fas fa-book"></i> <span class="sum-key">Subject</span> <span id="sumSubject">Not set</span></div>
             </div>
@@ -1369,6 +1426,18 @@
             document.getElementById('pipeSub2').textContent = name;
         }
         function selectStype(el) { applyStype(el.dataset.stype); }
+
+        // ── Live Room ── the quiz page reads this flag straight from
+        // localStorage, so the preference follows the student into the quiz
+        // without needing to be carried through the form or the session row.
+        function applyLiveRoom(on) {
+            document.getElementById('liveRoomToggle').classList.toggle('on', on);
+            localStorage.setItem('quizLiveRoom', on ? '1' : '0');
+            document.getElementById('sumRoom').textContent = on ? 'On' : 'Off';
+        }
+        function toggleLiveRoom() {
+            applyLiveRoom(!document.getElementById('liveRoomToggle').classList.contains('on'));
+        }
 
         // ── Select Mode ── highlight the card + push into every subject form.
         function applyMode(mode) {
@@ -1490,11 +1559,46 @@
         }
         function customLength(value) { if (value !== '') applyLength(value); }
 
+        // ── Start-quiz confirmation ──
+        // Built at submit time so the dialog mirrors the summary bar exactly.
+        document.getElementById('quizForm').addEventListener('submit', function (event) {
+            if (this.dataset.confirmed === 'yes') return;
+            event.preventDefault();
+
+            const val = id => document.getElementById(id).textContent.trim();
+            const rows = [
+                ['Mode', val('sumMode')],
+                ['Format', val('sumStype')],
+                ['Questions', val('sumCount')],
+                ['Subjects', val('sumSubject')],
+                ['Live room', val('sumRoom')],
+            ];
+
+            CPACE.confirm({
+                title: 'Start this quiz?',
+                html: '<ul class="cpace-alert-list">'
+                    + rows.map(r => `<li><strong>${r[0]}:</strong> ${r[1]}</li>`).join('')
+                    + '</ul>'
+                    + '<div class="cpace-note">Once you begin, leaving the quiz tab counts as a violation and the attempt is recorded.</div>',
+                icon: 'question',
+                confirmText: 'Yes, start quiz',
+                cancelText: 'Not yet',
+            }).then(ok => {
+                if (!ok) return;
+                this.dataset.confirmed = 'yes';
+                CPACE.loading('Building your quiz...', 'Picking questions that match your settings.');
+                this.submit();
+            });
+        });
+
         // ── init ──
         applyStype(localStorage.getItem('quizStype') || 'training');
         applyMode(localStorage.getItem('quizMode') || 'adaptive');
+        applyLiveRoom(localStorage.getItem('quizLiveRoom') !== '0');   // on by default
         updateSubjectsEnabled(0); // start locked
     </script>
     @include('partials.global-search')
+
+    @include('partials.alerts')
 </body>
 </html>

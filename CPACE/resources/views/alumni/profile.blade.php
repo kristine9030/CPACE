@@ -43,12 +43,14 @@
             </div>
         </div>
 
-        @if(session('status'))
-            <div class="flash"><i class="fas fa-circle-check"></i> {{ session('status') }}</div>
-        @endif
+        {{-- Flash messages surface as SweetAlert popups via partials.alerts --}}
 
         <div class="card">
-            <form method="POST" action="{{ route('alumni.profile.update') }}">
+            <form method="POST" action="{{ route('alumni.profile.update') }}"
+                  data-confirm="Your alumni profile will be updated with the details entered here."
+                  data-confirm-title="Save profile changes?"
+                  data-confirm-ok="Yes, save changes"
+                  data-confirm-icon="question">
                 @csrf
                 <div class="field">
                     <label>Batch Year</label>
@@ -75,5 +77,7 @@
         </div>
     </div>
 </main>
+
+    @include('partials.alerts')
 </body>
 </html>

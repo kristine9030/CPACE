@@ -201,11 +201,7 @@
         </div>
     </div>
 
-    @if (session('status'))
-        <div class="alert alert-success">
-            <i class="fas fa-check-circle"></i> {{ session('status') }}
-        </div>
-    @endif
+    {{-- Flash messages surface as SweetAlert popups via partials.alerts --}}
 
     <!-- Student identity and enrollment summary -->
     <div class="card profile-card">
@@ -443,5 +439,7 @@
         </div>
     </div>
 </main>
+
+    @include('partials.alerts')
 </body>
 </html>

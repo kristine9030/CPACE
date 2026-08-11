@@ -252,6 +252,42 @@
             .rq-text { font-size:12px; }
             .opt { font-size:11px; padding:8px 10px; }
         }
+        /* ══════════ LIVE ROOM RESULT ══════════ */
+        .room-result {
+            background:#fff; border:1px solid #f0e6e6; border-radius:16px;
+            padding:18px; margin-bottom:18px;
+        }
+        .room-result-head { display:flex; align-items:center; gap:13px; margin-bottom:12px; }
+        .room-result-medal {
+            width:46px; height:46px; border-radius:14px; flex-shrink:0;
+            display:flex; align-items:center; justify-content:center; font-size:20px;
+            background:#f3f4f6; color:#9ca3af;
+        }
+        .room-result-medal.win { background:linear-gradient(135deg,#fbbf24,#f59e0b); color:#7c2d12; }
+        .room-result-place { font-size:16px; font-weight:700; color:#222; }
+        .room-result-sub { font-size:11.5px; color:#999; margin-top:2px; }
+        .room-result-streak {
+            margin-left:auto; white-space:nowrap;
+            background:#fff7ed; color:#b45309;
+            border-radius:20px; padding:6px 12px; font-size:11px; font-weight:700;
+        }
+        .rr-row { display:flex; align-items:center; gap:9px; padding:6px 0; }
+        .rr-av {
+            width:26px; height:26px; border-radius:50%; flex-shrink:0;
+            display:flex; align-items:center; justify-content:center;
+            color:#fff; font-size:10.5px; font-weight:700;
+        }
+        .rr-body { flex:1; min-width:0; }
+        .rr-top { display:flex; justify-content:space-between; gap:8px; align-items:baseline; }
+        .rr-name { font-size:11.5px; font-weight:600; color:#555; }
+        .rr-row.you .rr-name { color:#7B1D1D; font-weight:700; }
+        .rr-q { font-size:10px; font-weight:700; color:#999; }
+        .rr-bar { height:5px; background:#f0f0f0; border-radius:3px; margin-top:4px; overflow:hidden; }
+        .rr-bar span { display:block; height:100%; border-radius:3px; }
+        .room-result-note {
+            margin-top:12px; font-size:9.5px; color:#c0c0c0;
+            display:flex; align-items:center; gap:6px;
+        }
     </style>
 </head>
 <body>
@@ -312,6 +348,22 @@
             </div>
         </div>
 
+        <!-- Live Room finish (filled in from the standing the quiz page saved) -->
+        <div class="room-result" id="roomResult" style="display:none;">
+            <div class="room-result-head">
+                <div class="room-result-medal" id="rrMedal"><i class="fas fa-medal"></i></div>
+                <div>
+                    <div class="room-result-place" id="rrPlace">—</div>
+                    <div class="room-result-sub" id="rrSub">in your live room</div>
+                </div>
+                <div class="room-result-streak"><i class="fas fa-bolt"></i> <span id="rrStreak">0</span> best streak</div>
+            </div>
+            <div id="rrRoster"></div>
+            <div class="room-result-note">
+                <i class="fas fa-robot"></i> Simulated AI pace partners — practice pressure only, never part of your score.
+            </div>
+        </div>
+
         <!-- Review answers -->
         <div class="section-lbl">Review Answers</div>
 
@@ -368,5 +420,66 @@
 
 </div>
 
+<script>
+/* The Live Room runs entirely in the browser during the quiz, so the finishing
+   standing is handed over through sessionStorage. No standing (room switched
+   off, or the results opened later from history) simply hides the card. */
+(function () {
+    let data = null;
+    try { data = JSON.parse(sessionStorage.getItem('cpaceRoom{{ $session->id }}') || 'null'); } catch (e) { return; }
+    if (!data || !Array.isArray(data.rivals) || !data.rivals.length) return;
+
+    const ordinals = ['', '1st', '2nd', '3rd', '4th', '5th', '6th'];
+    const place = data.place || 1;
+    const total = data.total || (data.rivals.length + 1);
+    const questions = data.questions || 1;
+
+    document.getElementById('rrPlace').textContent = (ordinals[place] || place + 'th') + ' of ' + total;
+    document.getElementById('rrSub').textContent = place === 1
+        ? 'You finished ahead of every candidate in the room.'
+        : 'in your live room';
+    document.getElementById('rrStreak').textContent = data.streak || 0;
+    if (place === 1) document.getElementById('rrMedal').classList.add('win');
+
+    // Same ordering rule as the quiz page: progress, then who finished first.
+    const UNFINISHED = 1e12;
+    const rows = data.rivals.map(function (r) {
+        return {
+            name: r.name, color: r.color, progress: r.progress, correct: r.correct,
+            at: r.at == null ? UNFINISHED : r.at, you: false
+        };
+    });
+    rows.push({
+        name: 'You', color: '#7B1D1D', progress: data.answered || 0, correct: data.correct,
+        at: data.youAt == null ? UNFINISHED : data.youAt, you: true
+    });
+
+    const key = data.byScore ? 'correct' : 'progress';
+    rows.sort(function (a, b) {
+        return (b[key] - a[key]) || (b.progress - a.progress) || (a.at - b.at) || (a.you ? -1 : 1);
+    });
+
+    document.getElementById('rrRoster').innerHTML = rows.map(function (r) {
+        const pct = Math.round(r.progress / questions * 100);
+        const stat = (data.byScore && r.correct != null && r.progress > 0)
+            ? r.progress + '/' + questions + ' · ' + Math.round(r.correct / r.progress * 100) + '%'
+            : r.progress + '/' + questions;
+        return '<div class="rr-row' + (r.you ? ' you' : '') + '">'
+             +   '<div class="rr-av" style="background:' + r.color + '">' + r.name.charAt(0) + '</div>'
+             +   '<div class="rr-body">'
+             +     '<div class="rr-top"><span class="rr-name">' + r.name + '</span>'
+             +     '<span class="rr-q">' + stat + '</span></div>'
+             +     '<div class="rr-bar"><span style="width:' + pct + '%;background:' + r.color + '"></span></div>'
+             +   '</div>'
+             + '</div>';
+    }).join('');
+
+    document.getElementById('roomResult').style.display = '';
+    sessionStorage.removeItem('cpaceRoom{{ $session->id }}');
+})();
+</script>
+
+
+    @include('partials.alerts')
 </body>
 </html>
