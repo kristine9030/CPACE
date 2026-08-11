@@ -1028,11 +1028,53 @@
             renderCounts();
         }
 
+        let violationAudioCtx = null;
+        function playViolationSound() {
+            try {
+                violationAudioCtx = violationAudioCtx || new (window.AudioContext || window.webkitAudioContext)();
+                const ctx = violationAudioCtx;
+                if (ctx.state === 'suspended') ctx.resume();
+                [0, 0.16].forEach(function (delay) {
+                    const osc  = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'square';
+                    osc.frequency.value = 880;
+                    gain.gain.setValueAtTime(0.0001, ctx.currentTime + delay);
+                    gain.gain.exponentialRampToValueAtTime(0.25, ctx.currentTime + delay + 0.02);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + delay + 0.14);
+                    osc.connect(gain).connect(ctx.destination);
+                    osc.start(ctx.currentTime + delay);
+                    osc.stop(ctx.currentTime + delay + 0.15);
+                });
+            } catch (e) {}
+        }
+        function playTerminationSound() {
+            try {
+                violationAudioCtx = violationAudioCtx || new (window.AudioContext || window.webkitAudioContext)();
+                const ctx = violationAudioCtx;
+                if (ctx.state === 'suspended') ctx.resume();
+                [660, 495, 330].forEach(function (freq, i) {
+                    const delay = i * 0.18;
+                    const osc  = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.value = freq;
+                    gain.gain.setValueAtTime(0.0001, ctx.currentTime + delay);
+                    gain.gain.exponentialRampToValueAtTime(0.3, ctx.currentTime + delay + 0.02);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + delay + 0.22);
+                    osc.connect(gain).connect(ctx.destination);
+                    osc.start(ctx.currentTime + delay);
+                    osc.stop(ctx.currentTime + delay + 0.23);
+                });
+            } catch (e) {}
+        }
+
         function freezeExam() {
             if (!state.examStarted || terminated || frozen) return;
             frozen = true;
             state.running = false;
             document.body.classList.add('exam-frozen');
+            playViolationSound();
         }
 
         function unfreezeExam() {
@@ -1056,6 +1098,7 @@
             el.mockVCount.textContent = violations;
 
             if (violations >= MAX_VIOLATIONS) {
+                playTerminationSound();
                 terminated = true;
                 state.running = false;
                 document.body.classList.remove('mock-test-active');
