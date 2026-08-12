@@ -104,13 +104,23 @@ class FacultyAiQuestionAssistantTest extends TestCase
         ]);
     }
 
-    private function fakeGeminiJson(array $payload): void
+    /**
+     * Fakes a successful reply from BOTH providers with the same content, so
+     * the test doesn't care whether the service actually reaches Gemini or
+     * falls through to OpenRouter — which depends on whether GEMINI_API_KEY
+     * is set in the current environment (it isn't in CI, which runs off
+     * .env.example, but it is in local dev off the real .env).
+     */
+    private function fakeAiReply(string $text): void
     {
         Http::fake([
             'https://generativelanguage.googleapis.com/*' => Http::response([
                 'candidates' => [
-                    ['content' => ['parts' => [['text' => json_encode($payload)]]]],
+                    ['content' => ['parts' => [['text' => $text]]]],
                 ],
+            ], 200),
+            'https://openrouter.ai/*' => Http::response([
+                'choices' => [['message' => ['content' => $text]]],
             ], 200),
         ]);
     }
@@ -120,7 +130,7 @@ class FacultyAiQuestionAssistantTest extends TestCase
         $subject = \DB::table('subjects')->insertGetId(['code' => 'FAR', 'name' => 'Financial Accounting and Reporting', 'is_active' => true]);
         $topicId = \DB::table('topics')->insertGetId(['subject_id' => $subject, 'name' => 'Inventory', 'sort_order' => 1, 'is_active' => true]);
 
-        $this->fakeGeminiJson([
+        $this->fakeAiReply(json_encode([
             'question_text' => 'Under the lower of cost or NRV rule, inventory is written down when:',
             'choices' => [
                 ['text' => 'NRV falls below cost', 'is_correct' => true],
@@ -129,7 +139,7 @@ class FacultyAiQuestionAssistantTest extends TestCase
                 ['text' => 'The entity changes its cost formula', 'is_correct' => false],
             ],
             'explanation' => 'PAS 2 requires inventory to be measured at the lower of cost and NRV.',
-        ]);
+        ]));
 
         $response = $this->actingAs($this->faculty())
             ->postJson(route('faculty.question.ai-draft'), [
@@ -178,13 +188,7 @@ class FacultyAiQuestionAssistantTest extends TestCase
             'created_at' => now(), 'updated_at' => now(),
         ]);
 
-        Http::fake([
-            'https://generativelanguage.googleapis.com/*' => Http::response([
-                'candidates' => [
-                    ['content' => ['parts' => [['text' => 'Identify which of the following is NOT a cost formula under PAS 2?']]]],
-                ],
-            ], 200),
-        ]);
+        $this->fakeAiReply('Identify which of the following is NOT a cost formula under PAS 2?');
 
         $response = $this->actingAs($this->faculty())
             ->postJson(route('faculty.question.variants.suggest', $questionId));
