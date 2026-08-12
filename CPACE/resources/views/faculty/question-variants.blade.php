@@ -220,11 +220,12 @@
                       data-confirm-ok="Yes, save variant"
                       data-confirm-icon="question">
                     @csrf
+                    <input type="hidden" name="source" id="variantSource" value="faculty">
                     <textarea name="variant_text" id="variantInput" placeholder="Type an alternative wording of the question here...">{{ old('variant_text') }}</textarea>
                     <div class="form-row">
                         <span class="hint"><i class="fas fa-lightbulb" style="color:#f59e0b;"></i> Tip: click the suggestions on the right to build your wording.</span>
                         <div style="display:flex;gap:8px;">
-                            <button type="button" class="btn btn-purple" id="suggestBtn"><i class="fas fa-wand-magic-sparkles"></i> Suggest a draft</button>
+                            <button type="button" class="btn btn-purple" id="suggestBtn"><i class="fas fa-wand-magic-sparkles"></i> Suggest with AI</button>
                             <button type="submit" class="btn btn-primary"><i class="fas fa-check"></i> Save Variant</button>
                         </div>
                     </div>
@@ -316,8 +317,15 @@
     });
     if (relevant === 0) document.getElementById('synEmpty').style.display = 'block';
 
-    // "Suggest a draft" — asks the server for a rule-based rewrite to start from
+    // "Suggest with AI" — tries an AI rewrite first, server falls back to the
+    // rule-based paraphraser if the AI is unavailable. Whichever wording gets
+    // saved as-is is tagged with the source that actually produced it.
     const suggestBtn = document.getElementById('suggestBtn');
+    const sourceField = document.getElementById('variantSource');
+
+    // Typing after a suggestion means the faculty wrote it themselves.
+    input.addEventListener('input', () => { sourceField.value = 'faculty'; });
+
     suggestBtn.addEventListener('click', async () => {
         const original = suggestBtn.innerHTML;
         suggestBtn.disabled = true;
@@ -329,7 +337,12 @@
             });
             const data = await res.json();
             input.value = data.draft || ORIGINAL;
+            const source = data.source === 'ai' ? 'ai' : 'rule';
+            sourceField.value = source;
             input.focus();
+            if (source === 'rule') {
+                CPACE.toast('AI is unavailable right now — used the quick rule-based rewrite instead.', 'info');
+            }
         } catch (e) {
             CPACE.error('Draft not generated', 'We could not generate a variant draft right now. Please try again.');
         } finally {

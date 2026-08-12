@@ -8,10 +8,12 @@ use App\Models\Question;
 use App\Models\QuestionVariant;
 use App\Models\Subject;
 use App\Models\Topic;
+use App\Services\AiQuestionAssistantService;
 use App\Services\QuestionParaphraser;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class TestBankController extends Controller
 {
@@ -197,6 +199,49 @@ class TestBankController extends Controller
     }
 
     /**
+     * Draft a full question (text, choices, explanation) with AI, grounded in
+     * the chosen subject/topic and the questions already in the bank for that
+     * topic so it doesn't duplicate them. Returns JSON for the form to fill
+     * in — nothing is saved here, the faculty still reviews and submits.
+     */
+    public function aiDraft(Request $request, AiQuestionAssistantService $ai)
+    {
+        $data = $request->validate([
+            'topic_id'      => 'required|exists:topics,id',
+            'difficulty'    => 'required|in:Easy,Medium,Hard',
+            'question_type' => 'required|in:mcq,true_false',
+            'seed_idea'     => 'nullable|string|max:500',
+        ]);
+
+        $topic = Topic::with('subject')->findOrFail($data['topic_id']);
+
+        $existingQuestions = Question::where('topic_id', $topic->id)
+            ->orderByDesc('id')
+            ->limit(15)
+            ->pluck('question_text')
+            ->all();
+
+        try {
+            $draft = $ai->draftQuestion(
+                $topic->subject->name ?? $topic->subject->code ?? 'CPA Reviewer',
+                $topic->name,
+                $data['difficulty'],
+                $data['question_type'],
+                $existingQuestions,
+                $data['seed_idea'] ?? null
+            );
+        } catch (\Throwable $e) {
+            Log::error('AI question draft failed.', ['error' => $e->getMessage()]);
+
+            return response()->json([
+                'message' => 'The AI could not draft a question right now. Please try again in a moment, or write it manually.',
+            ], 503);
+        }
+
+        return response()->json($draft);
+    }
+
+    /**
      * Persist a new question and its choices.
      */
     public function store(Request $request)
@@ -295,11 +340,12 @@ class TestBankController extends Controller
 
         $data = $request->validate([
             'variant_text' => 'required|string|min:5|max:1000',
+            'source'       => 'nullable|in:faculty,ai,rule',
         ]);
 
         $question->variants()->create([
             'variant_text' => trim($data['variant_text']),
-            'source'       => 'faculty',
+            'source'       => $data['source'] ?? 'faculty',
             'is_active'    => true,
         ]);
 
@@ -332,12 +378,26 @@ class TestBankController extends Controller
     }
 
     /**
-     * Return a rule-based draft variant the faculty can edit (the "intelligent"
-     * starting point). A fresh seed each call gives a different draft.
+     * Return a draft variant the faculty can edit. Tries the AI rewrite first
+     * (grounded in the question's subject/topic); if the AI is unavailable or
+     * fails, falls back to the always-on rule-based paraphraser so the button
+     * never dead-ends.
      */
-    public function suggestVariant(int $id)
+    public function suggestVariant(int $id, AiQuestionAssistantService $ai)
     {
-        $question = Question::findOrFail($id);
+        $question = Question::with('topic.subject')->findOrFail($id);
+
+        try {
+            $draft = $ai->rewriteVariant(
+                $question->topic->subject->name ?? $question->topic->subject->code ?? 'CPA Reviewer',
+                $question->topic->name ?? '',
+                $question->question_text
+            );
+
+            return response()->json(['draft' => $draft, 'source' => 'ai']);
+        } catch (\Throwable $e) {
+            Log::warning('AI variant rewrite failed, falling back to rule-based paraphraser.', ['error' => $e->getMessage()]);
+        }
 
         $draft = QuestionParaphraser::rephrase(
             $question->question_text,
@@ -345,7 +405,7 @@ class TestBankController extends Controller
             $question->question_type
         );
 
-        return response()->json(['draft' => $draft]);
+        return response()->json(['draft' => $draft, 'source' => 'rule']);
     }
 
     /**
