@@ -185,6 +185,19 @@
         <div class="form-layout a1">
             <!-- LEFT — MAIN FORM -->
             <div>
+                <!-- AI DRAFT -->
+                <div class="card" style="border:1.5px dashed #ddd6fe; background:#faf8ff;">
+                    <div class="card-title"><i class="fas fa-wand-magic-sparkles" style="color:#7c3aed;"></i> Draft with AI</div>
+                    <p style="font-size:12px;color:#999;margin-bottom:12px;">Pick a Subject and Topic on the right first — the AI grounds the question in that topic and avoids repeating what's already in the bank. Everything it writes lands below for you to review and edit before saving.</p>
+                    <div class="form-group">
+                        <label>What should the question be about? <span style="font-size:11px;color:#aaa;">(optional)</span></label>
+                        <textarea id="aiSeedIdea" placeholder="e.g. the lower of cost or NRV rule for inventory" style="min-height:60px;"></textarea>
+                    </div>
+                    <button type="button" class="btn" id="aiDraftBtn" style="background:#7c3aed;color:white;">
+                        <i class="fas fa-wand-magic-sparkles"></i> Draft with AI
+                    </button>
+                </div>
+
                 <!-- QUESTION TEXT -->
                 <div class="card">
                     <div class="card-title"><i class="fas fa-question-circle"></i> Question</div>
@@ -385,6 +398,72 @@ function loadTopics(subjectId) {
         sel.appendChild(opt);
     });
 }
+
+const AI_DRAFT_URL = @json(route('faculty.question.ai-draft'));
+const AI_CSRF = @json(csrf_token());
+
+document.getElementById('aiDraftBtn').addEventListener('click', async () => {
+    const btn = document.getElementById('aiDraftBtn');
+    const topicId = document.getElementById('topicSelect').value;
+    const difficulty = document.querySelector('select[name="difficulty"]').value;
+    const questionType = document.getElementById('questionType').value;
+    const seedIdea = document.getElementById('aiSeedIdea').value.trim();
+
+    if (!topicId) {
+        CPACE.warning('Pick a Subject and Topic first', 'The AI needs to know which topic to write for — select them in the Classification panel, then try again.');
+        return;
+    }
+
+    const original = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Drafting...';
+
+    try {
+        const res = await fetch(AI_DRAFT_URL, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': AI_CSRF,
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                topic_id: topicId,
+                difficulty: difficulty,
+                question_type: questionType,
+                seed_idea: seedIdea || null,
+            }),
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+            CPACE.error('Draft not generated', data.message || 'The AI could not draft a question right now. Please try again.');
+            return;
+        }
+
+        document.getElementById('questionText').value = data.question_text || '';
+        document.getElementById('questionText').dispatchEvent(new Event('input'));
+        document.querySelector('textarea[name="explanation"]').value = data.explanation || '';
+
+        if (questionType === 'true_false') {
+            const radio = document.querySelector(`input[name="tf_answer"][value="${data.tf_answer ? 'true' : 'false'}"]`);
+            if (radio) radio.checked = true;
+        } else if (data.choices) {
+            ['a', 'b', 'c', 'd'].forEach(label => {
+                const c = data.choices[label];
+                if (!c) return;
+                document.querySelector(`input[name="choice_${label}"]`).value = c.text;
+                if (c.is_correct) document.querySelector(`input[name="correct_answer"][value="${label}"]`).checked = true;
+            });
+        }
+
+        CPACE.toast('AI draft added — review it before saving.', 'success');
+    } catch (e) {
+        CPACE.error('Draft not generated', 'The AI could not draft a question right now. Please try again.');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = original;
+    }
+});
 
 function saveDraft() {
     CPACE.confirm({

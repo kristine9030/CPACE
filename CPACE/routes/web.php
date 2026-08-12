@@ -136,6 +136,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/test-bank', [TestBankController::class, 'index'])->name('test-bank');
         Route::get('/test-bank/export', [TestBankController::class, 'export'])->name('test-bank.export');
         Route::get('/test-bank/create', [TestBankController::class, 'create'])->name('question.create');
+        Route::post('/test-bank/ai-draft', [TestBankController::class, 'aiDraft'])->middleware('throttle:8,1')->name('question.ai-draft');
         Route::post('/test-bank', [TestBankController::class, 'store'])->name('question.store');
         Route::get('/test-bank/{id}/edit', [TestBankController::class, 'edit'])->name('question.edit');
         Route::put('/test-bank/{id}', [TestBankController::class, 'update'])->name('question.update');
