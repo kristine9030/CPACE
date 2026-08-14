@@ -450,149 +450,85 @@
         }
 
         /* ─── KPI ROW ─── */
+        /* ─── KPI CARDS ──────────────────────────────────────────────────────
+           Same treatment as the Dashboard's .metric-card: white card, maroon
+           accent bar on top, big number left, illustration right. Kept under
+           the .kpi-* names this page already uses. */
         .kpi-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 14px;
-            margin-bottom: 20px;
+            gap: 18px;
+            margin-bottom: 22px;
         }
 
         .kpi-card {
+            background: #fff;
+            border: 1px solid #eef0f2;
             border-radius: 18px;
             padding: 18px 20px;
+            position: relative;
+            overflow: hidden;
+            min-height: 130px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            position: relative;
-            overflow: hidden;
-            color: var(--ink-1);
-            min-height: 115px;
-            background: #fff;
-            border: 1px solid var(--line);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.06), 0 12px 28px rgba(0,0,0,0.08);
-            transition: box-shadow 0.25s, transform 0.25s;
+            gap: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05), 0 12px 26px rgba(0,0,0,0.06);
+            transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
         }
-
         .kpi-card:hover {
-            box-shadow: 0 6px 16px rgba(0,0,0,0.1), 0 16px 40px rgba(0,0,0,0.12);
-            transform: translateY(-2px);
+            transform: translateY(-4px);
+            box-shadow: 0 8px 18px rgba(0,0,0,0.10), 0 18px 40px rgba(0,0,0,0.11);
+            border-color: #e3e6e9;
         }
-
+        /* top accent bar */
         .kpi-card::before {
             content: '';
             position: absolute;
-            top: -50px; right: -50px;
-            width: 180px; height: 180px;
-            border-radius: 50%;
-            pointer-events: none;
+            top: 0; left: 0; right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #c0392b, #7B1D1D);
+            z-index: 2;
         }
-        .kpi-card.t1::before { background: rgba(192,57,43,0.07); }
-        .kpi-card.t2::before { background: rgba(232,145,11,0.07); }
-        .kpi-card.t3::before { background: rgba(59,125,221,0.07); }
-        .kpi-card.t6::before { background: rgba(142,68,173,0.07); }
-
+        /* soft tinted glow in the corner */
         .kpi-card::after {
             content: '';
             position: absolute;
-            bottom: -40px; left: 20%;
-            width: 140px; height: 140px;
+            top: -55px; right: -55px;
+            width: 170px; height: 170px;
             border-radius: 50%;
+            background: rgba(192,57,43,0.08);
             pointer-events: none;
         }
-        .kpi-card.t1::after { background: rgba(192,57,43,0.05); }
-        .kpi-card.t2::after { background: rgba(232,145,11,0.05); }
-        .kpi-card.t3::after { background: rgba(59,125,221,0.05); }
-        .kpi-card.t6::after { background: rgba(142,68,173,0.05); }
 
         .kpi-card .kpi-left {
-            display: flex;
-            flex-direction: column;
-            gap: 0;
             position: relative;
             z-index: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
         }
-
-        .kpi-card .kpi-number {
-            font-size: 52px;
-            font-weight: 800;
-            color: var(--ink-1);
-            line-height: 1;
-        }
-
-        .kpi-card .kpi-number small {
-            font-size: 20px;
-            font-weight: 600;
-            color: var(--ink-3);
-        }
-
-        .kpi-card .kpi-label {
-            font-size: 12.5px;
-            color: var(--ink-3);
-            font-weight: 500;
-            margin-top: auto;
-        }
-
-        .kpi-card .kpi-delta {
-            font-size: 11px;
-            font-weight: 500;
-            color: var(--ink-3);
-            white-space: nowrap;
-        }
-
+        .kpi-card .kpi-number { font-size: 34px; font-weight: 800; color: var(--ink-1); line-height: 1; }
+        .kpi-card .kpi-number small { font-size: 16px; font-weight: 600; color: var(--ink-3); }
+        .kpi-card .kpi-label { font-size: 12.5px; font-weight: 600; color: var(--ink-1); margin-top: 9px; }
+        .kpi-card .kpi-delta { font-size: 11px; color: var(--ink-3); margin-top: 3px; white-space: nowrap; }
         .kpi-card .kpi-delta .d { font-weight: 600; }
         .kpi-card .kpi-delta .d.up    { color: #21a366; }
         .kpi-card .kpi-delta .d.down  { color: #c0392b; }
         .kpi-card .kpi-delta .d.muted { color: #999; }
 
         .kpi-illust {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 130px;
-            height: 130px;
+            width: 96px; height: 96px;
             flex-shrink: 0;
             position: relative;
             z-index: 1;
+            display: flex; align-items: center; justify-content: center;
         }
-
         .kpi-illust img {
-            width: 100%;
-            height: 100%;
+            width: 100%; height: 100%;
             object-fit: contain;
-            filter: drop-shadow(0 6px 16px rgba(0,0,0,0.15));
+            filter: drop-shadow(0 6px 14px rgba(0,0,0,0.15));
         }
-
-        .kpi-shapes {
-            position: absolute;
-            inset: 0;
-            pointer-events: none;
-            overflow: hidden;
-        }
-
-        .kpi-shapes span {
-            position: absolute;
-        }
-
-        .kpi-shapes span:nth-child(1) {
-            width: 150px; height: 150px;
-            top: -45px; right: 35%;
-            border-radius: 50%;
-        }
-        .kpi-card.t1 .kpi-shapes span:nth-child(1) { background: rgba(192,57,43,0.06); }
-        .kpi-card.t2 .kpi-shapes span:nth-child(1) { background: rgba(232,145,11,0.06); }
-        .kpi-card.t3 .kpi-shapes span:nth-child(1) { background: rgba(59,125,221,0.06); }
-        .kpi-card.t6 .kpi-shapes span:nth-child(1) { background: rgba(142,68,173,0.06); }
-
-        .kpi-shapes span:nth-child(2) {
-            width: 100px; height: 100px;
-            bottom: -25px; left: 8%;
-            border-radius: 20px;
-            transform: rotate(35deg);
-        }
-        .kpi-card.t1 .kpi-shapes span:nth-child(2) { background: rgba(192,57,43,0.05); }
-        .kpi-card.t2 .kpi-shapes span:nth-child(2) { background: rgba(232,145,11,0.05); }
-        .kpi-card.t3 .kpi-shapes span:nth-child(2) { background: rgba(59,125,221,0.05); }
-        .kpi-card.t6 .kpi-shapes span:nth-child(2) { background: rgba(142,68,173,0.05); }
 
         /* ─── ROW GRIDS ─── */
         .row-2 {
@@ -1155,6 +1091,7 @@
 
         @media (max-width: 480px) {
             .kpi-grid { grid-template-columns: 1fr; }
+            .kpi-illust { width: 78px; height: 78px; }
             .card { padding: 14px; }
         }
     </style>
@@ -1294,8 +1231,7 @@
             <!-- KPI CARDS -->
             <div class="kpi-grid">
                 {{-- Overall Accuracy --}}
-                <div class="kpi-card t1">
-                    <div class="kpi-shapes"><span></span><span></span></div>
+                <div class="kpi-card">
                     <div class="kpi-left">
                         <div class="kpi-number">{!! $stats['accuracy'] !!}<small>%</small></div>
                         <span class="kpi-label">Overall Accuracy</span>
@@ -1308,8 +1244,7 @@
                 </div>
 
                 {{-- Questions Answered --}}
-                <div class="kpi-card t2">
-                    <div class="kpi-shapes"><span></span><span></span></div>
+                <div class="kpi-card">
                     <div class="kpi-left">
                         <div class="kpi-number">{!! number_format($stats['attempted']) !!}</div>
                         <span class="kpi-label">Questions Answered</span>
@@ -1322,8 +1257,7 @@
                 </div>
 
                 {{-- Study Hours --}}
-                <div class="kpi-card t3">
-                    <div class="kpi-shapes"><span></span><span></span></div>
+                <div class="kpi-card">
                     <div class="kpi-left">
                         <div class="kpi-number">{!! $studyHours !!}<small> hrs</small></div>
                         <span class="kpi-label">Study Hours</span>
@@ -1336,8 +1270,7 @@
                 </div>
 
                 {{-- Readiness Score --}}
-                <div class="kpi-card t6">
-                    <div class="kpi-shapes"><span></span><span></span></div>
+                <div class="kpi-card">
                     <div class="kpi-left">
                         <div class="kpi-number">{!! $readiness !!}<small>/100</small></div>
                         <span class="kpi-label">Readiness Score</span>

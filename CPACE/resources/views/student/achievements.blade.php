@@ -637,11 +637,17 @@
             color: #fff;
         }
 
+        /* Now the student's real tier, not a static label. */
         .banner-role {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
             font-size: 15px;
-            color: rgba(255, 255, 255, 0.75);
-            margin-bottom: 8px;
+            font-weight: 600;
+            color: #ffd76a;
+            margin-bottom: 10px;
         }
+        .banner-role i { font-size: 13px; opacity: .9; }
 
         .banner-doodle-star {
             color: #ffd76a;
@@ -656,17 +662,40 @@
             50% { opacity: 0.5; transform: scale(0.8) rotate(15deg); }
         }
 
+        /* Chips carry live figures now, so they wrap instead of sitting inline. */
+        .banner-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+
         .banner-tag {
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            background: #fff;
-            color: #c0392b;
-            font-size: 13px;
+            background: rgba(255, 255, 255, 0.94);
+            color: #7B1D1D;
+            font-size: 12.5px;
             font-weight: 600;
-            padding: 6px 16px;
+            padding: 6px 14px;
             border-radius: 20px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+            white-space: nowrap;
         }
+        .banner-tag i { color: #c0392b; }
+
+        /* Rank movement vs last month — real, and previously discarded. */
+        .banner-move {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 9px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11.5px;
+            font-weight: 600;
+            line-height: 1.4;
+        }
+        .banner-move i { font-size: 10px; }
+        .banner-move.tone-up   { background: rgba(33, 163, 102, 0.22); color: #9ff0c4; }
+        .banner-move.tone-down { background: rgba(255, 255, 255, 0.12); color: #ffb4ad; }
+        .banner-move.tone-flat { background: rgba(255, 255, 255, 0.12); color: rgba(255,255,255,0.72); }
 
         .banner-status {
             flex: 0 0 auto;
@@ -775,12 +804,20 @@
             color: #fff;
             line-height: 1.15;
         }
+        /* "of 18 total" folded into the number itself, so the line below is
+           free to carry a live figure instead. */
+        .stat-value .stat-of {
+            font-size: 16px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.55);
+        }
 
         .stat-extra {
-            font-size: 13px;
+            font-size: 12.5px;
             color: rgba(255, 255, 255, 0.75);
             margin-bottom: 12px;
         }
+        .stat-extra strong { color: #ffd76a; font-weight: 700; }
 
         .stat-bar {
             height: 8px;
@@ -1810,7 +1847,10 @@
                 <div class="banner-shape-8"></div>
                 <div class="banner-profile">
                     <div class="banner-avatar-wrap">
-                        <i class="fas fa-crown banner-crown"></i>
+                        {{-- Crown is earned, not decorative: top 3 overall only. --}}
+                        @if($status['ranked'] && $status['rank'] <= 3)
+                            <i class="fas fa-crown banner-crown" title="Top 3 overall"></i>
+                        @endif
                         <div class="banner-avatar">{{ strtoupper(substr($user->first_name,0,1) . substr($user->last_name,0,1)) }}</div>
                     </div>
                     <div>
@@ -1819,8 +1859,29 @@
                                 <path d="M2 8 Q 15 2 30 7 T 60 5 T 90 8 T 118 4" stroke="rgba(255,215,106,0.45)" stroke-width="2.5" stroke-linecap="round" fill="none"/>
                             </svg>
                         </div>
-                        <div class="banner-role">Reviewer <span class="banner-doodle-star">&#10023;</span></div>
-                        <span class="banner-tag"><i class="fas fa-star" style="font-size:10px;"></i> CPALE Aspirant</span>
+                        <div class="banner-role">
+                            <i class="fas {{ $standing['icon'] }}"></i> {{ $standing['label'] }} Reviewer
+                            <span class="banner-doodle-star">&#10023;</span>
+                        </div>
+                        <div class="banner-chips">
+                            @if($standing['badges_to_next'])
+                                <span class="banner-tag">
+                                    <i class="fas fa-arrow-up" style="font-size:10px;"></i>
+                                    {{ $standing['badges_to_next'] }} more to {{ $standing['next_label'] }}
+                                </span>
+                            @else
+                                <span class="banner-tag">
+                                    <i class="fas fa-star" style="font-size:10px;"></i> Full catalogue cleared
+                                </span>
+                            @endif
+
+                            @if(!is_null($daysToExam))
+                                <span class="banner-tag">
+                                    <i class="fas fa-calendar-day" style="font-size:10px;"></i>
+                                    {{ $daysToExam }} {{ Str::plural('day', $daysToExam) }} to CPALE
+                                </span>
+                            @endif
+                        </div>
                     </div>
                 </div>
 
@@ -1834,10 +1895,23 @@
                         </div>
                         @if($status['ranked'])
                             <div class="banner-status-value">#{{ $status['rank'] }}</div>
-                            <div class="banner-status-sub">You're in the <strong>top {{ $status['percentile'] }}%</strong> of {{ $status['total'] }} active reviewers.</div>
+                            <div class="banner-status-sub">
+                                @if($status['rank'] === 1)
+                                    <strong>Leading</strong> all {{ $status['total'] }} active reviewers.
+                                @elseif($status['show_percentile'])
+                                    You're in the <strong>top {{ $status['percentile'] }}%</strong> of {{ $status['total'] }} active reviewers.
+                                @else
+                                    Out of <strong>{{ $status['total'] }}</strong> active {{ Str::plural('reviewer', $status['total']) }}.
+                                @endif
+                            </div>
+                            <div class="banner-move tone-{{ $status['delta_tone'] }}">
+                                <i class="fas {{ $status['delta_tone'] === 'up' ? 'fa-arrow-trend-up' : ($status['delta_tone'] === 'down' ? 'fa-arrow-trend-down' : 'fa-minus') }}"></i>
+                                {{ $status['delta_label'] }}
+                            </div>
                         @else
                             <div class="banner-status-value">&mdash;</div>
                             <div class="banner-status-sub">Complete a quiz to join the leaderboard.</div>
+                            <div class="banner-move tone-flat"><i class="fas fa-minus"></i> {{ $status['delta_label'] }}</div>
                         @endif
                     </div>
 
@@ -1847,22 +1921,28 @@
                                 <div class="stat-icon trophy"><i class="fas fa-trophy"></i></div>
                                 <div class="stat-label">Badges Earned</div>
                             </div>
-                            <div class="stat-value">{{ $earnedCount }}</div>
-                            <div class="stat-extra">of {{ $totalCount }} total</div>
+                            <div class="stat-value">{{ $earnedCount }}<span class="stat-of">/{{ $totalCount }}</span></div>
+                            @if($earnedMonth > 0)
+                                <div class="stat-extra"><strong>+{{ $earnedMonth }}</strong> earned this month</div>
+                            @else
+                                <div class="stat-extra">None yet this month</div>
+                            @endif
                             <div class="stat-bar"><span style="width: {{ $totalCount ? round($earnedCount / $totalCount * 100) : 0 }}%;"></span></div>
                         </div>
                         <div class="stat-box days">
                             <div class="stat-box-top">
-                                <div class="stat-icon drop"><i class="fas fa-droplet"></i></div>
+                                <div class="stat-icon drop"><i class="fas fa-fire"></i></div>
                                 <div class="stat-label">Days Active</div>
                             </div>
                             <div class="stat-value">{{ $activeDays }}</div>
                             @if($streak > 0)
-                                <div class="stat-extra">{{ $streak }}-day streak going!</div>
+                                <div class="stat-extra"><strong>{{ $streak }}-day</strong> streak going!</div>
                             @else
-                                <div class="stat-extra">Study today to start a streak!</div>
+                                <div class="stat-extra">Study today to start a streak</div>
                             @endif
-                            <div class="stat-bar"><span style="width: {{ min(100, round($activeDays / 30 * 100)) }}%;"></span></div>
+                            {{-- Bar tracks the current streak against the 30-day
+                                 "Unstoppable" badge, so it means something. --}}
+                            <div class="stat-bar"><span style="width: {{ min(100, round($streak / 30 * 100)) }}%;"></span></div>
                         </div>
                     </div>
 

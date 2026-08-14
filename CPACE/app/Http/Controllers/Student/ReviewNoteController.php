@@ -7,9 +7,11 @@ use App\Http\Controllers\Controller;
 use App\Models\CommunityResource;
 use App\Models\ReviewNote;
 use App\Models\Subject;
+use App\Services\AiNoteQuizService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class ReviewNoteController extends Controller
 {
@@ -150,6 +152,55 @@ class ReviewNoteController extends Controller
         $note->save();
 
         return response()->json(['ok' => true, 'is_favorite' => $note->is_favorite, 'note' => $this->present($note->load(['subject', 'topic']))]);
+    }
+
+    /**
+     * Generate a short practice quiz from one of the student's own notes.
+     *
+     * Deliberately ephemeral: nothing is written to performance_records,
+     * because these questions are AI-drafted from the student's own writing
+     * rather than validated test-bank items, and mixing them into mastery
+     * tracking would distort readiness scores.
+     */
+    public function quiz(Request $request, ReviewNote $note, AiNoteQuizService $ai)
+    {
+        $this->authorizeNote($note);
+
+        $data = $request->validate([
+            'count' => ['nullable', 'integer', 'between:' . AiNoteQuizService::MIN_QUESTIONS . ',' . AiNoteQuizService::MAX_QUESTIONS],
+        ]);
+
+        // A note has to have enough substance to build questions from, or the
+        // model just invents material the student never wrote down.
+        $plain = trim(preg_replace('/\s+/u', ' ', strip_tags((string) $note->content)) ?? '');
+
+        if (mb_strlen($plain) < 200) {
+            return response()->json([
+                'message' => 'This note is too short to build a quiz from. Add more detail to it first — around a paragraph or two.',
+            ], 422);
+        }
+
+        try {
+            $questions = $ai->generate(
+                (string) $note->title,
+                $plain,
+                $note->subject->name ?? null,
+                $note->topic->name ?? null,
+                $data['count'] ?? 5
+            );
+        } catch (\Throwable $e) {
+            Log::error('AI note quiz failed.', ['note_id' => $note->id, 'error' => $e->getMessage()]);
+
+            return response()->json([
+                'message' => 'The AI could not build a quiz right now. Please try again in a moment.',
+            ], 503);
+        }
+
+        return response()->json([
+            'note_id'   => $note->id,
+            'title'     => $note->title,
+            'questions' => $questions,
+        ]);
     }
 
     // ──────────────────────────────────────────────────────────────────────

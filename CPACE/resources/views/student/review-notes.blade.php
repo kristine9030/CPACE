@@ -230,16 +230,62 @@
         .folder-item.active { background: var(--fi-pastel, var(--red-soft)); }
 
         .f-svg { flex-shrink: 0; }
+        .folder-item .f-body { flex: 1; min-width: 0; }
         .folder-item .f-name {
-            flex: 1; font-size: 13px; font-weight: 500; color: #3c3c41; line-height: 1.45;
+            font-size: 13px; font-weight: 500; color: #3c3c41; line-height: 1.45;
         }
         .folder-item.active .f-name { color: var(--fi-base, var(--brand)); font-weight: 600; }
+        /* Coverage line — how many of the subject's topics you've written on. */
+        .folder-item .f-meta { font-size: 10.5px; color: #a8a8b0; margin-top: 1px; }
+        .folder-item.active .f-meta { color: var(--fi-base, var(--brand)); opacity: .75; }
         .folder-item .f-count {
-            font-size: 11.5px; font-weight: 600;
+            font-size: 11.5px; font-weight: 600; flex-shrink: 0;
             background: var(--fi-pastel, #f2f2f4); color: var(--fi-base, #a3a3a8);
             border-radius: 12px; padding: 3px 10px;
         }
         .folder-item.active .f-count { background: var(--fi-base, var(--red)); color: #fff; }
+
+        /* Caret that expands a subject into its topic list. */
+        .f-caret {
+            width: 18px; height: 18px; flex-shrink: 0;
+            border: 0; background: transparent; padding: 0;
+            color: #b6b6bd; font-size: 10px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 4px; transition: background .15s, color .15s;
+        }
+        .f-caret:hover { background: rgba(0,0,0,.07); color: #6f6f75; }
+        .f-caret i { transition: transform .15s; }
+        .f-caret.open i { transform: rotate(90deg); }
+        .f-caret-spacer { width: 18px; flex-shrink: 0; }
+
+        /* ── TOPICS NESTED UNDER A FOLDER ───────────────────────────────── */
+        .topic-sublist {
+            margin: 1px 0 6px 36px;
+            padding-left: 10px;
+            border-left: 1.5px solid #eeeef1;
+            display: flex; flex-direction: column; gap: 1px;
+        }
+        .topic-item {
+            display: flex; align-items: center; gap: 9px;
+            padding: 7px 9px; border-radius: 8px;
+            cursor: pointer; transition: background .15s;
+        }
+        .topic-item:hover { background: #f5f6f8; }
+        .topic-item.active { background: var(--fi-pastel, var(--red-soft)); }
+        .topic-item .t-dot { font-size: 9.5px; flex-shrink: 0; color: var(--fi-base, #c9c9d0); }
+        .topic-item.empty .t-dot { color: #d9d9df; }
+        .topic-item .t-name {
+            flex: 1; min-width: 0;
+            font-size: 12px; color: #55555b; line-height: 1.4;
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        }
+        /* Topics you haven't written on yet stay muted, so covered ones pop. */
+        .topic-item.empty .t-name { color: #a8a8b0; }
+        .topic-item.active .t-name { color: var(--fi-base, var(--brand)); font-weight: 600; }
+        .topic-item .t-count {
+            font-size: 10.5px; font-weight: 700; flex-shrink: 0;
+            color: var(--fi-base, #a3a3a8);
+        }
 
         .trash-item {
             border-top: 1px solid #f1f1f3;
@@ -619,6 +665,68 @@
         .btn-primary:hover { background: #6a1818; }
         .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
 
+        /* ── QUIZ-FROM-NOTE ─────────────────────────────────────────────── */
+        .pv-tool.pv-quiz { color: var(--brand); }
+        .pv-tool.pv-quiz:hover { background: var(--red-soft); }
+
+        #quizModal .modal { max-width: 660px; }
+        .quiz-sub { font-size: 12px; color: #8a8a8e; margin-top: 3px; }
+
+        .quiz-state { padding: 46px 24px; text-align: center; color: #8a8a8e; font-size: 13px; }
+        .quiz-state i { font-size: 30px; color: var(--brand); display: block; margin-bottom: 14px; }
+        .quiz-spinner {
+            width: 30px; height: 30px; margin: 0 auto 14px;
+            border: 3px solid var(--red-soft); border-top-color: var(--brand);
+            border-radius: 50%; animation: quizSpin .8s linear infinite;
+        }
+        @keyframes quizSpin { to { transform: rotate(360deg); } }
+
+        .quiz-q { padding: 16px 0; border-bottom: 1px solid #f2f2f4; }
+        .quiz-q:last-of-type { border-bottom: none; }
+        .quiz-q-stem {
+            display: flex; gap: 10px; font-size: 13.5px; font-weight: 600;
+            color: #2b2b2b; line-height: 1.5; margin-bottom: 11px;
+        }
+        .quiz-q-num {
+            flex-shrink: 0; width: 22px; height: 22px; border-radius: 6px;
+            background: var(--brand); color: #fff; font-size: 11px;
+            display: flex; align-items: center; justify-content: center;
+        }
+
+        .quiz-choice {
+            display: flex; align-items: flex-start; gap: 10px;
+            padding: 10px 12px; margin-bottom: 6px;
+            border: 1.5px solid #ececee; border-radius: 9px;
+            font-size: 13px; color: #45454a; line-height: 1.45;
+            cursor: pointer; transition: border-color .15s, background .15s;
+        }
+        .quiz-choice:hover { background: #fafafb; }
+        .quiz-choice input { margin-top: 2px; accent-color: var(--brand); flex-shrink: 0; }
+        .quiz-choice.picked { border-color: var(--brand); background: var(--red-soft); }
+
+        /* After marking — the answer key takes over from the selection state. */
+        .quiz-choice.correct { border-color: #2ECC71; background: #E7FAEF; color: #1b6b3f; }
+        .quiz-choice.wrong   { border-color: #E03131; background: #FFECEC; color: #a32020; }
+        .quiz-choice.locked  { cursor: default; }
+        .quiz-choice.locked:hover { background: inherit; }
+        .quiz-tag { margin-left: auto; font-size: 10.5px; font-weight: 700; white-space: nowrap; }
+
+        .quiz-why {
+            margin-top: 9px; padding: 10px 12px;
+            background: #f8f8fa; border-left: 3px solid var(--brand); border-radius: 0 8px 8px 0;
+            font-size: 12px; color: #55555b; line-height: 1.55;
+        }
+        .quiz-why b { color: #2b2b2b; }
+
+        .quiz-score {
+            display: flex; align-items: center; gap: 14px;
+            padding: 15px 17px; margin-bottom: 6px;
+            background: var(--red-soft); border-radius: 11px;
+        }
+        .quiz-score .qs-pct { font-size: 26px; font-weight: 800; color: var(--brand); line-height: 1; }
+        .quiz-score .qs-lbl { font-size: 12.5px; font-weight: 600; color: #2b2b2b; }
+        .quiz-score .qs-sub { font-size: 11.5px; color: #8a8a8e; margin-top: 2px; }
+
         /* ── TOAST ──────────────────────────────────────────────────────── */
         .toast {
             position: fixed; bottom: 26px; right: 26px;
@@ -815,6 +923,7 @@
                         <span class="panel-title">Note Preview</span>
                         <div style="display:flex;align-items:center;gap:2px;">
                             <div class="pv-head-actions" id="pvActions" style="display:none;">
+                                <button class="pv-tool pv-quiz" id="pvQuizBtn" title="Quiz me on this note"><i class="fas fa-circle-question"></i></button>
                                 <button class="pv-tool" id="pvEditBtn" title="Edit note"><i class="fas fa-pencil"></i></button>
                                 <button class="pv-tool" id="pvStarBtn" title="Favorite"><i class="far fa-star"></i></button>
                                 <button class="pv-tool" id="pvPrintBtn" title="Print / Save as PDF"><i class="fas fa-print"></i></button>
@@ -943,6 +1052,21 @@
         </div>
     </div>
 
+    <!-- QUIZ FROM NOTE -->
+    <div class="modal-overlay" id="quizModal">
+        <div class="modal">
+            <div class="modal-head">
+                <div>
+                    <h3>Quiz me on this note</h3>
+                    <div class="quiz-sub" id="quizSub"></div>
+                </div>
+                <button class="modal-close" onclick="closeModal('quizModal')">&times;</button>
+            </div>
+            <div class="modal-body" id="quizBody"></div>
+            <div class="modal-foot" id="quizFoot"></div>
+        </div>
+    </div>
+
     <div class="toast" id="toast"><i class="fas fa-circle-check"></i> <span id="toastMsg"></span></div>
 
     <!-- AI TUTOR (floating chat + highlight-to-ask) -->
@@ -1015,6 +1139,8 @@
         const state = {
             tab: 'all',          // all | favorites | subject | topic | recent | archived
             folder: null,        // subject id | 'other' | 'trash' | null
+            topic: null,         // topic id when drilled into one, else null
+            expanded: new Set(), // subject ids whose topic list is open
             sort: 'recent',
             search: '',
             selectedId: null,
@@ -1045,6 +1171,8 @@
 
                 if (state.folder === 'other')      list = list.filter(n => !n.subject_id);
                 else if (state.folder !== null)    list = list.filter(n => n.subject_id === state.folder);
+
+                if (state.topic !== null)          list = list.filter(n => n.topic_id === state.topic);
             }
 
             if (state.search) {
@@ -1077,16 +1205,42 @@
             let html = '';
 
             SUBJECTS.forEach(s => {
-                const count = active.filter(n => n.subject_id === s.id).length;
+                const mine = active.filter(n => n.subject_id === s.id);
                 const t = themeOf(s.code);
-                const isActive = state.folder === s.id;
+                const vars = `--fi-base:${t.base};--fi-pastel:${t.pastel};`;
+                const topics = TOPICS.filter(tp => tp.subject_id === s.id);
+                const covered = topics.filter(tp => mine.some(n => n.topic_id === tp.id)).length;
+                const open = state.expanded.has(s.id);
+                const isActive = state.folder === s.id && state.topic === null;
+
                 html += `
-                    <div class="folder-item ${isActive ? 'active' : ''}" data-folder="${s.id}"
-                         style="--fi-base:${t.base};--fi-pastel:${t.pastel};">
+                    <div class="folder-item ${isActive ? 'active' : ''}" data-folder="${s.id}" style="${vars}">
+                        ${topics.length
+                            ? `<button type="button" class="f-caret ${open ? 'open' : ''}" data-expand="${s.id}"
+                                       aria-expanded="${open}" title="${open ? 'Hide topics' : 'Show topics'}"><i class="fas fa-chevron-right"></i></button>`
+                            : '<span class="f-caret-spacer"></span>'}
                         ${folderSvg(t)}
-                        <span class="f-name">${esc(s.name)} (${esc(s.code)})</span>
-                        <span class="f-count">${count}</span>
+                        <div class="f-body">
+                            <div class="f-name">${esc(s.name)} (${esc(s.code)})</div>
+                            ${topics.length ? `<div class="f-meta">${covered} of ${topics.length} topics have notes</div>` : ''}
+                        </div>
+                        <span class="f-count">${mine.length}</span>
                     </div>`;
+
+                if (open && topics.length) {
+                    html += '<div class="topic-sublist">';
+                    topics.forEach(tp => {
+                        const c = mine.filter(n => n.topic_id === tp.id).length;
+                        html += `
+                            <div class="topic-item ${c ? 'has-notes' : 'empty'} ${state.topic === tp.id ? 'active' : ''}"
+                                 data-folder="${s.id}" data-topic="${tp.id}" style="${vars}" title="${esc(tp.name)}">
+                                <i class="${c ? 'fas fa-circle-check' : 'far fa-circle'} t-dot"></i>
+                                <span class="t-name">${esc(tp.name)}</span>
+                                <span class="t-count">${c || ''}</span>
+                            </div>`;
+                    });
+                    html += '</div>';
+                }
             });
 
             const otherCount = active.filter(n => !n.subject_id).length;
@@ -1094,25 +1248,53 @@
             html += `
                 <div class="folder-item ${state.folder === 'other' ? 'active' : ''}" data-folder="other"
                      style="--fi-base:${GRAY_THEME.base};--fi-pastel:${GRAY_THEME.pastel};">
+                    <span class="f-caret-spacer"></span>
                     ${folderSvg(GRAY_THEME)}
-                    <span class="f-name">Other Topics</span>
+                    <div class="f-body"><div class="f-name">Other Topics</div></div>
                     <span class="f-count">${otherCount}</span>
                 </div>
                 <div class="folder-item trash-item ${state.folder === 'trash' ? 'active' : ''}" data-folder="trash"
                      style="--fi-base:${trashTheme.base};--fi-pastel:${trashTheme.pastel};">
+                    <span class="f-caret-spacer"></span>
                     ${trashSvg(trashTheme)}
-                    <span class="f-name">Trash</span>
+                    <div class="f-body"><div class="f-name">Trash</div></div>
                     <span class="f-count">${trashCount}</span>
                 </div>`;
 
             el.innerHTML = html;
+
+            // Caret only opens/closes the topic list — it never changes the filter,
+            // so re-rendering the rail alone is enough.
+            el.querySelectorAll('.f-caret').forEach(btn => {
+                btn.addEventListener('click', e => {
+                    e.stopPropagation();
+                    const id = Number(btn.dataset.expand);
+                    if (state.expanded.has(id)) state.expanded.delete(id);
+                    else state.expanded.add(id);
+                    renderFolders();
+                });
+            });
 
             el.querySelectorAll('.folder-item').forEach(item => {
                 item.addEventListener('click', () => {
                     maybeExitEdit(() => {
                         const raw = item.dataset.folder;
                         const val = raw === 'other' || raw === 'trash' ? raw : Number(raw);
-                        state.folder = state.folder === val ? null : val;
+                        // Clicking the subject clears any topic drill-down.
+                        const same = state.folder === val && state.topic === null;
+                        state.folder = same ? null : val;
+                        state.topic = null;
+                        renderAll();
+                    });
+                });
+            });
+
+            el.querySelectorAll('.topic-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    maybeExitEdit(() => {
+                        const tid = Number(item.dataset.topic);
+                        state.folder = Number(item.dataset.folder);
+                        state.topic = state.topic === tid ? null : tid;
                         renderAll();
                     });
                 });
@@ -2034,9 +2216,9 @@
             document.getElementById('noteModalTitle').textContent = 'New Note';
             document.getElementById('noteForm').reset();
             document.getElementById('noteId').value = '';
-            // Pre-select the active folder's subject.
+            // Pre-select the active folder's subject, and its topic if drilled in.
             if (typeof state.folder === 'number') document.getElementById('f_subject').value = state.folder;
-            filterTopicOptions();
+            filterTopicOptions(state.topic);
             openModal('noteModal');
             setTimeout(() => document.getElementById('f_title').focus(), 100);
         }
@@ -2121,6 +2303,145 @@
             toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
         }
 
+        // ── Quiz from note ──────────────────────────────────────────────────
+        // Ephemeral by design: the questions are AI-drafted from the student's
+        // own writing, so nothing here is persisted or fed into mastery stats.
+        let quizQuestions = [];
+        let quizPicks = [];
+        let quizMarked = false;
+
+        async function startNoteQuiz(id) {
+            const n = byId(id);
+            if (!n) return;
+
+            quizQuestions = [];
+            quizPicks = [];
+            quizMarked = false;
+
+            document.getElementById('quizSub').textContent = n.title || 'Untitled note';
+            document.getElementById('quizFoot').innerHTML =
+                '<button type="button" class="btn-secondary" onclick="closeModal(\'quizModal\')">Close</button>';
+            document.getElementById('quizBody').innerHTML =
+                '<div class="quiz-state"><div class="quiz-spinner"></div>Building your quiz from this note…<br>This usually takes a few seconds.</div>';
+            openModal('quizModal');
+
+            let res, data;
+            try {
+                res = await fetch(`${ROUTES.base}/${id}/quiz`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': CSRF },
+                    body: JSON.stringify({ count: 5 }),
+                });
+                data = await res.json();
+            } catch (e) {
+                quizError('Could not reach the server. Check your connection and try again.');
+                return;
+            }
+
+            if (!res.ok) {
+                quizError(data?.message || 'Something went wrong building the quiz.');
+                return;
+            }
+
+            quizQuestions = data.questions || [];
+            quizPicks = quizQuestions.map(() => null);
+            renderQuiz();
+        }
+
+        function quizError(msg) {
+            document.getElementById('quizBody').innerHTML =
+                `<div class="quiz-state"><i class="fas fa-circle-exclamation"></i>${esc(msg)}</div>`;
+            document.getElementById('quizFoot').innerHTML =
+                '<button type="button" class="btn-secondary" onclick="closeModal(\'quizModal\')">Close</button>';
+        }
+
+        function renderQuiz() {
+            const body = document.getElementById('quizBody');
+            let html = '';
+
+            if (quizMarked) {
+                const score = quizPicks.reduce((acc, pick, i) =>
+                    acc + (pick !== null && quizQuestions[i].choices[pick].is_correct ? 1 : 0), 0);
+                const pct = Math.round(score / quizQuestions.length * 100);
+                html += `
+                    <div class="quiz-score">
+                        <div class="qs-pct">${pct}%</div>
+                        <div>
+                            <div class="qs-lbl">${score} of ${quizQuestions.length} correct</div>
+                            <div class="qs-sub">Based only on what this note covers.</div>
+                        </div>
+                    </div>`;
+            }
+
+            quizQuestions.forEach((q, qi) => {
+                html += `<div class="quiz-q">
+                    <div class="quiz-q-stem"><span class="quiz-q-num">${qi + 1}</span><span>${esc(q.question_text)}</span></div>`;
+
+                q.choices.forEach((c, ci) => {
+                    const picked = quizPicks[qi] === ci;
+                    let cls = 'quiz-choice';
+                    let tag = '';
+
+                    if (quizMarked) {
+                        cls += ' locked';
+                        if (c.is_correct) { cls += ' correct'; tag = '<span class="quiz-tag">Correct answer</span>'; }
+                        else if (picked)  { cls += ' wrong';   tag = '<span class="quiz-tag">Your answer</span>'; }
+                    } else if (picked) {
+                        cls += ' picked';
+                    }
+
+                    html += `
+                        <label class="${cls}">
+                            <input type="radio" name="q${qi}" value="${ci}" ${picked ? 'checked' : ''} ${quizMarked ? 'disabled' : ''}>
+                            <span>${esc(c.text)}</span>${tag}
+                        </label>`;
+                });
+
+                if (quizMarked && q.explanation) {
+                    html += `<div class="quiz-why"><b>Why:</b> ${esc(q.explanation)}</div>`;
+                }
+
+                html += '</div>';
+            });
+
+            body.innerHTML = html;
+
+            if (!quizMarked) {
+                body.querySelectorAll('input[type="radio"]').forEach(input => {
+                    input.addEventListener('change', () => {
+                        const qi = Number(input.name.slice(1));
+                        quizPicks[qi] = Number(input.value);
+                        renderQuiz();
+                        document.getElementById('quizCheckBtn').disabled = quizPicks.includes(null);
+                    });
+                });
+            }
+
+            renderQuizFoot();
+        }
+
+        function renderQuizFoot() {
+            const foot = document.getElementById('quizFoot');
+
+            if (quizMarked) {
+                foot.innerHTML =
+                    '<button type="button" class="btn-secondary" onclick="closeModal(\'quizModal\')">Close</button>'
+                    + `<button type="button" class="btn-primary" onclick="startNoteQuiz(${state.selectedId})">New quiz</button>`;
+                return;
+            }
+
+            foot.innerHTML =
+                '<button type="button" class="btn-secondary" onclick="closeModal(\'quizModal\')">Cancel</button>'
+                + '<button type="button" class="btn-primary" id="quizCheckBtn" onclick="markNoteQuiz()">Check answers</button>';
+            document.getElementById('quizCheckBtn').disabled = quizPicks.includes(null);
+        }
+
+        function markNoteQuiz() {
+            quizMarked = true;
+            renderQuiz();
+            document.querySelector('#quizModal .modal').scrollTop = 0;
+        }
+
         // ── Wire-up ────────────────────────────────────────────────────────
         document.addEventListener('DOMContentLoaded', () => {
             // Tabs
@@ -2162,6 +2483,7 @@
 
             // New note (+), preview toolbar
             document.getElementById('newNoteBtn').addEventListener('click', openCreateModal);
+            document.getElementById('pvQuizBtn').addEventListener('click', () => state.selectedId && startNoteQuiz(state.selectedId));
             document.getElementById('pvEditBtn').addEventListener('click', () => state.selectedId && enterEditMode());
             document.getElementById('pvStarBtn').addEventListener('click', () => state.selectedId && toggleFavorite(state.selectedId));
             document.getElementById('pvPrintBtn').addEventListener('click', () => state.selectedId && printNote(state.selectedId));

@@ -57,6 +57,33 @@ class CommunityController extends Controller
             ->orderBy('first_name')
             ->get(['id', 'first_name', 'last_name', 'role_id']);
 
+        // ── Rail data, all live ───────────────────────────────────────────
+        // Post counts per subject, so the subject filter shows how much is
+        // actually there instead of a bare list of every subject.
+        $postsPerSubject = CommunityPost::selectRaw('subject_id, COUNT(*) c')
+            ->whereNotNull('subject_id')
+            ->groupBy('subject_id')
+            ->pluck('c', 'subject_id');
+
+        // Motivational quotes alumni have posted (post_type 'tip', with the
+        // attribution in `title`) — these drive the sliding header.
+        $quotes = CommunityPost::with('author')
+            ->where('post_type', 'tip')
+            ->orderByDesc('is_pinned')
+            ->orderByDesc('created_at')
+            ->limit(8)
+            ->get(['id', 'author_id', 'title', 'body', 'created_at']);
+
+        // Most active alumni by post count — a real "who's carrying this
+        // community" list rather than a static blurb.
+        $topContributors = User::select('users.*')
+            ->selectRaw('(select count(*) from community_posts where community_posts.author_id = users.id) posts_count')
+            ->where('is_active', true)
+            ->havingRaw('posts_count > 0')
+            ->orderByDesc('posts_count')
+            ->limit(5)
+            ->get();
+
         return view('community.index', [
             'posts' => $posts,
             'subjects' => Subject::where('is_active', true)->orderBy('code')->get(),
@@ -64,6 +91,9 @@ class CommunityController extends Controller
             'myResources' => $myResources,
             'contacts' => $contacts,
             'activeSubjectId' => $activeSubjectId,
+            'quotes' => $quotes,
+            'postsPerSubject' => $postsPerSubject,
+            'topContributors' => $topContributors,
         ]);
     }
 

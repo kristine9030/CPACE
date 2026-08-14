@@ -43,6 +43,7 @@ class AchievementController extends Controller
             'earnedMonth'  => $data['earned_this_month'],
             'activeDays'   => $data['active_days'],
             'streak'       => $data['streak'],
+            'standing'     => $this->achievements->standing($data['earned_count'], $data['total_count']),
             'leaderboard'  => $leaderboard,
             'daysToExam'   => $daysToExam,
         ]);

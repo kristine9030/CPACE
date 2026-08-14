@@ -224,6 +224,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/review-notes/{note}', [ReviewNoteController::class, 'show'])->name('review-notes.show');
     Route::put('/review-notes/{note}', [ReviewNoteController::class, 'update'])->name('review-notes.update');
     Route::delete('/review-notes/{note}', [ReviewNoteController::class, 'destroy'])->withTrashed()->name('review-notes.destroy');
+    Route::post('/review-notes/{note}/quiz', [ReviewNoteController::class, 'quiz'])->middleware('throttle:6,1')->name('review-notes.quiz');
     Route::post('/review-notes/{note}/favorite', [ReviewNoteController::class, 'favorite'])->name('review-notes.favorite');
     Route::post('/review-notes/{note}/archive', [ReviewNoteController::class, 'archive'])->name('review-notes.archive');
     Route::post('/review-notes/{note}/restore', [ReviewNoteController::class, 'restore'])->withTrashed()->name('review-notes.restore');

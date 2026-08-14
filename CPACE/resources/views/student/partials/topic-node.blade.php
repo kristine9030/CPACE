@@ -9,7 +9,7 @@
             @endif
 
             @if($depth === 0)
-                <div class="topic-num" style="background:{{ $color }};">{{ $i + 1 }}</div>
+                <div class="topic-num">{{ $i + 1 }}</div>
             @endif
 
             <div class="node-body">
@@ -45,7 +45,7 @@
 
         @if($topic->children->isNotEmpty())
             <div class="topic-children" hidden>
-                @include('student.partials.topic-node', ['topics' => $topic->children, 'subject' => $subject, 'color' => $color, 'depth' => $depth + 1])
+                @include('student.partials.topic-node', ['topics' => $topic->children, 'subject' => $subject, 'depth' => $depth + 1])
             </div>
         @endif
     </div>

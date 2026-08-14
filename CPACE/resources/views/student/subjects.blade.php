@@ -238,7 +238,19 @@
             gap: 20px;
         }
 
-        .page-title { font-size: 30px; font-weight: 700; color: #1a1a1a; margin-bottom: 6px; }
+        .page-title {
+            font-size: 30px; font-weight: 700; color: #1a1a1a;
+            margin-bottom: 6px; padding-bottom: 10px;
+            position: relative;
+        }
+        .page-title::after {
+            content: '';
+            position: absolute;
+            left: 0; bottom: 0;
+            width: 46px; height: 3px;
+            border-radius: 2px;
+            background: linear-gradient(90deg, #c0392b, #7B1D1D);
+        }
         .page-subtitle { font-size: 14px; color: #999; }
 
         /* Page header illustration */
@@ -276,117 +288,157 @@
         .illus-plant { font-size: 38px; margin-bottom: 2px; position: relative; z-index:1; }
         .illus-mug { font-size: 34px; margin-bottom: 2px; position: relative; z-index:1; }
 
-        /* ─── SUBJECT GRID ─── */
+        /* ─── SUBJECT GRID ───────────────────────────────────────────────────
+           Each subject is drawn as a manila-style folder: a tab riding above a
+           body whose top-left corner is square, so the two read as one shape. */
         .subjects-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 22px;
-            margin-top: 40px;
+            column-gap: 28px;
+            row-gap: 14px;         /* each card adds its own tab clearance on top */
+            margin-top: 26px;
         }
 
+        /* The back panel of the folder — maroon, with the tab raised off its
+           top-left corner. Same two-piece construction as the folder icons in
+           Review Notes: dark back panel, lighter front flap over the bottom. */
+        /* Proportions traced from the notes icon: tab is 33% of the width and
+           sits ~15% of the folder's height above the body, and the front flap
+           covers the bottom ~62%. */
+        /* Back panel. Flat fill like the icon — the depth comes from stacked
+           shadows and the flap sitting in front, not from gloss. */
         .subject-card {
             position: relative;
-            border-radius: 16px;
-            padding: 24px;
-            transition: transform 0.25s, box-shadow 0.25s;
+            margin-top: 26px;                 /* room for the tab */
+            border-radius: 0 12px 12px 12px;  /* square where the tab joins */
+            background: #7B1D1D;
             display: flex;
             flex-direction: column;
-            z-index: 0;
+            box-shadow:
+                0 1px 2px rgba(64,8,8,0.30),
+                0 5px 12px rgba(64,8,8,0.20),
+                0 14px 28px rgba(64,8,8,0.13);
+            transition: transform 0.22s, box-shadow 0.22s;
         }
-        .subject-card::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            border-radius: 16px;
-            background: white;
-            z-index: -2;
-        }
-        .subject-card::after {
-            content: '';
-            position: absolute;
-            inset: -2px;
-            border-radius: 18px;
-            background: linear-gradient(135deg, #c0392b, #7B1D1D, #a12626);
-            z-index: -3;
-        }
-        .subject-card > * { position: relative; z-index: 1; }
         .subject-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 10px 24px rgba(0,0,0,0.12);
+            box-shadow:
+                0 2px 4px rgba(64,8,8,0.30),
+                0 10px 22px rgba(64,8,8,0.26),
+                0 24px 44px rgba(64,8,8,0.20);
         }
 
-        .subject-card-top {
+        /* Raised tab — a shade lighter, like a separate leaf behind the body,
+           with a true triangular wedge for the diagonal right edge. */
+        .folder-tab {
+            position: absolute;
+            top: -26px; left: 0;
+            width: 33%; min-width: 84px; max-width: 128px;
+            height: 27px;
+            border-radius: 9px 0 0 0;
+            background: #8d2626;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.14);
+        }
+        .folder-tab::after {
+            content: '';
+            position: absolute;
+            left: 100%; top: 0; bottom: 0;
+            width: 27px;
+            background: #8d2626;
+            clip-path: polygon(0 0, 100% 100%, 0 100%);
+        }
+
+        /* Header sits directly on the back panel, so its text is white. */
+        .folder-head {
             display: flex;
             align-items: center;
-            gap: 18px;
-            margin-bottom: 20px;
+            gap: 14px;
+            padding: 18px 20px 20px;
         }
 
+        /* Front flap — plain white against the maroon back panel. It physically
+           sits in front, so it casts a shadow up onto the back panel. The white
+           highlight the fold used to carry is gone — on a white flap it did
+           nothing, and the maroon/white contrast defines the edge on its own. */
+        .folder-front {
+            background: #fff;
+            border-radius: 0 0 12px 12px;
+            box-shadow: 0 -5px 12px rgba(58,6,6,0.34);
+            padding: 18px 20px 20px;
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+
+        /* White disc — the subject artwork is maroon-and-gold, so it needs a
+           light ground to stay legible against the maroon back panel. */
         .subject-icon-circle {
-            width: 72px; height: 72px;
+            width: 46px; height: 46px;
             border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
             flex-shrink: 0;
-            position: relative;
-        }
-        .subject-icon-circle::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            border-radius: 50%;
-            background: var(--icon-bg, #f5e8e8);
-            z-index: 0;
+            background: #fff;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.20);
         }
         .subject-icon-circle img {
-            width: 42px; height: 42px;
+            width: 29px; height: 29px;
             object-fit: contain;
-            position: relative;
-            z-index: 1;
         }
 
-        .subject-info { flex: 1; }
-        .subject-abbr { font-size: 20px; font-weight: 800; color: #1a1a1a; margin-bottom: 3px; }
-        .subject-full { font-size: 12px; color: #888; line-height: 1.4; }
+        .subject-info { flex: 1; min-width: 0; }
+        .subject-abbr {
+            font-size: 16px; font-weight: 800; color: #fff;
+            margin-bottom: 1px; text-shadow: 0 1px 2px rgba(0,0,0,0.20);
+        }
+        .subject-full {
+            font-size: 11px; color: rgba(255,255,255,0.85); line-height: 1.4;
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        }
 
         .overall-progress {
             display: flex; align-items: center; gap: 14px;
             padding-bottom: 16px; margin-bottom: 16px;
-            border-bottom: 1px solid #f5f5f5;
+            border-bottom: 1px solid #f0f0f0;
         }
-        .ring-wrap { position: relative; width: 58px; height: 58px; flex-shrink: 0; }
-        .ring-svg { width: 58px; height: 58px; transform: rotate(-90deg); }
-        .ring-bg { fill: none; stroke: #f0f0f0; stroke-width: 6; }
+        .ring-wrap { position: relative; width: 44px; height: 44px; flex-shrink: 0; }
+        .ring-svg { width: 44px; height: 44px; transform: rotate(-90deg); }
+        .ring-bg { fill: none; stroke: #ededed; stroke-width: 6; }
         .ring-fill { fill: none; stroke-width: 6; stroke-linecap: round; transition: stroke-dashoffset 0.6s ease; }
         .ring-pct {
             position: absolute; inset: 0;
             display: flex; align-items: center; justify-content: center;
-            font-size: 13px; font-weight: 800; color: #1a1a1a;
+            font-size: 11px; font-weight: 800; color: #1a1a1a;
         }
         .overall-info { flex: 1; min-width: 0; }
         .overall-title {
-            font-size: 11px; font-weight: 700; color: #333;
-            text-transform: uppercase; letter-spacing: 0.4px;
+            font-size: 10px; font-weight: 700; color: var(--primary);
+            text-transform: uppercase; letter-spacing: 0.5px;
         }
-        .overall-sub { font-size: 11px; color: #999; margin-top: 3px; }
+        .overall-sub { font-size: 10.5px; color: #999; margin-top: 4px; line-height: 1.45; }
 
+        /* Blush panel with hairline dividers, instead of two flat grey rules. */
+        /* White card floating on the flap — one more layer of depth. */
         .subject-stats {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 8px;
-            padding: 16px 0;
-            border-top: 1px solid #f5f5f5;
-            border-bottom: 1px solid #f5f5f5;
+            gap: 0;
+            padding: 13px 8px;
+            background: #fafafa;
+            border: 1px solid #f0f0f0;
+            border-radius: 10px;
             margin-bottom: 16px;
             text-align: center;
         }
+        .subject-stats > div + div { border-left: 1px solid #ececec; }
         .stat-num {
             display: block;
-            font-size: 20px; font-weight: 700; color: #1a1a1a;
+            font-size: 17px; font-weight: 700; color: var(--primary);
             margin-bottom: 3px;
         }
-        .stat-num.weak { color: var(--accent-red); }
+        /* Brighter than the maroon siblings so the warning still stands out. */
+        .stat-num.weak { color: #e03131; }
         .stat-lbl {
-            font-size: 10px; color: #aaa; text-transform: uppercase; letter-spacing: 0.4px;
+            font-size: 9.5px; color: #999; text-transform: uppercase; letter-spacing: 0.4px;
         }
 
         .subject-btn {
@@ -396,19 +448,25 @@
             gap: 8px;
             padding: 11px 16px;
             border: none;
-            border-radius: 8px;
-            font-size: 13px;
+            border-radius: 9px;
+            font-size: 12px;
             font-weight: 600;
             cursor: pointer;
             font-family: 'Poppins', sans-serif;
             text-decoration: none;
-            transition: opacity 0.2s, box-shadow 0.2s;
+            transition: background 0.2s, box-shadow 0.2s;
             margin-top: auto;
-            background: linear-gradient(135deg, rgba(192,57,43,.12) 0%, rgba(123,29,29,.12) 100%);
-            color: #7B1D1D;
+            /* Solid maroon — the pale 12% wash was the flattest thing on the card. */
+            background: linear-gradient(135deg, #a52f26 0%, #7B1D1D 100%);
+            color: #fff;
+            box-shadow: 0 2px 5px rgba(90,20,20,.30);
         }
-        .subject-btn:hover { opacity: 0.85; box-shadow: 0 4px 14px rgba(123,29,29,.15); }
-        .btn-afar  { background: #e8f7f9; color: #17a2b8; }
+        .subject-btn:hover {
+            background: linear-gradient(135deg, #8e2620 0%, #5c1414 100%);
+            box-shadow: 0 5px 14px rgba(90,20,20,.42);
+        }
+        .subject-btn i { transition: transform 0.2s; }
+        .subject-card:hover .subject-btn i { transform: translateX(3px); }
 
         @media (max-width: 1200px) {
             .subjects-grid { grid-template-columns: repeat(2, 1fr); }
@@ -433,10 +491,12 @@
 
         @media (max-width: 480px) {
             .main-content { padding: 16px 12px; }
-            .subjects-grid { grid-template-columns: 1fr; gap: 14px; }
-            .subject-card { padding: 18px; }
-            .subject-icon-circle { width: 56px; height: 56px; }
-            .subject-abbr { font-size: 18px; }
+            .subjects-grid { grid-template-columns: 1fr; column-gap: 16px; row-gap: 10px; }
+            .folder-head { padding: 16px 17px 18px; gap: 13px; }
+            .folder-front { padding: 16px 17px 18px; }
+            .subject-icon-circle { width: 44px; height: 44px; }
+            .subject-icon-circle img { width: 28px; height: 28px; }
+            .subject-abbr { font-size: 15px; }
             .page-title { font-size: 20px; }
         }
 
@@ -501,10 +561,13 @@
     <div class="subjects-grid anim" style="animation-delay:0.12s">
 
         @forelse($subjects as $subject)
-            @php $color = $subject->color ?: '#7B1D1D'; @endphp
+            {{-- Brand maroon, not subjects.color — those stored values are a
+                 mixed palette that clashed with the rest of the UI. --}}
+            @php $color = '#7B1D1D'; @endphp
             <div class="subject-card">
-                <div class="subject-card-top">
-                    <div class="subject-icon-circle" style="--icon-bg:{{ $color }}1a;">
+                <span class="folder-tab" aria-hidden="true"></span>
+                <div class="folder-head">
+                    <div class="subject-icon-circle">
                         <img src="{{ asset('images/' . $subject->code . '.png') }}" alt="{{ $subject->code }}">
                     </div>
                     <div class="subject-info">
@@ -522,6 +585,7 @@
                         ? round($circumference * (1 - $subject->overall_accuracy / 100))
                         : $circumference;
                 @endphp
+                <div class="folder-front">
                 <div class="overall-progress">
                     <div class="ring-wrap">
                         <svg viewBox="0 0 60 60" class="ring-svg">
@@ -558,6 +622,7 @@
                     </div>
                 </div>
                 <a href="{{ route('subjects.show', $subject->id) }}" class="subject-btn">Review Subject <i class="fas fa-arrow-right"></i></a>
+                </div>
             </div>
         @empty
             <div style="grid-column:1/-1; text-align:center; padding:60px 20px; color:#aaa;">

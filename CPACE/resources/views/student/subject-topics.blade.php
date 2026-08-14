@@ -108,11 +108,12 @@
             background: linear-gradient(135deg, #c0392b, #7B1D1D, #a12626);
             z-index:-2;
         }
+        /* Blush wash from the top edge, matching the cards on the Subjects grid. */
         .subject-hero::after {
             content:'';
             position:absolute; inset:0;
             border-radius:16px;
-            background:#fff;
+            background:linear-gradient(180deg, #fdeeeb 0%, #fdf6f5 30%, #ffffff 62%);
             z-index:-1;
         }
         /* abstract shapes */
@@ -124,36 +125,55 @@
         .hero-shapes .hs4 { bottom:10px; right:5%; width:60px; height:60px; border:1.5px dashed rgba(123,29,29,.07); border-radius:14px; transform:rotate(35deg); }
         .hero-shapes .hs5 { top:-15px; right:40%; width:40px; height:40px; background:rgba(255,200,100,.06); border-radius:50%; }
         .hero-top { display:flex; align-items:center; gap:20px; position:relative; z-index:1; }
-        .hero-icon { width:70px; height:70px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; position:relative; }
+        .hero-icon {
+            width:70px; height:70px; border-radius:50%;
+            display:flex; align-items:center; justify-content:center;
+            flex-shrink:0; position:relative;
+            box-shadow:0 0 0 5px rgba(192,57,43,0.10);
+        }
         .hero-icon::before { content:''; position:absolute; inset:0; border-radius:50%; background:var(--icon-bg, #f5e8e8); z-index:0; }
         .hero-icon img { width:40px; height:40px; object-fit:contain; position:relative; z-index:1; }
         .hero-info h1 { font-size:24px; font-weight:800; color:#1a1a1a; }
         .hero-info p { font-size:13px; color:#888; margin-top:3px; }
-        .hero-count { margin-left:auto; text-align:center; }
-        .hero-count .n { font-size:26px; font-weight:800; color:var(--primary); }
-        .hero-count .l { font-size:11px; color:#aaa; text-transform:uppercase; letter-spacing:.5px; }
+        /* Blush pill so the topic count reads as a stat, not stray text. */
+        .hero-count {
+            margin-left:auto; text-align:center; flex-shrink:0;
+            background:#fdf3f1; border:1px solid #f7e4e0;
+            border-radius:12px; padding:10px 18px;
+        }
+        .hero-count .n { font-size:26px; font-weight:800; color:var(--primary); line-height:1.1; }
+        .hero-count .l { font-size:11px; color:#a98e8a; text-transform:uppercase; letter-spacing:.5px; }
 
-        .hero-overall { border-top:1px solid #f2f2f2; padding-top:18px; position:relative; z-index:1; }
-        .hero-overall-head { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:9px; }
-        .hero-overall-label { font-size:11.5px; font-weight:700; color:#888; text-transform:uppercase; letter-spacing:.5px; }
+        .hero-overall { border-top:1px solid #f6e7e4; padding-top:18px; position:relative; z-index:1; }
+        .hero-overall-head { display:flex; justify-content:space-between; align-items:baseline; gap:12px; flex-wrap:wrap; margin-bottom:9px; }
+        .hero-overall-label { font-size:11.5px; font-weight:700; color:var(--primary); text-transform:uppercase; letter-spacing:.5px; }
         .hero-overall-value { font-size:20px; font-weight:800; }
-        .hero-overall-sub { font-size:11px; color:#aaa; }
-        .hero-track { height:14px; border-radius:8px; background:#f0f0f0; overflow:hidden; }
+        .hero-overall-sub { font-size:11px; color:#a98e8a; }
+        .hero-track { height:14px; border-radius:8px; background:#f7e4e0; overflow:hidden; }
         .hero-fill {
             height:100%; border-radius:8px;
             background-image:repeating-linear-gradient(45deg, rgba(255,255,255,.18) 0 8px, transparent 8px 16px);
             transition:width .6s ease;
         }
 
-        .section-title { font-size:16px; font-weight:700; color:#333; margin-bottom:14px; }
+        .section-title {
+            font-size:16px; font-weight:700; color:#333;
+            margin-bottom:14px; padding-bottom:9px; position:relative;
+        }
+        .section-title::after {
+            content:''; position:absolute; left:0; bottom:0;
+            width:38px; height:3px; border-radius:2px;
+            background:linear-gradient(90deg, #c0392b, #7B1D1D);
+        }
 
         .topic-search { position:relative; margin-bottom:18px; }
         .topic-search i { position:absolute; left:16px; top:50%; transform:translateY(-50%); color:#bbb; font-size:13px; }
         .topic-search input {
-            width:100%; padding:12px 16px 12px 40px; border:1.5px solid #e5e5e5; border-radius:10px;
-            font:13px 'Poppins',sans-serif; background:#fff; outline:none; transition:border-color .15s;
+            width:100%; padding:12px 16px 12px 40px; border:1.5px solid #f0e0dd; border-radius:10px;
+            font:13px 'Poppins',sans-serif; background:#fff; outline:none;
+            transition:border-color .15s, box-shadow .15s;
         }
-        .topic-search input:focus { border-color:var(--primary); }
+        .topic-search input:focus { border-color:var(--primary); box-shadow:0 0 0 3px rgba(192,57,43,.10); }
         .topic-search .clear-btn {
             position:absolute; right:10px; top:50%; transform:translateY(-50%);
             border:0; background:#f3f4f6; color:#999; width:22px; height:22px; border-radius:50%;
@@ -165,43 +185,76 @@
         .topic-node + .topic-node { margin-top:12px; }
         .topic-node .topic-node { margin-top:8px; }
 
+        /* Root rows lift on hover and grow a maroon edge, so the list reads as
+           a set of doors rather than a flat stack of boxes. */
         .topic-row-item {
+            position:relative; overflow:hidden;
             display:flex; align-items:center; gap:14px;
             background:#fff; border-radius:14px; padding:16px 18px;
-            box-shadow:0 2px 8px rgba(0,0,0,.04); border:1px solid #f0f0f0;
+            box-shadow:0 2px 8px rgba(0,0,0,.04); border:1px solid #f4e7e4;
+            transition:transform .2s, box-shadow .2s, border-color .2s;
         }
-        .topic-row-item:not(.root) { padding:10px 14px; border-radius:10px; background:#fafafa; box-shadow:none; border:1px solid #f0f0f0; }
+        .topic-row-item.root::before {
+            content:''; position:absolute; left:0; top:0; bottom:0;
+            width:4px; background:linear-gradient(180deg, #c0392b, #7B1D1D);
+            opacity:0; transition:opacity .2s;
+        }
+        .topic-row-item.root:hover {
+            transform:translateY(-2px);
+            border-color:#f0d8d4;
+            box-shadow:0 8px 20px rgba(123,29,29,.14);
+        }
+        .topic-row-item.root:hover::before { opacity:1; }
+        .topic-row-item:not(.root) {
+            padding:10px 14px; border-radius:10px;
+            background:#fdf8f7; box-shadow:none; border:1px solid #f6e7e4;
+        }
+        .topic-row-item:not(.root):hover { background:#fdf3f1; border-color:#f0d8d4; }
 
-        .node-toggle { width:22px; height:22px; flex-shrink:0; border:0; background:#f3f4f6; color:#888; border-radius:6px; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:11px; padding:0; }
+        .node-toggle { width:22px; height:22px; flex-shrink:0; border:0; background:#fbeceb; color:var(--primary); border-radius:6px; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:11px; padding:0; transition:background .15s; }
+        .node-toggle:hover { background:#f7dcd9; }
         .node-toggle.open i { transform:rotate(90deg); }
         .node-toggle i { transition:transform .15s; }
         .node-toggle-spacer { width:22px; flex-shrink:0; }
 
-        .topic-num { width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:15px; color:#fff; flex-shrink:0; }
+        /* Brand maroon, not the subject's stored colour — the grid, the hero and
+           these badges all read as one palette. */
+        .topic-num {
+            width:44px; height:44px; border-radius:12px;
+            display:flex; align-items:center; justify-content:center;
+            font-weight:700; font-size:15px; color:#fff; flex-shrink:0;
+            background:linear-gradient(135deg, #c0392b 0%, #7B1D1D 100%);
+            box-shadow:0 3px 8px rgba(123,29,29,.28);
+        }
         .node-body { flex:1; min-width:0; }
         .node-name { font-size:14px; font-weight:600; color:#222; }
-        .node-meta { font-size:11.5px; color:#aaa; margin-top:4px; display:flex; gap:12px; flex-wrap:wrap; }
+        .node-meta { font-size:11.5px; color:#a98e8a; margin-top:4px; display:flex; gap:12px; flex-wrap:wrap; }
         .node-meta span { display:inline-flex; align-items:center; gap:5px; }
         .node-meta a.meta-link { display:inline-flex; align-items:center; gap:5px; color:var(--primary); font-weight:600; text-decoration:none; }
         .node-meta a.meta-link:hover { text-decoration:underline; }
         .node-materials-link {
             display:flex; align-items:center; gap:6px; flex-shrink:0;
-            color:var(--primary); background:var(--primary-light); font-size:11px; font-weight:600;
-            padding:8px 12px; border-radius:8px; text-decoration:none; white-space:nowrap;
+            color:#fff; background:linear-gradient(135deg, #c0392b 0%, #7B1D1D 100%);
+            font-size:11px; font-weight:600;
+            padding:9px 14px; border-radius:8px; text-decoration:none; white-space:nowrap;
+            transition:background .2s, box-shadow .2s;
         }
-        .node-materials-link:hover { background:var(--primary); color:#fff; }
+        .node-materials-link:hover {
+            background:linear-gradient(135deg, #a12626 0%, #5c1414 100%);
+            box-shadow:0 5px 14px rgba(123,29,29,.30);
+        }
         .node-materials-link i { font-size:13px; }
         .topic-children { margin-top:8px; }
 
         .node-progress { display:flex; align-items:center; gap:9px; margin-top:8px; }
-        .progress-track { flex:1; max-width:200px; height:6px; background:#eee; border-radius:3px; overflow:hidden; }
+        .progress-track { flex:1; max-width:200px; height:6px; background:#f7e4e0; border-radius:3px; overflow:hidden; }
         .progress-fill { height:100%; border-radius:3px; transition:width .3s; }
         .progress-fill.empty { width:0; }
         .progress-label { font-size:10.5px; font-weight:600; white-space:nowrap; }
-        .progress-label.muted { color:#bbb; font-weight:500; }
+        .progress-label.muted { color:#c0a9a5; font-weight:500; }
 
-        .empty { text-align:center; padding:60px 20px; color:#aaa; background:#fff; border-radius:14px; }
-        .empty i { font-size:36px; color:#e5d5d5; display:block; margin-bottom:12px; }
+        .empty { text-align:center; padding:60px 20px; color:#a98e8a; background:#fff; border:1px solid #f4e7e4; border-radius:14px; }
+        .empty i { font-size:36px; color:#e5c9c4; display:block; margin-bottom:12px; }
 
         @media (max-width:768px) {
             .main-content { margin-left:0; padding:20px 16px; }
@@ -219,7 +272,9 @@
 @include('partials.student-bottom-nav', ['active' => 'subjects'])
 @include('partials.student-mobile-header')
 
-@php $color = $subject->color ?: '#7B1D1D'; @endphp
+{{-- Brand maroon throughout. The stored subjects.color values are a mixed
+     palette (blue, green, orange…) that clashed with the rest of the UI. --}}
+@php $color = '#7B1D1D'; @endphp
 
 <main class="main-content">
     <!-- TOP BAR -->
@@ -316,7 +371,7 @@
 
     <div class="topics-list" id="topicsList">
         @if($topicTree->isNotEmpty())
-            @include('student.partials.topic-node', ['topics' => $topicTree, 'subject' => $subject, 'color' => $color, 'depth' => 0])
+            @include('student.partials.topic-node', ['topics' => $topicTree, 'subject' => $subject, 'depth' => 0])
         @else
             <div class="empty">
                 <i class="fas fa-inbox"></i>

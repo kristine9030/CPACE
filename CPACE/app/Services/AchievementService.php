@@ -23,6 +23,9 @@ use Illuminate\Support\Facades\DB;
  */
 class AchievementService
 {
+    /** Ranked students needed before a percentile is worth quoting. */
+    private const PERCENTILE_MIN_POOL = 20;
+
     public function __construct(private StreakService $streaks) {}
 
     /**
@@ -88,6 +91,47 @@ class AchievementService
             'intermediate' => ['Intermediate', 'fa-spa'],
             'advanced'     => ['Advanced', 'fa-tree'],
             'legend'       => ['Legend', 'fa-crown'],
+        ];
+    }
+
+    /**
+     * The student's standing, derived from how much of the badge catalogue
+     * they've earned. Reuses the tier vocabulary from the Badge Progress panel
+     * so the header and that panel speak the same language.
+     *
+     * @return array{key: string, label: string, icon: string, percent: int, next_label: ?string, badges_to_next: ?int}
+     */
+    public function standing(int $earned, int $total): array
+    {
+        $percent = $total > 0 ? (int) round($earned / $total * 100) : 0;
+        $tiers   = $this->tiers();
+
+        // Share of the whole catalogue each tier starts at.
+        $bands = ['beginner' => 0, 'intermediate' => 25, 'advanced' => 50, 'legend' => 75];
+
+        $currentKey = 'beginner';
+        $nextKey    = null;
+
+        foreach ($bands as $key => $floor) {
+            if ($percent >= $floor) {
+                $currentKey = $key;
+            } elseif ($nextKey === null) {
+                $nextKey = $key;
+            }
+        }
+
+        $badgesToNext = null;
+        if ($nextKey !== null && $total > 0) {
+            $badgesToNext = max(1, (int) ceil($bands[$nextKey] / 100 * $total) - $earned);
+        }
+
+        return [
+            'key'            => $currentKey,
+            'label'          => $tiers[$currentKey][0],
+            'icon'           => $tiers[$currentKey][1],
+            'percent'        => $percent,
+            'next_label'     => $nextKey ? $tiers[$nextKey][0] : null,
+            'badges_to_next' => $badgesToNext,
         ];
     }
 
@@ -368,6 +412,16 @@ class AchievementService
 
         $percentile = $allRank ? max(1, (int) round($allRank / max($totalRanked, 1) * 100)) : null;
 
+        // A percentile only carries information once the pool is big enough,
+        // and only in the top half. With 6 ranked students rank 1 computes to
+        // "top 17%", which reads as worse than being first; at the other end
+        // rank 499 of 500 computes to "top 100%", which is meaningless. In
+        // both cases the header shows the plain standing instead.
+        $showPercentile = $allRank !== null
+            && $allRank > 1
+            && $totalRanked >= self::PERCENTILE_MIN_POOL
+            && $percentile <= 50;
+
         if ($monthRank && $prevRank) {
             $delta = $prevRank - $monthRank; // positive = moved up
         } else {
@@ -393,10 +447,11 @@ class AchievementService
             'month'  => $this->display($month, $meId),
             'all'    => $this->display($all, $meId),
             'status' => [
-                'ranked'       => $allRank !== null,
-                'rank'         => $allRank,
-                'percentile'   => $percentile,
-                'total'        => $totalRanked,
+                'ranked'          => $allRank !== null,
+                'rank'            => $allRank,
+                'percentile'      => $percentile,
+                'show_percentile' => $showPercentile,
+                'total'           => $totalRanked,
                 'delta'        => $delta,
                 'delta_label'  => $deltaLabel,
                 'delta_tone'   => $deltaTone,
