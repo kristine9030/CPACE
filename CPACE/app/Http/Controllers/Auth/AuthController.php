@@ -44,6 +44,10 @@ class AuthController extends Controller
                 return $this->rejectShiftedLogin($request, $user);
             }
 
+            if (! $user->is_active) {
+                return $this->rejectInactiveLogin($request);
+            }
+
             $user->forceFill(['last_login_at' => now()])->save();
 
             return redirect()->intended($this->homeFor($user));
@@ -51,6 +55,22 @@ class AuthController extends Controller
 
         return back()->withErrors([
             'email' => 'The provided credentials do not match our records.',
+        ])->onlyInput('email');
+    }
+
+    /**
+     * A deactivated account (e.g. a faculty login the Program Chair toggled
+     * off) authenticates fine against email/password but must not get a
+     * session — Auth::attempt() has no knowledge of the is_active flag.
+     */
+    protected function rejectInactiveLogin(Request $request)
+    {
+        Auth::logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return back()->withErrors([
+            'email' => 'This account has been deactivated. Please contact your Program Chair for assistance.',
         ])->onlyInput('email');
     }
 
@@ -179,6 +199,10 @@ class AuthController extends Controller
 
         if ($user->isShifted()) {
             return $this->rejectShiftedLogin(request(), $user);
+        }
+
+        if (! $user->is_active) {
+            return $this->rejectInactiveLogin(request());
         }
 
         $user->forceFill(['last_login_at' => now()])->save();
