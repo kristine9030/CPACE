@@ -34,19 +34,40 @@ class TestBankController extends Controller
             return view('faculty.partials.test-bank-table', ['questions' => $questions]);
         }
 
+        $statsBase = $this->scopedQuestionQuery(Auth::user());
+
         $stats = [
-            'total'     => Question::count(),
-            'active'    => Question::where('is_active', true)->count(),
-            'draft'     => Question::where('is_active', false)->count(),
-            'this_week' => Question::where('created_at', '>=', now()->subDays(7))->count(),
+            'total'     => (clone $statsBase)->count(),
+            'active'    => (clone $statsBase)->where('questions.is_active', true)->count(),
+            'draft'     => (clone $statsBase)->where('questions.is_active', false)->count(),
+            'this_week' => (clone $statsBase)->where('questions.created_at', '>=', now()->subDays(7))->count(),
         ];
 
         return view('faculty.test-bank', [
             'questions' => $questions,
             'stats'     => $stats,
-            'subjects'  => Subject::orderBy('id')->get(),
+            'subjects'  => $this->subjectsFor(Auth::user())->orderBy('id')->get(),
             'filters'   => $request->only(['search', 'subject', 'type', 'difficulty', 'status']),
         ]);
+    }
+
+    /**
+     * Question query joined to topic/subject and restricted to the subjects
+     * the current faculty member is assigned to (chair/admin see everything).
+     * "All Subjects" in the UI therefore still only ever means "all of my
+     * assigned subjects" for a faculty member, never the whole test bank.
+     */
+    private function scopedQuestionQuery(\App\Models\User $user)
+    {
+        $query = Question::query()
+            ->join('topics', 'topics.id', '=', 'questions.topic_id')
+            ->join('subjects', 'subjects.id', '=', 'topics.subject_id');
+
+        if (! $user->isChair()) {
+            $query->whereIn('subjects.id', $user->assignedSubjects()->pluck('subjects.id'));
+        }
+
+        return $query;
     }
 
     /**
@@ -55,11 +76,9 @@ class TestBankController extends Controller
      */
     private function filteredQuery(Request $request)
     {
-        $query = Question::query()
+        $query = $this->scopedQuestionQuery(Auth::user())
             ->select('questions.*', 'topics.name as topic_name', 'subjects.code as subject_code', 'subjects.id as subject_id')
-            ->withCount('variants')
-            ->join('topics', 'topics.id', '=', 'questions.topic_id')
-            ->join('subjects', 'subjects.id', '=', 'topics.subject_id');
+            ->withCount('variants');
 
         if ($search = $request->input('search')) {
             $query->where('questions.question_text', 'like', "%{$search}%");
@@ -191,11 +210,32 @@ class TestBankController extends Controller
     public function create()
     {
         return view('faculty.question-form', [
-            'subjects'    => Subject::where('is_active', true)
+            'subjects'    => $this->subjectsFor(Auth::user())
                 ->with(['topics' => fn ($query) => $query->where('is_active', true)->orderBy('sort_order')])
                 ->orderBy('id')->get(),
             'editMode'    => false,
         ]);
+    }
+
+    /**
+     * Subjects a faculty member is allowed to write test-bank questions for:
+     * only the subjects the Program Chair assigned to them. Chair/admin can
+     * manage everything.
+     */
+    private function subjectsFor(\App\Models\User $user)
+    {
+        return $user->isChair()
+            ? Subject::where('is_active', true)
+            : $user->assignedSubjects()->where('is_active', true);
+    }
+
+    /** Message shown (as a friendly modal, not a hard error page) when a faculty member strays outside their assigned subjects. */
+    private const NOT_ASSIGNED_MESSAGE = "You're not assigned to this subject, so you can't manage its questions. Ask your Program Chair for access if you think this is a mistake.";
+
+    /** Whether this faculty member is allowed to manage questions in the given subject. Chair/admin can manage everything. */
+    private function canManageSubject(\App\Models\User $user, int $subjectId): bool
+    {
+        return $user->isChair() || $user->assignedSubjects()->where('subjects.id', $subjectId)->exists();
     }
 
     /**
@@ -214,6 +254,10 @@ class TestBankController extends Controller
         ]);
 
         $topic = Topic::with('subject')->findOrFail($data['topic_id']);
+
+        if (! $this->canManageSubject(Auth::user(), $topic->subject_id)) {
+            return response()->json(['message' => self::NOT_ASSIGNED_MESSAGE, 'not_assigned' => true], 403);
+        }
 
         $existingQuestions = Question::where('topic_id', $topic->id)
             ->orderByDesc('id')
@@ -248,6 +292,10 @@ class TestBankController extends Controller
     {
         $data = $this->validateQuestion($request);
 
+        if (! $this->canManageSubject(Auth::user(), Topic::findOrFail($data['topic_id'])->subject_id)) {
+            return redirect()->route('faculty.test-bank')->with('warning', self::NOT_ASSIGNED_MESSAGE);
+        }
+
         DB::transaction(function () use ($data, $request) {
             $question = Question::create([
                 'topic_id'      => $data['topic_id'],
@@ -272,12 +320,48 @@ class TestBankController extends Controller
     {
         $question = Question::with('choices')->findOrFail($id);
 
+        if (! $this->canManageSubject(Auth::user(), $question->topic->subject_id)) {
+            return redirect()->route('faculty.test-bank')->with('warning', self::NOT_ASSIGNED_MESSAGE);
+        }
+
         return view('faculty.question-form', [
-            'subjects'       => Subject::with('topics')->orderBy('id')->get(),
+            'subjects'       => $this->subjectsFor(Auth::user())->with('topics')->orderBy('id')->get(),
             'editMode'       => true,
             'question'       => $question,
             'currentSubject' => $question->topic->subject_id,
+            'stats'          => $this->questionStats($question),
         ]);
+    }
+
+    /**
+     * Real usage stats for a question, derived from recorded quiz answers.
+     * Avg. time spent has no per-question timer in the schema, so it's
+     * estimated from the parent session's total duration divided evenly
+     * across that session's items.
+     */
+    private function questionStats(Question $question): array
+    {
+        $timesAnswered = DB::table('quiz_answers')->where('question_id', $question->id)->count();
+
+        $correctRate = null;
+        if ($timesAnswered > 0) {
+            $correct = DB::table('quiz_answers')->where('question_id', $question->id)->where('is_correct', true)->count();
+            $correctRate = round($correct / $timesAnswered * 100);
+        }
+
+        $avgTimeSpent = DB::table('quiz_answers')
+            ->join('quiz_sessions', 'quiz_sessions.id', '=', 'quiz_answers.session_id')
+            ->where('quiz_answers.question_id', $question->id)
+            ->where('quiz_sessions.total_items', '>', 0)
+            ->whereNotNull('quiz_sessions.duration_secs')
+            ->avg(DB::raw('quiz_sessions.duration_secs / quiz_sessions.total_items'));
+
+        return [
+            'times_answered' => $timesAnswered,
+            'correct_rate'   => $correctRate,
+            'avg_time_secs'  => $avgTimeSpent !== null ? round($avgTimeSpent) : null,
+            'date_added'     => $question->created_at,
+        ];
     }
 
     /**
@@ -285,8 +369,15 @@ class TestBankController extends Controller
      */
     public function update(Request $request, int $id)
     {
-        $question = Question::findOrFail($id);
+        $question = Question::with('topic')->findOrFail($id);
         $data = $this->validateQuestion($request);
+
+        $canManage = $this->canManageSubject(Auth::user(), $question->topic->subject_id)
+            && $this->canManageSubject(Auth::user(), Topic::findOrFail($data['topic_id'])->subject_id);
+
+        if (! $canManage) {
+            return redirect()->route('faculty.test-bank')->with('warning', self::NOT_ASSIGNED_MESSAGE);
+        }
 
         DB::transaction(function () use ($question, $data, $request) {
             $question->update([

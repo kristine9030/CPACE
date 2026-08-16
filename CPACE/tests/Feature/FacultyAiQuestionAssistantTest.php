@@ -17,7 +17,7 @@ use Tests\TestCase;
  */
 class FacultyAiQuestionAssistantTest extends TestCase
 {
-    private const TABLES = ['question_variants', 'question_choices', 'questions', 'topics', 'subjects', 'users'];
+    private const TABLES = ['question_variants', 'question_choices', 'questions', 'topics', 'subjects', 'faculty_subjects', 'users'];
 
     protected function setUp(): void
     {
@@ -79,6 +79,14 @@ class FacultyAiQuestionAssistantTest extends TestCase
             $table->boolean('is_active')->default(true);
             $table->timestamps();
         });
+
+        Schema::create('faculty_subjects', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('faculty_id');
+            $table->unsignedBigInteger('subject_id');
+            $table->unsignedBigInteger('assigned_by')->nullable();
+            $table->timestamp('assigned_at')->useCurrent();
+        });
     }
 
     protected function tearDown(): void
@@ -101,6 +109,15 @@ class FacultyAiQuestionAssistantTest extends TestCase
             'email'      => 'faculty@example.com',
             'password'   => bcrypt('secret'),
             'setup_completed_at' => now(),
+        ]);
+    }
+
+    private function assignSubject(User $faculty, int $subjectId): void
+    {
+        \DB::table('faculty_subjects')->insert([
+            'faculty_id'  => $faculty->id,
+            'subject_id'  => $subjectId,
+            'assigned_at' => now(),
         ]);
     }
 
@@ -129,6 +146,8 @@ class FacultyAiQuestionAssistantTest extends TestCase
     {
         $subject = \DB::table('subjects')->insertGetId(['code' => 'FAR', 'name' => 'Financial Accounting and Reporting', 'is_active' => true]);
         $topicId = \DB::table('topics')->insertGetId(['subject_id' => $subject, 'name' => 'Inventory', 'sort_order' => 1, 'is_active' => true]);
+        $faculty = $this->faculty();
+        $this->assignSubject($faculty, $subject);
 
         $this->fakeAiReply(json_encode([
             'question_text' => 'Under the lower of cost or NRV rule, inventory is written down when:',
@@ -141,7 +160,7 @@ class FacultyAiQuestionAssistantTest extends TestCase
             'explanation' => 'PAS 2 requires inventory to be measured at the lower of cost and NRV.',
         ]));
 
-        $response = $this->actingAs($this->faculty())
+        $response = $this->actingAs($faculty)
             ->postJson(route('faculty.question.ai-draft'), [
                 'topic_id'      => $topicId,
                 'difficulty'    => 'Medium',
@@ -160,13 +179,15 @@ class FacultyAiQuestionAssistantTest extends TestCase
     {
         $subject = \DB::table('subjects')->insertGetId(['code' => 'FAR', 'name' => 'FAR', 'is_active' => true]);
         $topicId = \DB::table('topics')->insertGetId(['subject_id' => $subject, 'name' => 'Inventory', 'sort_order' => 1, 'is_active' => true]);
+        $faculty = $this->faculty();
+        $this->assignSubject($faculty, $subject);
 
         Http::fake([
             'https://generativelanguage.googleapis.com/*' => Http::response([], 500),
             'https://openrouter.ai/*' => Http::response([], 500),
         ]);
 
-        $response = $this->actingAs($this->faculty())
+        $response = $this->actingAs($faculty)
             ->postJson(route('faculty.question.ai-draft'), [
                 'topic_id'      => $topicId,
                 'difficulty'    => 'Easy',
@@ -175,6 +196,23 @@ class FacultyAiQuestionAssistantTest extends TestCase
 
         $response->assertStatus(503);
         $response->assertJsonStructure(['message']);
+    }
+
+    public function test_ai_draft_endpoint_returns_a_friendly_not_assigned_response_instead_of_a_bare_403(): void
+    {
+        // Subject exists but is never assigned to this faculty member via faculty_subjects.
+        $subject = \DB::table('subjects')->insertGetId(['code' => 'AUD', 'name' => 'Auditing', 'is_active' => true]);
+        $topicId = \DB::table('topics')->insertGetId(['subject_id' => $subject, 'name' => 'Risk Assessment', 'sort_order' => 1, 'is_active' => true]);
+
+        $response = $this->actingAs($this->faculty())
+            ->postJson(route('faculty.question.ai-draft'), [
+                'topic_id'      => $topicId,
+                'difficulty'    => 'Easy',
+                'question_type' => 'mcq',
+            ]);
+
+        $response->assertStatus(403);
+        $response->assertJson(['not_assigned' => true]);
     }
 
     public function test_suggest_variant_uses_ai_rewrite_when_available(): void

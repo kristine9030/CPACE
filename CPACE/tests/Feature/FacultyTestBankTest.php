@@ -23,7 +23,7 @@ class FacultyTestBankTest extends TestCase
      * - the Laravel migration file for this table has drifted from it.
      */
     private const TABLES = [
-        'question_choices', 'questions', 'topics', 'subjects',
+        'question_variants', 'question_choices', 'questions', 'topics', 'subjects', 'faculty_subjects',
         'notifications', 'messages', 'conversation_participants', 'conversations', 'users',
     ];
 
@@ -114,6 +114,21 @@ class FacultyTestBankTest extends TestCase
             $table->boolean('is_correct')->default(false);
             $table->foreign('question_id')->references('id')->on('questions')->cascadeOnDelete();
         });
+        Schema::create('question_variants', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('question_id');
+            $table->text('variant_text');
+            $table->string('source', 20)->default('faculty');
+            $table->boolean('is_active')->default(true);
+            $table->timestamps();
+        });
+        Schema::create('faculty_subjects', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('faculty_id');
+            $table->unsignedBigInteger('subject_id');
+            $table->unsignedBigInteger('assigned_by')->nullable();
+            $table->timestamp('assigned_at')->useCurrent();
+        });
     }
 
     protected function tearDown(): void
@@ -127,7 +142,7 @@ class FacultyTestBankTest extends TestCase
     public function test_faculty_can_create_an_mcq_question_with_exactly_one_correct_choice(): void
     {
         $faculty = $this->faculty();
-        $topicId = $this->topic();
+        $topicId = $this->topic($faculty);
 
         $this->actingAs($faculty)->post(route('faculty.question.store'), [
             'topic_id'       => $topicId,
@@ -157,7 +172,7 @@ class FacultyTestBankTest extends TestCase
     public function test_faculty_can_create_a_true_false_question(): void
     {
         $faculty = $this->faculty();
-        $topicId = $this->topic();
+        $topicId = $this->topic($faculty);
 
         $this->actingAs($faculty)->post(route('faculty.question.store'), [
             'topic_id'      => $topicId,
@@ -180,7 +195,7 @@ class FacultyTestBankTest extends TestCase
     public function test_an_incomplete_mcq_submission_is_rejected_and_nothing_is_saved(): void
     {
         $faculty = $this->faculty();
-        $topicId = $this->topic();
+        $topicId = $this->topic($faculty);
 
         $this->actingAs($faculty)->post(route('faculty.question.store'), [
             'topic_id'      => $topicId,
@@ -200,7 +215,7 @@ class FacultyTestBankTest extends TestCase
     public function test_updating_a_question_replaces_its_choices_rather_than_editing_them_in_place(): void
     {
         $faculty = $this->faculty();
-        $topicId = $this->topic();
+        $topicId = $this->topic($faculty);
         $questionId = $this->mcqQuestion($topicId, $faculty->id, correct: 'a');
 
         $originalChoiceIds = DB::table('question_choices')->where('question_id', $questionId)->pluck('id');
@@ -234,7 +249,7 @@ class FacultyTestBankTest extends TestCase
     public function test_deleting_a_question_cascades_its_choices(): void
     {
         $faculty = $this->faculty();
-        $topicId = $this->topic();
+        $topicId = $this->topic($faculty);
         $questionId = $this->mcqQuestion($topicId, $faculty->id, correct: 'a');
 
         $this->assertSame(4, DB::table('question_choices')->where('question_id', $questionId)->count());
@@ -244,6 +259,51 @@ class FacultyTestBankTest extends TestCase
 
         $this->assertNull(DB::table('questions')->find($questionId));
         $this->assertSame(0, DB::table('question_choices')->where('question_id', $questionId)->count());
+    }
+
+    public function test_faculty_only_sees_questions_and_subjects_from_their_assigned_subjects(): void
+    {
+        $faculty = $this->faculty();
+        $assignedTopicId = $this->topic($faculty); // FAR, assigned via topic()
+
+        $otherSubjectId = DB::table('subjects')->insertGetId(['code' => 'AUD', 'name' => 'Auditing', 'created_at' => now(), 'updated_at' => now()]);
+        $otherTopicId = DB::table('topics')->insertGetId(['subject_id' => $otherSubjectId, 'name' => 'Risk Assessment', 'created_at' => now(), 'updated_at' => now()]);
+
+        $this->mcqQuestion($assignedTopicId, $faculty->id, correct: 'a');
+        $this->mcqQuestion($otherTopicId, $faculty->id, correct: 'a');
+
+        $response = $this->actingAs($faculty)->get(route('faculty.test-bank'));
+
+        $response->assertOk();
+        $response->assertViewHas('subjects', fn ($subjects) => $subjects->pluck('code')->all() === ['FAR']);
+        $response->assertViewHas('stats', fn ($stats) => $stats['total'] === 1);
+        $response->assertViewHas('questions', fn ($questions) => $questions->total() === 1);
+    }
+
+    public function test_faculty_cannot_open_the_editor_for_a_question_outside_their_assigned_subjects(): void
+    {
+        $faculty = $this->faculty();
+        $otherSubjectId = DB::table('subjects')->insertGetId(['code' => 'AUD', 'name' => 'Auditing', 'created_at' => now(), 'updated_at' => now()]);
+        $otherTopicId = DB::table('topics')->insertGetId(['subject_id' => $otherSubjectId, 'name' => 'Risk Assessment', 'created_at' => now(), 'updated_at' => now()]);
+        $questionId = $this->mcqQuestion($otherTopicId, $faculty->id, correct: 'a');
+
+        $this->actingAs($faculty)->get(route('faculty.question.edit', $questionId))
+            ->assertRedirect(route('faculty.test-bank'))
+            ->assertSessionHas('warning');
+    }
+
+    public function test_faculty_cannot_create_a_question_in_a_subject_they_are_not_assigned_to(): void
+    {
+        $faculty = $this->faculty();
+        $otherSubjectId = DB::table('subjects')->insertGetId(['code' => 'AUD', 'name' => 'Auditing', 'created_at' => now(), 'updated_at' => now()]);
+        $otherTopicId = DB::table('topics')->insertGetId(['subject_id' => $otherSubjectId, 'name' => 'Risk Assessment', 'created_at' => now(), 'updated_at' => now()]);
+
+        $this->actingAs($faculty)->post(route('faculty.question.store'), [
+            'topic_id' => $otherTopicId, 'question_text' => 'x', 'question_type' => 'true_false',
+            'difficulty' => 'Easy', 'tf_answer' => 'true', 'is_active' => '1',
+        ])->assertRedirect(route('faculty.test-bank'))->assertSessionHas('warning');
+
+        $this->assertSame(0, DB::table('questions')->count());
     }
 
     public function test_chair_cannot_manage_the_test_bank(): void
@@ -285,9 +345,17 @@ class FacultyTestBankTest extends TestCase
         ]);
     }
 
-    private function topic(): int
+    private function topic(?User $faculty = null): int
     {
         $subjectId = DB::table('subjects')->insertGetId(['code' => 'FAR', 'name' => 'Financial Accounting', 'created_at' => now(), 'updated_at' => now()]);
+
+        if ($faculty) {
+            DB::table('faculty_subjects')->insert([
+                'faculty_id'  => $faculty->id,
+                'subject_id'  => $subjectId,
+                'assigned_at' => now(),
+            ]);
+        }
 
         return DB::table('topics')->insertGetId(['subject_id' => $subjectId, 'name' => 'Inventory', 'created_at' => now(), 'updated_at' => now()]);
     }

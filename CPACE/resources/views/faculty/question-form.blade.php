@@ -320,25 +320,25 @@
                 </div>
 
                 <!-- STATS (edit mode only) -->
-                @if(isset($editMode))
+                @if(!empty($editMode))
                 <div class="side-card">
                     <div class="side-title">Question Stats</div>
                     <div style="display:flex;flex-direction:column;gap:12px;">
                         <div style="display:flex;justify-content:space-between;align-items:center;">
                             <span style="font-size:12px;color:#888;">Times Answered</span>
-                            <span style="font-size:13px;font-weight:700;color:#1a1a1a;">1,284</span>
+                            <span style="font-size:13px;font-weight:700;color:#1a1a1a;">{{ number_format($stats['times_answered']) }}</span>
                         </div>
                         <div style="display:flex;justify-content:space-between;align-items:center;">
                             <span style="font-size:12px;color:#888;">Correct Rate</span>
-                            <span style="font-size:13px;font-weight:700;color:var(--green);">68%</span>
+                            <span style="font-size:13px;font-weight:700;color:var(--green);">{{ $stats['correct_rate'] !== null ? $stats['correct_rate'].'%' : '—' }}</span>
                         </div>
                         <div style="display:flex;justify-content:space-between;align-items:center;">
                             <span style="font-size:12px;color:#888;">Avg. Time Spent</span>
-                            <span style="font-size:13px;font-weight:700;color:#1a1a1a;">48 sec</span>
+                            <span style="font-size:13px;font-weight:700;color:#1a1a1a;">{{ $stats['avg_time_secs'] !== null ? $stats['avg_time_secs'].' sec' : '—' }}</span>
                         </div>
                         <div style="display:flex;justify-content:space-between;align-items:center;">
                             <span style="font-size:12px;color:#888;">Date Added</span>
-                            <span style="font-size:12px;color:#aaa;">June 9, 2026</span>
+                            <span style="font-size:12px;color:#aaa;">{{ $stats['date_added']->format('F j, Y') }}</span>
                         </div>
                     </div>
                 </div>
@@ -436,7 +436,11 @@ document.getElementById('aiDraftBtn').addEventListener('click', async () => {
 
         const data = await res.json();
         if (!res.ok) {
-            CPACE.error('Draft not generated', data.message || 'The AI could not draft a question right now. Please try again.');
+            if (data.not_assigned) {
+                CPACE.warning('Not your subject', data.message);
+            } else {
+                CPACE.error('Draft not generated', data.message || 'The AI could not draft a question right now. Please try again.');
+            }
             return;
         }
 
