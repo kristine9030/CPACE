@@ -43,7 +43,7 @@ class FacultyPerformanceController extends Controller
      */
     public function index(Request $request)
     {
-        $filters = $this->filters($request);
+        $filters = $this->filters($request, $this->assignedSubjectIds(Auth::user()));
 
         $rows = $this->studentRows($filters);          // every qualifying student
         $search = trim((string) $filters['search']);
@@ -90,7 +90,7 @@ class FacultyPerformanceController extends Controller
             'atRisk'       => $rows->where('at_risk', true)->sortBy('score')->take(5)->values(),
             'weakTopics'   => $this->classWeakTopics($filters),
             'distribution' => $this->scoreDistribution($rows),
-            'subjects'     => Subject::orderBy('id')->get(),
+            'subjects'     => $this->subjectsFor(Auth::user())->orderBy('id')->get(),
             'filters'      => $filters,
             'activeQuery'  => $this->activeQuery($filters),
         ];
@@ -120,10 +120,31 @@ class FacultyPerformanceController extends Controller
     }
 
     /**
-     * Normalise the request filters into the shape the rest of the controller
-     * works with (and the view echoes back into the controls).
+     * Subjects a faculty member is allowed to see performance data for: only
+     * the subjects the Program Chair assigned to them. Chair/admin see
+     * everything (subjects are unrestricted for them everywhere below).
      */
-    private function filters(Request $request): array
+    private function subjectsFor(\App\Models\User $user)
+    {
+        return $user->isChair()
+            ? Subject::where('is_active', true)
+            : $user->assignedSubjects()->where('is_active', true);
+    }
+
+    /** Null means "no restriction" (chair/admin); otherwise the faculty's assigned subject ids. */
+    private function assignedSubjectIds(\App\Models\User $user): ?array
+    {
+        return $user->isChair() ? null : $user->assignedSubjects()->pluck('subjects.id')->all();
+    }
+
+    /**
+     * Normalise the request filters into the shape the rest of the controller
+     * works with (and the view echoes back into the controls). $assignedIds
+     * is null for a chair (no restriction) or the faculty's assigned subject
+     * ids otherwise — an explicit ?subject= outside that set is ignored so a
+     * faculty member can't browse another subject's students via the URL.
+     */
+    private function filters(Request $request, ?array $assignedIds): array
     {
         $period = $request->input('period', '30');
         if (! in_array($period, ['7', '30', '90', 'all'], true)) {
@@ -137,6 +158,9 @@ class FacultyPerformanceController extends Controller
 
         $subjectId = $request->input('subject');
         $subjectId = is_numeric($subjectId) ? (int) $subjectId : null;
+        if ($subjectId !== null && $assignedIds !== null && ! in_array($subjectId, $assignedIds, true)) {
+            $subjectId = null;
+        }
 
         $from = match ($period) {
             '7'  => Carbon::now()->subDays(7),
@@ -146,11 +170,15 @@ class FacultyPerformanceController extends Controller
         };
 
         return [
-            'search'  => (string) $request->input('search', ''),
-            'subject' => $subjectId,
-            'period'  => $period,
-            'sort'    => $sort,
-            'from'    => $from,
+            'search'      => (string) $request->input('search', ''),
+            'subject'     => $subjectId,
+            // The ids actually applied to every query below: the one chosen
+            // subject, or (for a faculty with no subject picked) all of
+            // theirs, or null for chair/admin ("All Subjects" = everything).
+            'subject_ids' => $subjectId !== null ? [$subjectId] : $assignedIds,
+            'period'      => $period,
+            'sort'        => $sort,
+            'from'        => $from,
         ];
     }
 
@@ -161,15 +189,15 @@ class FacultyPerformanceController extends Controller
      */
     private function studentRows(array $filters)
     {
-        $from      = $filters['from'];
-        $subjectId = $filters['subject'];
+        $from       = $filters['from'];
+        $subjectIds = $filters['subject_ids'];
 
         // Reusable base query honouring the period + subject filters.
         $base = fn () => DB::table('quiz_sessions')
             ->where('session_type', '!=', 'training')
             ->whereNotNull('completed_at')
             ->when($from, fn ($q) => $q->where('started_at', '>=', $from))
-            ->when($subjectId, fn ($q) => $q->where('subject_id', $subjectId));
+            ->when($subjectIds !== null, fn ($q) => $q->whereIn('subject_id', $subjectIds));
 
         // Headline aggregate per student.
         $agg = $base()
@@ -204,7 +232,7 @@ class FacultyPerformanceController extends Controller
         // Trend: accuracy in the last 7 days vs the previous 7 (subject filter
         // applies, but the trend window is fixed so it always means "recent").
         $now   = Carbon::now();
-        $trend = $this->trendAccuracy($subjectId, $now, $studentIds);
+        $trend = $this->trendAccuracy($subjectIds, $now, $studentIds);
 
         // User identity + fallback last-login.
         $users = DB::table('users')
@@ -264,15 +292,15 @@ class FacultyPerformanceController extends Controller
     /**
      * Last-7-days and previous-7-days accuracy per student, keyed by id.
      */
-    private function trendAccuracy(?int $subjectId, Carbon $now, array $studentIds): array
+    private function trendAccuracy(?array $subjectIds, Carbon $now, array $studentIds): array
     {
-        $window = function (Carbon $start, Carbon $end) use ($subjectId, $studentIds) {
+        $window = function (Carbon $start, Carbon $end) use ($subjectIds, $studentIds) {
             return DB::table('quiz_sessions')
                 ->where('session_type', '!=', 'training')
                 ->whereNotNull('completed_at')
                 ->whereIn('student_id', $studentIds)
                 ->whereBetween('started_at', [$start, $end])
-                ->when($subjectId, fn ($q) => $q->where('subject_id', $subjectId))
+                ->when($subjectIds !== null, fn ($q) => $q->whereIn('subject_id', $subjectIds))
                 ->groupBy('student_id')
                 ->select(
                     'student_id',
@@ -377,12 +405,12 @@ class FacultyPerformanceController extends Controller
      */
     private function classWeakTopics(array $filters)
     {
-        $subjectId = $filters['subject'];
+        $subjectIds = $filters['subject_ids'];
 
         return DB::table('performance_records')
             ->join('topics', 'topics.id', '=', 'performance_records.topic_id')
             ->join('subjects', 'subjects.id', '=', 'topics.subject_id')
-            ->when($subjectId, fn ($q) => $q->where('subjects.id', $subjectId))
+            ->when($subjectIds !== null, fn ($q) => $q->whereIn('subjects.id', $subjectIds))
             ->groupBy('topics.id', 'topics.name', 'subjects.code')
             ->havingRaw('SUM(performance_records.total_attempts) >= 5')
             ->select(
@@ -428,7 +456,7 @@ class FacultyPerformanceController extends Controller
      */
     public function export(Request $request)
     {
-        $filters = $this->filters($request);
+        $filters = $this->filters($request, $this->assignedSubjectIds(Auth::user()));
         $rows = $this->studentRows($filters);
 
         $search = trim((string) $filters['search']);
@@ -476,7 +504,7 @@ class FacultyPerformanceController extends Controller
      */
     public function sendReminder(Request $request)
     {
-        $filters = $this->filters($request);
+        $filters = $this->filters($request, $this->assignedSubjectIds(Auth::user()));
         $rows = $this->studentRows($filters);
 
         $scope = $request->input('scope', 'at_risk');
