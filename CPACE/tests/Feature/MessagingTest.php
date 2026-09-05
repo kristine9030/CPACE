@@ -128,6 +128,32 @@ class MessagingTest extends TestCase
             ->assertStatus(422);
     }
 
+    public function test_polling_only_returns_messages_newer_than_the_given_id(): void
+    {
+        $a = $this->user('a@example.com');
+        $b = $this->user('b@example.com');
+        $conversationId = $this->directConversation($a->id, $b->id);
+        $old = DB::table('messages')->insertGetId(['conversation_id' => $conversationId, 'sender_id' => $b->id, 'body' => 'Old message', 'created_at' => now(), 'updated_at' => now()]);
+        $new = DB::table('messages')->insertGetId(['conversation_id' => $conversationId, 'sender_id' => $b->id, 'body' => 'New message', 'created_at' => now(), 'updated_at' => now()]);
+
+        $response = $this->actingAs($a)->getJson(route('messages.poll', $conversationId) . "?after_id={$old}");
+
+        $response->assertOk();
+        $bodies = collect($response->json('messages'))->pluck('body');
+        $this->assertTrue($bodies->contains('New message'));
+        $this->assertFalse($bodies->contains('Old message'));
+    }
+
+    public function test_a_non_participant_cannot_poll_a_conversation(): void
+    {
+        $a = $this->user('a@example.com');
+        $b = $this->user('b@example.com');
+        $outsider = $this->user('outsider@example.com');
+        $conversationId = $this->directConversation($a->id, $b->id);
+
+        $this->actingAs($outsider)->getJson(route('messages.poll', $conversationId))->assertForbidden();
+    }
+
     public function test_starting_a_direct_message_resumes_the_existing_conversation_instead_of_duplicating_it(): void
     {
         $a = $this->user('a@example.com');

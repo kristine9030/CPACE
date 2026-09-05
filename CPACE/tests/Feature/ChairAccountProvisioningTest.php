@@ -24,7 +24,7 @@ use Tests\TestCase;
 class ChairAccountProvisioningTest extends TestCase
 {
     private const TABLES = [
-        'quiz_sessions', 'alumni_profiles', 'student_profiles', 'faculty_profiles', 'faculty_subjects', 'subjects',
+        'quiz_sessions', 'performance_records', 'topics', 'alumni_profiles', 'student_profiles', 'faculty_profiles', 'faculty_subjects', 'subjects',
         'notifications', 'messages', 'conversation_participants', 'conversations', 'users',
     ];
 
@@ -118,8 +118,23 @@ class ChairAccountProvisioningTest extends TestCase
             $table->id();
             $table->string('code');
             $table->string('name');
+            $table->unsignedTinyInteger('passing_threshold')->default(75);
             $table->boolean('is_active')->default(true);
             $table->timestamps();
+        });
+        Schema::create('topics', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('subject_id');
+            $table->string('name');
+            $table->timestamps();
+        });
+        Schema::create('performance_records', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('student_id');
+            $table->unsignedBigInteger('topic_id');
+            $table->integer('correct_count')->default(0);
+            $table->integer('total_attempts')->default(0);
+            $table->integer('consecutive_wrong')->default(0);
         });
         // studentRows() (backs the chair.students index) always queries this
         // table even when nobody has taken a quiz yet.
@@ -211,6 +226,40 @@ class ChairAccountProvisioningTest extends TestCase
         });
 
         $this->assertStringNotContainsString($fresh->temp_password, session('status'));
+    }
+
+    public function test_regenerating_a_faculty_otp_emails_a_new_password_and_invalidates_the_old_one(): void
+    {
+        Mail::fake();
+        $chair = $this->chair();
+        $faculty = $this->faculty('pending-faculty2@example.com', setupComplete: false);
+
+        $this->actingAs($chair)->post(route('chair.faculty.regenerate-otp', $faculty->id))
+            ->assertRedirect();
+
+        $fresh = $faculty->fresh();
+        $this->assertNotSame('OldPass1', $fresh->temp_password);
+
+        Mail::assertSent(AccountCredentialsMail::class, function (AccountCredentialsMail $mail) use ($fresh) {
+            return $mail->hasTo($fresh->email)
+                && $mail->tempPassword === $fresh->temp_password
+                && $mail->isReissue === true;
+        });
+    }
+
+    public function test_regenerating_a_faculty_otp_is_rejected_once_setup_is_already_complete(): void
+    {
+        Mail::fake();
+        $chair = $this->chair();
+        $faculty = $this->faculty('already-setup@example.com');
+        $oldTempPassword = $faculty->temp_password;
+
+        $this->actingAs($chair)->post(route('chair.faculty.regenerate-otp', $faculty->id))
+            ->assertRedirect()
+            ->assertSessionHas('error');
+
+        $this->assertSame($oldTempPassword, $faculty->fresh()->temp_password);
+        Mail::assertNothingSent();
     }
 
     public function test_check_email_endpoint_flags_an_email_already_in_use(): void
@@ -310,6 +359,21 @@ class ChairAccountProvisioningTest extends TestCase
 
         $assigned = $faculty->assignedSubjects()->pluck('subjects.id')->all();
         $this->assertSame([$subjectB->id], $assigned);
+    }
+
+    public function test_chair_can_view_a_students_detail_page_including_weak_areas(): void
+    {
+        $chair = $this->chair();
+        $student = $this->student('detail@example.com');
+        $subjectId = DB::table('subjects')->insertGetId(['code' => 'FAR', 'name' => 'Financial Accounting', 'passing_threshold' => 75, 'created_at' => now(), 'updated_at' => now()]);
+        $topicId = DB::table('topics')->insertGetId(['subject_id' => $subjectId, 'name' => 'Inventory', 'created_at' => now(), 'updated_at' => now()]);
+        // 5 attempts, 40% accuracy: meets MIN_ATTEMPTS and is below ACCURACY_THRESHOLD.
+        DB::table('performance_records')->insert(['student_id' => $student->id, 'topic_id' => $topicId, 'total_attempts' => 5, 'correct_count' => 2, 'consecutive_wrong' => 0]);
+
+        $response = $this->actingAs($chair)->get(route('chair.students.show', $student->id));
+
+        $response->assertOk();
+        $response->assertViewHas('weakAreas', fn ($weakAreas) => $weakAreas->count() === 1 && $weakAreas->first()->topic === 'Inventory');
     }
 
     public function test_chair_can_view_the_student_edit_form(): void
