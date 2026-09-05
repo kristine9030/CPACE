@@ -197,6 +197,19 @@ class ChairSubjectManagementTest extends TestCase
         $this->assertNotNull(DB::table('topics')->find($parentId), 'a topic with subtopics must not be deletable');
     }
 
+    public function test_toggling_a_topic_flips_its_active_status_each_time(): void
+    {
+        $chair = $this->chair();
+        $subjectId = $this->subject();
+        $topicId = DB::table('topics')->insertGetId(['subject_id' => $subjectId, 'name' => 'Inventory', 'sort_order' => 1, 'is_active' => true]);
+
+        $this->actingAs($chair)->patch(route('chair.subjects.topics.toggle', [$subjectId, $topicId]))->assertRedirect();
+        $this->assertFalse((bool) DB::table('topics')->find($topicId)->is_active);
+
+        $this->actingAs($chair)->patch(route('chair.subjects.topics.toggle', [$subjectId, $topicId]))->assertRedirect();
+        $this->assertTrue((bool) DB::table('topics')->find($topicId)->is_active);
+    }
+
     public function test_an_empty_leaf_topic_can_be_deleted(): void
     {
         $chair = $this->chair();

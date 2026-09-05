@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
@@ -69,7 +70,15 @@ class FacultyPerformanceScopeTest extends TestCase
         Schema::create('notifications', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('recipient_id');
+            $table->unsignedBigInteger('sender_id')->nullable();
+            $table->string('type', 50)->default('normal');
+            $table->string('title', 150)->default('');
+            $table->text('message')->nullable();
+            $table->string('link')->nullable();
             $table->boolean('is_read')->default(false);
+            $table->string('reference_type', 50)->nullable();
+            $table->unsignedBigInteger('reference_id')->nullable();
+            $table->timestamps();
         });
         Schema::create('subjects', function (Blueprint $table) {
             $table->id();
@@ -174,6 +183,72 @@ class FacultyPerformanceScopeTest extends TestCase
             return $students->count() === 1 && $students->first()['id'] === $farStudent->id;
         });
         $response->assertViewHas('stats', fn ($stats) => $stats['active'] === 1);
+    }
+
+    public function test_exporting_streams_a_csv_scoped_to_the_facultys_assigned_subjects(): void
+    {
+        $faculty = $this->faculty();
+        $farId = DB::table('subjects')->insertGetId(['code' => 'FAR', 'name' => 'Financial Accounting']);
+        $audId = DB::table('subjects')->insertGetId(['code' => 'AUD', 'name' => 'Auditing']);
+        DB::table('faculty_subjects')->insert(['faculty_id' => $faculty->id, 'subject_id' => $farId, 'assigned_at' => now()]);
+        $farStudent = $this->student('far-student@example.com');
+        $audStudent = $this->student('aud-student@example.com');
+        DB::table('quiz_sessions')->insert([
+            'student_id' => $farStudent->id, 'session_type' => 'testing', 'subject_id' => $farId,
+            'started_at' => now(), 'completed_at' => now(), 'total_items' => 10, 'correct_answers' => 7,
+        ]);
+        DB::table('quiz_sessions')->insert([
+            'student_id' => $audStudent->id, 'session_type' => 'testing', 'subject_id' => $audId,
+            'started_at' => now(), 'completed_at' => now(), 'total_items' => 10, 'correct_answers' => 7,
+        ]);
+
+        $response = $this->actingAs($faculty)->get(route('faculty.performance.export'));
+
+        $response->assertOk();
+        $csv = $response->streamedContent();
+        $this->assertStringContainsString($farStudent->email, $csv);
+        $this->assertStringNotContainsString($audStudent->email, $csv);
+    }
+
+    public function test_sending_a_reminder_notifies_only_at_risk_students_by_default(): void
+    {
+        Mail::fake();
+        $faculty = $this->faculty();
+        $farId = DB::table('subjects')->insertGetId(['code' => 'FAR', 'name' => 'Financial Accounting']);
+        DB::table('faculty_subjects')->insert(['faculty_id' => $faculty->id, 'subject_id' => $farId, 'assigned_at' => now()]);
+        $weakStudent = $this->student('weak@example.com');
+        $strongStudent = $this->student('strong@example.com');
+        // 5 attempts, 40% accuracy: at-risk (meets MIN_ATTEMPTS, below threshold).
+        DB::table('quiz_sessions')->insert([
+            'student_id' => $weakStudent->id, 'session_type' => 'testing', 'subject_id' => $farId,
+            'started_at' => now(), 'completed_at' => now(), 'total_items' => 5, 'correct_answers' => 2,
+        ]);
+        DB::table('quiz_sessions')->insert([
+            'student_id' => $strongStudent->id, 'session_type' => 'testing', 'subject_id' => $farId,
+            'started_at' => now(), 'completed_at' => now(), 'total_items' => 5, 'correct_answers' => 5,
+        ]);
+
+        $this->actingAs($faculty)->post(route('faculty.performance.remind'))->assertRedirect();
+
+        $this->assertTrue(DB::table('notifications')->where('recipient_id', $weakStudent->id)->exists());
+        $this->assertFalse(DB::table('notifications')->where('recipient_id', $strongStudent->id)->exists());
+    }
+
+    public function test_sending_a_reminder_with_scope_all_notifies_every_scoped_student(): void
+    {
+        Mail::fake();
+        $faculty = $this->faculty();
+        $farId = DB::table('subjects')->insertGetId(['code' => 'FAR', 'name' => 'Financial Accounting']);
+        DB::table('faculty_subjects')->insert(['faculty_id' => $faculty->id, 'subject_id' => $farId, 'assigned_at' => now()]);
+        $strongStudent = $this->student('strong@example.com');
+        DB::table('quiz_sessions')->insert([
+            'student_id' => $strongStudent->id, 'session_type' => 'testing', 'subject_id' => $farId,
+            'started_at' => now(), 'completed_at' => now(), 'total_items' => 5, 'correct_answers' => 5,
+        ]);
+
+        $this->actingAs($faculty)->post(route('faculty.performance.remind'), ['scope' => 'all'])->assertRedirect();
+
+        $this->assertTrue(DB::table('notifications')->where('recipient_id', $strongStudent->id)->exists());
     }
 
     public function test_requesting_a_subject_id_outside_the_faculty_assignment_is_ignored(): void
