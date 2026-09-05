@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Mail\AccountCredentialsMail;
 use App\Models\Role;
+use App\Models\Subject;
 use App\Models\User;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
@@ -238,6 +239,67 @@ class ChairAccountProvisioningTest extends TestCase
         $response->assertOk();
         $response->assertSee($pending->temp_password);
         $response->assertDontSee($active->temp_password ?? '__none__');
+    }
+
+    public function test_toggling_a_student_flips_their_active_status_each_time(): void
+    {
+        $chair = $this->chair();
+        $student = $this->student('toggle-student@example.com');
+        $this->assertTrue($student->is_active);
+
+        $this->actingAs($chair)->post(route('chair.students.toggle', $student->id))->assertRedirect();
+        $this->assertFalse($student->fresh()->is_active);
+
+        $this->actingAs($chair)->post(route('chair.students.toggle', $student->id))->assertRedirect();
+        $this->assertTrue($student->fresh()->is_active);
+    }
+
+    public function test_updating_a_student_as_shifted_forces_the_account_inactive_regardless_of_the_toggle(): void
+    {
+        $chair = $this->chair();
+        $student = $this->student('shifting@example.com');
+
+        $this->actingAs($chair)->put(route('chair.students.update', $student->id), [
+            'first_name' => $student->first_name,
+            'last_name' => $student->last_name,
+            'email' => $student->email,
+            'is_active' => '1',
+            'is_shifted' => '1',
+            'shift_reason' => 'Transferred to another program',
+        ])->assertRedirect();
+
+        $this->assertFalse($student->fresh()->is_active);
+    }
+
+    public function test_toggling_a_faculty_account_flips_their_active_status_each_time(): void
+    {
+        $chair = $this->chair();
+        $faculty = $this->faculty('toggle-faculty@example.com');
+        $this->assertTrue($faculty->is_active);
+
+        $this->actingAs($chair)->post(route('chair.faculty.toggle', $faculty->id))->assertRedirect();
+        $this->assertFalse($faculty->fresh()->is_active);
+
+        $this->actingAs($chair)->post(route('chair.faculty.toggle', $faculty->id))->assertRedirect();
+        $this->assertTrue($faculty->fresh()->is_active);
+    }
+
+    public function test_assigning_subjects_replaces_a_facultys_previous_assignments_rather_than_adding_to_them(): void
+    {
+        $chair = $this->chair();
+        $faculty = $this->faculty('assign-faculty@example.com');
+        [$subjectA, $subjectB] = [
+            Subject::create(['code' => 'GEC1', 'name' => 'General Ed 1']),
+            Subject::create(['code' => 'GEC2', 'name' => 'General Ed 2']),
+        ];
+        $faculty->assignedSubjects()->attach($subjectA->id, ['assigned_at' => now()]);
+
+        $this->actingAs($chair)->post(route('chair.faculty.assign', $faculty->id), [
+            'subjects' => [$subjectB->id],
+        ])->assertRedirect();
+
+        $assigned = $faculty->assignedSubjects()->pluck('subjects.id')->all();
+        $this->assertSame([$subjectB->id], $assigned);
     }
 
     private function chair(): User
