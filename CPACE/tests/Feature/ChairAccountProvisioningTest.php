@@ -23,7 +23,7 @@ use Tests\TestCase;
 class ChairAccountProvisioningTest extends TestCase
 {
     private const TABLES = [
-        'student_profiles', 'faculty_profiles', 'faculty_subjects',
+        'quiz_sessions', 'student_profiles', 'faculty_profiles', 'faculty_subjects', 'subjects',
         'notifications', 'messages', 'conversation_participants', 'conversations', 'users',
     ];
 
@@ -102,6 +102,23 @@ class ChairAccountProvisioningTest extends TestCase
             $table->unsignedBigInteger('assigned_by')->nullable();
             $table->timestamp('assigned_at')->nullable();
             $table->primary(['faculty_id', 'subject_id']);
+        });
+        Schema::create('subjects', function (Blueprint $table) {
+            $table->id();
+            $table->string('code');
+            $table->string('name');
+            $table->boolean('is_active')->default(true);
+            $table->timestamps();
+        });
+        // studentRows() (backs the chair.students index) always queries this
+        // table even when nobody has taken a quiz yet.
+        Schema::create('quiz_sessions', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('student_id');
+            $table->string('session_type');
+            $table->integer('total_items');
+            $table->integer('correct_answers');
+            $table->timestamp('completed_at')->nullable();
         });
     }
 
@@ -197,6 +214,32 @@ class ChairAccountProvisioningTest extends TestCase
         $free->assertJson(['taken' => false]);
     }
 
+    public function test_students_index_shows_the_manual_otp_only_for_accounts_still_pending_setup(): void
+    {
+        $chair = $this->chair();
+        $pending = $this->student('pending@example.com', setupComplete: false);
+        $active = $this->student('active@example.com', setupComplete: true);
+
+        $response = $this->actingAs($chair)->get(route('chair.students'));
+
+        $response->assertOk();
+        $response->assertSee($pending->temp_password);
+        $response->assertDontSee($active->temp_password ?? '__none__');
+    }
+
+    public function test_faculty_index_shows_the_manual_otp_only_for_accounts_still_pending_setup(): void
+    {
+        $chair = $this->chair();
+        $pending = $this->faculty('pending-faculty@example.com', setupComplete: false);
+        $active = $this->faculty('active-faculty@example.com', setupComplete: true);
+
+        $response = $this->actingAs($chair)->get(route('chair.faculty'));
+
+        $response->assertOk();
+        $response->assertSee($pending->temp_password);
+        $response->assertDontSee($active->temp_password ?? '__none__');
+    }
+
     private function chair(): User
     {
         return User::create([
@@ -223,6 +266,23 @@ class ChairAccountProvisioningTest extends TestCase
             'temp_password' => $setupComplete ? null : 'OldPass1',
         ]);
         DB::table('student_profiles')->insert(['user_id' => $user->id]);
+
+        return $user;
+    }
+
+    private function faculty(string $email, bool $setupComplete = true): User
+    {
+        $user = User::create([
+            'role_id' => Role::FACULTY,
+            'first_name' => 'Test',
+            'last_name' => 'Faculty',
+            'email' => $email,
+            'password' => Hash::make('password'),
+            'is_active' => true,
+            'setup_completed_at' => $setupComplete ? now() : null,
+            'temp_password' => $setupComplete ? null : 'OldPass1',
+        ]);
+        DB::table('faculty_profiles')->insert(['user_id' => $user->id]);
 
         return $user;
     }
