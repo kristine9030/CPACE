@@ -475,6 +475,9 @@ class StudentManagementController extends Controller
                     'at_risk' => $student->is_active && ($low || $inactive),
                     'is_active' => (bool) $student->is_active,
                     'setup_completed' => $student->setup_completed_at !== null,
+                    // Manual fallback for the chair to read the OTP directly when a
+                    // "sent" email never actually reaches the student (bounce/spam).
+                    'temp_password' => $student->setup_completed_at === null ? $student->temp_password : null,
                 ];
             });
     }

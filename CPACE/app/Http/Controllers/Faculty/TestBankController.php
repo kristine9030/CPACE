@@ -401,7 +401,13 @@ class TestBankController extends Controller
      */
     public function destroy(int $id)
     {
-        Question::findOrFail($id)->delete();
+        $question = Question::with('topic')->findOrFail($id);
+
+        if (! $this->canManageSubject(Auth::user(), $question->topic->subject_id)) {
+            return redirect()->route('faculty.test-bank')->with('warning', self::NOT_ASSIGNED_MESSAGE);
+        }
+
+        $question->delete();
 
         return redirect()->route('faculty.test-bank')->with('status', 'Question deleted.');
     }
@@ -416,6 +422,10 @@ class TestBankController extends Controller
         $question = Question::with(['choices', 'topic.subject', 'variants' => fn ($q) => $q->orderByDesc('id')])
             ->findOrFail($id);
 
+        if (! $this->canManageSubject(Auth::user(), $question->topic->subject_id)) {
+            return redirect()->route('faculty.test-bank')->with('warning', self::NOT_ASSIGNED_MESSAGE);
+        }
+
         return view('faculty.question-variants', [
             'question'   => $question,
             'vocabulary' => QuestionParaphraser::vocabulary(),
@@ -427,7 +437,11 @@ class TestBankController extends Controller
      */
     public function storeVariant(Request $request, int $id)
     {
-        $question = Question::findOrFail($id);
+        $question = Question::with('topic')->findOrFail($id);
+
+        if (! $this->canManageSubject(Auth::user(), $question->topic->subject_id)) {
+            return redirect()->route('faculty.test-bank')->with('warning', self::NOT_ASSIGNED_MESSAGE);
+        }
 
         $data = $request->validate([
             'variant_text' => 'required|string|min:5|max:1000',
@@ -450,6 +464,12 @@ class TestBankController extends Controller
      */
     public function toggleVariant(int $id, int $variantId)
     {
+        $question = Question::with('topic')->findOrFail($id);
+
+        if (! $this->canManageSubject(Auth::user(), $question->topic->subject_id)) {
+            return redirect()->route('faculty.test-bank')->with('warning', self::NOT_ASSIGNED_MESSAGE);
+        }
+
         $variant = QuestionVariant::where('question_id', $id)->findOrFail($variantId);
         $variant->update(['is_active' => ! $variant->is_active]);
 
@@ -461,6 +481,12 @@ class TestBankController extends Controller
      */
     public function destroyVariant(int $id, int $variantId)
     {
+        $question = Question::with('topic')->findOrFail($id);
+
+        if (! $this->canManageSubject(Auth::user(), $question->topic->subject_id)) {
+            return redirect()->route('faculty.test-bank')->with('warning', self::NOT_ASSIGNED_MESSAGE);
+        }
+
         QuestionVariant::where('question_id', $id)->where('id', $variantId)->delete();
 
         return redirect()
@@ -477,6 +503,10 @@ class TestBankController extends Controller
     public function suggestVariant(int $id, AiQuestionAssistantService $ai)
     {
         $question = Question::with('topic.subject')->findOrFail($id);
+
+        if (! $this->canManageSubject(Auth::user(), $question->topic->subject_id)) {
+            return response()->json(['message' => self::NOT_ASSIGNED_MESSAGE, 'not_assigned' => true], 403);
+        }
 
         try {
             $draft = $ai->rewriteVariant(

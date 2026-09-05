@@ -306,6 +306,51 @@ class FacultyTestBankTest extends TestCase
         $this->assertSame(0, DB::table('questions')->count());
     }
 
+    public function test_faculty_cannot_delete_a_question_outside_their_assigned_subjects(): void
+    {
+        $faculty = $this->faculty();
+        $otherSubjectId = DB::table('subjects')->insertGetId(['code' => 'AUD', 'name' => 'Auditing', 'created_at' => now(), 'updated_at' => now()]);
+        $otherTopicId = DB::table('topics')->insertGetId(['subject_id' => $otherSubjectId, 'name' => 'Risk Assessment', 'created_at' => now(), 'updated_at' => now()]);
+        $questionId = $this->mcqQuestion($otherTopicId, $faculty->id, correct: 'a');
+
+        $this->actingAs($faculty)->delete(route('faculty.question.destroy', $questionId))
+            ->assertRedirect(route('faculty.test-bank'))
+            ->assertSessionHas('warning');
+
+        $this->assertNotNull(DB::table('questions')->find($questionId));
+    }
+
+    public function test_faculty_cannot_manage_variants_of_a_question_outside_their_assigned_subjects(): void
+    {
+        $faculty = $this->faculty();
+        $otherSubjectId = DB::table('subjects')->insertGetId(['code' => 'AUD', 'name' => 'Auditing', 'created_at' => now(), 'updated_at' => now()]);
+        $otherTopicId = DB::table('topics')->insertGetId(['subject_id' => $otherSubjectId, 'name' => 'Risk Assessment', 'created_at' => now(), 'updated_at' => now()]);
+        $questionId = $this->mcqQuestion($otherTopicId, $faculty->id, correct: 'a');
+        $variantId = DB::table('question_variants')->insertGetId([
+            'question_id' => $questionId, 'variant_text' => 'Existing variant',
+            'source' => 'faculty', 'is_active' => true, 'created_at' => now(), 'updated_at' => now(),
+        ]);
+
+        $this->actingAs($faculty)->get(route('faculty.question.variants', $questionId))
+            ->assertRedirect(route('faculty.test-bank'))->assertSessionHas('warning');
+
+        $this->actingAs($faculty)->post(route('faculty.question.variants.store', $questionId), [
+            'variant_text' => 'A new variant text long enough',
+        ])->assertRedirect(route('faculty.test-bank'))->assertSessionHas('warning');
+        $this->assertSame(1, DB::table('question_variants')->where('question_id', $questionId)->count());
+
+        $this->actingAs($faculty)->post(route('faculty.question.variants.toggle', [$questionId, $variantId]))
+            ->assertRedirect(route('faculty.test-bank'))->assertSessionHas('warning');
+        $this->assertTrue((bool) DB::table('question_variants')->find($variantId)->is_active);
+
+        $this->actingAs($faculty)->delete(route('faculty.question.variants.destroy', [$questionId, $variantId]))
+            ->assertRedirect(route('faculty.test-bank'))->assertSessionHas('warning');
+        $this->assertNotNull(DB::table('question_variants')->find($variantId));
+
+        $this->actingAs($faculty)->post(route('faculty.question.variants.suggest', $questionId))
+            ->assertForbidden();
+    }
+
     public function test_chair_cannot_manage_the_test_bank(): void
     {
         $chair = User::create([

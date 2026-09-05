@@ -225,10 +225,12 @@ class FacultyAiQuestionAssistantTest extends TestCase
             'question_type' => 'mcq', 'difficulty' => 'moderate',
             'created_at' => now(), 'updated_at' => now(),
         ]);
+        $faculty = $this->faculty();
+        $this->assignSubject($faculty, $subject);
 
         $this->fakeAiReply('Identify which of the following is NOT a cost formula under PAS 2?');
 
-        $response = $this->actingAs($this->faculty())
+        $response = $this->actingAs($faculty)
             ->postJson(route('faculty.question.variants.suggest', $questionId));
 
         $response->assertOk();
@@ -247,12 +249,15 @@ class FacultyAiQuestionAssistantTest extends TestCase
             'created_at' => now(), 'updated_at' => now(),
         ]);
 
+        $faculty = $this->faculty();
+        $this->assignSubject($faculty, $subject);
+
         Http::fake([
             'https://generativelanguage.googleapis.com/*' => Http::response([], 500),
             'https://openrouter.ai/*' => Http::response([], 500),
         ]);
 
-        $response = $this->actingAs($this->faculty())
+        $response = $this->actingAs($faculty)
             ->postJson(route('faculty.question.variants.suggest', $questionId));
 
         $response->assertOk();
@@ -271,7 +276,10 @@ class FacultyAiQuestionAssistantTest extends TestCase
             'created_at' => now(), 'updated_at' => now(),
         ]);
 
-        $this->actingAs($this->faculty())
+        $faculty = $this->faculty();
+        $this->assignSubject($faculty, $subject);
+
+        $this->actingAs($faculty)
             ->post(route('faculty.question.variants.store', $questionId), [
                 'variant_text' => 'Identify which of the following is NOT a cost formula under PAS 2?',
                 'source'       => 'ai',

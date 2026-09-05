@@ -445,6 +445,10 @@
                                                 <i class="fas fa-paper-plane"></i> Resend OTP
                                             </button>
                                         </form>
+                                        @if ($student['temp_password'])
+                                            <span class="temp-pass" title="Manual fallback if the email never arrives">{{ $student['temp_password'] }}</span>
+                                            <button type="button" class="copy-mini" title="Copy" onclick="navigator.clipboard.writeText('{{ $student['temp_password'] }}')"><i class="fas fa-copy"></i></button>
+                                        @endif
                                     </div>
                                 @elseif ($student['at_risk'])
                                     <span class="risk-pill">
