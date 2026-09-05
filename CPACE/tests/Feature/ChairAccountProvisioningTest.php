@@ -24,7 +24,7 @@ use Tests\TestCase;
 class ChairAccountProvisioningTest extends TestCase
 {
     private const TABLES = [
-        'quiz_sessions', 'student_profiles', 'faculty_profiles', 'faculty_subjects', 'subjects',
+        'quiz_sessions', 'alumni_profiles', 'student_profiles', 'faculty_profiles', 'faculty_subjects', 'subjects',
         'notifications', 'messages', 'conversation_participants', 'conversations', 'users',
     ];
 
@@ -96,6 +96,16 @@ class ChairAccountProvisioningTest extends TestCase
             $table->unsignedBigInteger('user_id')->primary();
             $table->string('employee_number', 20)->nullable();
             $table->string('department', 100)->nullable();
+        });
+        Schema::create('alumni_profiles', function (Blueprint $table) {
+            $table->unsignedBigInteger('user_id')->primary();
+            $table->year('batch_year')->nullable();
+            $table->string('cpa_number', 30)->nullable();
+            $table->date('passed_at')->nullable();
+            $table->string('current_job')->nullable();
+            $table->string('company')->nullable();
+            $table->string('linkedin_url')->nullable();
+            $table->text('bio')->nullable();
         });
         Schema::create('faculty_subjects', function (Blueprint $table) {
             $table->unsignedBigInteger('faculty_id');
@@ -300,6 +310,94 @@ class ChairAccountProvisioningTest extends TestCase
 
         $assigned = $faculty->assignedSubjects()->pluck('subjects.id')->all();
         $this->assertSame([$subjectB->id], $assigned);
+    }
+
+    public function test_chair_can_view_the_student_edit_form(): void
+    {
+        $chair = $this->chair();
+        $student = $this->student('editme@example.com');
+
+        $this->actingAs($chair)->get(route('chair.students.edit', $student->id))
+            ->assertOk()
+            ->assertSee($student->email);
+    }
+
+    public function test_chair_can_update_a_students_basic_details(): void
+    {
+        $chair = $this->chair();
+        $student = $this->student('before@example.com');
+
+        $this->actingAs($chair)->put(route('chair.students.update', $student->id), [
+            'first_name' => 'Renamed',
+            'last_name' => $student->last_name,
+            'email' => 'after@example.com',
+            'is_active' => '1',
+        ])->assertRedirect();
+
+        $fresh = $student->fresh();
+        $this->assertSame('Renamed', $fresh->first_name);
+        $this->assertSame('after@example.com', $fresh->email);
+    }
+
+    public function test_a_students_email_must_be_unique_when_updating(): void
+    {
+        $chair = $this->chair();
+        $student = $this->student('keep-mine@example.com');
+        $this->student('taken-by-other@example.com');
+
+        $this->actingAs($chair)->put(route('chair.students.update', $student->id), [
+            'first_name' => $student->first_name,
+            'last_name' => $student->last_name,
+            'email' => 'taken-by-other@example.com',
+            'is_active' => '1',
+        ])->assertSessionHasErrors('email');
+
+        $this->assertSame('keep-mine@example.com', $student->fresh()->email);
+    }
+
+    public function test_chair_can_view_the_faculty_edit_form(): void
+    {
+        $chair = $this->chair();
+        $faculty = $this->faculty('editme-faculty@example.com');
+
+        $this->actingAs($chair)->get(route('chair.faculty.edit', $faculty->id))
+            ->assertOk()
+            ->assertSee($faculty->email);
+    }
+
+    public function test_chair_can_update_a_faculty_account(): void
+    {
+        $chair = $this->chair();
+        $faculty = $this->faculty('before-faculty@example.com');
+
+        $this->actingAs($chair)->put(route('chair.faculty.update', $faculty->id), [
+            'first_name' => 'Renamed',
+            'last_name' => $faculty->last_name,
+            'email' => 'after-faculty@example.com',
+            'is_active' => '1',
+            'subjects' => [],
+        ])->assertRedirect();
+
+        $fresh = $faculty->fresh();
+        $this->assertSame('Renamed', $fresh->first_name);
+        $this->assertSame('after-faculty@example.com', $fresh->email);
+    }
+
+    public function test_a_facultys_email_must_be_unique_when_updating(): void
+    {
+        $chair = $this->chair();
+        $faculty = $this->faculty('keep-mine-faculty@example.com');
+        $this->faculty('taken-by-other-faculty@example.com');
+
+        $this->actingAs($chair)->put(route('chair.faculty.update', $faculty->id), [
+            'first_name' => $faculty->first_name,
+            'last_name' => $faculty->last_name,
+            'email' => 'taken-by-other-faculty@example.com',
+            'is_active' => '1',
+            'subjects' => [],
+        ])->assertSessionHasErrors('email');
+
+        $this->assertSame('keep-mine-faculty@example.com', $faculty->fresh()->email);
     }
 
     private function chair(): User

@@ -18,7 +18,7 @@ class ChairSubjectManagementTest extends TestCase
      * cleanly from scratch).
      */
     private const TABLES = [
-        'questions', 'topics', 'subjects',
+        'questions', 'topics', 'faculty_subjects', 'subjects',
         'notifications', 'messages', 'conversation_participants', 'conversations', 'users',
     ];
 
@@ -97,6 +97,13 @@ class ChairSubjectManagementTest extends TestCase
             $table->string('difficulty')->default('moderate');
             $table->boolean('is_active')->default(true);
             $table->timestamps();
+        });
+        Schema::create('faculty_subjects', function (Blueprint $table) {
+            $table->unsignedBigInteger('faculty_id');
+            $table->unsignedBigInteger('subject_id');
+            $table->unsignedBigInteger('assigned_by')->nullable();
+            $table->timestamp('assigned_at')->nullable();
+            $table->primary(['faculty_id', 'subject_id']);
         });
     }
 
@@ -230,6 +237,81 @@ class ChairSubjectManagementTest extends TestCase
         $this->actingAs($faculty)->post(route('chair.subjects.topics.store', $subjectId), [
             'name' => 'Should Not Save', 'sort_order' => 1, 'is_active' => '1',
         ])->assertForbidden();
+    }
+
+    public function test_chair_can_create_a_subject(): void
+    {
+        $chair = $this->chair();
+
+        $this->actingAs($chair)->post(route('chair.subjects.store'), [
+            'code' => 'tax', 'name' => 'Taxation', 'passing_threshold' => 75, 'is_active' => '1',
+        ])->assertRedirect();
+
+        $subject = DB::table('subjects')->where('name', 'Taxation')->first();
+        $this->assertNotNull($subject);
+        $this->assertSame('TAX', $subject->code, 'subject codes are normalized to uppercase');
+    }
+
+    public function test_a_subject_code_must_be_unique(): void
+    {
+        $chair = $this->chair();
+        $this->subject('FAR');
+
+        $this->actingAs($chair)->post(route('chair.subjects.store'), [
+            'code' => 'FAR', 'name' => 'Duplicate', 'passing_threshold' => 75, 'is_active' => '1',
+        ])->assertSessionHasErrors('code');
+
+        $this->assertSame(1, DB::table('subjects')->where('code', 'FAR')->count());
+    }
+
+    public function test_chair_can_update_a_subject(): void
+    {
+        $chair = $this->chair();
+        $subjectId = $this->subject('FAR');
+
+        $this->actingAs($chair)->put(route('chair.subjects.update', $subjectId), [
+            'code' => 'FAR', 'name' => 'Financial Accounting & Reporting', 'passing_threshold' => 80, 'is_active' => '1',
+        ])->assertRedirect();
+
+        $this->assertSame('Financial Accounting & Reporting', DB::table('subjects')->find($subjectId)->name);
+    }
+
+    public function test_a_subject_with_topics_cannot_be_deleted(): void
+    {
+        $chair = $this->chair();
+        $subjectId = $this->subject();
+        DB::table('topics')->insert(['subject_id' => $subjectId, 'name' => 'A Topic', 'sort_order' => 1, 'is_active' => true]);
+
+        $this->actingAs($chair)->delete(route('chair.subjects.destroy', $subjectId))->assertRedirect();
+
+        $this->assertNotNull(DB::table('subjects')->find($subjectId), 'a subject with topics must not be deletable');
+    }
+
+    public function test_a_subject_with_assigned_faculty_cannot_be_deleted(): void
+    {
+        $chair = $this->chair();
+        $subjectId = $this->subject();
+        $faculty = User::create([
+            'role_id' => Role::FACULTY,
+            'first_name' => 'Test', 'last_name' => 'Faculty',
+            'email' => 'assigned-faculty@example.com', 'password' => Hash::make('password'),
+            'is_active' => true, 'setup_completed_at' => now(),
+        ]);
+        DB::table('faculty_subjects')->insert(['faculty_id' => $faculty->id, 'subject_id' => $subjectId, 'assigned_at' => now()]);
+
+        $this->actingAs($chair)->delete(route('chair.subjects.destroy', $subjectId))->assertRedirect();
+
+        $this->assertNotNull(DB::table('subjects')->find($subjectId), 'a subject with assigned faculty must not be deletable');
+    }
+
+    public function test_an_unused_subject_can_be_deleted(): void
+    {
+        $chair = $this->chair();
+        $subjectId = $this->subject();
+
+        $this->actingAs($chair)->delete(route('chair.subjects.destroy', $subjectId))->assertRedirect();
+
+        $this->assertNull(DB::table('subjects')->find($subjectId));
     }
 
     private function chair(): User
