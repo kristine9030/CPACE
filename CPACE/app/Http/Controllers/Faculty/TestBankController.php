@@ -389,8 +389,7 @@ class TestBankController extends Controller
                 'is_active'     => $request->boolean('is_active'),
             ]);
 
-            $question->choices()->delete();
-            $this->saveChoices($question, $data);
+            $this->replaceChoices($question, $data);
         });
 
         return redirect()->route('faculty.test-bank')->with('status', 'Question updated.');
@@ -558,30 +557,63 @@ class TestBankController extends Controller
         return $request->validate($rules);
     }
 
-    /**
-     * Insert the choice rows for a question based on its type.
-     */
-    private function saveChoices(Question $question, array $data): void
+    /** Build the label => [choice_text, is_correct] rows for a question submission. */
+    private function choiceRows(array $data): array
     {
         if ($data['question_type'] === 'mcq') {
+            $rows = [];
             foreach (['a', 'b', 'c', 'd'] as $label) {
-                $question->choices()->create([
-                    'choice_label' => strtoupper($label),
-                    'choice_text'  => $data["choice_{$label}"],
-                    'is_correct'   => $data['correct_answer'] === $label,
-                ]);
+                $rows[strtoupper($label)] = [
+                    'choice_text' => $data["choice_{$label}"],
+                    'is_correct'  => $data['correct_answer'] === $label,
+                ];
             }
-            return;
+
+            return $rows;
         }
 
         // True / False stored as two choices.
-        $question->choices()->create([
-            'choice_label' => 'A', 'choice_text' => 'True',
-            'is_correct'   => $data['tf_answer'] === 'true',
-        ]);
-        $question->choices()->create([
-            'choice_label' => 'B', 'choice_text' => 'False',
-            'is_correct'   => $data['tf_answer'] === 'false',
-        ]);
+        return [
+            'A' => ['choice_text' => 'True', 'is_correct' => $data['tf_answer'] === 'true'],
+            'B' => ['choice_text' => 'False', 'is_correct' => $data['tf_answer'] === 'false'],
+        ];
+    }
+
+    /**
+     * Insert the choice rows for a brand-new question.
+     */
+    private function saveChoices(Question $question, array $data): void
+    {
+        foreach ($this->choiceRows($data) as $label => $row) {
+            $question->choices()->create(['choice_label' => $label] + $row);
+        }
+    }
+
+    /**
+     * Replace a question's choices on edit. Existing rows are updated in
+     * place (matched by choice_label) rather than deleted and recreated,
+     * because quiz_answers.selected_choice has a foreign key on
+     * question_choices.id - once a student has answered the question,
+     * dropping its choice rows fails with an integrity-constraint
+     * violation. Only choices that no longer apply (e.g. the question type
+     * changed and C/D no longer exist) are removed.
+     */
+    private function replaceChoices(Question $question, array $data): void
+    {
+        $existing = $question->choices()->get()->keyBy('choice_label');
+        $rows = $this->choiceRows($data);
+
+        foreach ($rows as $label => $row) {
+            if ($existing->has($label)) {
+                $existing[$label]->update($row);
+            } else {
+                $question->choices()->create(['choice_label' => $label] + $row);
+            }
+        }
+
+        $obsolete = $existing->keys()->diff(array_keys($rows));
+        if ($obsolete->isNotEmpty()) {
+            $question->choices()->whereIn('choice_label', $obsolete->all())->delete();
+        }
     }
 }

@@ -212,7 +212,7 @@ class FacultyTestBankTest extends TestCase
         $this->assertSame(0, DB::table('questions')->count());
     }
 
-    public function test_updating_a_question_replaces_its_choices_rather_than_editing_them_in_place(): void
+    public function test_updating_a_question_edits_its_choices_in_place_by_label(): void
     {
         $faculty = $this->faculty();
         $topicId = $this->topic($faculty);
@@ -239,11 +239,59 @@ class FacultyTestBankTest extends TestCase
 
         $newChoices = DB::table('question_choices')->where('question_id', $questionId)->get();
         $this->assertCount(4, $newChoices);
-        // The old choice rows were deleted, not updated in place - none of the
-        // new rows share an id with the originals.
-        $this->assertEmpty($newChoices->pluck('id')->intersect($originalChoiceIds));
+        // Same choice_label rows are updated in place (same ids kept), not
+        // deleted and recreated - required so a foreign key from
+        // quiz_answers.selected_choice into an already-answered question's
+        // choices doesn't break on edit.
+        $this->assertEquals($originalChoiceIds->sort()->values(), $newChoices->pluck('id')->sort()->values());
         $this->assertTrue((bool) $newChoices->firstWhere('choice_label', 'C')->is_correct);
         $this->assertFalse((bool) $newChoices->firstWhere('choice_label', 'A')->is_correct);
+    }
+
+    public function test_editing_an_already_answered_question_does_not_violate_the_quiz_answers_foreign_key(): void
+    {
+        $faculty = $this->faculty();
+        $topicId = $this->topic($faculty);
+        $questionId = $this->mcqQuestion($topicId, $faculty->id, correct: 'a');
+        $answeredChoiceId = DB::table('question_choices')->where('question_id', $questionId)->where('choice_label', 'A')->value('id');
+
+        Schema::create('quiz_sessions', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('student_id');
+        });
+        Schema::create('quiz_answers', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('session_id');
+            $table->unsignedBigInteger('question_id');
+            $table->unsignedBigInteger('selected_choice')->nullable();
+            $table->boolean('is_correct')->default(false);
+            $table->foreign('selected_choice')->references('id')->on('question_choices');
+        });
+        $sessionId = DB::table('quiz_sessions')->insertGetId(['student_id' => 999]);
+        DB::table('quiz_answers')->insert([
+            'session_id' => $sessionId, 'question_id' => $questionId,
+            'selected_choice' => $answeredChoiceId, 'is_correct' => true,
+        ]);
+
+        try {
+            $this->actingAs($faculty)->put(route('faculty.question.update', $questionId), [
+                'topic_id'       => $topicId,
+                'question_text'  => 'Corrected wording',
+                'question_type'  => 'mcq',
+                'difficulty'     => 'Easy',
+                'choice_a'       => 'Choice A text fixed',
+                'choice_b'       => 'Choice B',
+                'choice_c'       => 'Choice C',
+                'choice_d'       => 'Choice D',
+                'correct_answer' => 'a',
+                'is_active'      => '1',
+            ])->assertRedirect(route('faculty.test-bank'))->assertSessionHas('status');
+
+            $this->assertSame('Choice A text fixed', DB::table('question_choices')->find($answeredChoiceId)->choice_text);
+        } finally {
+            Schema::dropIfExists('quiz_answers');
+            Schema::dropIfExists('quiz_sessions');
+        }
     }
 
     public function test_deleting_a_question_cascades_its_choices(): void
