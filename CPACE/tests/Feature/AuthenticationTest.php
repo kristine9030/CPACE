@@ -203,6 +203,25 @@ class AuthenticationTest extends TestCase
         $this->assertSame('2026-00123', DB::table('student_profiles')->where('user_id', $user->id)->value('student_number'));
     }
 
+    public function test_account_setup_computes_the_exam_date_and_filters_the_study_plan_to_known_values(): void
+    {
+        $user = $this->user(Role::STUDENT, 'plan@example.com', setupComplete: false);
+
+        $this->actingAs($user)->post(route('account-setup.store'), [
+            'password' => 'NewPassw0rd',
+            'password_confirmation' => 'NewPassw0rd',
+            'exam_month' => 5,
+            'exam_year' => 2027,
+            'study_days' => 'Mon,Wed,NotADay',
+            'focus_subjects' => 'FAR,AUD,NOTASUBJECT',
+        ])->assertRedirect(route('onboarding.welcome'));
+
+        $profile = DB::table('student_profiles')->where('user_id', $user->id)->first();
+        $this->assertStringStartsWith('2027-05-15', $profile->exam_target_date);
+        $this->assertSame('Mon,Wed', $profile->study_days);
+        $this->assertSame('FAR,AUD', $profile->focus_subjects);
+    }
+
     public function test_a_faculty_needing_setup_is_redirected_to_the_faculty_setup_page(): void
     {
         $faculty = $this->user(Role::FACULTY, 'newfaculty@example.com', setupComplete: false);
