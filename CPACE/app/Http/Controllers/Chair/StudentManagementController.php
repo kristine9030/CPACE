@@ -249,38 +249,110 @@ class StudentManagementController extends Controller
      * Bulk-enroll students from an uploaded class list. For every valid row we
      * provision an account with a generated one-time password (which the
      * student must change on first login) and hand the credentials back once.
+     *
+     * The chair reviews (and can edit) the parsed rows in the browser first —
+     * the browser posts back the edited rows as `rows_json` rather than
+     * re-uploading the original file, so corrections made in the preview
+     * table are what actually get created. `rows_json` is only produced for
+     * files the browser can parse itself (CSV); anything else falls back to
+     * the server parsing the uploaded file directly, unedited.
      */
     public function import(Request $request)
     {
-        $request->validate(['file' => ['required', 'file', 'mimes:csv,txt', 'max:5120']]);
+        if ($request->filled('rows_json')) {
+            $decoded = json_decode((string) $request->input('rows_json'), true);
+            if (! is_array($decoded)) {
+                return back()->with('error', 'The submitted student list was invalid. Please re-upload your file.');
+            }
 
-        $handle = fopen($request->file('file')->getRealPath(), 'r');
+            $rows = array_values(array_filter(array_map(fn($row) => [
+                'first_name' => trim((string) ($row['first_name'] ?? '')),
+                'last_name' => trim((string) ($row['last_name'] ?? '')),
+                'email' => strtolower(trim((string) ($row['email'] ?? ''))),
+                'student_number' => trim((string) ($row['student_number'] ?? '')) ?: null,
+                'section' => trim((string) ($row['section'] ?? '')) ?: null,
+            ], $decoded), fn($row) => $row['first_name'] !== '' || $row['last_name'] !== ''));
+
+            if (empty($rows)) {
+                return back()->with('error', 'No student rows were submitted.');
+            }
+        } else {
+            $request->validate(['file' => ['required', 'file', 'mimes:csv,txt', 'max:5120']]);
+            $rows = $this->parseCsvRows($request->file('file')->getRealPath());
+            if ($rows === null) {
+                return back()->with('error', 'The file must contain at least first_name and last_name columns.');
+            }
+        }
+
+        [$created, $errors] = $this->createAccountsFromRows($rows);
+
+        $failedMail = count(array_filter($created, fn($row) => ! $row['mailed']));
+        $status = count($created) . ' account' . (count($created) === 1 ? '' : 's') . ' created.';
+        if ($failedMail > 0) {
+            $status .= " {$failedMail} credential email" . ($failedMail === 1 ? '' : 's') . " couldn't be sent — see the flagged rows below.";
+        }
+
+        return back()
+            ->with('created_credentials', $created)
+            ->with('status', $status)
+            ->with('import_errors', array_slice($errors, 0, 25));
+    }
+
+    /**
+     * Reads an uploaded CSV into the same plain row shape used by the
+     * `rows_json` path, without creating anything yet. Returns null when the
+     * file is missing the required header columns.
+     */
+    private function parseCsvRows(string $path): ?array
+    {
+        $handle = fopen($path, 'r');
         $header = fgetcsv($handle);
         $header = array_map(fn($value) => strtolower(trim((string) $value)), $header ?: []);
 
         if (! in_array('first_name', $header, true) || ! in_array('last_name', $header, true)) {
             fclose($handle);
 
-            return back()->with('error', 'The file must contain at least first_name and last_name columns.');
+            return null;
         }
 
-        $created = [];
-        $errors = [];
-        $line = 1;
-
+        $rows = [];
         while (($values = fgetcsv($handle)) !== false) {
-            $line++;
             if (count(array_filter($values, fn($value) => trim((string) $value) !== '')) === 0) {
                 continue;
             }
             $values = array_pad($values, count($header), null);
             $row = array_combine($header, array_slice($values, 0, count($header)));
 
-            $firstName = trim((string) ($row['first_name'] ?? ''));
-            $lastName = trim((string) ($row['last_name'] ?? ''));
-            $email = strtolower(trim((string) ($row['email'] ?? '')));
-            $studentNumber = trim((string) ($row['student_number'] ?? '')) ?: null;
-            $section = trim((string) ($row['section'] ?? '')) ?: null;
+            $rows[] = [
+                'first_name' => trim((string) ($row['first_name'] ?? '')),
+                'last_name' => trim((string) ($row['last_name'] ?? '')),
+                'email' => strtolower(trim((string) ($row['email'] ?? ''))),
+                'student_number' => trim((string) ($row['student_number'] ?? '')) ?: null,
+                'section' => trim((string) ($row['section'] ?? '')) ?: null,
+            ];
+        }
+        fclose($handle);
+
+        return $rows;
+    }
+
+    /**
+     * Shared by both import paths: validates each row and, if it passes,
+     * creates the student account and emails (or falls back to returning)
+     * the one-time password. Returns [created[], errors[]].
+     */
+    private function createAccountsFromRows(array $rows): array
+    {
+        $created = [];
+        $errors = [];
+
+        foreach ($rows as $i => $row) {
+            $line = $i + 1;
+            $firstName = $row['first_name'];
+            $lastName = $row['last_name'];
+            $email = $row['email'];
+            $studentNumber = $row['student_number'];
+            $section = $row['section'];
 
             if ($firstName === '' || $lastName === '') {
                 $errors[] = "Row {$line}: missing first or last name.";
@@ -344,18 +416,8 @@ class StudentManagementController extends Controller
                 $errors[] = "Row {$line}: could not be imported.";
             }
         }
-        fclose($handle);
 
-        $failedMail = count(array_filter($created, fn($row) => ! $row['mailed']));
-        $status = count($created) . ' account' . (count($created) === 1 ? '' : 's') . ' created.';
-        if ($failedMail > 0) {
-            $status .= " {$failedMail} credential email" . ($failedMail === 1 ? '' : 's') . " couldn't be sent — see the flagged rows below.";
-        }
-
-        return back()
-            ->with('created_credentials', $created)
-            ->with('status', $status)
-            ->with('import_errors', array_slice($errors, 0, 25));
+        return [$created, $errors];
     }
 
     public function template()

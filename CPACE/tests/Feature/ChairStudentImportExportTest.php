@@ -156,6 +156,41 @@ class ChairStudentImportExportTest extends TestCase
         $this->assertNotNull(DB::table('users')->where('email', '23-70362@g.batstate-u.edu.ph')->first());
     }
 
+    public function test_submitting_edited_preview_rows_creates_accounts_from_the_edits_not_the_original_file(): void
+    {
+        // The browser parses the CSV and lets the chair fix it up client-side
+        // before posting back — so a submission carrying rows_json must use
+        // those (possibly corrected) values instead of re-parsing the file.
+        Mail::fake();
+        $chair = $this->chair();
+        $csv = "first_name,last_name,email\nTypo,Name,wrong@example.com\n";
+
+        $this->actingAs($chair)->post(route('chair.students.import'), [
+            'file' => UploadedFile::fake()->createWithContent('students.csv', $csv),
+            'rows_json' => json_encode([
+                ['first_name' => 'Fixed', 'last_name' => 'Name', 'email' => 'fixed@example.com', 'student_number' => '23-00099', 'section' => 'BSA-4A'],
+            ]),
+        ])->assertRedirect();
+
+        $this->assertSame(0, DB::table('users')->where('email', 'wrong@example.com')->count());
+        $this->assertNotNull(DB::table('users')->where('email', 'fixed@example.com')->first());
+    }
+
+    public function test_a_row_removed_from_the_edited_preview_is_not_created(): void
+    {
+        Mail::fake();
+        $chair = $this->chair();
+
+        $this->actingAs($chair)->post(route('chair.students.import'), [
+            'rows_json' => json_encode([
+                ['first_name' => 'Keep', 'last_name' => 'Me', 'email' => 'keep@example.com'],
+            ]),
+        ])->assertRedirect();
+
+        $this->assertSame(1, DB::table('users')->where('role_id', Role::STUDENT)->count());
+        $this->assertNotNull(DB::table('users')->where('email', 'keep@example.com')->first());
+    }
+
     public function test_a_file_without_the_required_columns_is_rejected(): void
     {
         $chair = $this->chair();

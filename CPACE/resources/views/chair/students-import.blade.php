@@ -101,6 +101,16 @@
         .rt-dup { background:#fef3c7; color:#d97706; }
         .rt-exists { background:#fee2e2; color:#b91c1c; }
         .rt-checking { background:#f1f1f1; color:#999; }
+        .cell-input {
+            width: 100%; min-width: 110px; border: 1px solid transparent; background: transparent;
+            font: inherit; color: inherit; padding: 5px 7px; border-radius: 7px; transition: all .15s;
+        }
+        .cell-input:hover { border-color: #eadada; background: #fff; }
+        .cell-input:focus { outline: none; border-color: var(--primary); background: #fff; box-shadow: 0 0 0 2px var(--primary-light); }
+        .cell-input.bad { border-color: #f3a1a1; background: #fff5f5; }
+        .row-remove { background: none; border: none; color: #ccc; cursor: pointer; font-size: 12.5px; padding: 6px 8px; }
+        .row-remove:hover { color: var(--accent); }
+        .preview-add-row { font-size: 12px; }
 
         /* Results panel */
         .results-panel { display:none; margin-top: 22px; }
@@ -194,6 +204,7 @@
                         <div class="dz-formats"><span>.CSV</span><span>.XLSX</span><span>.DOCX</span></div>
                         <input type="file" id="fileInput" name="file" accept=".csv,.xlsx,.xls,.docx" hidden>
                     </label>
+                    <input type="hidden" name="rows_json" id="rowsJson">
 
                     <div class="dz-file" id="dzFile">
                         <div class="df-ic"><i class="fas fa-file-csv"></i></div>
@@ -234,18 +245,21 @@
         <div class="card preview-wrap" id="previewWrap">
             <div class="preview-head">
                 <div class="card-title"><i class="fas fa-table-list" style="color:var(--primary); margin-right:6px;"></i> Preview</div>
-                <div class="ph-count">Detected <b id="rowCount">0</b> students — review before creating</div>
+                <div class="ph-count">Detected <b id="rowCount">0</b> students — click any cell to fix it before creating accounts</div>
             </div>
             <div class="tbl-scroll">
                 <table>
                     <thead>
                         <tr>
-                            <th>#</th><th>First Name</th><th>Last Name</th><th>Email</th><th>Student No.</th><th>Section</th><th>Status</th>
+                            <th>#</th><th>First Name</th><th>Last Name</th><th>Email</th><th>Student No.</th><th>Section</th><th>Status</th><th></th>
                         </tr>
                     </thead>
                     <tbody id="previewBody"></tbody>
                 </table>
             </div>
+            <button type="button" class="btn btn-outline preview-add-row" id="addRowBtn" style="margin-top:12px;">
+                <i class="fas fa-plus"></i> Add row
+            </button>
         </div>
 
         <!-- Results (rendered after the server creates the accounts) -->
@@ -330,8 +344,11 @@
     const previewWrap = document.getElementById('previewWrap');
     const previewBody = document.getElementById('previewBody');
     const rowCount = document.getElementById('rowCount');
+    const rowsJsonInput = document.getElementById('rowsJson');
+    const addRowBtn = document.getElementById('addRowBtn');
 
     let rows = [];
+    let recheckTimer = null;
 
     ['dragenter','dragover'].forEach(e => dz.addEventListener(e, ev => { ev.preventDefault(); dz.classList.add('drag'); }));
     ['dragleave','drop'].forEach(e => dz.addEventListener(e, ev => { ev.preventDefault(); dz.classList.remove('drag'); }));
@@ -342,6 +359,7 @@
     function reset() {
         input.value = '';
         rows = [];
+        rowsJsonInput.value = '';
         dzFile.classList.remove('show');
         previewWrap.classList.remove('show');
         createBtn.disabled = true;
@@ -391,28 +409,57 @@
         return '<span class="row-tag rt-ok">Ready</span>';
     }
 
+    // Field inputs are built once per full render; typing in one updates
+    // `rows` directly (see the delegated 'input' listener below) instead of
+    // re-rendering the whole table, so the chair's cursor/focus isn't lost
+    // mid-edit. Only structural changes (add/remove row, initial parse,
+    // existence-check results) trigger a full re-render.
     function renderPreview() {
         previewBody.innerHTML = rows.map((r, i) => `
-            <tr>
+            <tr data-i="${i}">
                 <td>${i+1}</td>
-                <td>${esc(r.first_name)}</td>
-                <td>${esc(r.last_name)}</td>
-                <td>${esc(r.email)}</td>
-                <td>${esc(r.student_number) || '—'}</td>
-                <td>${esc(r.section) || '—'}</td>
-                <td>${statusTag(r)}</td>
+                <td><input class="cell-input" data-field="first_name" value="${escAttr(r.first_name)}" placeholder="First name"></td>
+                <td><input class="cell-input" data-field="last_name" value="${escAttr(r.last_name)}" placeholder="Last name"></td>
+                <td><input class="cell-input" data-field="email" value="${escAttr(r.email)}" placeholder="Auto-generated if blank"></td>
+                <td><input class="cell-input" data-field="student_number" value="${escAttr(r.student_number)}" placeholder="Optional"></td>
+                <td><input class="cell-input" data-field="section" value="${escAttr(r.section)}" placeholder="Optional"></td>
+                <td class="status-cell">${statusTag(r)}</td>
+                <td><button type="button" class="row-remove" title="Remove row"><i class="fas fa-trash"></i></button></td>
             </tr>`).join('');
         rowCount.textContent = rows.length;
         previewWrap.classList.add('show');
         createBtn.disabled = rows.length === 0;
     }
 
+    // Refreshes only the status pill in each row — used after an in-place
+    // edit, so the input the chair is typing into is never replaced.
+    function updateStatusCells() {
+        previewBody.querySelectorAll('tr').forEach(tr => {
+            const i = parseInt(tr.dataset.i, 10);
+            const cell = tr.querySelector('.status-cell');
+            if (cell && rows[i]) cell.innerHTML = statusTag(rows[i]);
+        });
+        rowCount.textContent = rows.length;
+        createBtn.disabled = rows.length === 0;
+    }
+
+    function recomputeDupFlags() {
+        const seen = new Set();
+        rows.forEach(r => {
+            const email = (r.email || '').toLowerCase();
+            r.dup = email !== '' && seen.has(email);
+            seen.add(email);
+        });
+    }
+
     // Cross-checks each (non in-file-duplicate) email against accounts already
     // in the system, so the chair sees "Already registered" before submitting
     // instead of only finding out from a skipped-row error afterwards.
+    // `afterUpdate` lets edit-triggered rechecks refresh just the status
+    // pills instead of rebuilding the whole (currently-focused) table.
     let checkingEmails = false;
 
-    async function checkExistingEmails() {
+    async function checkExistingEmails(afterUpdate) {
         checkingEmails = true;
         createBtn.disabled = true;
         const uniqueEmails = [...new Set(rows.filter(r => !r.dup && r.email).map(r => r.email))];
@@ -432,8 +479,50 @@
 
         rows.forEach(r => { r.exists = r.dup || !r.email ? false : (cache[r.email] || false); });
         checkingEmails = false;
-        renderPreview();
+        (afterUpdate || renderPreview)();
     }
+
+    // Editing a cell updates `rows` in place. Email edits also refresh the
+    // duplicate flag immediately and re-check "already registered" (debounced
+    // so it doesn't fire a request per keystroke).
+    previewBody.addEventListener('input', ev => {
+        const cell = ev.target.closest('.cell-input');
+        if (!cell) return;
+        const tr = cell.closest('tr');
+        const i = parseInt(tr.dataset.i, 10);
+        if (!rows[i]) return;
+        const field = cell.dataset.field;
+        const value = field === 'email' ? cell.value.trim().toLowerCase() : cell.value.trim();
+        rows[i][field] = value || null;
+        if (field === 'first_name' || field === 'last_name') rows[i][field] = value;
+
+        if (field === 'email') {
+            rows[i].exists = null;
+            recomputeDupFlags();
+            updateStatusCells();
+            clearTimeout(recheckTimer);
+            recheckTimer = setTimeout(() => checkExistingEmails(updateStatusCells), 400);
+        }
+    });
+
+    // Row removal — a full re-render is fine here since it's a discrete
+    // click, not an in-progress keystroke.
+    previewBody.addEventListener('click', ev => {
+        const btn = ev.target.closest('.row-remove');
+        if (!btn) return;
+        const tr = btn.closest('tr');
+        const i = parseInt(tr.dataset.i, 10);
+        rows.splice(i, 1);
+        renderPreview();
+        checkExistingEmails();
+    });
+
+    // Lets the chair add a student the file missed, straight in the preview.
+    addRowBtn.addEventListener('click', () => {
+        rows.push({ first_name: '', last_name: '', email: '', student_number: null, section: null, dup: false, exists: false });
+        renderPreview();
+        previewBody.querySelector('tr:last-child .cell-input')?.focus();
+    });
 
     // Real submit — the server creates the accounts and returns credentials.
     createBtn.addEventListener('click', () => {
@@ -469,6 +558,16 @@
             createBtn.disabled = true;
             createBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating accounts…';
             CPACE.loading('Creating accounts...', 'Generating one-time passwords for ' + n + ' student' + (n === 1 ? '' : 's') + '.');
+
+            // If we parsed the file ourselves (CSV), submit the edited rows
+            // as-is instead of making the server re-parse the original file —
+            // so any fixes made in the preview are what actually get created.
+            if (rows.length > 0) {
+                rowsJsonInput.value = JSON.stringify(rows.map(r => ({
+                    first_name: r.first_name, last_name: r.last_name, email: r.email,
+                    student_number: r.student_number, section: r.section,
+                })));
+            }
             document.getElementById('importForm').submit();
         });
     });
@@ -476,6 +575,7 @@
     document.getElementById('resultsPanel')?.scrollIntoView({ behavior: 'smooth' });
 
     function esc(s) { return (s||'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+    function escAttr(s) { return esc(s).replace(/'/g, '&#39;'); }
 })();
 </script>
 
