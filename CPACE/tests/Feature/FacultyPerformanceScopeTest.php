@@ -20,6 +20,7 @@ use Tests\TestCase;
 class FacultyPerformanceScopeTest extends TestCase
 {
     private const TABLES = [
+        'faculty_subject_sections', 'sections', 'student_profiles',
         'performance_records', 'quiz_sessions', 'topics', 'subjects', 'faculty_subjects',
         'notifications', 'messages', 'conversation_participants', 'conversations', 'users',
     ];
@@ -125,6 +126,26 @@ class FacultyPerformanceScopeTest extends TestCase
             $table->unsignedBigInteger('assigned_by')->nullable();
             $table->timestamp('assigned_at')->useCurrent();
         });
+
+        Schema::create('student_profiles', function (Blueprint $table) {
+            $table->unsignedBigInteger('user_id')->primary();
+            $table->string('section', 30)->nullable();
+        });
+        Schema::create('sections', function (Blueprint $table) {
+            $table->id();
+            $table->string('name', 30)->unique();
+            $table->boolean('is_active')->default(true);
+            $table->timestamps();
+        });
+        Schema::create('faculty_subject_sections', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('faculty_id');
+            $table->unsignedBigInteger('subject_id');
+            $table->unsignedBigInteger('section_id');
+            $table->unsignedBigInteger('assigned_by')->nullable();
+            $table->timestamp('assigned_at')->useCurrent();
+            $table->timestamps();
+        });
     }
 
     protected function tearDown(): void
@@ -145,14 +166,48 @@ class FacultyPerformanceScopeTest extends TestCase
         ]);
     }
 
-    private function student(string $email): User
+    private function student(string $email, ?string $section = null): User
     {
-        return User::create([
+        $student = User::create([
             'role_id' => Role::STUDENT,
             'first_name' => 'Student', 'last_name' => $email,
             'email' => $email, 'password' => Hash::make('password'),
             'is_active' => true, 'setup_completed_at' => now(),
         ]);
+
+        DB::table('student_profiles')->insert(['user_id' => $student->id, 'section' => $section]);
+
+        return $student;
+    }
+
+    public function test_a_faculty_restricted_to_a_section_only_sees_that_sections_students(): void
+    {
+        $faculty = $this->faculty();
+        $farId = DB::table('subjects')->insertGetId(['code' => 'FAR', 'name' => 'Financial Accounting']);
+        DB::table('faculty_subjects')->insert(['faculty_id' => $faculty->id, 'subject_id' => $farId, 'assigned_at' => now()]);
+        $sectionA = DB::table('sections')->insertGetId(['name' => 'BSA-3A', 'is_active' => true, 'created_at' => now(), 'updated_at' => now()]);
+        DB::table('faculty_subject_sections')->insert([
+            'faculty_id' => $faculty->id, 'subject_id' => $farId, 'section_id' => $sectionA,
+            'assigned_at' => now(), 'created_at' => now(), 'updated_at' => now(),
+        ]);
+
+        $inSection = $this->student('in-section@example.com', 'BSA-3A');
+        $outOfSection = $this->student('out-of-section@example.com', 'BSA-3B');
+        DB::table('quiz_sessions')->insert([
+            'student_id' => $inSection->id, 'session_type' => 'testing', 'subject_id' => $farId,
+            'started_at' => now(), 'completed_at' => now(), 'total_items' => 10, 'correct_answers' => 7,
+        ]);
+        DB::table('quiz_sessions')->insert([
+            'student_id' => $outOfSection->id, 'session_type' => 'testing', 'subject_id' => $farId,
+            'started_at' => now(), 'completed_at' => now(), 'total_items' => 10, 'correct_answers' => 7,
+        ]);
+
+        $response = $this->actingAs($faculty)->get(route('faculty.performance'));
+
+        $response->assertOk();
+        $response->assertViewHas('students', function ($students) use ($inSection) {
+            return $students->count() === 1 && $students->first()['id'] === $inSection->id;
+        });
     }
 
     public function test_faculty_only_sees_the_subject_filter_and_students_from_their_assigned_subjects(): void

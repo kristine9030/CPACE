@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 
 use App\Mail\AccountCredentialsMail;
 use App\Models\Role;
+use App\Models\Section;
 use App\Models\Subject;
 use App\Models\User;
 use App\Services\WeaknessDetector;
@@ -141,12 +142,21 @@ class ProgramChairController extends Controller
      */
     public function faculty()
     {
+        $faculty = User::where('role_id', Role::FACULTY)
+            ->with('assignedSubjects', 'assignedSections')
+            ->orderBy('first_name')
+            ->get();
+
+        $faculty->each(function (User $f) {
+            $f->sectionsBySubject = $f->assignedSections
+                ->groupBy(fn ($s) => $s->pivot->subject_id)
+                ->map(fn ($group) => $group->pluck('id'));
+        });
+
         return view('chair.faculty', [
-            'faculty'  => User::where('role_id', Role::FACULTY)
-                ->with('assignedSubjects')
-                ->orderBy('first_name')
-                ->get(),
+            'faculty'  => $faculty,
             'subjects' => Subject::orderBy('id')->get(),
+            'sections' => Section::where('is_active', true)->orderBy('name')->get(),
         ]);
     }
 
@@ -158,11 +168,12 @@ class ProgramChairController extends Controller
         return view('chair.faculty-form', [
             'editMode' => false,
             'subjects' => Subject::orderBy('id')->get(),
+            'sections' => Section::where('is_active', true)->orderBy('name')->get(),
         ]);
     }
 
     /**
-     * Create a faculty login and assign subjects in one step.
+     * Create a faculty login and assign subjects (optionally scoped to sections) in one step.
      */
     public function storeFaculty(Request $request)
     {
@@ -174,6 +185,9 @@ class ProgramChairController extends Controller
             'department'      => 'nullable|string|max:100',
             'subjects'        => 'array',
             'subjects.*'      => 'integer|exists:subjects,id',
+            'sections'        => 'array',
+            'sections.*'      => 'array',
+            'sections.*.*'    => 'integer|exists:sections,id',
         ]);
 
         $tempPassword = $this->generateOneTimePassword();
@@ -196,7 +210,7 @@ class ProgramChairController extends Controller
                 'department'      => $data['department'] ?? 'College of Accountancy',
             ]);
 
-            $this->syncSubjects($user, $request->input('subjects', []));
+            $this->syncSubjects($user, $request->input('subjects', []), $request->input('sections', []));
 
             return $user;
         });
@@ -217,14 +231,19 @@ class ProgramChairController extends Controller
     public function editFaculty(int $id)
     {
         $faculty = User::where('role_id', Role::FACULTY)
-            ->with(['assignedSubjects', 'facultyProfile'])
+            ->with(['assignedSubjects', 'assignedSections', 'facultyProfile'])
             ->findOrFail($id);
 
         return view('chair.faculty-form', [
             'editMode' => true,
             'faculty'  => $faculty,
             'subjects' => Subject::orderBy('id')->get(),
+            'sections' => Section::where('is_active', true)->orderBy('name')->get(),
             'assigned' => $faculty->assignedSubjects->pluck('id')->all(),
+            'assignedSections' => $faculty->assignedSections
+                ->groupBy(fn ($s) => $s->pivot->subject_id)
+                ->map(fn ($group) => $group->pluck('id')->all())
+                ->all(),
         ]);
     }
 
@@ -244,6 +263,9 @@ class ProgramChairController extends Controller
             'is_active'       => 'nullable|boolean',
             'subjects'        => 'array',
             'subjects.*'      => 'integer|exists:subjects,id',
+            'sections'        => 'array',
+            'sections.*'      => 'array',
+            'sections.*.*'    => 'integer|exists:sections,id',
         ]);
 
         DB::transaction(function () use ($faculty, $data, $request) {
@@ -262,7 +284,7 @@ class ProgramChairController extends Controller
                 ]
             );
 
-            $this->syncSubjects($faculty, $request->input('subjects', []));
+            $this->syncSubjects($faculty, $request->input('subjects', []), $request->input('sections', []));
         });
 
         return redirect()->route('chair.faculty')->with('status', 'Faculty account updated.');
@@ -276,11 +298,14 @@ class ProgramChairController extends Controller
         $faculty = User::where('role_id', Role::FACULTY)->findOrFail($id);
 
         $request->validate([
-            'subjects'   => 'array',
-            'subjects.*' => 'integer|exists:subjects,id',
+            'subjects'     => 'array',
+            'subjects.*'   => 'integer|exists:subjects,id',
+            'sections'     => 'array',
+            'sections.*'   => 'array',
+            'sections.*.*' => 'integer|exists:sections,id',
         ]);
 
-        $this->syncSubjects($faculty, $request->input('subjects', []));
+        $this->syncSubjects($faculty, $request->input('subjects', []), $request->input('sections', []));
 
         return redirect()->route('chair.faculty')
             ->with('status', "Subjects updated for {$faculty->name}.");
@@ -363,9 +388,12 @@ class ProgramChairController extends Controller
     }
 
     /**
-     * Attach pivot rows with the chair who made the assignment + timestamp.
+     * Attach pivot rows with the chair who made the assignment + timestamp,
+     * and (fully) replace this faculty's section restrictions to match
+     * exactly what was submitted. A subject with no section ids here leaves
+     * the faculty unrestricted for it (sees the whole subject).
      */
-    private function syncSubjects(User $faculty, array $subjectIds): void
+    private function syncSubjects(User $faculty, array $subjectIds, array $sectionsBySubject = []): void
     {
         $pivot = [];
         foreach ($subjectIds as $sid) {
@@ -376,5 +404,26 @@ class ProgramChairController extends Controller
         }
 
         $faculty->assignedSubjects()->sync($pivot);
+
+        DB::table('faculty_subject_sections')->where('faculty_id', $faculty->id)->delete();
+
+        $rows = [];
+        foreach ($subjectIds as $sid) {
+            foreach ($sectionsBySubject[$sid] ?? [] as $secId) {
+                $rows[] = [
+                    'faculty_id'  => $faculty->id,
+                    'subject_id'  => (int) $sid,
+                    'section_id'  => (int) $secId,
+                    'assigned_by' => Auth::id(),
+                    'assigned_at' => now(),
+                    'created_at'  => now(),
+                    'updated_at'  => now(),
+                ];
+            }
+        }
+
+        if ($rows !== []) {
+            DB::table('faculty_subject_sections')->insert($rows);
+        }
     }
 }

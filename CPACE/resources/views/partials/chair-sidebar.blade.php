@@ -1,7 +1,7 @@
 {{--
     Program Chair (Admin) portal sidebar + shared CSS for all chair pages.
     Usage: @include('partials.chair-sidebar', ['active' => 'dashboard'])
-    Valid $active keys: dashboard, students, faculty, faculty-performance, subjects, communications
+    Valid $active keys: dashboard, students, faculty, faculty-performance, subjects, sections, communications
 --}}
 @php $active = $active ?? ''; @endphp
 
@@ -240,6 +240,18 @@
     .check-card .cc-code { font-size:11px; font-weight:700; color:var(--primary); }
     .check-card .cc-name { font-size:12px; color:#555; }
 
+    /* Subject → section-scope picker (see chair/partials/subject-section-fields.blade.php) */
+    .section-picker { margin:8px 0 4px 4px; padding:10px 12px 12px; background:#f9fafb; border-left:3px solid var(--primary); border-radius:0 8px 8px 0; }
+    .scope-toggle { display:flex; gap:6px; margin-bottom:9px; }
+    .scope-opt { flex:1; }
+    .scope-opt input { display:none; }
+    .scope-opt span { display:flex; align-items:center; justify-content:center; gap:5px; font-size:11px; font-weight:600; color:#777; background:#fff; border:1.5px solid #e2e2e6; border-radius:7px; padding:6px; cursor:pointer; transition:all .15s; text-align:center; }
+    .scope-opt input:checked + span { background:var(--primary); border-color:var(--primary); color:#fff; }
+    .section-chips { display:flex; flex-wrap:wrap; gap:4px 10px; }
+    .section-chip { display:inline-flex; align-items:center; gap:5px; font-size:11.5px; color:#444; cursor:pointer; }
+    .section-chip input { width:14px; height:14px; accent-color:var(--primary); cursor:pointer; }
+    .muted-note { font-size:11px; color:#bbb; }
+
     /* ALERTS */
     .alert { padding:12px 16px; border-radius:10px; font-size:13px; margin-bottom:18px; display:flex; align-items:center; gap:10px; }
     .alert-success { background:#d1fae5; color:#065f46; }
@@ -354,6 +366,7 @@
         <li><a href="{{ route('chair.faculty') }}" class="{{ $active === 'faculty' ? 'active' : '' }}"><i class="fas fa-chalkboard-user"></i><span>Faculty Accounts</span></a></li>
         <li><a href="{{ route('chair.faculty.performance') }}" class="{{ $active === 'faculty-performance' ? 'active' : '' }}"><i class="fas fa-chart-column"></i><span>Faculty Performance</span></a></li>
         <li><a href="{{ route('chair.subjects') }}" class="{{ $active === 'subjects' ? 'active' : '' }}"><i class="fas fa-layer-group"></i><span>Subject Assignments</span></a></li>
+        <li><a href="{{ route('chair.sections') }}" class="{{ $active === 'sections' ? 'active' : '' }}"><i class="fas fa-people-group"></i><span>Sections</span></a></li>
         <li><a href="{{ route('chair.communications') }}" class="{{ $active === 'communications' ? 'active' : '' }}"><i class="fas fa-bullhorn"></i><span>Communications</span></a></li>
         <li><a href="{{ route('notifications.index') }}" class="{{ $active === 'notifications' ? 'active' : '' }}"><i class="fas fa-bell"></i><span>Notifications{{ $unreadNotifications ? ' ('.$unreadNotifications.')' : '' }}</span></a></li>
 

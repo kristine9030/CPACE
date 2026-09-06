@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Role;
 use App\Models\Subject;
 use App\Services\WeaknessDetector;
+use App\Support\FacultySectionScope;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -78,10 +79,13 @@ class FacultyDashboardController extends Controller
      */
     private function scopedSessions(array $subjectIds)
     {
-        return DB::table('quiz_sessions')
-            ->where('session_type', '!=', 'training')
-            ->whereNotNull('completed_at')
-            ->whereIn('subject_id', $subjectIds);
+        $query = DB::table('quiz_sessions')
+            ->leftJoin('student_profiles', 'student_profiles.user_id', '=', 'quiz_sessions.student_id')
+            ->where('quiz_sessions.session_type', '!=', 'training')
+            ->whereNotNull('quiz_sessions.completed_at')
+            ->select('quiz_sessions.*');
+
+        return FacultySectionScope::apply($query, Auth::user(), $subjectIds, 'quiz_sessions.subject_id', 'student_profiles.section');
     }
 
     /**
@@ -132,7 +136,7 @@ class FacultyDashboardController extends Controller
         $agg = $this->scopedSessions($subjectIds)
             ->when($from, fn ($q) => $q->where('started_at', '>=', $from))
             ->when($to, fn ($q) => $q->where('started_at', '<', $to))
-            ->selectRaw('COALESCE(SUM(total_items),0) as attempted, COALESCE(SUM(correct_answers),0) as correct')
+            ->select(DB::raw('COALESCE(SUM(total_items),0) as attempted'), DB::raw('COALESCE(SUM(correct_answers),0) as correct'))
             ->first();
 
         $attempted = (int) ($agg->attempted ?? 0);

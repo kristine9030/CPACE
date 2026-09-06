@@ -19,6 +19,7 @@ use Tests\TestCase;
 class FacultyReportScopeTest extends TestCase
 {
     private const TABLES = [
+        'faculty_subject_sections', 'sections',
         'weakness_reports', 'performance_records', 'quiz_sessions', 'topics', 'subjects', 'faculty_subjects',
         'notifications', 'messages', 'conversation_participants', 'conversations', 'student_profiles', 'users',
     ];
@@ -116,6 +117,21 @@ class FacultyReportScopeTest extends TestCase
             $table->unsignedBigInteger('assigned_by')->nullable();
             $table->timestamp('assigned_at')->useCurrent();
         });
+        Schema::create('sections', function (Blueprint $table) {
+            $table->id();
+            $table->string('name', 30)->unique();
+            $table->boolean('is_active')->default(true);
+            $table->timestamps();
+        });
+        Schema::create('faculty_subject_sections', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('faculty_id');
+            $table->unsignedBigInteger('subject_id');
+            $table->unsignedBigInteger('section_id');
+            $table->unsignedBigInteger('assigned_by')->nullable();
+            $table->timestamp('assigned_at')->useCurrent();
+            $table->timestamps();
+        });
     }
 
     protected function tearDown(): void
@@ -144,6 +160,52 @@ class FacultyReportScopeTest extends TestCase
         $response->assertViewHas('students', function ($students) use ($farStudent) {
             return $students->count() === 1 && $students->first()['id'] === $farStudent->id;
         });
+    }
+
+    public function test_a_faculty_restricted_to_a_section_only_sees_that_sections_students(): void
+    {
+        $faculty = $this->faculty();
+        $farId = DB::table('subjects')->insertGetId(['code' => 'FAR', 'name' => 'Financial Accounting']);
+        DB::table('faculty_subjects')->insert(['faculty_id' => $faculty->id, 'subject_id' => $farId, 'assigned_at' => now()]);
+        $sectionA = DB::table('sections')->insertGetId(['name' => 'BSA-3A', 'is_active' => true, 'created_at' => now(), 'updated_at' => now()]);
+        DB::table('faculty_subject_sections')->insert([
+            'faculty_id' => $faculty->id, 'subject_id' => $farId, 'section_id' => $sectionA,
+            'assigned_at' => now(), 'created_at' => now(), 'updated_at' => now(),
+        ]);
+
+        $inSection = $this->student('in-section@example.com', 'BSA-3A');
+        $outOfSection = $this->student('out-of-section@example.com', 'BSA-3B');
+        $this->completedSession($inSection->id, $farId, 10, 7);
+        $this->completedSession($outOfSection->id, $farId, 10, 7);
+
+        $response = $this->actingAs($faculty)->get(route('faculty.reports'));
+
+        $response->assertOk();
+        $response->assertViewHas('students', function ($students) use ($inSection) {
+            return $students->count() === 1 && $students->first()['id'] === $inSection->id;
+        });
+        // The "Student Group" dropdown must only offer sections this faculty
+        // can actually see - not BSA-3B, which they're not assigned to.
+        $response->assertViewHas('sections', fn ($sections) => $sections === ['BSA-3A']);
+    }
+
+    public function test_a_faculty_unrestricted_on_a_subject_still_sees_every_section(): void
+    {
+        $faculty = $this->faculty();
+        $farId = DB::table('subjects')->insertGetId(['code' => 'FAR', 'name' => 'Financial Accounting']);
+        DB::table('faculty_subjects')->insert(['faculty_id' => $faculty->id, 'subject_id' => $farId, 'assigned_at' => now()]);
+        // No faculty_subject_sections rows for this subject - unrestricted, same as before this feature existed.
+
+        $studentA = $this->student('a@example.com', 'BSA-3A');
+        $studentB = $this->student('b@example.com', 'BSA-3B');
+        $this->completedSession($studentA->id, $farId, 10, 7);
+        $this->completedSession($studentB->id, $farId, 10, 7);
+
+        $response = $this->actingAs($faculty)->get(route('faculty.reports'));
+
+        $response->assertOk();
+        $response->assertViewHas('students', fn ($students) => $students->count() === 2);
+        $response->assertViewHas('sections', fn ($sections) => $sections === ['BSA-3A', 'BSA-3B']);
     }
 
     public function test_an_out_of_scope_subject_filter_falls_back_to_all_assigned_subjects_not_everything(): void
@@ -207,14 +269,18 @@ class FacultyReportScopeTest extends TestCase
         ]);
     }
 
-    private function student(string $email): User
+    private function student(string $email, ?string $section = null): User
     {
-        return User::create([
+        $student = User::create([
             'role_id' => Role::STUDENT,
             'first_name' => 'Student', 'last_name' => $email,
             'email' => $email, 'password' => Hash::make('password'),
             'is_active' => true, 'setup_completed_at' => now(),
         ]);
+
+        DB::table('student_profiles')->insert(['user_id' => $student->id, 'section' => $section]);
+
+        return $student;
     }
 
     private function completedSession(int $studentId, int $subjectId, int $totalItems, int $correct): void

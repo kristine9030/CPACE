@@ -70,6 +70,36 @@ CREATE TABLE faculty_subjects (
     CONSTRAINT fk_fs_assigner FOREIGN KEY (assigned_by) REFERENCES users(id)    ON DELETE SET NULL
 );
 
+-- Formal catalog of student sections, used to restrict a faculty's subject
+-- assignment to specific sections (see faculty_subject_sections below).
+-- Seeded from the distinct student_profiles.section values already in use.
+CREATE TABLE sections (
+    id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    name        VARCHAR(30) NOT NULL UNIQUE,
+    is_active   BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at  DATETIME NULL,
+    updated_at  DATETIME NULL
+);
+
+-- Faculty <-> Subject <-> Section restriction (set by the Program Chair).
+-- A faculty_subjects row with NO matching rows here is unrestricted for
+-- that subject (sees every section) - this table only narrows access.
+CREATE TABLE faculty_subject_sections (
+    id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    faculty_id  INT UNSIGNED NOT NULL,
+    subject_id  TINYINT UNSIGNED NOT NULL,
+    section_id  INT UNSIGNED NOT NULL,
+    assigned_by INT UNSIGNED NULL,
+    assigned_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_at  DATETIME NULL,
+    updated_at  DATETIME NULL,
+    UNIQUE KEY uq_faculty_subject_section (faculty_id, subject_id, section_id),
+    CONSTRAINT fk_fss_faculty  FOREIGN KEY (faculty_id)  REFERENCES users(id)    ON DELETE CASCADE,
+    CONSTRAINT fk_fss_subject  FOREIGN KEY (subject_id)  REFERENCES subjects(id) ON DELETE CASCADE,
+    CONSTRAINT fk_fss_section  FOREIGN KEY (section_id)  REFERENCES sections(id) ON DELETE CASCADE,
+    CONSTRAINT fk_fss_assigner FOREIGN KEY (assigned_by) REFERENCES users(id)    ON DELETE SET NULL
+);
+
 -- Alumni-specific profile
 CREATE TABLE alumni_profiles (
     user_id         INT UNSIGNED PRIMARY KEY,

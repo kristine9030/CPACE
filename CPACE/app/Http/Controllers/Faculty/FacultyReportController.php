@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Role;
 use App\Models\Subject;
 use App\Services\WeaknessDetector;
+use App\Support\FacultySectionScope;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -138,6 +139,10 @@ class FacultyReportController extends Controller
             : $assignedIds;
 
         $students = $this->studentRows($subjectIds, $filters['from']);
+        // Sections the "Student Group" dropdown may offer - only ones this
+        // faculty member can actually see (i.e. present in their already
+        // section-scoped roster), not every section in the system.
+        $sections = $this->sectionOptions($students);
         $students = $this->applyGroup($students, $filters['group']);
 
         $totalAtt = (int) $students->sum('attempted');
@@ -164,7 +169,7 @@ class FacultyReportController extends Controller
             'reportTypes'   => self::REPORT_TYPES,
             'reportLabel'   => self::REPORT_TYPES[$filters['report']],
             'assigned'      => $assigned,
-            'sections'      => $this->sectionList(),
+            'sections'      => $sections,
             'scopeLabel'    => $scopeLabel,
             'rangeLabel'    => $this->rangeLabel($filters['range']),
             'stats'         => $stats,
@@ -251,17 +256,14 @@ class FacultyReportController extends Controller
     }
 
     /**
-     * Distinct student sections (for the "Student Group" selector).
+     * Sections to offer in the "Student Group" selector - derived from the
+     * faculty's own already section-scoped roster, so a restricted faculty
+     * member can only pick a section they're actually assigned to (never the
+     * whole system's section list).
      */
-    private function sectionList(): array
+    private function sectionOptions($students): array
     {
-        return DB::table('student_profiles')
-            ->whereNotNull('section')
-            ->where('section', '!=', '')
-            ->distinct()
-            ->orderBy('section')
-            ->pluck('section')
-            ->all();
+        return $students->pluck('section')->filter()->unique()->sort()->values()->all();
     }
 
     /**
@@ -273,18 +275,20 @@ class FacultyReportController extends Controller
             return collect();
         }
 
-        $agg = DB::table('quiz_sessions')
-            ->where('session_type', '!=', 'training')
-            ->whereNotNull('completed_at')
-            ->whereIn('subject_id', $subjectIds)
-            ->when($from, fn ($q) => $q->where('started_at', '>=', $from))
-            ->groupBy('student_id')
+        $base = DB::table('quiz_sessions')
+            ->leftJoin('student_profiles', 'student_profiles.user_id', '=', 'quiz_sessions.student_id')
+            ->where('quiz_sessions.session_type', '!=', 'training')
+            ->whereNotNull('quiz_sessions.completed_at')
+            ->when($from, fn ($q) => $q->where('quiz_sessions.started_at', '>=', $from));
+
+        $agg = FacultySectionScope::apply($base, Auth::user(), $subjectIds, 'quiz_sessions.subject_id', 'student_profiles.section')
+            ->groupBy('quiz_sessions.student_id')
             ->select(
-                'student_id',
+                'quiz_sessions.student_id',
                 DB::raw('COUNT(*) as quizzes'),
-                DB::raw('COALESCE(SUM(total_items),0) as attempted'),
-                DB::raw('COALESCE(SUM(correct_answers),0) as correct'),
-                DB::raw('MAX(completed_at) as last_active')
+                DB::raw('COALESCE(SUM(quiz_sessions.total_items),0) as attempted'),
+                DB::raw('COALESCE(SUM(quiz_sessions.correct_answers),0) as correct'),
+                DB::raw('MAX(quiz_sessions.completed_at) as last_active')
             )
             ->get()
             ->keyBy('student_id');

@@ -15,6 +15,7 @@ use App\Http\Controllers\Chair\EmailAvailabilityController;
 use App\Http\Controllers\Chair\ProgramChairController;
 use App\Http\Controllers\Chair\FacultyOversightController;
 use App\Http\Controllers\Chair\SubjectManagementController;
+use App\Http\Controllers\Chair\SectionManagementController;
 use App\Http\Controllers\Chair\StudentManagementController;
 use App\Http\Controllers\Student\PerformanceController;
 use App\Http\Controllers\Student\QuizController;
@@ -109,6 +110,11 @@ Route::middleware('auth')->group(function () {
         Route::post('/faculty/{id}/regenerate-otp', [ProgramChairController::class, 'regenerateFacultyOtp'])->name('faculty.regenerate-otp');
         Route::get('/faculty-performance', [FacultyOversightController::class, 'performance'])->name('faculty.performance');
         Route::get('/faculty/{id}/activity', [FacultyOversightController::class, 'activity'])->name('faculty.activity');
+
+        // Section catalog (used to scope faculty-to-section assignment)
+        Route::get('/sections', [SectionManagementController::class, 'index'])->name('sections');
+        Route::post('/sections', [SectionManagementController::class, 'store'])->name('sections.store');
+        Route::post('/sections/{section}/toggle', [SectionManagementController::class, 'toggle'])->name('sections.toggle');
 
         // Subject assignment overview
         Route::get('/subjects', [SubjectManagementController::class, 'index'])->name('subjects');

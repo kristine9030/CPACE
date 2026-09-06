@@ -11,6 +11,7 @@
         .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:2000; align-items:center; justify-content:center; padding:20px; }
         .modal-overlay.open { display:flex; }
         .modal { background:#fff; border-radius:16px; width:100%; max-width:480px; padding:24px; max-height:90vh; overflow-y:auto; }
+        #assignModal .modal { max-width:640px; }
         .modal h3 { font-size:16px; color:#1a1a1a; margin-bottom:4px; }
         .modal p.sub { font-size:12px; color:#999; margin-bottom:18px; }
         .modal-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:20px; }
@@ -116,7 +117,7 @@
                     <td style="text-align:right; white-space:nowrap;">
                         <a href="{{ route('chair.faculty.activity', $f->id) }}" class="action-btn ab-activity" title="View activity log"><i class="fas fa-clock-rotate-left"></i></a>
                         <button class="action-btn ab-assign" title="Assign subjects"
-                            onclick="openAssign({{ $f->id }}, '{{ addslashes($f->name) }}', {{ $f->assignedSubjects->pluck('id')->toJson() }})">
+                            onclick="openAssign({{ $f->id }}, '{{ addslashes($f->name) }}', {{ $f->assignedSubjects->pluck('id')->toJson() }}, {{ $f->sectionsBySubject->toJson() }})">
                             <i class="fas fa-layer-group"></i>
                         </button>
                         <a href="{{ route('chair.faculty.edit', $f->id) }}" class="action-btn ab-edit" title="Edit account"><i class="fas fa-pen"></i></a>
@@ -148,24 +149,14 @@
 <div class="modal-overlay" id="assignModal">
     <div class="modal">
         <h3>Assign Subjects</h3>
-        <p class="sub" id="assignSub">Select the CPALE subjects for this faculty member.</p>
+        <p class="sub" id="assignSub">Select the CPALE subjects for this faculty member, and optionally limit each one to specific sections.</p>
         <form method="POST" id="assignForm"
-              data-confirm="This faculty member's subject access will be replaced with exactly the subjects ticked here."
+              data-confirm="This faculty member's subject access will be replaced with exactly what's ticked here."
               data-confirm-title="Save subject assignments?"
               data-confirm-ok="Yes, save assignments"
               data-confirm-icon="question">
             @csrf
-            <div class="check-grid">
-                @foreach ($subjects as $s)
-                    <label class="check-card">
-                        <input type="checkbox" name="subjects[]" value="{{ $s->id }}" data-sid="{{ $s->id }}">
-                        <span>
-                            <span class="cc-code">{{ $s->code }}</span><br>
-                            <span class="cc-name">{{ $s->name }}</span>
-                        </span>
-                    </label>
-                @endforeach
-            </div>
+            @include('chair.partials.subject-section-fields', ['subjects' => $subjects, 'sections' => $sections])
             <div class="modal-actions">
                 <button type="button" class="btn btn-ghost" onclick="closeAssign()">Cancel</button>
                 <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Assignments</button>
@@ -177,11 +168,23 @@
 <script>
     const assignModal = document.getElementById('assignModal');
     const assignForm  = document.getElementById('assignForm');
-    function openAssign(id, name, current) {
+
+    function openAssign(id, name, current, currentSections) {
         assignForm.action = `/chair/faculty/${id}/assign`;
-        document.getElementById('assignSub').textContent = `Select the CPALE subjects for ${name}.`;
+        document.getElementById('assignSub').textContent = `Select the CPALE subjects for ${name}, and optionally limit each one to specific sections.`;
+        currentSections = currentSections || {};
         assignForm.querySelectorAll('input[name="subjects[]"]').forEach(cb => {
-            cb.checked = current.includes(parseInt(cb.dataset.sid));
+            const sid = parseInt(cb.dataset.sid);
+            cb.checked = current.includes(sid);
+            const secIds = (currentSections[sid] || []).map(Number);
+            assignForm.querySelectorAll(`input[data-secid][name="sections[${sid}][]"]`).forEach(sc => {
+                sc.checked = secIds.includes(parseInt(sc.dataset.secid));
+            });
+            const mode = secIds.length > 0 ? 'specific' : 'all';
+            const radio = assignForm.querySelector(`input[name="scope[${sid}]"][value="${mode}"]`);
+            if (radio) radio.checked = true;
+            setScope(sid, mode);
+            toggleSectionPicker(sid, cb.checked);
         });
         assignModal.classList.add('open');
     }
@@ -189,6 +192,7 @@
     assignModal.addEventListener('click', e => { if (e.target === assignModal) closeAssign(); });
 
 </script>
+@include('chair.partials.subject-section-script')
 
     @include('partials.alerts')
 </body>

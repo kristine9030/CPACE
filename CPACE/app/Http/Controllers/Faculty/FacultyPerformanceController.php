@@ -8,6 +8,7 @@ use App\Mail\StudentReminderMail;
 use App\Models\Role;
 use App\Models\Subject;
 use App\Services\WeaknessDetector;
+use App\Support\FacultySectionScope;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -191,17 +192,25 @@ class FacultyPerformanceController extends Controller
     {
         $from       = $filters['from'];
         $subjectIds = $filters['subject_ids'];
+        $faculty    = Auth::user();
 
-        // Reusable base query honouring the period + subject filters.
-        $base = fn () => DB::table('quiz_sessions')
-            ->where('session_type', '!=', 'training')
-            ->whereNotNull('completed_at')
-            ->when($from, fn ($q) => $q->where('started_at', '>=', $from))
-            ->when($subjectIds !== null, fn ($q) => $q->whereIn('subject_id', $subjectIds));
+        // Reusable base query honouring the period + subject (+ section,
+        // when the faculty is restricted to specific sections) filters.
+        $base = function () use ($from, $subjectIds, $faculty) {
+            $query = DB::table('quiz_sessions')
+                ->leftJoin('student_profiles', 'student_profiles.user_id', '=', 'quiz_sessions.student_id')
+                ->where('quiz_sessions.session_type', '!=', 'training')
+                ->whereNotNull('quiz_sessions.completed_at')
+                ->when($from, fn ($q) => $q->where('quiz_sessions.started_at', '>=', $from));
+
+            return $subjectIds !== null
+                ? FacultySectionScope::apply($query, $faculty, $subjectIds, 'quiz_sessions.subject_id', 'student_profiles.section')
+                : $query;
+        };
 
         // Headline aggregate per student.
         $agg = $base()
-            ->groupBy('student_id')
+            ->groupBy('quiz_sessions.student_id')
             ->select(
                 'student_id',
                 DB::raw('COUNT(*) as quizzes'),

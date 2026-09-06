@@ -21,6 +21,7 @@ use Tests\TestCase;
 class FacultyDashboardScopeTest extends TestCase
 {
     private const TABLES = [
+        'faculty_subject_sections', 'sections', 'student_profiles',
         'quiz_sessions', 'questions', 'topics', 'subjects', 'faculty_subjects',
         'notifications', 'messages', 'conversation_participants', 'conversations', 'users',
     ];
@@ -108,6 +109,25 @@ class FacultyDashboardScopeTest extends TestCase
             $table->timestamp('assigned_at')->nullable();
             $table->primary(['faculty_id', 'subject_id']);
         });
+        Schema::create('student_profiles', function (Blueprint $table) {
+            $table->unsignedBigInteger('user_id')->primary();
+            $table->string('section', 30)->nullable();
+        });
+        Schema::create('sections', function (Blueprint $table) {
+            $table->id();
+            $table->string('name', 30)->unique();
+            $table->boolean('is_active')->default(true);
+            $table->timestamps();
+        });
+        Schema::create('faculty_subject_sections', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('faculty_id');
+            $table->unsignedBigInteger('subject_id');
+            $table->unsignedBigInteger('section_id');
+            $table->unsignedBigInteger('assigned_by')->nullable();
+            $table->timestamp('assigned_at')->useCurrent();
+            $table->timestamps();
+        });
     }
 
     protected function tearDown(): void
@@ -149,6 +169,34 @@ class FacultyDashboardScopeTest extends TestCase
         $response->assertDontSee('AUD question 1');
     }
 
+    public function test_active_students_only_counts_the_section_the_faculty_is_restricted_to(): void
+    {
+        $faculty = $this->faculty();
+        $farId = DB::table('subjects')->insertGetId(['code' => 'FAR', 'name' => 'Financial Accounting', 'created_at' => now(), 'updated_at' => now()]);
+        DB::table('faculty_subjects')->insert(['faculty_id' => $faculty->id, 'subject_id' => $farId, 'assigned_at' => now()]);
+        $sectionA = DB::table('sections')->insertGetId(['name' => 'BSA-3A', 'is_active' => true, 'created_at' => now(), 'updated_at' => now()]);
+        DB::table('faculty_subject_sections')->insert([
+            'faculty_id' => $faculty->id, 'subject_id' => $farId, 'section_id' => $sectionA,
+            'assigned_at' => now(), 'created_at' => now(), 'updated_at' => now(),
+        ]);
+
+        $inSection = $this->student('in-section@example.com', 'BSA-3A');
+        $outOfSection = $this->student('out-of-section@example.com', 'BSA-3B');
+        DB::table('quiz_sessions')->insert([
+            'student_id' => $inSection->id, 'subject_id' => $farId, 'session_type' => 'testing',
+            'total_items' => 10, 'correct_answers' => 7, 'started_at' => now(), 'completed_at' => now(),
+        ]);
+        DB::table('quiz_sessions')->insert([
+            'student_id' => $outOfSection->id, 'subject_id' => $farId, 'session_type' => 'testing',
+            'total_items' => 10, 'correct_answers' => 7, 'started_at' => now(), 'completed_at' => now(),
+        ]);
+
+        $response = $this->actingAs($faculty)->get(route('faculty.dashboard'));
+
+        $response->assertOk();
+        $response->assertViewHas('stats', fn ($stats) => $stats['active_students'] === 1);
+    }
+
     private function faculty(): User
     {
         return User::create([
@@ -158,12 +206,16 @@ class FacultyDashboardScopeTest extends TestCase
         ]);
     }
 
-    private function student(string $email): User
+    private function student(string $email, ?string $section = null): User
     {
-        return User::create([
+        $student = User::create([
             'role_id' => Role::STUDENT, 'first_name' => 'Test', 'last_name' => 'Student',
             'email' => $email, 'password' => Hash::make('password'),
             'is_active' => true, 'setup_completed_at' => now(),
         ]);
+
+        DB::table('student_profiles')->insert(['user_id' => $student->id, 'section' => $section]);
+
+        return $student;
     }
 }

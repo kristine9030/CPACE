@@ -89,18 +89,13 @@
 
         <div class="card">
             <div class="card-head"><span class="card-title"><i class="fas fa-layer-group" style="color:var(--primary);"></i> Assigned Subjects</span></div>
-            <div class="check-grid">
-                @foreach ($subjects as $s)
-                    @php $checked = collect(old('subjects', $assigned))->contains($s->id); @endphp
-                    <label class="check-card">
-                        <input type="checkbox" name="subjects[]" value="{{ $s->id }}" {{ $checked ? 'checked' : '' }}>
-                        <span>
-                            <span class="cc-code">{{ $s->code }}</span><br>
-                            <span class="cc-name">{{ $s->name }}</span>
-                        </span>
-                    </label>
-                @endforeach
-            </div>
+            <p class="hint" style="margin:-6px 0 14px;">Tick a subject, then optionally limit it to specific sections instead of the whole subject.</p>
+            @include('chair.partials.subject-section-fields', [
+                'subjects' => $subjects,
+                'sections' => $sections,
+                'checkedSubjects' => old('subjects', $assigned),
+                'checkedSectionsBySubject' => old('sections', $assignedSections ?? []),
+            ])
         </div>
 
         @if ($editMode)
@@ -161,6 +156,7 @@
         })();
     </script>
 
+    @include('chair.partials.subject-section-script')
     @include('partials.alerts')
 </body>
 </html>

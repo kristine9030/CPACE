@@ -24,6 +24,7 @@ use Tests\TestCase;
 class ChairAccountProvisioningTest extends TestCase
 {
     private const TABLES = [
+        'faculty_subject_sections', 'sections',
         'quiz_sessions', 'performance_records', 'topics', 'alumni_profiles', 'student_profiles', 'faculty_profiles', 'faculty_subjects', 'subjects',
         'notifications', 'messages', 'conversation_participants', 'conversations', 'users',
     ];
@@ -113,6 +114,21 @@ class ChairAccountProvisioningTest extends TestCase
             $table->unsignedBigInteger('assigned_by')->nullable();
             $table->timestamp('assigned_at')->nullable();
             $table->primary(['faculty_id', 'subject_id']);
+        });
+        Schema::create('sections', function (Blueprint $table) {
+            $table->id();
+            $table->string('name', 30)->unique();
+            $table->boolean('is_active')->default(true);
+            $table->timestamps();
+        });
+        Schema::create('faculty_subject_sections', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('faculty_id');
+            $table->unsignedBigInteger('subject_id');
+            $table->unsignedBigInteger('section_id');
+            $table->unsignedBigInteger('assigned_by')->nullable();
+            $table->timestamp('assigned_at')->useCurrent();
+            $table->timestamps();
         });
         Schema::create('subjects', function (Blueprint $table) {
             $table->id();

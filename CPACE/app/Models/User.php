@@ -133,6 +133,35 @@ class User extends Authenticatable
     }
 
     /**
+     * Sections this faculty member is restricted to, per assigned subject.
+     * A subject with no rows here is unrestricted for that faculty member.
+     */
+    public function assignedSections()
+    {
+        return $this->belongsToMany(Section::class, 'faculty_subject_sections', 'faculty_id', 'section_id')
+            ->withPivot('subject_id', 'assigned_by', 'assigned_at');
+    }
+
+    /**
+     * Section names this faculty member is restricted to for a subject, or
+     * null when unrestricted (chair, or no section rows yet for that subject
+     * - the original behavior: the whole subject is visible).
+     */
+    public function sectionNamesForSubject(int $subjectId): ?array
+    {
+        if ($this->isChair()) {
+            return null;
+        }
+
+        $names = $this->assignedSections()
+            ->wherePivot('subject_id', $subjectId)
+            ->pluck('sections.name')
+            ->all();
+
+        return $names !== [] ? $names : null;
+    }
+
+    /**
      * Quiz sessions taken by this student.
      */
     public function quizSessions()
