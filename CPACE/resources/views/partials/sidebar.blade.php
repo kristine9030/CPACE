@@ -276,6 +276,7 @@
 
         <li class="nav-label">Study</li>
         <li><a href="{{ route('adaptive-quizzes') }}" class="{{ $active === 'quizzes' ? 'active' : '' }}"><i class="fas fa-pen-fancy"></i><span>Quizzes</span></a></li>
+        <li><a href="{{ route('class-quizzes') }}" class="{{ $active === 'class-quizzes' ? 'active' : '' }}"><i class="fas fa-clipboard-list"></i><span>Class Quizzes</span></a></li>
         <li>
             <a href="{{ route('mock-exams') }}" class="{{ $active === 'mock-exams' ? 'active' : '' }}">
                 <i class="fas fa-file-alt"></i><span>Mock Exams</span>

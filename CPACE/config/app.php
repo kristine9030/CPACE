@@ -65,7 +65,9 @@ return [
     |
     */
 
-    'timezone' => 'UTC',
+    // CPACE is used in the Philippines only. Deadlines, "opens at" times and
+    // every displayed timestamp must match the users' wall clock.
+    'timezone' => env('APP_TIMEZONE', 'Asia/Manila'),
 
     /*
     |--------------------------------------------------------------------------

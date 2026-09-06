@@ -24,6 +24,8 @@ use App\Http\Controllers\Student\ReviewNoteController;
 use App\Http\Controllers\Student\AiTutorController;
 use App\Http\Controllers\Faculty\TestBankController;
 use App\Http\Controllers\Faculty\MaterialController;
+use App\Http\Controllers\Faculty\FacultyQuizController;
+use App\Http\Controllers\Student\ClassQuizController;
 use App\Http\Controllers\Student\SubjectController;
 use App\Http\Controllers\Chair\CommunicationController;
 use App\Http\Controllers\Chair\AnalyticsController;
@@ -159,6 +161,20 @@ Route::middleware('auth')->group(function () {
         Route::get('/materials', [MaterialController::class, 'index'])->name('materials');
         Route::post('/materials', [MaterialController::class, 'store'])->name('materials.store');
         Route::delete('/materials/{material}', [MaterialController::class, 'destroy'])->name('materials.destroy');
+
+        // Class quizzes (faculty-authored, deadline-bound, shared by link)
+        Route::get('/quizzes', [FacultyQuizController::class, 'index'])->name('quizzes');
+        Route::get('/quizzes/create', [FacultyQuizController::class, 'create'])->name('quizzes.create');
+        Route::get('/quizzes/bank-questions', [FacultyQuizController::class, 'bankQuestions'])->name('quizzes.bank-questions');
+        Route::post('/quizzes', [FacultyQuizController::class, 'store'])->name('quizzes.store');
+        Route::get('/quizzes/{quiz}/edit', [FacultyQuizController::class, 'edit'])->name('quizzes.edit');
+        Route::put('/quizzes/{quiz}', [FacultyQuizController::class, 'update'])->name('quizzes.update');
+        Route::post('/quizzes/{quiz}/publish', [FacultyQuizController::class, 'publish'])->name('quizzes.publish');
+        Route::post('/quizzes/{quiz}/close', [FacultyQuizController::class, 'close'])->name('quizzes.close');
+        Route::post('/quizzes/{quiz}/reopen', [FacultyQuizController::class, 'reopen'])->name('quizzes.reopen');
+        Route::delete('/quizzes/{quiz}', [FacultyQuizController::class, 'destroy'])->name('quizzes.destroy');
+        Route::get('/quizzes/{quiz}/results', [FacultyQuizController::class, 'results'])->name('quizzes.results');
+
         Route::get('/performance', [FacultyPerformanceController::class, 'index'])->name('performance');
         Route::get('/performance/export', [FacultyPerformanceController::class, 'export'])->name('performance.export');
         Route::post('/performance/remind', [FacultyPerformanceController::class, 'sendReminder'])->name('performance.remind');
@@ -219,6 +235,14 @@ Route::middleware('auth')->group(function () {
     Route::get('/quiz/{session}/take', [QuizController::class, 'take'])->name('quiz.take');
     Route::post('/quiz/{session}/submit', [QuizController::class, 'submit'])->name('quiz.submit');
     Route::get('/quiz/{session}/results', [QuizController::class, 'results'])->name('quiz.results');
+    // Class quizzes assigned by faculty. /q/{token} is the link a faculty
+    // member shares when announcing a quiz; guests are sent to login first.
+    Route::get('/class-quizzes', [ClassQuizController::class, 'index'])->name('class-quizzes');
+    Route::get('/q/{token}', [ClassQuizController::class, 'show'])->name('class-quiz.show');
+    Route::post('/q/{token}/start', [ClassQuizController::class, 'start'])->name('class-quiz.start');
+    Route::get('/q/{token}/take', [ClassQuizController::class, 'take'])->name('class-quiz.take');
+    Route::post('/q/{token}/submit', [ClassQuizController::class, 'submit'])->name('class-quiz.submit');
+    Route::get('/q/{token}/result', [ClassQuizController::class, 'result'])->name('class-quiz.result');
     // Mock exams are locked until faculty hands out the access code.
     Route::get('/mock-exams', [MockExamController::class, 'index'])->name('mock-exams');
     Route::post('/mock-exams/unlock', [MockExamController::class, 'unlock'])->name('mock-exams.unlock');
