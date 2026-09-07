@@ -3,1206 +3,1149 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CPAce — Adaptive CPALE Review System</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <title>CPAce — Adaptive Review. Smarter Preparation.</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <style>
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
         :root {
-            --maroon:       #7B1D1D;
-            --maroon-dark:  #5a1414;
-            --maroon-mid:   #8B2525;
-            --maroon-bright:#a12626;
-            --maroon-pale:  #f9f0f0;
-            --maroon-light: #f5e8e8;
-            --maroon-border:#e8d5d5;
-            --accent-red:   #c0392b;
-            --white:        #ffffff;
-            --dark:         #1a1a1a;
-            --gray:         #666666;
-            --gray-light:   #f4f5f7;
-            --gray-border:  #eef0f2;
+            --red:        #7B1D1D;   /* login --maroon        */
+            --red-dark:   #5A1414;   /* login --maroon-dark   */
+            --red-bright: #A12626;   /* login --maroon-bright */
+            --red-soft:   #EBD6D6;
+            --red-pale:   #F5E8E8;
+            --navy:       #14283E;
+            --navy-soft:  #1F3550;
+            --body:       #66768A;
+            --muted:      #93A0AE;
+            --line:       #E5E9ED;
+            --soft:       #F4F5F7;
+            --ink:        #15181D;
+            --container:  1320px;
         }
 
-        html { scroll-behavior: smooth; }
+        html { scroll-behavior: smooth; overflow-x: hidden; }
         body {
-            font-family: 'Poppins', sans-serif;
-            color: var(--dark);
+            font-family: 'Montserrat', ui-sans-serif, system-ui, sans-serif;
+            color: var(--body);
+            background: #fff;
             overflow-x: hidden;
-            background: var(--gray-light);
+            -webkit-font-smoothing: antialiased;
         }
+        img { max-width: 100%; display: block; }
+        a { text-decoration: none; }
+        ul { list-style: none; }
+
+        .container { width: 100%; max-width: var(--container); margin: 0 auto; padding: 0 32px; position: relative; z-index: 1; }
+
+        /* ─── SHARED BITS ─────────────────────────────────────── */
+        .eyebrow {
+            display: flex; align-items: center; gap: 12px;
+            font-size: .7rem; font-weight: 600; letter-spacing: .17em;
+            text-transform: uppercase; color: var(--navy); margin-bottom: 18px;
+        }
+        .eyebrow::before { content: ''; width: 30px; height: 2px; background: var(--red); flex: 0 0 auto; }
+        .eyebrow .nocaps { text-transform: none; }
+        .eyebrow.on-red { color: rgba(255,255,255,.92); }
+        .eyebrow.on-red::before { background: rgba(255,255,255,.85); }
+
+        .sec-title {
+            font-size: clamp(1.55rem, 2.35vw, 2.05rem); font-weight: 700;
+            color: var(--navy); line-height: 1.3; letter-spacing: -.022em;
+        }
+        .sec-text { font-size: .8rem; line-height: 1.72; color: var(--body); margin-top: 20px; max-width: 420px; }
+
+        .btn {
+            display: inline-flex; align-items: center; gap: 10px;
+            padding: .82rem 1.75rem; border-radius: 8px; white-space: nowrap;
+            font-size: .76rem; font-weight: 600; letter-spacing: .005em;
+            transition: transform .18s ease, box-shadow .18s ease, background .18s ease, color .18s ease;
+        }
+        .btn i { font-size: .72rem; transition: transform .18s ease; }
+        .btn:hover i { transform: translateX(3px); }
+
+        .btn-red { background: var(--red); color: #fff; box-shadow: 0 8px 20px rgba(123,29,29,.26); }
+        .btn-red:hover { background: var(--red-dark); transform: translateY(-2px); box-shadow: 0 12px 26px rgba(123,29,29,.34); }
+
+        .btn-outline { background: #fff; color: var(--red); border: 1.5px solid var(--red); }
+        .btn-outline:hover { background: var(--red-pale); transform: translateY(-2px); }
+
+        .btn-white { background: #fff; color: var(--red); box-shadow: 0 8px 22px rgba(0,0,0,.16); }
+        .btn-white:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(0,0,0,.2); }
+
+        .btn-pill { border-radius: 999px; }
+
+        /* wordmark */
+        .wordmark { font-weight: 800; letter-spacing: -.035em; line-height: 1; }
+        .wordmark .w-a { color: var(--red); }
+        .wordmark .w-b { color: var(--navy); }
+        .wordmark.on-dark .w-a, .wordmark.on-dark .w-b { color: #fff; }
 
         /* ─── NAVBAR ──────────────────────────────────────────── */
-        nav {
-            position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-            height: 68px;
-            background: rgba(255,255,255,.97);
-            border-bottom: 1px solid var(--gray-border);
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 0;
-            transition: box-shadow .3s;
+        header.nav {
+            position: fixed; inset: 0 0 auto 0; z-index: 200; height: 86px;
+            background: rgba(255,255,255,.96);
+            backdrop-filter: saturate(180%) blur(10px);
+            display: flex; align-items: center;
+            transition: box-shadow .25s ease, height .25s ease;
         }
-        nav.scrolled { box-shadow: 0 4px 24px rgba(0,0,0,.08); }
+        header.nav.scrolled { box-shadow: 0 2px 18px rgba(20,32,48,.06); height: 74px; }
+        .nav-inner { display: flex; align-items: center; width: 100%; }
+        .nav-brand { margin-right: 48px; display: flex; align-items: center; }
+        .nav-brand img { height: 47px; width: auto; object-fit: contain; transition: height .25s ease; }
+        header.nav.scrolled .nav-brand img { height: 41px; }
 
-        .nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; padding-left: 6%; }
-        .nav-logo img { height: 40px; object-fit: contain; }
-        .nav-logo .nav-wordmark { height: 28px; object-fit: contain; }
-
-        .nav-links { display: flex; gap: 1.8rem; list-style: none; }
+        .nav-links { display: flex; gap: 2.1rem; margin-right: auto; }
         .nav-links a {
-            font-size: .85rem; font-weight: 500; color: var(--dark);
-            text-decoration: none; transition: color .2s;
+            position: relative; font-size: .92rem; font-weight: 500;
+            color: var(--navy-soft); padding-bottom: 6px; transition: color .18s;
         }
-        .nav-links a:hover { color: var(--maroon); }
-
-        .nav-actions { display: flex; gap: .75rem; align-items: center; padding-right: 6%; }
-
-        .btn-login {
-            padding: .55rem 1.5rem; font-size: .85rem; font-weight: 600;
-            color: #fff; background: linear-gradient(135deg, var(--maroon) 0%, var(--maroon-dark) 100%);
-            border: none; border-radius: 10px; text-decoration: none;
-            box-shadow: 0 4px 14px rgba(123,29,29,.25);
-            transition: transform .2s, box-shadow .2s;
+        .nav-links a::after {
+            content: ''; position: absolute; left: 0; bottom: 0; height: 2px;
+            width: 0; background: var(--red); transition: width .22s ease;
         }
-        .btn-login:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(123,29,29,.35); }
+        .nav-links a:hover { color: var(--red); }
+        .nav-links a:hover::after, .nav-links a.active::after { width: 100%; }
+        .nav-links a.active { color: var(--red); font-weight: 600; }
 
-        .hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; }
-        .hamburger span { width: 24px; height: 2px; background: var(--dark); border-radius: 4px; }
+        .nav-actions { display: flex; align-items: center; gap: 1.2rem; }
+
+        .burger { display: none; flex-direction: column; gap: 5px; cursor: pointer; padding: 6px; }
+        .burger span { width: 22px; height: 2px; background: var(--navy); border-radius: 3px; transition: .25s; }
 
         .mobile-menu {
-            display: none; position: fixed; top: 68px; left: 0; right: 0;
-            background: #fff; border-bottom: 1px solid var(--gray-border);
-            padding: 1rem 6%; z-index: 99; flex-direction: column; gap: .75rem;
-            box-shadow: 0 8px 24px rgba(0,0,0,.08);
+            position: fixed; top: 86px; left: 0; right: 0; z-index: 199;
+            background: #fff; border-bottom: 1px solid var(--line);
+            padding: 14px 28px 20px; display: none; flex-direction: column;
+            box-shadow: 0 14px 30px rgba(20,30,45,.1);
         }
         .mobile-menu.open { display: flex; }
         .mobile-menu a {
-            font-size: .9rem; font-weight: 500; color: var(--dark);
-            text-decoration: none; padding: .6rem 0;
-            border-bottom: 1px solid var(--gray-border);
+            font-size: .85rem; font-weight: 500; color: var(--navy);
+            padding: .75rem 0; border-bottom: 1px solid var(--line);
         }
-        .mobile-menu a:last-child { border: none; }
+        .mobile-menu a:last-child { border: none; color: var(--red); font-weight: 600; }
 
         /* ─── HERO ────────────────────────────────────────────── */
         .hero {
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            padding: 118px 6% 140px;
-            background: linear-gradient(115deg, #6a1a1a 0%, #3a1010 40%, #130707 100%);
-            position: relative;
-            overflow: hidden;
+            position: relative; background: #fff; overflow: hidden;
+            min-height: 100vh; min-height: 100svh;
+            display: flex; align-items: center;
+            padding: 118px 0 72px;
         }
 
-        .hero-shapes { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
-        .hero-shapes span { position: absolute; pointer-events: none; }
-        .hero-shapes .hs1 { top: 12%; left: 5%; width: 180px; height: 180px; border: 2px solid rgba(255,255,255,.06); border-radius: 50%; }
-        .hero-shapes .hs2 { bottom: 18%; left: 8%; width: 120px; height: 120px; border: 2px solid rgba(255,215,106,.1); border-radius: 30px; transform: rotate(28deg); }
-        .hero-shapes .hs3 { top: 20%; right: 35%; width: 0; height: 0; border-left: 26px solid transparent; border-right: 26px solid transparent; border-bottom: 45px solid rgba(255,255,255,.04); transform: rotate(-18deg); }
-        .hero-shapes .hs4 { bottom: 25%; right: 8%; width: 80px; height: 80px; background: rgba(192,57,43,.18); border-radius: 20px; transform: rotate(20deg); }
-        .hero-shapes .hs5 { top: 35%; right: 5%; width: 100px; height: 100px; border: 1.5px solid rgba(255,255,255,.05); border-radius: 50%; }
-        .hero-shapes .hs6 { top: 8%; right: 22%; width: 60px; height: 60px; border: 1.5px dashed rgba(255,255,255,.08); border-radius: 50%; animation: spinSlow 30s linear infinite; }
-        @keyframes spinSlow { to { transform: rotate(360deg) } }
-
-        .hero::before {
-            content: ''; position: absolute; z-index: 1; pointer-events: none;
-            top: 90px; right: 4%; width: 240px; height: 180px;
-            background-image: radial-gradient(rgba(255,255,255,.1) 1.5px, transparent 1.6px);
-            background-size: 19px 19px;
-            -webkit-mask-image: radial-gradient(ellipse at top right, #000 25%, transparent 78%);
-                    mask-image: radial-gradient(ellipse at top right, #000 25%, transparent 78%);
-        }
-
-        .hero-inner {
-            width: 100%; max-width: 1280px; margin: 0 auto;
-            display: grid; grid-template-columns: 48fr 52fr;
-            gap: 4rem; align-items: center;
-            position: relative; z-index: 2;
-        }
-
-        .hero-badge {
-            display: inline-flex; align-items: center; gap: .55rem;
-            background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.15);
-            color: #f5a0a0; font-size: .72rem; font-weight: 600;
-            padding: .4rem 1rem .4rem .85rem; border-radius: 50px; margin-bottom: 1.5rem;
-            backdrop-filter: blur(8px);
-        }
-        .pulse-dot { width: 7px; height: 7px; border-radius: 50%; background: #f5a0a0; position: relative; flex-shrink: 0; }
-        .pulse-dot::after {
-            content: ''; position: absolute; inset: -4px; border-radius: 50%;
-            background: rgba(245,160,160,.4);
-            animation: pulseDot 2s ease-out infinite;
-        }
-        @keyframes pulseDot { 0% { transform: scale(.4); opacity: .9 } 70%,100% { transform: scale(1.3); opacity: 0 } }
-
-        .hero-copy h1 {
-            font-size: clamp(2.2rem, 4vw, 3.4rem);
-            font-weight: 800; line-height: 1.12; color: #fff;
-            margin-bottom: 1.2rem; letter-spacing: -1px;
-        }
-        .hero-copy h1 span { color: #ffca6a; }
-        .hero-copy > p {
-            font-size: .95rem; color: rgba(255,255,255,.55); line-height: 1.8;
-            margin-bottom: 2.2rem; max-width: 520px;
-        }
-
-        .hero-cta { display: flex; gap: .9rem; flex-wrap: wrap; margin-bottom: 2.4rem; }
-
-        .cta-primary {
-            display: inline-flex; align-items: center; gap: .6rem;
-            padding: .95rem 2rem;
-            background: linear-gradient(135deg, #ffca6a 0%, #e8a830 100%);
-            color: #3a1010; border-radius: 12px; font-weight: 700; font-size: .92rem;
-            text-decoration: none; border: none; cursor: pointer;
-            box-shadow: 0 6px 24px rgba(255,202,106,.3);
-            transition: transform .2s, box-shadow .2s;
-        }
-        .cta-primary i { transition: transform .25s; }
-        .cta-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 32px rgba(255,202,106,.45); }
-        .cta-primary:hover i { transform: translateX(4px); }
-
-        .cta-secondary {
-            display: inline-flex; align-items: center; gap: .6rem;
-            padding: .95rem 2rem;
-            background: rgba(255,255,255,.08); color: #fff;
-            border: 1.5px solid rgba(255,255,255,.2); border-radius: 12px;
-            font-weight: 600; font-size: .92rem; text-decoration: none;
-            backdrop-filter: blur(8px); transition: all .2s;
-        }
-        .cta-secondary:hover { background: rgba(255,255,255,.15); border-color: rgba(255,255,255,.35); }
-
-        .hero-proof {
-            display: flex; align-items: center; gap: 1.5rem;
-            padding-top: 1.8rem; border-top: 1px solid rgba(255,255,255,.1);
-        }
-        .hero-proof-item { display: flex; align-items: center; gap: .5rem; }
-        .hero-proof-item i { font-size: 1rem; color: rgba(255,255,255,.35); }
-        .hero-proof-item span { font-size: .78rem; color: rgba(255,255,255,.45); font-weight: 500; }
-        .hero-proof-item strong { color: rgba(255,255,255,.8); }
-
-        .hero-visual { position: relative; }
-
-        .hero-visual-back {
+        /* The source image is already desaturated and already fades to white
+           on its left side, so it is laid in full-bleed with no filter or
+           gradient of our own on top of it. */
+        .hero-photo, .hero-photo-fg {
             position: absolute; z-index: 0;
-            top: 28px; left: 30px; right: -22px; bottom: -22px;
-            border-radius: 30px; transform: rotate(2.4deg);
-            background: linear-gradient(135deg, var(--maroon-bright) 0%, var(--maroon-dark) 100%);
-            box-shadow: 0 20px 60px rgba(0,0,0,.35);
+            bottom: 0; left: 9.3%; width: 84%;
+            aspect-ratio: 1920 / 1080;
+            background-size: 100% 100%;
+            background-repeat: no-repeat;
+            -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 7%, #000 74%, transparent 99%),
+                                linear-gradient(to right, transparent 0%, #000 14%);
+            -webkit-mask-composite: source-in;
+                    mask-image: linear-gradient(to bottom, transparent 0%, #000 7%, #000 74%, transparent 99%),
+                                linear-gradient(to right, transparent 0%, #000 14%);
+                    mask-composite: intersect;
+        }
+        /* Base plate: already desaturated and faded to white, so it is
+           multiplied onto the hero to drop its near-white edges. */
+        .hero-photo {
+            background-image: url("{{ asset('images/landing page.png') }}");
+            mix-blend-mode: multiply;
+            filter: brightness(1.06) contrast(.94);
+        }
+        /* Cut-out of the same frame (transparent sky) laid over the plate so
+           the building reads clearly instead of washing out. */
+        .hero-photo-fg {
+            background-image: url("{{ asset('images/overaly.png') }}");
+            transform: translate(1.042%, -2.222%);
+            z-index: 2;
+        }
+        /* The cut-out tops out at ~87% alpha, so the red shapes behind it bled
+           through the building. A second identical pass takes it to ~98%. */
+        .hero-photo-fg::after {
+            content: ''; position: absolute; inset: 0;
+            background-image: inherit;
+            background-size: 100% 100%;
+            background-repeat: no-repeat;
         }
 
-        .hero-ring-spin {
-            position: absolute; z-index: 1; pointer-events: none;
-            width: 120px; height: 120px; bottom: -30px; left: -36px;
-            border: 1.5px dashed rgba(255,255,255,.15); border-radius: 50%;
-            animation: spinSlow 30s linear infinite;
+        .hero-slashes { position: absolute; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; }
+        .hero-inner { position: relative; z-index: 3; }
+        .hero-slashes i {
+            position: absolute; display: block; transform: skewX(-19deg); border-radius: 4px;
         }
+        .hs-1 { top: -14%; right: -5%;  width: 13%;  height: 82%; background: linear-gradient(165deg, var(--red-bright), var(--red-dark)); }
+        .hs-2 { top: -14%; right: 9%;    width: 2.7%; height: 66%; background: linear-gradient(165deg, rgba(156,38,38,.82), rgba(94,20,20,.66)); }
+        .hs-3 { top: -14%; right: 12.4%; width: .9%;  height: 52%; background: rgba(156,38,38,.32); }
+        .hs-4 { bottom: -8%; right: -5%;  width: 9.6%; height: 36%; background: linear-gradient(195deg, var(--red-dark), var(--red-bright)); }
+        .hs-5 { bottom: -8%; right: 7.4%; width: 1.7%; height: 25%; background: rgba(156,38,38,.44); }
 
-        .hero-visual-frame {
-            position: relative; z-index: 2;
-            aspect-ratio: 4 / 3; border-radius: 26px; overflow: hidden;
-            background: #fdf3f3;
-            border: 5px solid rgba(255,255,255,.1);
-            box-shadow: 0 35px 90px -25px rgba(0,0,0,.55);
-        }
-        .hero-visual-frame img { width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; }
+        .hero-copy { max-width: 560px; }
 
-        .float-card {
-            position: absolute; z-index: 3;
-            background: rgba(26,10,10,.55); backdrop-filter: blur(12px);
-            border: 1px solid rgba(255,255,255,.1); border-radius: 16px;
-            box-shadow: 0 12px 34px rgba(0,0,0,.3);
-            display: flex; align-items: center; gap: .7rem;
-            padding: .75rem .95rem;
-            animation: chipFloat 6s ease-in-out infinite;
+        .hero-brand { line-height: 0; margin-bottom: 16px; }
+        .hero-brand img {
+            height: clamp(38px, 5.4vw, 78px); width: auto; object-fit: contain;
         }
-        .float-card strong { display: block; font-size: .78rem; font-weight: 700; color: #fff; line-height: 1.25; white-space: nowrap; }
-        .float-card small { display: block; font-size: .66rem; color: rgba(255,255,255,.45); white-space: nowrap; }
+        .hero-head {
+            font-size: clamp(1.35rem, 2.1vw, 1.88rem); font-weight: 700;
+            color: var(--navy); line-height: 1.34; letter-spacing: -.022em;
+        }
+        .hero-sub { font-size: .9rem; line-height: 1.6; color: var(--body); margin-top: 22px; max-width: 374px; }
+        .hero-cta { display: flex; gap: 14px; margin-top: 26px; flex-wrap: wrap; }
 
-        .fc-readiness { top: -24px; left: -34px; }
-        .fc-streak { top: 42%; right: -26px; animation-delay: 1.6s; }
-        .fc-exam { bottom: -22px; left: 10%; animation-delay: .8s; animation-duration: 7s; }
+        .hero-mini { display: flex; align-items: center; margin-top: 50px; flex-wrap: wrap; }
+        .hero-mini .mini {
+            display: flex; align-items: center; gap: 13px;
+            padding: 3px 30px; border-right: 1px solid var(--line);
+        }
+        .hero-mini .mini:first-child { padding-left: 0; }
+        .hero-mini .mini:last-child { border-right: none; }
+        .mini-ico {
+            width: 38px; height: 38px; border-radius: 50%; flex: 0 0 auto;
+            background: var(--red-pale); color: var(--red);
+            display: grid; place-items: center; font-size: .82rem;
+        }
+        .mini-txt { font-size: .66rem; font-weight: 600; color: var(--navy); line-height: 1.5; }
 
-        .fc-ring {
-            width: 46px; height: 46px; border-radius: 50%; flex-shrink: 0;
-            background: conic-gradient(#ffca6a 0 81%, rgba(255,255,255,.15) 81% 100%);
-            display: flex; align-items: center; justify-content: center; position: relative;
+        /* ─── WHY / ABOUT ─────────────────────────────────────── */
+                /* ─── DARK BAND ───────────────────────────────────────── */
+        /* The login screen's three-layer backdrop — dark campus photo, a
+           maroon-to-near-black scrim, then a soft dot texture — reused by
+           every red section on the page so they read as one surface. */
+        .band { position: relative; overflow: hidden; background: #0d0505; }
+        .band-bg {
+            position: absolute; inset: 0; z-index: 0;
+            background: url("{{ asset('images/CPACE login bg.png') }}") center / cover no-repeat;
+            filter: grayscale(35%) brightness(.45) saturate(.85);
+            transform: scale(1.05);
         }
-        .fc-ring::before { content: ''; position: absolute; inset: 6px; background: rgba(26,10,10,.85); border-radius: 50%; }
-        .fc-ring span { position: relative; font-size: .68rem; font-weight: 800; color: #ffca6a; }
+        .band-scrim {
+            position: absolute; inset: 0; z-index: 1;
+            background:
+                radial-gradient(ellipse 70% 60% at 20% 15%, rgba(161,38,38,.38), transparent 62%),
+                radial-gradient(ellipse 60% 55% at 85% 90%, rgba(123,29,29,.32), transparent 60%),
+                linear-gradient(135deg, rgba(19,7,7,.90) 0%, rgba(58,16,16,.86) 45%, rgba(13,5,5,.94) 100%);
+        }
+        .band-dots {
+            position: absolute; inset: 0; z-index: 2; pointer-events: none;
+            background-image: radial-gradient(rgba(255,255,255,.075) 1.5px, transparent 1.6px);
+            background-size: 20px 20px;
+            -webkit-mask-image: radial-gradient(ellipse at top right, #000 20%, transparent 75%);
+                    mask-image: radial-gradient(ellipse at top right, #000 20%, transparent 75%);
+        }
+        .band .deco      { z-index: 3; }
+        .band .container { z-index: 4; }
 
-        .fc-ico {
-            width: 40px; height: 40px; border-radius: 11px; flex-shrink: 0;
-            display: flex; align-items: center; justify-content: center; font-size: .95rem;
-        }
-        .fc-ico.flame { background: linear-gradient(135deg, #7B1D1D, #a53232); color: #ffd9a0; }
-        .fc-ico.check { background: rgba(16,185,129,.15); color: #34d399; border: 1px solid rgba(16,185,129,.2); }
+        .why { padding: 96px 0 100px; }
 
-        .hero-wave { position: absolute; bottom: -2px; left: 0; right: 0; z-index: 4; line-height: 0; pointer-events: none; }
-        .hero-wave svg { display: block; width: 100%; height: 96px; }
+        /* Type and rules flipped for the dark ground */
+        .why .eyebrow          { color: rgba(255,255,255,.92); }
+        .why .eyebrow::before  { background: #D9A0A0; }
+        .why .sec-title        { color: #fff; }
+        .why .sec-text         { color: rgba(255,255,255,.8); }
+        .why .why-right        { border-left-color: rgba(255,255,255,.15); }
+        .why .feat-ico {
+            background: rgba(255,255,255,.1); color: #EFC6C6;
+            border: 1px solid rgba(255,255,255,.15);
+        }
+        .why .feat h4          { color: #fff; }
+        .why .feat p           { color: rgba(255,255,255,.78); }
 
-        @keyframes chipFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
-
-        /* ─── SECTION UTILITIES ───────────────────────────────── */
-        section { padding: 80px 6%; }
-
-        .section-eyebrow {
-            display: inline-flex; align-items: center; gap: .4rem;
-            background: linear-gradient(135deg, var(--maroon), var(--maroon-dark));
-            color: #f5a0a0; font-size: .72rem; font-weight: 600;
-            padding: .3rem .95rem; border-radius: 50px; margin-bottom: .9rem;
-            box-shadow: 0 2px 8px rgba(123,29,29,.2);
+        /* Ornaments have to go light here or they vanish into the dark. */
+        .why .deco-dots { color: rgba(255,255,255,.2); }
+        .why .deco-ring { border-color: rgba(255,255,255,.14); }
+        .why .deco-tile { border-color: rgba(255,255,255,.15); }
+        .why .deco-glow { background: radial-gradient(circle, rgba(255,255,255,.07) 0%, rgba(255,255,255,0) 70%); }
+        .why-grid { display: grid; grid-template-columns: 360px 1fr; gap: 62px; align-items: start; }
+        .why-right { border-left: 1px solid var(--line); padding-left: 62px; }
+        .feat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 42px 58px; max-width: 690px; }
+        .feat { display: flex; gap: 16px; }
+        .feat-ico {
+            width: 44px; height: 44px; border-radius: 50%; flex: 0 0 auto;
+            background: var(--red-pale); color: var(--red);
+            display: grid; place-items: center; font-size: .92rem;
         }
-        .section-title {
-            font-size: clamp(1.7rem, 2.8vw, 2.4rem);
-            font-weight: 800; line-height: 1.2; color: var(--dark);
-            margin-bottom: .9rem; letter-spacing: -.3px;
-        }
-        .section-title span { color: var(--maroon); }
-        .section-sub { font-size: .92rem; color: var(--gray); line-height: 1.7; max-width: 560px; }
-        .text-center { text-align: center; }
-        .sub-center { margin-left: auto; margin-right: auto; }
-
-        /* ─── ABOUT ────────────────────────────────────────────── */
-        .about-section { background: #fff; }
-        .about-grid {
-            display: grid; grid-template-columns: 1fr 1fr; gap: 4rem;
-            align-items: center; margin-top: 3rem;
-        }
-        .about-text p { font-size: .92rem; color: var(--gray); line-height: 1.8; margin-bottom: 1rem; }
-        .about-text p strong { color: var(--dark); font-weight: 600; }
-
-        .about-cards { display: flex; flex-direction: column; gap: 1rem; }
-        .about-card {
-            background: #fff; border-radius: 16px; padding: 1.3rem 1.5rem;
-            border: 1px solid var(--gray-border);
-            box-shadow: 0 2px 10px rgba(0,0,0,.03);
-            display: flex; align-items: flex-start; gap: 1rem;
-            transition: transform .2s, box-shadow .2s;
-        }
-        .about-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(123,29,29,.08); }
-        .about-card-icon {
-            width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0;
-            background: linear-gradient(135deg, var(--maroon), var(--maroon-dark));
-            display: flex; align-items: center; justify-content: center;
-            color: #f5a0a0; font-size: 1rem;
-            box-shadow: 0 4px 12px rgba(123,29,29,.2);
-        }
-        .about-card h4 { font-size: .88rem; font-weight: 700; color: var(--dark); margin-bottom: .2rem; }
-        .about-card p { font-size: .8rem; color: var(--gray); line-height: 1.55; margin: 0; }
-
-        /* ─── FEATURES ────────────────────────────────────────── */
-        .features-section { background: var(--gray-light); }
-        .features-grid {
-            display: grid; grid-template-columns: repeat(3, 1fr);
-            gap: 1.25rem; margin-top: 3rem;
-        }
-        .feature-card {
-            background: #fff; border-radius: 18px; padding: 1.8rem;
-            border: 1px solid var(--gray-border);
-            box-shadow: 0 2px 10px rgba(0,0,0,.04);
-            transition: transform .25s, box-shadow .25s;
-            position: relative; overflow: hidden;
-        }
-        .feature-card::before {
-            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
-            background: linear-gradient(90deg, var(--maroon), var(--accent-red));
-        }
-        .feature-card::after {
-            content: ''; position: absolute; top: -55px; right: -55px;
-            width: 150px; height: 150px; border-radius: 50%;
-            background: rgba(123,29,29,.04); pointer-events: none;
-        }
-        .feature-card:hover { transform: translateY(-5px); box-shadow: 0 12px 40px rgba(123,29,29,.1); }
-        .feature-icon {
-            width: 50px; height: 50px; border-radius: 14px;
-            background: linear-gradient(135deg, var(--maroon), var(--maroon-dark));
-            display: flex; align-items: center; justify-content: center;
-            color: #f5a0a0; font-size: 1.2rem; margin-bottom: 1.2rem;
-            box-shadow: 0 4px 12px rgba(123,29,29,.2);
-        }
-        .feature-card h3 { font-size: 1rem; font-weight: 700; color: var(--dark); margin-bottom: .5rem; }
-        .feature-card p { font-size: .84rem; color: var(--gray); line-height: 1.65; }
-
-        /* ─── CPALE SUBJECTS ──────────────────────────────────── */
-        .subjects-section { background: #fff; }
-        .subjects-grid {
-            display: grid; grid-template-columns: repeat(3, 1fr);
-            gap: 1.25rem; margin-top: 3rem;
-        }
-        .subject-card {
-            background: #fff; border-radius: 18px; padding: 1.6rem;
-            border: 1px solid var(--gray-border);
-            box-shadow: 0 2px 10px rgba(0,0,0,.04);
-            text-align: center;
-            transition: transform .25s, box-shadow .25s, border-color .25s;
-            position: relative; overflow: hidden;
-        }
-        .subject-card::before {
-            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
-            background: linear-gradient(90deg, var(--maroon), var(--accent-red));
-        }
-        .subject-card:hover { transform: translateY(-4px); box-shadow: 0 10px 32px rgba(123,29,29,.1); border-color: #e3d5d5; }
-        .subject-icon {
-            width: 56px; height: 56px; border-radius: 16px; margin: 0 auto 1rem;
-            background: linear-gradient(135deg, var(--maroon-pale), #fff);
-            border: 1px solid var(--maroon-border);
-            display: flex; align-items: center; justify-content: center;
-            color: var(--maroon); font-size: 1.4rem;
-        }
-        .subject-card h3 { font-size: .9rem; font-weight: 700; color: var(--dark); margin-bottom: .3rem; }
-        .subject-card .subject-code { font-size: .72rem; font-weight: 600; color: var(--maroon); text-transform: uppercase; letter-spacing: .5px; }
-        .subject-card p { font-size: .8rem; color: var(--gray); line-height: 1.55; margin-top: .5rem; }
+        .feat h4 { font-size: .84rem; font-weight: 600; color: var(--navy); margin-bottom: 7px; }
+        .feat p { font-size: .76rem; line-height: 1.72; color: var(--body); }
 
         /* ─── HOW IT WORKS ────────────────────────────────────── */
-        .how-section { background: var(--gray-light); }
-        .flow-container {
-            display: flex; align-items: flex-start; justify-content: center;
-            gap: 0; margin-top: 3rem; flex-wrap: wrap;
-            position: relative;
-        }
-        .flow-step {
-            display: flex; flex-direction: column; align-items: center;
-            text-align: center; flex: 0 0 auto; width: 160px;
-        }
-        .flow-circle {
-            width: 64px; height: 64px; border-radius: 50%;
-            background: linear-gradient(135deg, var(--maroon), var(--maroon-dark));
-            display: flex; align-items: center; justify-content: center;
-            color: #fff; font-size: 1.3rem;
-            box-shadow: 0 6px 20px rgba(123,29,29,.3);
-            margin-bottom: .8rem;
-            position: relative;
-        }
-        .flow-circle .flow-num {
-            position: absolute; top: -6px; right: -6px;
-            width: 22px; height: 22px; border-radius: 50%;
-            background: #ffca6a; color: #3a1010;
-            font-size: .6rem; font-weight: 800;
-            display: flex; align-items: center; justify-content: center;
-        }
-        .flow-step h4 { font-size: .82rem; font-weight: 700; color: var(--dark); margin-bottom: .2rem; }
-        .flow-step p { font-size: .72rem; color: var(--gray); line-height: 1.45; padding: 0 .5rem; }
-        .flow-arrow {
-            display: flex; align-items: center; padding-top: 22px;
-            color: var(--maroon-border); font-size: 1.2rem;
-        }
+        .how { padding: 88px 0 96px; background: var(--soft); position: relative; overflow: hidden; }
+        .how-grid { display: grid; grid-template-columns: 400px 1fr; gap: 60px; align-items: center; }
 
-        /* ─── BENEFITS ────────────────────────────────────────── */
-        .benefits-section { background: #fff; }
-        .benefits-grid {
-            display: grid; grid-template-columns: repeat(3, 1fr);
-            gap: 1.25rem; margin-top: 3rem;
+        .steps { margin-top: 34px; }
+        .step { display: flex; gap: 16px; position: relative; padding-bottom: 24px; }
+        .step:last-child { padding-bottom: 0; }
+        .step::before {
+            content: ''; position: absolute; left: 13px; top: 30px; bottom: 2px;
+            width: 1.5px; background: #E2CDCD;
         }
-        .benefit-card {
-            background: #fff; border-radius: 18px; padding: 1.6rem;
-            border: 1px solid var(--gray-border);
-            box-shadow: 0 2px 10px rgba(0,0,0,.04);
-            display: flex; align-items: flex-start; gap: 1rem;
-            transition: transform .25s, box-shadow .25s;
-            position: relative; overflow: hidden;
+        .step:last-child::before { display: none; }
+        .step-num {
+            width: 27px; height: 27px; border-radius: 50%; flex: 0 0 auto; z-index: 1;
+            background: var(--red); color: #fff; font-size: .7rem; font-weight: 700;
+            display: grid; place-items: center;
         }
-        .benefit-card::before {
-            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
-            background: linear-gradient(90deg, var(--maroon), var(--accent-red));
-        }
-        .benefit-card:hover { transform: translateY(-4px); box-shadow: 0 10px 32px rgba(123,29,29,.08); }
-        .benefit-icon {
-            width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0;
-            background: linear-gradient(135deg, var(--maroon-pale), #fff);
-            border: 1px solid var(--maroon-border);
-            display: flex; align-items: center; justify-content: center;
-            color: var(--maroon); font-size: 1rem;
-        }
-        .benefit-card h4 { font-size: .88rem; font-weight: 700; color: var(--dark); margin-bottom: .3rem; }
-        .benefit-card p { font-size: .8rem; color: var(--gray); line-height: 1.55; margin: 0; }
+        .step h4 { font-size: .82rem; font-weight: 600; color: var(--navy); margin-bottom: 4px; }
+        .step p { font-size: .74rem; line-height: 1.6; color: var(--body); }
 
-        /* ─── FAQ ─────────────────────────────────────────────── */
-        .faq-section { background: var(--gray-light); }
-        .faq-grid {
-            display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem;
-            margin-top: 3rem; max-width: 960px; margin-left: auto; margin-right: auto;
+        /* dashboard mockup */
+        .mock-wrap { position: relative; max-width: 760px; margin-left: auto; }
+        .mock-behind {
+            position: absolute; z-index: 0; border-radius: 20px;
+            top: 26px; bottom: -20px; left: -26px; right: 22px;
+            background: linear-gradient(150deg, var(--red-bright), var(--red-dark));
+            opacity: .92;
         }
-        .faq-item {
-            background: #fff; border-radius: 16px;
-            border: 1px solid var(--gray-border);
-            overflow: hidden;
-            box-shadow: 0 2px 10px rgba(0,0,0,.03);
-            transition: box-shadow .2s;
+        .mock {
+            position: relative; z-index: 1; display: grid; grid-template-columns: 128px 1fr;
+            background: #fff; border-radius: 12px; overflow: hidden;
+            box-shadow: 0 30px 70px rgba(20,32,48,.16); font-size: 11px;
         }
-        .faq-item:hover { box-shadow: 0 6px 20px rgba(123,29,29,.06); }
-        .faq-question {
-            padding: 1.1rem 1.4rem;
-            font-size: .85rem; font-weight: 600; color: var(--dark);
-            cursor: pointer; display: flex; align-items: center; justify-content: space-between;
-            gap: .8rem; user-select: none;
-            border-left: 4px solid transparent;
-            transition: border-color .2s, background .2s;
+        .mock-side { background: linear-gradient(160deg, #3A1010, #130707); padding: 14px 10px; }
+        .mock-side .wordmark { font-size: .92rem; margin: 2px 0 16px 6px; }
+        .mock-side ul li {
+            display: flex; align-items: center; gap: 8px;
+            font-size: 8.5px; color: rgba(255,255,255,.6);
+            padding: 7px 8px; border-radius: 6px; margin-bottom: 2px;
         }
-        .faq-question:hover { background: var(--maroon-pale); border-left-color: var(--maroon); }
-        .faq-question i { color: var(--maroon); font-size: .75rem; transition: transform .3s; flex-shrink: 0; }
-        .faq-answer {
-            max-height: 0; overflow: hidden;
-            transition: max-height .3s ease, padding .3s ease;
-        }
-        .faq-answer-inner {
-            padding: 0 1.4rem 1.1rem;
-            font-size: .82rem; color: var(--gray); line-height: 1.65;
-        }
-        .faq-item.active .faq-question i { transform: rotate(180deg); }
-        .faq-item.active .faq-answer { max-height: 200px; }
-        .faq-item.active .faq-question { background: var(--maroon-pale); border-left-color: var(--maroon); }
+        .mock-side ul li i { font-size: 8px; width: 10px; }
+        .mock-side ul li.on { background: rgba(255,255,255,.13); color: #fff; font-weight: 600; }
 
-        /* ─── CONTACT ──────────────────────────────────────────── */
-        .contact-section { background: #fff; }
-        .contact-grid {
-            display: grid; grid-template-columns: 1fr 1fr; gap: 3rem;
-            align-items: start; margin-top: 3rem;
-        }
-        .contact-info-cards { display: flex; flex-direction: column; gap: 1rem; }
-        .contact-card {
-            background: #fff; border-radius: 16px; padding: 1.4rem 1.6rem;
-            border: 1px solid var(--gray-border);
-            box-shadow: 0 2px 10px rgba(0,0,0,.03);
-            display: flex; align-items: flex-start; gap: 1rem;
-            transition: transform .2s;
-        }
-        .contact-card:hover { transform: translateY(-2px); }
-        .contact-card-icon {
-            width: 42px; height: 42px; border-radius: 12px; flex-shrink: 0;
-            background: linear-gradient(135deg, var(--maroon), var(--maroon-dark));
-            display: flex; align-items: center; justify-content: center;
-            color: #f5a0a0; font-size: .95rem;
-        }
-        .contact-card h4 { font-size: .85rem; font-weight: 700; color: var(--dark); margin-bottom: .15rem; }
-        .contact-card p { font-size: .8rem; color: var(--gray); line-height: 1.5; margin: 0; }
+        .mock-main { background: #FBFBFC; padding: 12px 14px 14px; }
+        .mock-top { display: flex; justify-content: flex-end; margin-bottom: 12px; }
+        .mock-user { display: flex; align-items: center; gap: 6px; font-size: 8px; color: var(--navy); font-weight: 500; }
+        .mock-avatar { width: 16px; height: 16px; border-radius: 50%; background: var(--red-pale); display: grid; place-items: center; color: var(--red); font-size: 7px; }
 
-        .contact-map-card {
-            background: #fff; border-radius: 18px; overflow: hidden;
-            border: 1px solid var(--gray-border);
-            box-shadow: 0 2px 10px rgba(0,0,0,.04);
-        }
-        .contact-map-header {
-            background: linear-gradient(135deg, var(--maroon), var(--maroon-dark));
-            padding: 1.2rem 1.5rem; color: #fff;
-        }
-        .contact-map-header h3 { font-size: .95rem; font-weight: 700; }
-        .contact-map-header p { font-size: .78rem; opacity: .7; margin-top: .2rem; }
-        .contact-map-body {
-            padding: 1.5rem;
-        }
-        .contact-map-body p { font-size: .82rem; color: var(--gray); line-height: 1.65; margin-bottom: .8rem; }
-        .contact-map-body p:last-child { margin-bottom: 0; }
-        .contact-map-body strong { color: var(--dark); }
+        .mock-hello { font-size: 10.5px; font-weight: 700; color: var(--navy); }
+        .mock-hello + span { font-size: 7.5px; color: var(--muted); display: block; margin-top: 2px; }
 
-        /* ─── INTENDED USERS ──────────────────────────────────── */
-        .users-section { background: var(--gray-light); }
-        .users-grid {
-            display: grid; grid-template-columns: repeat(3, 1fr);
-            gap: 1.25rem; margin-top: 3rem;
-        }
-        .user-card {
-            background: #fff; border-radius: 18px; padding: 2rem;
-            border: 1px solid var(--gray-border);
-            box-shadow: 0 2px 10px rgba(0,0,0,.04);
-            text-align: center;
-            transition: transform .25s, box-shadow .25s;
-            position: relative; overflow: hidden;
-        }
-        .user-card::before {
-            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
-            background: linear-gradient(90deg, var(--maroon), var(--accent-red));
-        }
-        .user-card:hover { transform: translateY(-5px); box-shadow: 0 12px 40px rgba(123,29,29,.1); }
-        .user-avatar {
-            width: 72px; height: 72px; border-radius: 50%; margin: 0 auto 1.2rem;
-            background: linear-gradient(135deg, var(--maroon), var(--maroon-dark));
-            display: flex; align-items: center; justify-content: center;
-            color: #f5a0a0; font-size: 1.8rem;
-            box-shadow: 0 6px 20px rgba(123,29,29,.25);
-        }
-        .user-card h3 { font-size: 1.05rem; font-weight: 700; color: var(--dark); margin-bottom: .5rem; }
-        .user-card p { font-size: .82rem; color: var(--gray); line-height: 1.6; }
+        .mock-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 11px; }
+        .mock-card { background: #fff; border: 1px solid #EFF1F4; border-radius: 8px; padding: 10px; }
+        .mock-card h6 { font-size: 8px; font-weight: 600; color: var(--navy); margin-bottom: 8px; }
+        .mock-card h6 span { float: right; color: var(--muted); font-weight: 400; }
 
-        /* ─── SECURITY & DEVICES ──────────────────────────────── */
-        .info-banner {
-            background: linear-gradient(135deg, var(--maroon) 0%, var(--maroon-dark) 100%);
-            padding: 50px 6%;
-            position: relative; overflow: hidden;
+        .donut-row { display: flex; align-items: center; gap: 10px; }
+        .donut {
+            width: 46px; height: 46px; border-radius: 50%; flex: 0 0 auto;
+            background: conic-gradient(var(--red) 0 68%, #EFEFF2 68% 100%);
+            display: grid; place-items: center;
         }
-        .info-banner::before {
-            content: ''; position: absolute; inset: 0;
-            background: radial-gradient(circle at 80% 50%, rgba(192,57,43,.2), transparent 50%);
-            pointer-events: none;
+        .donut::after {
+            content: '68%'; width: 34px; height: 34px; border-radius: 50%; background: #fff;
+            display: grid; place-items: center; font-size: 8.5px; font-weight: 700; color: var(--navy);
         }
-        .info-grid {
-            display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;
-            max-width: 960px; margin: 0 auto; position: relative; z-index: 1;
+        .donut-bars { flex: 1; }
+        .donut-bars span { display: block; font-size: 7px; color: var(--muted); margin-bottom: 5px; }
+        .bar { height: 5px; border-radius: 4px; background: #EFEFF2; overflow: hidden; }
+        .bar i { display: block; height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--red), var(--red-bright)); }
+
+        .weak { display: flex; align-items: center; gap: 7px; margin-bottom: 6px; font-size: 7.5px; color: var(--navy); }
+        .weak b { width: 22px; font-weight: 600; }
+        .weak .bar { flex: 1; }
+        .weak em { font-style: normal; color: var(--muted); width: 20px; text-align: right; }
+
+        .mock-reco { font-size: 8px; font-weight: 600; color: var(--navy); margin: 12px 0 8px; }
+        .reco-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        .reco {
+            background: #fff; border: 1px solid #EFF1F4; border-radius: 8px; padding: 9px;
         }
-        .info-card {
-            background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.12);
-            border-radius: 16px; padding: 1.6rem;
-            backdrop-filter: blur(8px);
+        .reco .r-ico { width: 17px; height: 17px; border-radius: 5px; background: var(--red-pale); color: var(--red); display: grid; place-items: center; font-size: 7px; margin-bottom: 7px; }
+        .reco h6 { font-size: 7.5px; font-weight: 600; color: var(--navy); }
+        .reco small { font-size: 6.5px; color: var(--muted); display: block; margin: 2px 0 8px; }
+        .reco b { display: block; background: var(--red); color: #fff; font-size: 6.5px; font-weight: 600; text-align: center; padding: 4px 0; border-radius: 4px; }
+
+        /* ─── FEATURES ────────────────────────────────────────── */
+        .features { padding: 88px 0 92px; background: #fff; position: relative; overflow: hidden; }
+        .features-grid { display: grid; grid-template-columns: 368px 1fr; gap: 56px; align-items: center; }
+        .device-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 26px; max-width: 745px; margin-left: auto; }
+        .device-item figcaption h4 { font-size: .78rem; font-weight: 600; color: var(--navy); margin: 16px 0 6px; }
+        .device-item figcaption p { font-size: .7rem; line-height: 1.65; color: var(--body); }
+
+        .device {
+            border-radius: 10px; overflow: hidden; position: relative;
+            background: linear-gradient(150deg, #F2F4F7 0%, #E3E7EC 100%);
+            box-shadow: 0 14px 34px rgba(20,32,48,.1);
+            aspect-ratio: 4 / 3; display: grid; place-items: center; padding: 16px;
         }
-        .info-card-icon {
-            width: 44px; height: 44px; border-radius: 12px; margin-bottom: 1rem;
-            background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.15);
-            display: flex; align-items: center; justify-content: center;
-            color: #f5a0a0; font-size: 1.1rem;
+        .frame {
+            width: 100%; height: 100%; background: #2B2F36; border-radius: 9px;
+            padding: 5px; box-shadow: 0 10px 22px rgba(20,30,45,.28);
         }
-        .info-card h3 { font-size: 1rem; font-weight: 700; color: #fff; margin-bottom: .4rem; }
-        .info-card p { font-size: .82rem; color: rgba(255,255,255,.55); line-height: 1.65; }
+        .frame.laptop { border-radius: 6px; padding: 5px 5px 9px; }
+        .frame.laptop::after {
+            content: ''; display: block; width: 34%; height: 2px; margin: 3px auto 0;
+            background: rgba(255,255,255,.32); border-radius: 2px;
+        }
+        .frame.phone { width: 46%; height: 100%; margin: 0 auto; border-radius: 14px; padding: 6px 4px; }
+        .frame.phone::before {
+            content: ''; display: block; width: 26%; height: 3px; margin: 0 auto 4px;
+            background: rgba(255,255,255,.3); border-radius: 3px;
+        }
+        .screen {
+            width: 100%; height: 100%; background: #fff; border-radius: 5px;
+            padding: 8px; overflow: hidden;
+            display: flex; flex-direction: column; gap: 5px;
+        }
+        .frame.phone .screen { border-radius: 9px; padding: 7px 6px; }
+        .sk { border-radius: 3px; background: #EDEFF2; height: 6px; }
+        .sk.red { background: var(--red); }
+        .sk.pale { background: var(--red-pale); }
+        .sk.w40 { width: 40%; } .sk.w60 { width: 60%; } .sk.w75 { width: 75%; } .sk.w25 { width: 25%; }
+        .sk.tall { height: 26px; }
+        .sk-row { display: flex; gap: 5px; }
+        .sk-row > * { flex: 1; }
+        .sk-donut {
+            width: 30px; height: 30px; border-radius: 50%; margin: 2px auto 4px;
+            background: conic-gradient(var(--red) 0 62%, #E9EBEF 62% 100%);
+        }
+        .sk-bars { display: flex; align-items: flex-end; gap: 4px; height: 26px; }
+        .sk-bars i { flex: 1; border-radius: 2px 2px 0 0; background: var(--red-pale); display: block; }
+        .sk-bars i:nth-child(2) { background: var(--red); }
+        .sk-bars i:nth-child(4) { background: var(--red-bright); }
+
+        /* ─── IMPACT ──────────────────────────────────────────── */
+        .impact { padding: 58px 0; }
+        .impact::before {
+            content: ''; position: absolute; inset: -20% -10%; z-index: 3; pointer-events: none;
+            background: repeating-linear-gradient(112deg, rgba(255,255,255,.05) 0 2px, transparent 2px 90px);
+        }
+        .impact-grid { display: grid; grid-template-columns: 330px 1fr; gap: 56px; align-items: center; }
+        .impact h3 { font-size: clamp(1.25rem, 2.1vw, 1.6rem); font-weight: 700; color: #fff; line-height: 1.28; letter-spacing: -.015em; }
+        .impact p { font-size: .72rem; line-height: 1.7; color: rgba(255,255,255,.82); margin-top: 12px; max-width: 300px; }
+        .stat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 22px; max-width: 790px; margin-left: auto; }
+        .stat i { font-size: .8rem; color: rgba(255,255,255,.6); display: block; margin-bottom: 12px; }
+        .stat b { display: block; font-size: clamp(1.5rem, 2.6vw, 2rem); font-weight: 700; color: #fff; letter-spacing: -.02em; }
+        .stat span { display: block; font-size: .68rem; color: rgba(255,255,255,.82); margin-top: 5px; }
+
+        /* ─── STORIES ─────────────────────────────────────────── */
+        .stories { padding: 76px 0 84px; background: var(--soft); position: relative; overflow: hidden; }
+        .stories-grid { display: grid; grid-template-columns: 330px 1fr; gap: 56px; align-items: center; }
+
+        .carousel { position: relative; }
+        .carousel-viewport { overflow: hidden; }
+        .carousel-track { display: flex; transition: transform .45s cubic-bezier(.4,0,.2,1); }
+        .story {
+            flex: 0 0 50%; padding-right: 22px;
+        }
+        .story-card {
+            background: #fff; border: 1px solid var(--line); border-radius: 10px;
+            padding: 18px 20px; height: 100%;
+            box-shadow: 0 6px 20px rgba(20,32,48,.05);
+        }
+        .story-head { display: flex; align-items: center; gap: 11px; margin-bottom: 12px; }
+        .story-avatar {
+            width: 34px; height: 34px; border-radius: 50%; flex: 0 0 auto;
+            background: var(--red-pale); color: var(--red);
+            display: grid; place-items: center; font-size: .72rem; font-weight: 700;
+        }
+        .story-head h5 { font-size: .76rem; font-weight: 600; color: var(--navy); }
+        .story-head small { font-size: .62rem; color: var(--muted); }
+        .story-card q { display: block; font-size: .74rem; line-height: 1.75; color: var(--body); font-style: normal; }
+        .stars { margin-top: 12px; color: var(--red); font-size: .6rem; letter-spacing: 2px; }
+
+        .car-btn {
+            position: absolute; top: 50%; transform: translateY(-50%); z-index: 5;
+            width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--line);
+            background: #fff; color: var(--navy); cursor: pointer;
+            display: grid; place-items: center; font-size: .72rem;
+            box-shadow: 0 4px 12px rgba(20,30,45,.09); transition: .18s;
+        }
+        .car-btn:hover { background: var(--red); color: #fff; border-color: var(--red); }
+        .car-btn.prev { left: -15px; }
+        .car-btn.next { right: 7px; }
+
+        .dots { display: flex; justify-content: center; gap: 6px; margin-top: 20px; }
+        .dots button {
+            width: 6px; height: 6px; border-radius: 50%; border: none; padding: 0;
+            background: #D2D7DE; cursor: pointer; transition: .2s;
+        }
+        .dots button.on { background: var(--red); width: 18px; border-radius: 4px; }
+
+        /* ─── CTA BAND ────────────────────────────────────────── */
+        .cta-band { padding: 42px 0; }
+        .cta-inner {
+            display: flex; align-items: center;
+            justify-content: space-between; gap: 28px; flex-wrap: wrap;
+        }
+        .cta-inner .wordmark { font-size: 1.55rem; }
+        .cta-copy h4 { font-size: 1rem; font-weight: 700; color: #fff; }
+        .cta-copy p { font-size: .72rem; color: rgba(255,255,255,.8); margin-top: 3px; }
 
         /* ─── FOOTER ──────────────────────────────────────────── */
+        /* The CTA band is dark now too, so the footer needs a hairline to
+           keep the two from reading as one slab. */
+        /* The CTA band is dark now too, so the footer needs a hairline to
+           keep the two from reading as one slab. */
         footer {
-            background: linear-gradient(180deg, #111 0%, #080404 100%);
-            padding: 56px 6% 28px; color: rgba(255,255,255,.4);
+            position: relative; overflow: hidden;
+            background: var(--ink); padding: 64px 0 0;
+            border-top: 1px solid rgba(255,255,255,.08);
         }
-        .footer-grid {
-            display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 3rem;
-            padding-bottom: 2.5rem; border-bottom: 1px solid rgba(255,255,255,.06);
-            margin-bottom: 1.5rem;
+        footer::before {
+            content: ''; position: absolute; left: -6%; top: -40%;
+            width: 460px; height: 460px; border-radius: 50%; pointer-events: none;
+            background: radial-gradient(circle, rgba(161,38,38,.16) 0%, rgba(161,38,38,0) 70%);
         }
-        .footer-brand img { height: 36px; filter: brightness(0) invert(1); margin-bottom: .9rem; }
-        .footer-brand p { font-size: .82rem; line-height: 1.7; }
-        .footer-col h4 { font-size: .82rem; font-weight: 700; color: rgba(255,255,255,.75); margin-bottom: .9rem; }
-        .footer-col ul { list-style: none; display: flex; flex-direction: column; gap: .45rem; }
-        .footer-col ul a { font-size: .8rem; color: rgba(255,255,255,.3); text-decoration: none; transition: color .2s; }
-        .footer-col ul a:hover { color: #f5a0a0; }
-        .footer-bottom {
-            display: flex; justify-content: space-between; align-items: center;
-            font-size: .72rem; flex-wrap: wrap; gap: .5rem;
+        .foot-top {
+            position: relative; display: grid;
+            grid-template-columns: 1.7fr 1fr 1fr 1.4fr;
+            gap: 48px; padding-bottom: 52px;
         }
-        .footer-bottom a { color: #f5a0a0; text-decoration: none; }
 
-        /* ─── SCROLL REVEAL ───────────────────────────────────── */
-        .reveal { opacity: 0; transform: translateY(24px); transition: opacity .55s ease, transform .55s ease; }
-        .reveal.visible { opacity: 1; transform: translateY(0); }
+        .foot-brand .wordmark { font-size: 1.6rem; }
+        .foot-brand p {
+            font-size: .74rem; line-height: 1.8; color: rgba(255,255,255,.6);
+            margin: 16px 0 22px; max-width: 300px;
+        }
+        .foot-social { display: flex; gap: 8px; }
+        .foot-social a {
+            width: 30px; height: 30px; border-radius: 7px; background: rgba(255,255,255,.07);
+            border: 1px solid rgba(255,255,255,.09);
+            color: rgba(255,255,255,.7); display: grid; place-items: center;
+            font-size: .72rem; transition: background .18s, color .18s, transform .18s;
+        }
+        .foot-social a:hover { background: var(--red); color: #fff; border-color: var(--red); transform: translateY(-2px); }
+
+        .foot-col h5 {
+            font-size: .74rem; font-weight: 600; color: #fff;
+            letter-spacing: .01em; margin-bottom: 6px;
+        }
+        .foot-col h5::after {
+            content: ''; display: block; width: 24px; height: 2px;
+            background: var(--red-bright); margin: 9px 0 16px;
+        }
+        .foot-col li { margin-bottom: 11px; }
+        .foot-col a {
+            font-size: .74rem; color: rgba(255,255,255,.6);
+            transition: color .18s, padding-left .18s;
+        }
+        .foot-col a:hover { color: #fff; padding-left: 4px; }
+
+        .foot-uni { display: flex; gap: 12px; margin-bottom: 16px; }
+        .foot-uni img {
+            width: 38px; height: 38px; flex: 0 0 auto; object-fit: contain;
+            background: #fff; border-radius: 50%; padding: 4px;
+        }
+        .foot-uni strong { display: block; font-size: .74rem; font-weight: 600; color: #fff; }
+        .foot-uni span { display: block; font-size: .68rem; line-height: 1.55; color: rgba(255,255,255,.55); margin-top: 3px; }
+        .foot-meta { font-size: .7rem; line-height: 1.75; color: rgba(255,255,255,.55); }
+        .foot-meta a { color: rgba(255,255,255,.72); transition: color .18s; }
+        .foot-meta a:hover { color: #fff; }
+        .foot-meta i { width: 15px; color: var(--red-bright); font-size: .7rem; }
+
+        .foot-bottom {
+            position: relative;
+            display: flex; align-items: center; justify-content: space-between;
+            gap: 18px; flex-wrap: wrap;
+            padding: 20px 0 22px;
+            border-top: 1px solid rgba(255,255,255,.07);
+            font-size: .68rem; color: rgba(255,255,255,.45);
+        }
+
+        /* Grid and flex children default to min-width:auto, which lets a wide
+           child (the carousel track) push its column past the viewport. */
+        .why-grid > *, .how-grid > *, .features-grid > *,
+        .impact-grid > *, .stories-grid > *,
+        .carousel, .carousel-viewport, .feat > div, .step > div { min-width: 0; }
+
+        /* ─── DECOR ───────────────────────────────────────────── */
+        .deco { position: absolute; z-index: 0; pointer-events: none; }
+
+        .deco-dots {
+            color: rgba(123,29,29,.24);
+            background-image: radial-gradient(currentColor 1.3px, transparent 1.4px);
+            background-size: 17px 17px;
+            -webkit-mask-image: radial-gradient(ellipse at center, #000 26%, transparent 72%);
+                    mask-image: radial-gradient(ellipse at center, #000 26%, transparent 72%);
+        }
+        .deco-ring   { border: 1.5px solid  rgba(123,29,29,.13); border-radius: 50%; }
+        .deco-ring-d { border: 1.5px dashed rgba(123,29,29,.16); border-radius: 50%; }
+        .deco-tile   { border: 1.5px solid  rgba(123,29,29,.13); border-radius: 14px; }
+        .deco-glow   { border-radius: 50%; background: radial-gradient(circle, rgba(123,29,29,.075) 0%, rgba(123,29,29,0) 70%); }
+        .deco-slash  { border-radius: 6px; transform: skewX(-19deg); background: linear-gradient(180deg, rgba(123,29,29,.14), rgba(123,29,29,0)); }
+        .deco-quote {
+            font-size: 210px; line-height: .8; font-weight: 800;
+            color: rgba(123,29,29,.055); user-select: none;
+        }
+        .deco-spin { animation: decoSpin 46s linear infinite; }
+        @keyframes decoSpin { to { transform: rotate(360deg); } }
+
+        /* The copy is centred, so the free space is the strip above the
+           eyebrow and the band under the mini-features. */
+        .hero     .d1 { left: 2%;     bottom: 3%;  width: 210px; height: 104px; }
+        .hero     .d2 { left: 3.5%;   top: 14%;    width: 70px;  height: 70px; transform: rotate(22deg); }
+        .hero     .d3 { left: -110px; bottom: -80px; width: 300px; height: 300px; }
+        .hero     .d4 { left: 27%;    bottom: 4%;  width: 84px;  height: 84px; }
+
+        .why      .d1 { right: 1.5%; bottom: 4%;    width: 196px; height: 118px; }
+        .why      .d2 { right: 6%;   top: 8%;       width: 122px; height: 122px; }
+        .why      .d3 { left: -110px; bottom: -90px; width: 300px; height: 300px; }
+        .why      .d4 { left: 23%;   bottom: 9%;    width: 58px;  height: 58px; transform: rotate(-16deg); }
+
+        .how      .d1 { left: 0.5%;  bottom: 1%;    width: 200px; height: 116px; }
+        .how      .d2 { right: 3%;   top: 7%;       width: 104px; height: 104px; }
+        .how      .d3 { right: -70px; bottom: -90px; width: 320px; height: 320px; }
+
+        .features .d1 { left: 1.5%;  bottom: 6%;    width: 204px; height: 118px; }
+        .features .d2 { left: 3%;    top: 9%;       width: 62px;  height: 62px; transform: rotate(-18deg); }
+        .features .d3 { right: -90px; top: -80px;   width: 280px; height: 280px; }
+
+        .stories  .d1 { left: 1.5%;  bottom: 5%;    width: 192px; height: 116px; }
+        .stories  .d2 { right: 2.5%; top: 7%;       width: 92px;  height: 92px; }
+        .stories  .d3 { left: 1%;    top: 24%; }
+
+        @media (max-width: 1080px) { .deco { display: none; } }
+        /* The hero centres its copy, so on short screens the free bands above
+           and below it disappear and the ornaments would sit on the text. */
+        @media (max-height: 820px) { .hero .d1, .hero .d2, .hero .d4 { display: none; } }
+
+        /* ─── REVEAL ──────────────────────────────────────────── */
+        .reveal { opacity: 0; transform: translateY(18px); transition: opacity .6s ease, transform .6s ease; }
+        .reveal.visible { opacity: 1; transform: none; }
+        @media (prefers-reduced-motion: reduce) {
+            .reveal { opacity: 1; transform: none; transition: none; }
+            html { scroll-behavior: auto; }
+        }
 
         /* ─── RESPONSIVE ──────────────────────────────────────── */
-        @media (max-width: 1024px) {
-            .hero { padding: 104px 6% 150px; }
-            .hero-inner { grid-template-columns: 1fr; gap: 3.5rem; }
-            .hero-copy { margin: 0 auto; text-align: center; }
-            .hero-badge { margin-left: auto; margin-right: auto; }
-            .hero-copy > p { margin-left: auto; margin-right: auto; }
-            .hero-cta { justify-content: center; }
-            .hero-proof { justify-content: center; flex-wrap: wrap; }
-            .hero-visual { max-width: 520px; width: 100%; margin: 0 auto; }
-            .section-sub { margin-left: auto; margin-right: auto; }
-            .features-grid, .benefits-grid { grid-template-columns: 1fr 1fr; }
-            .subjects-grid { grid-template-columns: 1fr 1fr; }
-            .about-grid, .contact-grid { grid-template-columns: 1fr; }
-            .faq-grid { grid-template-columns: 1fr; }
-            .users-grid { grid-template-columns: 1fr 1fr; }
-            .footer-grid { grid-template-columns: 1fr 1fr; }
+        @media (max-width: 1080px) {
+            .why-grid, .how-grid, .features-grid, .impact-grid, .stories-grid { grid-template-columns: 1fr; gap: 42px; }
+            .why-right { border-left: none; padding-left: 0; }
+            .hero-photo, .hero-photo-fg { left: 4%; width: 92%; }
+            .hero-photo { opacity: .55; }
+            .hero-photo-fg { opacity: .7; }
         }
-        @media (max-width: 768px) {
+        @media (max-width: 880px) {
             .nav-links { display: none; }
-            .hamburger { display: flex; }
-            .features-grid, .benefits-grid, .subjects-grid, .users-grid, .testi-grid { grid-template-columns: 1fr; }
-            .footer-grid { grid-template-columns: 1fr; }
-            .footer-bottom { flex-direction: column; text-align: center; }
-            .hero { padding-bottom: 120px; }
-            .hero-proof { flex-direction: column; gap: .6rem; }
-            .float-card { padding: .55rem .7rem; border-radius: 12px; }
-            .float-card strong { font-size: .7rem; }
-            .float-card small { font-size: .6rem; }
-            .fc-readiness { top: -16px; left: -6px; }
-            .fc-streak { right: -6px; }
-            .fc-exam { bottom: -16px; left: 6%; }
-            .fc-ring { width: 38px; height: 38px; }
-            .fc-ring::before { inset: 5px; }
-            .fc-ico { width: 34px; height: 34px; font-size: .85rem; }
-            .hero-wave svg { height: 64px; }
-            .hero-shapes { display: none; }
-            .hero::before { display: none; }
-            .flow-container { flex-direction: column; align-items: center; }
-            .flow-arrow { transform: rotate(90deg); padding: .5rem 0; }
-            .flow-step { width: 100%; }
-            .info-grid { grid-template-columns: 1fr; }
+            .burger { display: flex; }
+            .hero { padding: 122px 0 64px; }
+            .hero-photo, .hero-photo-fg { left: 0; width: 100%; }
+            .hero-photo { opacity: .3; }
+            .hero-photo-fg { opacity: .42; }
+            .hero-slashes .hs-1 { top: -8%; right: -16%; width: 42%; height: 26%; }
+            .hero-slashes .hs-2 { top: -8%; right: 26%;  width: 7%;  height: 18%; }
+            .hero-slashes .hs-4 { bottom: -8%; right: -16%; width: 36%; height: 15%; }
+            .hero-slashes .hs-3, .hero-slashes .hs-5 { display: none; }
+            .hero-mini .mini { border-right: none; padding: 0 22px 0 0; }
+            .stat-row { grid-template-columns: repeat(2, 1fr); gap: 26px; }
+            .device-row { grid-template-columns: 1fr; }
+            .story { flex: 0 0 100%; padding-right: 0; }
+            .car-btn.prev { left: 6px; } .car-btn.next { right: 6px; }
+            .cta-inner { justify-content: center; text-align: center; }
+            .foot-top { grid-template-columns: 1fr 1fr; gap: 38px; }
+        }
+        @media (max-width: 560px) {
+            .container { padding: 0 20px; }
+            .nav-brand img { height: 34px; }
+            .nav-actions .btn { padding: .62rem 1.15rem; font-size: .72rem; }
+            .feat-grid { grid-template-columns: 1fr; gap: 28px; }
+            .stat-row { grid-template-columns: 1fr 1fr; }
+            .hero-mini { gap: 18px; }
+            .mock { grid-template-columns: 1fr; }
+            .mock-side { display: none; }
+            .mock-cards, .reco-row { grid-template-columns: 1fr; }
+            footer { padding-top: 48px; }
+            .foot-top { grid-template-columns: 1fr; gap: 32px; padding-bottom: 38px; }
+            .foot-bottom { justify-content: center; text-align: center; }
         }
     </style>
 </head>
 <body>
 
-<!-- NAVBAR -->
-<nav id="navbar">
-    <a href="/" class="nav-logo">
-        <img src="{{ asset('images/logo-icon.png') }}" alt="CPAce">
-        <img src="{{ asset('images/wordmark-cropped.png') }}" alt="CPAce" class="nav-wordmark">
-    </a>
-    <ul class="nav-links">
-        <li><a href="#about">About</a></li>
-        <li><a href="#features">Features</a></li>
-        <li><a href="#subjects">Subjects</a></li>
-        <li><a href="#how-it-works">How It Works</a></li>
-        <li><a href="#contact">Contact</a></li>
-    </ul>
-    <div class="nav-actions">
-        <a href="{{ route('login') }}" class="btn-login">Login</a>
+<!-- ══ NAVBAR ══ -->
+<header class="nav" id="navbar">
+    <div class="container nav-inner">
+        <a href="#home" class="nav-brand">
+            <img src="{{ asset('images/logo no.2.png') }}" alt="CPAce">
+        </a>
+
+        <nav class="nav-links" id="navLinks">
+            <a href="#home" class="active">Home</a>
+            <a href="#features">Features</a>
+            <a href="#about">About</a>
+            <a href="#contact">Contact</a>
+        </nav>
+
+        <div class="nav-actions">
+            <a href="{{ route('login') }}" class="btn btn-red btn-pill">Get Started <i class="fas fa-arrow-right"></i></a>
+        </div>
+
+        <div class="burger" onclick="toggleMenu()" aria-label="Menu"><span></span><span></span><span></span></div>
     </div>
-    <div class="hamburger" onclick="toggleMenu()">
-        <span></span><span></span><span></span>
-    </div>
-</nav>
+</header>
 
 <div class="mobile-menu" id="mobileMenu">
-    <a href="#about" onclick="toggleMenu()">About</a>
+    <a href="#home" onclick="toggleMenu()">Home</a>
     <a href="#features" onclick="toggleMenu()">Features</a>
-    <a href="#subjects" onclick="toggleMenu()">Subjects</a>
-    <a href="#how-it-works" onclick="toggleMenu()">How It Works</a>
+    <a href="#about" onclick="toggleMenu()">About</a>
     <a href="#contact" onclick="toggleMenu()">Contact</a>
-    <a href="{{ route('login') }}">Login &rarr;</a>
+    <a href="{{ route('login') }}">Get Started &rarr;</a>
 </div>
 
-<!-- HERO -->
-<div class="hero">
-    <div class="hero-shapes" aria-hidden="true">
-        <span class="hs1"></span><span class="hs2"></span><span class="hs3"></span>
-        <span class="hs4"></span><span class="hs5"></span><span class="hs6"></span>
+<!-- ══ HERO ══ -->
+<section class="hero" id="home">
+    <div class="hero-photo" aria-hidden="true"></div>
+    <div class="hero-photo-fg" aria-hidden="true"></div>
+
+    <div class="deco deco-glow   d3" aria-hidden="true"></div>
+    <div class="deco deco-ring-d d4 deco-spin" aria-hidden="true"></div>
+    <div class="deco deco-tile   d2" aria-hidden="true"></div>
+    <div class="deco deco-dots   d1" aria-hidden="true"></div>
+    <div class="hero-slashes" aria-hidden="true">
+        <i class="hs-1"></i><i class="hs-2"></i><i class="hs-3"></i><i class="hs-4"></i><i class="hs-5"></i>
     </div>
 
-    <div class="hero-inner">
+    <div class="container hero-inner">
         <div class="hero-copy">
-            <div class="hero-badge reveal">
-                <span class="pulse-dot"></span>
-                Institutional Review System
-            </div>
-            <h1 class="reveal">
-                CPAce:<br>
-                <span>Adaptive CPALE</span><br>
-                Review System
-            </h1>
-            <p class="reveal">
-                A web-based adaptive review platform developed to support Bachelor of Science in Accountancy students through personalized learning, performance analytics, and intelligent review scheduling.
+            <div class="eyebrow reveal">CPALE Review System</div>
+            <h1 class="hero-brand reveal"><img src="{{ asset('images/wordmark-transparent.png') }}" alt="CPAce"></h1>
+            <h2 class="hero-head reveal">Adaptive Review.<br>Smarter Preparation.</h2>
+            <p class="hero-sub reveal">
+                An adaptive board exam review system designed to help aspiring Certified
+                Public Accountants identify weaknesses, practice strategically, and track
+                their progress.
             </p>
             <div class="hero-cta reveal">
-                <a href="{{ route('login') }}" class="cta-primary">
-                    Login <i class="fas fa-arrow-right"></i>
-                </a>
-                <a href="#about" class="cta-secondary">
-                    <i class="fas fa-info-circle"></i> Learn More
-                </a>
-            </div>
-            <div class="hero-proof reveal">
-                <div class="hero-proof-item">
-                    <i class="fas fa-university"></i>
-                    <span><strong>Batangas State University</strong></span>
-                </div>
-                <div class="hero-proof-item">
-                    <i class="fas fa-graduation-cap"></i>
-                    <span>ARASOF-Nasugbu</span>
-                </div>
-                <div class="hero-proof-item">
-                    <i class="fas fa-shield-alt"></i>
-                    <span>Institutional Access</span>
-                </div>
-            </div>
-        </div>
-
-        <div class="hero-visual reveal">
-            <div class="hero-visual-back" aria-hidden="true"></div>
-            <div class="hero-ring-spin" aria-hidden="true"></div>
-            <div class="hero-visual-frame">
-                <img src="{{ asset('images/hero-section.png') }}" alt="CPAce Dashboard Preview">
+                <a href="{{ route('login') }}" class="btn btn-red">Get Started <i class="fas fa-arrow-right"></i></a>
+                <a href="#features" class="btn btn-outline">Explore Features</a>
             </div>
 
-            <div class="float-card fc-readiness">
-                <div class="fc-ring"><span>81%</span></div>
-                <div>
-                    <strong>Overall Readiness</strong>
-                    <small>+6% this week</small>
+            <div class="hero-mini reveal">
+                <div class="mini">
+                    <div class="mini-ico"><i class="fas fa-bullseye"></i></div>
+                    <div class="mini-txt">Personalized<br>Learning Path</div>
                 </div>
-            </div>
-            <div class="float-card fc-streak">
-                <div class="fc-ico flame"><i class="fas fa-fire"></i></div>
-                <div>
-                    <strong>7-day streak</strong>
-                    <small>Keep it going!</small>
+                <div class="mini">
+                    <div class="mini-ico"><i class="fas fa-chart-simple"></i></div>
+                    <div class="mini-txt">Track Your<br>Progress</div>
                 </div>
-            </div>
-            <div class="float-card fc-exam">
-                <div class="fc-ico check"><i class="fas fa-check"></i></div>
-                <div>
-                    <strong>Mock Exam — FAR</strong>
-                    <small>Scored 88% · Passed</small>
+                <div class="mini">
+                    <div class="mini-ico"><i class="fas fa-brain"></i></div>
+                    <div class="mini-txt">Focus on<br>Your Weak Areas</div>
                 </div>
             </div>
         </div>
     </div>
+</section>
 
-    <div class="hero-wave" aria-hidden="true">
-        <svg viewBox="0 0 1440 100" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M0,64 C180,94 400,34 640,54 C880,74 1080,26 1260,44 C1340,52 1400,50 1440,54 L1440,100 L0,100 Z" fill="rgba(0,0,0,.15)"/>
-            <path d="M0,76 C240,104 480,46 720,68 C960,90 1200,42 1440,66 L1440,100 L0,100 Z" fill="#f4f5f7"/>
-        </svg>
-    </div>
-</div>
+<!-- ══ WHY CPAce ══ -->
+<section class="why band" id="about">
+    <div class="band-bg" aria-hidden="true"></div>
+    <div class="band-scrim" aria-hidden="true"></div>
+    <div class="band-dots" aria-hidden="true"></div>
 
-<!-- ABOUT -->
-<section class="about-section" id="about">
-    <div class="text-center reveal">
-        <div class="section-eyebrow"><i class="fas fa-info-circle"></i> About the System</div>
-        <h2 class="section-title">What is <span>CPAce?</span></h2>
-    </div>
-    <div class="about-grid">
-        <div class="about-text reveal">
-            <p>
-                <strong>CPAce</strong> is an institutional review system designed for Bachelor of Science in Accountancy students at Batangas State University ARASOF-Nasugbu. It assists learners in preparing for the CPA Licensure Examination through adaptive quizzes, personalized recommendations, and comprehensive performance monitoring.
+    <div class="deco deco-glow d3" aria-hidden="true"></div>
+    <div class="deco deco-ring d2" aria-hidden="true"></div>
+    <div class="deco deco-tile d4" aria-hidden="true"></div>
+    <div class="deco deco-dots d1" aria-hidden="true"></div>
+    <div class="container why-grid">
+        <div class="why-left reveal">
+            <div class="eyebrow"><span>Why <span class="nocaps">CPAce</span>?</span></div>
+            <h2 class="sec-title">Built for Your<br>CPA Journey</h2>
+            <p class="sec-text">
+                CPAce combines smart technology with proven review strategies to give you a
+                personalized, effective, and flexible study experience.
             </p>
-            <p>
-                The system leverages adaptive learning algorithms to identify each student's knowledge gaps and dynamically adjust quiz difficulty, ensuring focused and efficient review sessions tailored to individual learning needs.
+            <a href="#how-it-works" class="btn btn-white" style="margin-top:26px">Learn More <i class="fas fa-arrow-right"></i></a>
+        </div>
+
+        <div class="why-right reveal">
+            <div class="feat-grid">
+                <div class="feat">
+                    <div class="feat-ico"><i class="fas fa-brain"></i></div>
+                    <div>
+                        <h4>Adaptive Learning</h4>
+                        <p>Adjusts to your performance and focuses on what you need most.</p>
+                    </div>
+                </div>
+                <div class="feat">
+                    <div class="feat-ico"><i class="fas fa-chart-simple"></i></div>
+                    <div>
+                        <h4>Progress Tracking</h4>
+                        <p>Monitor your growth with detailed analytics and insights.</p>
+                    </div>
+                </div>
+                <div class="feat">
+                    <div class="feat-ico"><i class="fas fa-file-lines"></i></div>
+                    <div>
+                        <h4>Mock Exams</h4>
+                        <p>Simulate the real CPALE experience and build confidence.</p>
+                    </div>
+                </div>
+                <div class="feat">
+                    <div class="feat-ico"><i class="fas fa-calendar-days"></i></div>
+                    <div>
+                        <h4>Spaced Repetition</h4>
+                        <p>Reinforce your learning with scientifically proven scheduling.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ══ HOW IT WORKS ══ -->
+<section class="how" id="how-it-works">
+    <div class="deco deco-glow   d3" aria-hidden="true"></div>
+    <div class="deco deco-ring-d d2 deco-spin" aria-hidden="true"></div>
+    <div class="deco deco-dots   d1" aria-hidden="true"></div>
+    <div class="container how-grid">
+        <div class="how-left reveal">
+            <div class="eyebrow">How It Works</div>
+            <h2 class="sec-title">From Learning<br>to Passing</h2>
+            <p class="sec-text">
+                Follow a simple 4-step process and let CPAce guide you toward your CPA goals.
             </p>
+
+            <div class="steps">
+                <div class="step">
+                    <div class="step-num">1</div>
+                    <div>
+                        <h4>Take a Diagnostic Test</h4>
+                        <p>Identify your strengths and weak areas.</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-num">2</div>
+                    <div>
+                        <h4>Get Your Personalized Plan</h4>
+                        <p>Focus on what matters most.</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-num">3</div>
+                    <div>
+                        <h4>Practice and Improve</h4>
+                        <p>Use adaptive quizzes and mock exams.</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-num">4</div>
+                    <div>
+                        <h4>Track Your Progress</h4>
+                        <p>See your growth, stay motivated.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mock-wrap reveal">
+            <div class="mock-behind" aria-hidden="true"></div>
+            <div class="mock" role="img" aria-label="Preview of the CPAce student dashboard">
+                <aside class="mock-side">
+                    <div class="wordmark on-dark"><span class="w-a">CPA</span><span class="w-b">ce</span></div>
+                    <ul>
+                        <li class="on"><i class="fas fa-gauge"></i> Dashboard</li>
+                        <li><i class="fas fa-book"></i> Subjects</li>
+                        <li><i class="fas fa-list-check"></i> Quizzes</li>
+                        <li><i class="fas fa-file-lines"></i> Mock Exams</li>
+                        <li><i class="fas fa-chart-simple"></i> Analytics</li>
+                        <li><i class="fas fa-gear"></i> Settings</li>
+                    </ul>
+                </aside>
+
+                <div class="mock-main">
+                    <div class="mock-top">
+                        <div class="mock-user">
+                            <span class="mock-avatar"><i class="fas fa-user"></i></span> Student
+                            <i class="fas fa-chevron-down" style="font-size:6px"></i>
+                        </div>
+                    </div>
+
+                    <div class="mock-hello">Good morning, Future CPA! 👋</div>
+                    <span>Keep going! You're doing great.</span>
+
+                    <div class="mock-cards">
+                        <div class="mock-card">
+                            <h6>Overall Progress <span>7d</span></h6>
+                            <div class="donut-row">
+                                <div class="donut"></div>
+                                <div class="donut-bars">
+                                    <span>Recent 7 quizzes</span>
+                                    <div class="bar"><i style="width:74%"></i></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mock-card">
+                            <h6>Weak Areas <span>%</span></h6>
+                            <div class="weak"><b>FAR</b><div class="bar"><i style="width:62%"></i></div><em>62%</em></div>
+                            <div class="weak"><b>AUD</b><div class="bar"><i style="width:74%"></i></div><em>74%</em></div>
+                            <div class="weak"><b>TAX</b><div class="bar"><i style="width:58%"></i></div><em>58%</em></div>
+                            <div class="weak"><b>MS</b><div class="bar"><i style="width:81%"></i></div><em>81%</em></div>
+                        </div>
+                    </div>
+
+                    <div class="mock-reco">Recommended for You</div>
+                    <div class="reco-row">
+                        <div class="reco">
+                            <div class="r-ico"><i class="fas fa-list-check"></i></div>
+                            <h6>Practice Quiz</h6>
+                            <small>20 questions · Adaptive</small>
+                            <b>Start</b>
+                        </div>
+                        <div class="reco">
+                            <div class="r-ico"><i class="fas fa-book-open"></i></div>
+                            <h6>Topic Review</h6>
+                            <small>Key concepts · 15 min</small>
+                            <b>Start</b>
+                        </div>
+                        <div class="reco">
+                            <div class="r-ico"><i class="fas fa-file-lines"></i></div>
+                            <h6>Mock Exam</h6>
+                            <small>100 questions · Timed</small>
+                            <b>Start</b>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ══ FEATURES ══ -->
+<section class="features" id="features">
+    <div class="deco deco-glow d3" aria-hidden="true"></div>
+    <div class="deco deco-tile d2" aria-hidden="true"></div>
+    <div class="deco deco-dots d1" aria-hidden="true"></div>
+    <div class="container features-grid">
+        <div class="reveal">
+            <div class="eyebrow">Features</div>
+            <h2 class="sec-title">Everything You Need<br>in One Place</h2>
+            <p class="sec-text">CPAce gives you the tools to study smarter, not harder.</p>
+        </div>
+
+        <div class="device-row reveal">
+            <figure class="device-item">
+                <div class="device">
+                    <div class="frame">
+                        <div class="screen">
+                            <div class="sk red w40"></div>
+                            <div class="sk w75"></div>
+                            <div class="sk-row"><div class="sk pale tall"></div><div class="sk tall"></div></div>
+                            <div class="sk w60"></div>
+                            <div class="sk-row"><div class="sk"></div><div class="sk red w25"></div></div>
+                        </div>
+                    </div>
+                </div>
+                <figcaption>
+                    <h4>Adaptive Quiz Engine</h4>
+                    <p>Questions adjust to your strengths and weaknesses.</p>
+                </figcaption>
+            </figure>
+
+            <figure class="device-item">
+                <div class="device">
+                    <div class="frame laptop">
+                        <div class="screen">
+                            <div class="sk red w40"></div>
+                            <div class="sk-donut"></div>
+                            <div class="sk-bars"><i style="height:45%"></i><i style="height:80%"></i><i style="height:60%"></i><i style="height:100%"></i><i style="height:55%"></i></div>
+                            <div class="sk w60"></div>
+                        </div>
+                    </div>
+                </div>
+                <figcaption>
+                    <h4>Performance Dashboard</h4>
+                    <p>Visualize your progress and identify areas to improve.</p>
+                </figcaption>
+            </figure>
+
+            <figure class="device-item">
+                <div class="device phone">
+                    <div class="frame phone">
+                        <div class="screen">
+                            <div class="sk red w60"></div>
+                            <div class="sk"></div>
+                            <div class="sk pale tall"></div>
+                            <div class="sk w75"></div>
+                            <div class="sk w40"></div>
+                            <div class="sk red"></div>
+                        </div>
+                    </div>
+                </div>
+                <figcaption>
+                    <h4>Mobile Friendly</h4>
+                    <p>Study anytime, anywhere, on any device.</p>
+                </figcaption>
+            </figure>
+        </div>
+    </div>
+</section>
+
+<!-- ══ IMPACT ══ -->
+<section class="impact band">
+    <div class="band-bg" aria-hidden="true"></div>
+    <div class="band-scrim" aria-hidden="true"></div>
+    <div class="band-dots" aria-hidden="true"></div>
+
+    <div class="container impact-grid">
+        <div class="reveal">
+            <div class="eyebrow on-red">The Impact</div>
+            <h3>More Practice.<br>Higher Chances.</h3>
+            <p>Join thousands of aspiring CPAs and take your review to the next level with CPAce.</p>
+        </div>
+
+        <div class="stat-row reveal">
+            <div class="stat"><i class="fas fa-user-group"></i><b>10K+</b><span>Active Students</span></div>
+            <div class="stat"><i class="fas fa-face-smile"></i><b>95%</b><span>Satisfaction Rate</span></div>
+            <div class="stat"><i class="fas fa-circle-question"></i><b>3.2K+</b><span>Practice Questions</span></div>
+            <div class="stat"><i class="fas fa-arrow-trend-up"></i><b>85%</b><span>Average Score Increase</span></div>
+        </div>
+    </div>
+</section>
+
+<!-- ══ STUDENT STORIES ══ -->
+<section class="stories">
+    <div class="deco deco-quote d3" aria-hidden="true">&rdquo;</div>
+    <div class="deco deco-ring  d2" aria-hidden="true"></div>
+    <div class="deco deco-dots  d1" aria-hidden="true"></div>
+    <div class="container stories-grid">
+        <div class="reveal">
+            <div class="eyebrow">Student Stories</div>
+            <h2 class="sec-title">Real People. Real Progress.</h2>
+            <p class="sec-text">Hear from future CPAs who are on their way to success with CPAce.</p>
+        </div>
+
+        <div class="carousel reveal" id="carousel">
+            <button class="car-btn prev" onclick="slide(-1)" aria-label="Previous"><i class="fas fa-chevron-left"></i></button>
+            <div class="carousel-viewport">
+                <div class="carousel-track" id="track">
+                    <div class="story">
+                        <div class="story-card">
+                            <div class="story-head">
+                                <div class="story-avatar">MS</div>
+                                <div><h5>Maria Santos</h5><small>CPALE Taker</small></div>
+                            </div>
+                            <q>CPAce helped me focus on my weak areas. The adaptive quizzes are a game changer!</q>
+                            <div class="stars">★★★★★</div>
+                        </div>
+                    </div>
+                    <div class="story">
+                        <div class="story-card">
+                            <div class="story-head">
+                                <div class="story-avatar">JR</div>
+                                <div><h5>John Reyes</h5><small>CPALE Taker</small></div>
+                            </div>
+                            <q>The progress tracking feature kept me motivated. I know exactly where I stand and what to improve.</q>
+                            <div class="stars">★★★★★</div>
+                        </div>
+                    </div>
+                    <div class="story">
+                        <div class="story-card">
+                            <div class="story-head">
+                                <div class="story-avatar">AD</div>
+                                <div><h5>Angela Dizon</h5><small>BS Accountancy Graduate</small></div>
+                            </div>
+                            <q>The mock exams felt exactly like the real thing. Walking into the CPALE, I already knew the pacing.</q>
+                            <div class="stars">★★★★★</div>
+                        </div>
+                    </div>
+                    <div class="story">
+                        <div class="story-card">
+                            <div class="story-head">
+                                <div class="story-avatar">PM</div>
+                                <div><h5>Paulo Mendoza</h5><small>CPALE Taker</small></div>
+                            </div>
+                            <q>Spaced repetition kept older topics fresh. I stopped forgetting what I reviewed weeks ago.</q>
+                            <div class="stars">★★★★★</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <button class="car-btn next" onclick="slide(1)" aria-label="Next"><i class="fas fa-chevron-right"></i></button>
+            <div class="dots" id="dots"></div>
+        </div>
+    </div>
+</section>
+
+<!-- ══ CTA BAND ══ -->
+<section class="cta-band band">
+    <div class="band-bg" aria-hidden="true"></div>
+    <div class="band-scrim" aria-hidden="true"></div>
+    <div class="band-dots" aria-hidden="true"></div>
+
+    <div class="container cta-inner">
+        <div class="wordmark on-dark"><span class="w-a">CPA</span><span class="w-b">ce</span></div>
+        <div class="cta-copy">
+            <h4>Your CPA journey starts here.</h4>
+            <p>Smarter review. Greater possibilities.</p>
+        </div>
+        <a href="{{ route('login') }}" class="btn btn-white btn-pill">Get Started <i class="fas fa-arrow-right"></i></a>
+    </div>
+</section>
+
+<!-- ══ FOOTER ══ -->
+<footer id="contact">
+    <div class="container foot-top">
+
+        <div class="foot-brand">
+            <div class="wordmark on-dark"><span class="w-a">CPA</span><span class="w-b">ce</span></div>
             <p>
-                Developed as a capstone project, CPAce aims to bridge the gap between traditional review methods and technology-driven learning, providing students with a intelligent study companion throughout their CPALE preparation journey.
+                An adaptive CPALE review system built for Bachelor of Science in Accountancy
+                students — personalized practice, performance analytics, and intelligent
+                review scheduling in one place.
             </p>
-        </div>
-        <div class="about-cards reveal">
-            <div class="about-card">
-                <div class="about-card-icon"><i class="fas fa-bullseye"></i></div>
-                <div>
-                    <h4>Purpose</h4>
-                    <p>To support BSA students in their CPALE preparation through an adaptive, data-driven review system.</p>
-                </div>
-            </div>
-            <div class="about-card">
-                <div class="about-card-icon"><i class="fas fa-users"></i></div>
-                <div>
-                    <h4>Institutional Use</h4>
-                    <p>Exclusively available to authorized students and faculty of the Department of Accountancy.</p>
-                </div>
-            </div>
-            <div class="about-card">
-                <div class="about-card-icon"><i class="fas fa-cogs"></i></div>
-                <div>
-                    <h4>Technology</h4>
-                    <p>Built with adaptive algorithms, real-time analytics, and a comprehensive CPALE question bank.</p>
-                </div>
+            <div class="foot-social">
+                <a href="#" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+                <a href="#" aria-label="X"><i class="fab fa-x-twitter"></i></a>
+                <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
             </div>
         </div>
-    </div>
-</section>
 
-<!-- FEATURES -->
-<section class="features-section" id="features">
-    <div class="text-center reveal">
-        <div class="section-eyebrow"><i class="fas fa-star"></i> Core Features</div>
-        <h2 class="section-title">Intelligent review, <span>designed for CPALE</span></h2>
-        <p class="section-sub sub-center">CPAce combines adaptive learning technology with comprehensive CPALE review tools to help students study smarter, not harder.</p>
-    </div>
-    <div class="features-grid">
-        <div class="feature-card reveal">
-            <div class="feature-icon"><i class="fas fa-brain"></i></div>
-            <h3>Adaptive Quiz Engine</h3>
-            <p>Generates quizzes dynamically based on the learner's performance, adjusting difficulty to target knowledge gaps.</p>
-        </div>
-        <div class="feature-card reveal">
-            <div class="feature-icon"><i class="fas fa-search-plus"></i></div>
-            <h3>Weakness Detection</h3>
-            <p>Identifies specific topics and subtopics requiring further review through continuous performance analysis.</p>
-        </div>
-        <div class="feature-card reveal">
-            <div class="feature-icon"><i class="fas fa-sync-alt"></i></div>
-            <h3>Spaced Repetition</h3>
-            <p>Schedules review sessions using spaced repetition principles to improve long-term knowledge retention.</p>
-        </div>
-        <div class="feature-card reveal">
-            <div class="feature-icon"><i class="fas fa-file-signature"></i></div>
-            <h3>Mock CPALE Examination</h3>
-            <p>Provides board exam simulation with timed conditions, replicating the actual CPALE testing experience.</p>
-        </div>
-        <div class="feature-card reveal">
-            <div class="feature-icon"><i class="fas fa-chart-line"></i></div>
-            <h3>Performance Dashboard</h3>
-            <p>Displays progress, mastery levels, and quiz statistics through an intuitive real-time analytics dashboard.</p>
-        </div>
-        <div class="feature-card reveal">
-            <div class="feature-icon"><i class="fas fa-database"></i></div>
-            <h3>Question Bank</h3>
-            <p>Comprehensive collection of review questions organized by CPALE subject, continuously updated for relevance.</p>
-        </div>
-    </div>
-</section>
-
-<!-- CPALE SUBJECTS -->
-<section class="subjects-section" id="subjects">
-    <div class="text-center reveal">
-        <div class="section-eyebrow"><i class="fas fa-book-open"></i> CPALE Subjects</div>
-        <h2 class="section-title">Covering all <span>six CPALE subjects</span></h2>
-        <p class="section-sub sub-center">CPAce provides comprehensive coverage of all subjects tested in the CPA Licensure Examination.</p>
-    </div>
-    <div class="subjects-grid">
-        <div class="subject-card reveal">
-            <div class="subject-icon"><i class="fas fa-calculator"></i></div>
-            <h3>Financial Accounting and Reporting</h3>
-            <div class="subject-code">FAR</div>
-            <p>Comprehensive coverage of financial accounting standards, reporting frameworks, and financial statement preparation.</p>
-        </div>
-        <div class="subject-card reveal">
-            <div class="subject-icon"><i class="fas fa-chart-pie"></i></div>
-            <h3>Advanced Financial Accounting and Reporting</h3>
-            <div class="subject-code">AFAR</div>
-            <p>Advanced topics including consolidations, partnerships, government accounting, and foreign currency transactions.</p>
-        </div>
-        <div class="subject-card reveal">
-            <div class="subject-icon"><i class="fas fa-receipt"></i></div>
-            <h3>Taxation</h3>
-            <div class="subject-code">TAX</div>
-            <p>Income taxation, transfer taxes, VAT, and tax compliance for individuals and corporations under Philippine tax law.</p>
-        </div>
-        <div class="subject-card reveal">
-            <div class="subject-icon"><i class="fas fa-balance-scale"></i></div>
-            <h3>Regulatory Framework for Business Transactions</h3>
-            <div class="subject-code">RFBT</div>
-            <p>Commercial law, obligations, contracts, negotiable instruments, and regulatory frameworks governing business.</p>
-        </div>
-        <div class="subject-card reveal">
-            <div class="subject-icon"><i class="fas fa-search"></i></div>
-            <h3>Auditing</h3>
-            <div class="subject-code">AUD</div>
-            <p>Audit principles, procedures, standards, internal control evaluation, and assurance engagement practices.</p>
-        </div>
-        <div class="subject-card reveal">
-            <div class="subject-icon"><i class="fas fa-lightbulb"></i></div>
-            <h3>Management Advisory Services</h3>
-            <div class="subject-code">MAS</div>
-            <p>Management consulting, financial management, strategic planning, and business decision-making techniques.</p>
-        </div>
-    </div>
-</section>
-
-<!-- HOW IT WORKS -->
-<section class="how-section" id="how-it-works">
-    <div class="text-center reveal">
-        <div class="section-eyebrow"><i class="fas fa-route"></i> How It Works</div>
-        <h2 class="section-title">Your journey to <span>CPA success</span></h2>
-        <p class="section-sub sub-center">CPAce follows a systematic adaptive learning process to maximize your review efficiency.</p>
-    </div>
-    <div class="flow-container reveal">
-        <div class="flow-step">
-            <div class="flow-circle">
-                <i class="fas fa-sign-in-alt"></i>
-                <span class="flow-num">1</span>
-            </div>
-            <h4>Login</h4>
-            <p>Access your account using institutional credentials</p>
-        </div>
-        <div class="flow-arrow"><i class="fas fa-chevron-right"></i></div>
-        <div class="flow-step">
-            <div class="flow-circle">
-                <i class="fas fa-clipboard-list"></i>
-                <span class="flow-num">2</span>
-            </div>
-            <h4>Diagnostic Quiz</h4>
-            <p>Take an initial assessment to establish your baseline</p>
-        </div>
-        <div class="flow-arrow"><i class="fas fa-chevron-right"></i></div>
-        <div class="flow-step">
-            <div class="flow-circle">
-                <i class="fas fa-crosshairs"></i>
-                <span class="flow-num">3</span>
-            </div>
-            <h4>Weakness Detection</h4>
-            <p>System identifies topics requiring focused review</p>
-        </div>
-        <div class="flow-arrow"><i class="fas fa-chevron-right"></i></div>
-        <div class="flow-step">
-            <div class="flow-circle">
-                <i class="fas fa-map-signs"></i>
-                <span class="flow-num">4</span>
-            </div>
-            <h4>Personalized Plan</h4>
-            <p>Receive a customized study plan based on your gaps</p>
-        </div>
-        <div class="flow-arrow"><i class="fas fa-chevron-right"></i></div>
-        <div class="flow-step">
-            <div class="flow-circle">
-                <i class="fas fa-dumbbell"></i>
-                <span class="flow-num">5</span>
-            </div>
-            <h4>Adaptive Practice</h4>
-            <p>Practice with quizzes that adjust to your level</p>
-        </div>
-        <div class="flow-arrow"><i class="fas fa-chevron-right"></i></div>
-        <div class="flow-step">
-            <div class="flow-circle">
-                <i class="fas fa-chart-area"></i>
-                <span class="flow-num">6</span>
-            </div>
-            <h4>Progress Monitoring</h4>
-            <p>Track your improvement with real-time analytics</p>
-        </div>
-    </div>
-</section>
-
-<!-- BENEFITS -->
-<section class="benefits-section" id="benefits">
-    <div class="text-center reveal">
-        <div class="section-eyebrow"><i class="fas fa-check-double"></i> Benefits</div>
-        <h2 class="section-title">Why use <span>CPAce?</span></h2>
-        <p class="section-sub sub-center">CPAce provides institutional-level advantages for CPALE preparation that traditional review methods cannot match.</p>
-    </div>
-    <div class="benefits-grid">
-        <div class="benefit-card reveal">
-            <div class="benefit-icon"><i class="fas fa-user-graduate"></i></div>
-            <div>
-                <h4>Personalized Learning</h4>
-                <p>Adaptive algorithms tailor quiz difficulty and content to each student's unique learning profile.</p>
-            </div>
-        </div>
-        <div class="benefit-card reveal">
-            <div class="benefit-icon"><i class="fas fa-chart-bar"></i></div>
-            <div>
-                <h4>Data-Driven Monitoring</h4>
-                <p>Real-time analytics provide actionable insights into student performance and readiness levels.</p>
-            </div>
-        </div>
-        <div class="benefit-card reveal">
-            <div class="benefit-icon"><i class="fas fa-calendar-alt"></i></div>
-            <div>
-                <h4>Efficient Review Scheduling</h4>
-                <p>Spaced repetition ensures optimal review timing for maximum knowledge retention.</p>
-            </div>
-        </div>
-        <div class="benefit-card reveal">
-            <div class="benefit-icon"><i class="fas fa-redo"></i></div>
-            <div>
-                <h4>Continuous Assessment</h4>
-                <p>Ongoing performance evaluation helps students and faculty track progress throughout the review period.</p>
-            </div>
-        </div>
-        <div class="benefit-card reveal">
-            <div class="benefit-icon"><i class="fas fa-trophy"></i></div>
-            <div>
-                <h4>Exam Readiness Support</h4>
-                <p>Mock examinations simulate actual board exam conditions to build confidence and familiarity.</p>
-            </div>
-        </div>
-        <div class="benefit-card reveal">
-            <div class="benefit-icon"><i class="fas fa-mobile-alt"></i></div>
-            <div>
-                <h4>Multi-Device Access</h4>
-                <p>Review anytime, anywhere — accessible on desktops, tablets, and smartphones.</p>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- INTENDED USERS -->
-<section class="users-section">
-    <div class="text-center reveal">
-        <div class="section-eyebrow"><i class="fas fa-users"></i> Intended Users</div>
-        <h2 class="section-title">Designed for <span>the academic community</span></h2>
-        <p class="section-sub sub-center">CPAce serves distinct roles within the Department of Accountancy.</p>
-    </div>
-    <div class="users-grid">
-        <div class="user-card reveal">
-            <div class="user-avatar"><i class="fas fa-user-graduate"></i></div>
-            <h3>Students</h3>
-            <p>BSA students preparing for the CPA Licensure Examination. Access adaptive quizzes, track progress, and follow personalized study plans.</p>
-        </div>
-        <div class="user-card reveal">
-            <div class="user-avatar"><i class="fas fa-chalkboard-teacher"></i></div>
-            <h3>Faculty</h3>
-            <p>Accountancy faculty members who monitor student performance, review analytics, and guide the review process.</p>
-        </div>
-        <div class="user-card reveal">
-            <div class="user-avatar"><i class="fas fa-user-shield"></i></div>
-            <h3>Administrator</h3>
-            <p>System administrators who manage accounts, question banks, subject configurations, and overall system maintenance.</p>
-        </div>
-    </div>
-</section>
-
-<!-- SECURITY & DEVICES -->
-<div class="info-banner">
-    <div class="info-grid">
-        <div class="info-card reveal">
-            <div class="info-card-icon"><i class="fas fa-lock"></i></div>
-            <h3>Secure Institutional Access</h3>
-            <p>Access to CPAce is restricted to authorized institutional users only. All student progress and performance data are securely stored and protected within the university's system infrastructure.</p>
-        </div>
-        <div class="info-card reveal">
-            <div class="info-card-icon"><i class="fas fa-laptop"></i></div>
-            <h3>Device Compatibility</h3>
-            <p>CPAce is fully responsive and accessible across desktops, tablets, and smartphones — allowing students to review anytime and anywhere with an internet connection.</p>
-        </div>
-    </div>
-</div>
-
-<!-- FAQ -->
-<section class="faq-section" id="faq">
-    <div class="text-center reveal">
-        <div class="section-eyebrow"><i class="fas fa-question-circle"></i> FAQ</div>
-        <h2 class="section-title">Frequently Asked <span>Questions</span></h2>
-    </div>
-    <div class="faq-grid">
-        <div class="faq-item reveal">
-            <div class="faq-question" onclick="toggleFaq(this)">
-                Who can access CPAce?
-                <i class="fas fa-chevron-down"></i>
-            </div>
-            <div class="faq-answer">
-                <div class="faq-answer-inner">
-                    CPAce is exclusively available to authorized users of the Department of Accountancy at Batangas State University ARASOF-Nasugbu, including BSA students, faculty members, and designated administrators.
-                </div>
-            </div>
-        </div>
-        <div class="faq-item reveal">
-            <div class="faq-question" onclick="toggleFaq(this)">
-                How do I obtain my account?
-                <i class="fas fa-chevron-down"></i>
-            </div>
-            <div class="faq-answer">
-                <div class="faq-answer-inner">
-                    Accounts are created by the system administrator. Contact the Department of Accountancy to receive your login credentials. Self-registration is not available as access is institution-controlled.
-                </div>
-            </div>
-        </div>
-        <div class="faq-item reveal">
-            <div class="faq-question" onclick="toggleFaq(this)">
-                Can I review using my mobile phone?
-                <i class="fas fa-chevron-down"></i>
-            </div>
-            <div class="faq-answer">
-                <div class="faq-answer-inner">
-                    Yes. CPAce is fully responsive and works on any device with a modern web browser, including smartphones and tablets.
-                </div>
-            </div>
-        </div>
-        <div class="faq-item reveal">
-            <div class="faq-question" onclick="toggleFaq(this)">
-                Are quiz attempts recorded?
-                <i class="fas fa-chevron-down"></i>
-            </div>
-            <div class="faq-answer">
-                <div class="faq-answer-inner">
-                    Yes. All quiz attempts, scores, and performance data are recorded and reflected in your performance dashboard for ongoing progress monitoring.
-                </div>
-            </div>
-        </div>
-        <div class="faq-item reveal">
-            <div class="faq-question" onclick="toggleFaq(this)">
-                How is my progress evaluated?
-                <i class="fas fa-chevron-down"></i>
-            </div>
-            <div class="faq-answer">
-                <div class="faq-answer-inner">
-                    CPAce tracks your quiz performance, subject mastery levels, and readiness scores in real time. The adaptive engine continuously analyzes your results to identify strengths and areas for improvement.
-                </div>
-            </div>
-        </div>
-        <div class="faq-item reveal">
-            <div class="faq-question" onclick="toggleFaq(this)">
-                Is my data kept private?
-                <i class="fas fa-chevron-down"></i>
-            </div>
-            <div class="faq-answer">
-                <div class="faq-answer-inner">
-                    Yes. All data is securely stored within the institutional system. Your performance information is only accessible to you, your assigned faculty, and authorized administrators.
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- CONTACT -->
-<section class="contact-section" id="contact">
-    <div class="text-center reveal">
-        <div class="section-eyebrow"><i class="fas fa-envelope"></i> Contact</div>
-        <h2 class="section-title">Get in <span>touch</span></h2>
-    </div>
-    <div class="contact-grid">
-        <div class="contact-info-cards reveal">
-            <div class="contact-card">
-                <div class="contact-card-icon"><i class="fas fa-user-cog"></i></div>
-                <div>
-                    <h4>System Administrator</h4>
-                    <p>For technical issues, account concerns, and system-related inquiries.</p>
-                </div>
-            </div>
-            <div class="contact-card">
-                <div class="contact-card-icon"><i class="fas fa-university"></i></div>
-                <div>
-                    <h4>Department of Accountancy</h4>
-                    <p>College of Accountancy, Business, Economics, and International Hospitality Management</p>
-                </div>
-            </div>
-            <div class="contact-card">
-                <div class="contact-card-icon"><i class="fas fa-map-marker-alt"></i></div>
-                <div>
-                    <h4>Batangas State University ARASOF-Nasugbu</h4>
-                    <p>Nasugbu, Batangas, Philippines</p>
-                </div>
-            </div>
-            <div class="contact-card">
-                <div class="contact-card-icon"><i class="fas fa-envelope"></i></div>
-                <div>
-                    <h4>Institutional Email</h4>
-                    <p>accountancy@bsu.edu.ph</p>
-                </div>
-            </div>
-        </div>
-        <div class="contact-map-card reveal">
-            <div class="contact-map-header">
-                <h3><i class="fas fa-map-marked-alt"></i> Our Location</h3>
-                <p>Batangas State University — ARASOF Nasugbu Campus</p>
-            </div>
-            <div class="contact-map-body">
-                <p><strong>Batangas State University</strong> Pablo Borbon Campus is the main campus, while the <strong>ARASOF-Nasugbu</strong> campus houses the College of Accountancy, Business, Economics, and International Hospitality Management where CPAce was developed.</p>
-                <p>For inquiries regarding the system, you may reach the Department of Accountancy or the system development team through the institutional email provided above.</p>
-                <p><strong>Office Hours:</strong> Monday to Friday, 8:00 AM – 5:00 PM</p>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- FOOTER -->
-<footer>
-    <div class="footer-grid">
-        <div class="footer-brand">
-            <img src="{{ asset('images/cpace_logo.png') }}" alt="CPAce">
-            <p>CPAce is an adaptive CPALE review system developed as a capstone project by the Department of Accountancy, Batangas State University ARASOF-Nasugbu.</p>
-        </div>
-        <div class="footer-col">
-            <h4>System</h4>
+        <div class="foot-col">
+            <h5>Platform</h5>
             <ul>
+                <li><a href="#home">Home</a></li>
                 <li><a href="#about">About CPAce</a></li>
-                <li><a href="#features">Features</a></li>
-                <li><a href="#subjects">CPALE Subjects</a></li>
                 <li><a href="#how-it-works">How It Works</a></li>
+                <li><a href="#features">Features</a></li>
             </ul>
         </div>
-        <div class="footer-col">
-            <h4>Support</h4>
+
+        <div class="foot-col">
+            <h5>Account</h5>
             <ul>
-                <li><a href="#faq">FAQ</a></li>
-                <li><a href="#contact">Contact Us</a></li>
-                <li><a href="#">User Guide</a></li>
-                <li><a href="#">Report an Issue</a></li>
+                <li><a href="{{ route('login') }}">Log in</a></li>
+                <li><a href="{{ route('forgot-password') }}">Forgot password</a></li>
+                <li><a href="mailto:accountancy@bsu.edu.ph?subject=CPAce%20—%20Report%20an%20issue">Report an issue</a></li>
             </ul>
         </div>
-        <div class="footer-col">
-            <h4>Institution</h4>
-            <ul>
-                <li><a href="#">Batangas State University</a></li>
-                <li><a href="#">Dept. of Accountancy</a></li>
-                <li><a href="#">Privacy Policy</a></li>
-                <li><a href="#">Terms of Use</a></li>
-            </ul>
+
+        <div class="foot-col">
+            <h5>Institution</h5>
+            <div class="foot-uni">
+                <img src="{{ asset('images/logo-icon.png') }}" alt="">
+                <div>
+                    <strong>Batangas State University</strong>
+                    <span>ARASOF-Nasugbu Campus<br>Nasugbu, Batangas, Philippines</span>
+                </div>
+            </div>
+            <p class="foot-meta">
+                <i class="fas fa-building-columns"></i> Department of Accountancy<br>
+                <i class="fas fa-envelope"></i> <a href="mailto:accountancy@bsu.edu.ph">accountancy@bsu.edu.ph</a>
+            </p>
         </div>
     </div>
-    <div class="footer-bottom">
-        <span>&copy; 2026 CPAce. All rights reserved.</span>
+
+    <div class="container foot-bottom">
+        <span>&copy; {{ date('Y') }} CPAce. All rights reserved.</span>
         <span>Version 1.0.0 &middot; Capstone Project &middot; BSU ARASOF-Nasugbu</span>
     </div>
 </footer>
 
 <script>
-    // Navbar scroll
+    // Navbar shadow on scroll
+    const navbar = document.getElementById('navbar');
     window.addEventListener('scroll', () => {
-        document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 20);
+        navbar.classList.toggle('scrolled', window.scrollY > 16);
     });
 
     // Mobile menu
@@ -1210,24 +1153,64 @@
         document.getElementById('mobileMenu').classList.toggle('open');
     }
 
-    // FAQ accordion
-    function toggleFaq(el) {
-        const item = el.parentElement;
-        const wasActive = item.classList.contains('active');
-        document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('active'));
-        if (!wasActive) item.classList.add('active');
+    // Active nav link on scroll
+    const navLinks = [...document.querySelectorAll('#navLinks a')];
+    const sections = navLinks
+        .map(a => document.querySelector(a.getAttribute('href')))
+        .filter(Boolean);
+
+    window.addEventListener('scroll', () => {
+        const y = window.scrollY + 140;
+        let current = sections[0];
+        sections.forEach(s => { if (s.offsetTop <= y) current = s; });
+        navLinks.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + current.id));
+    });
+
+    // Testimonial carousel
+    const track   = document.getElementById('track');
+    const stories = track.children.length;
+    const dotsBox = document.getElementById('dots');
+    let index = 0;
+
+    const perView = () => (window.innerWidth <= 880 ? 1 : 2);
+    const maxIndex = () => Math.max(0, stories - perView());
+
+    function buildDots() {
+        dotsBox.innerHTML = '';
+        for (let i = 0; i <= maxIndex(); i++) {
+            const b = document.createElement('button');
+            b.setAttribute('aria-label', 'Go to slide ' + (i + 1));
+            b.onclick = () => { index = i; render(); };
+            dotsBox.appendChild(b);
+        }
     }
 
+    function render() {
+        index = Math.min(Math.max(index, 0), maxIndex());
+        track.style.transform = 'translateX(-' + (index * (100 / perView())) + '%)';
+        [...dotsBox.children].forEach((d, i) => d.classList.toggle('on', i === index));
+    }
+
+    function slide(dir) {
+        index = index + dir;
+        if (index > maxIndex()) index = 0;
+        if (index < 0) index = maxIndex();
+        render();
+    }
+
+    window.addEventListener('resize', () => { buildDots(); render(); });
+    buildDots(); render();
+
     // Scroll reveal
-    const observer = new IntersectionObserver((entries) => {
+    const io = new IntersectionObserver((entries) => {
         entries.forEach((entry, i) => {
             if (entry.isIntersecting) {
                 setTimeout(() => entry.target.classList.add('visible'), i * 70);
-                observer.unobserve(entry.target);
+                io.unobserve(entry.target);
             }
         });
-    }, { threshold: 0.08, rootMargin: '0px 0px -30px 0px' });
-    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+    }, { threshold: .08, rootMargin: '0px 0px -30px 0px' });
+    document.querySelectorAll('.reveal').forEach(el => io.observe(el));
 </script>
 
     @include('partials.alerts')
