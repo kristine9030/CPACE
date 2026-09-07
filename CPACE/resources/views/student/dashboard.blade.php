@@ -343,8 +343,29 @@
             gap: 30px;
             align-items: center;
         }
+        /* Campus photo laid over the gradient as texture, so the red is not a
+           flat wash. Overlay blend keeps the maroon saturated instead of
+           greying it out, and the mask clears it off the greeting — the same
+           trick .welcome-banner already uses for its blueprint grid. */
+        .exam-hero::after {
+            content: ''; position: absolute; inset: 0; z-index: 0; pointer-events: none;
+            background: url("{{ asset('images/CPACE login bg.png') }}") center / cover no-repeat;
+            filter: grayscale(1) contrast(1.15);
+            opacity: .62;
+            mix-blend-mode: overlay;
+            -webkit-mask-image: linear-gradient(to left, #000 0%, rgba(0,0,0,.6) 40%, transparent 78%);
+                    mask-image: linear-gradient(to left, #000 0%, rgba(0,0,0,.6) 40%, transparent 78%);
+        }
+
         .exam-hero-left { position: relative; z-index: 1; }
-        .exam-hero-greeting { font-size: 32px; font-weight: 800; color: #fff; line-height: 1.1; }
+        /* Montserrat (loaded by partials.sidebar) for the banner copy, to match
+           the landing page and the page header. */
+        .exam-hero-greeting,
+        .exam-hero-subtitle,
+        .exam-hero-target,
+        .exam-hero-empty { font-family: 'Montserrat', ui-sans-serif, system-ui, sans-serif; }
+
+        .exam-hero-greeting { font-size: 32px; font-weight: 800; color: #fff; line-height: 1.1; letter-spacing: -.022em; }
         .exam-hero-subtitle { font-size: 16px; font-weight: 500; color: rgba(255,255,255,0.78); margin-top: 5px; }
 
         /* abstract decorative shapes (pure background overlay, out of the grid flow) */
