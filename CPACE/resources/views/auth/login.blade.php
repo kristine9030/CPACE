@@ -4,16 +4,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - CPACE CPA Reviewer</title>
-    <link href='https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap' rel='stylesheet'>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href='https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&display=swap' rel='stylesheet'>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
-            --maroon:        #7B1D1D;
-            --maroon-dark:   #5a1414;
-            --maroon-bright: #a12626;
-            --ink:           #1a1a1a;
-            --gray:          #666666;
-            --border:        #e8d5d5;
+            /* Same values the landing page uses, so the two read as one product. */
+            --maroon:        #7B1D1D;   /* landing --red        */
+            --maroon-dark:   #5A1414;   /* landing --red-dark   */
+            --maroon-bright: #A12626;   /* landing --red-bright */
+            --ink:           #14283E;   /* landing --navy       */
+            --navy-soft:     #1F3550;
+            --gray:          #66768A;   /* landing --body       */
+            --muted:         #93A0AE;
+            --border:        #E5E9ED;   /* landing --line       */
+            --soft:          #F4F5F7;
+            --rose:          #EFC6C6;   /* the on-dark accent used in the dark bands */
         }
 
         * {
@@ -23,7 +30,7 @@
         }
 
         body {
-            font-family: 'Poppins', sans-serif;
+            font-family: 'Montserrat', ui-sans-serif, system-ui, sans-serif;
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -91,7 +98,7 @@
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            background: linear-gradient(150deg, #6a1a1a 0%, #3a1010 45%, #130707 100%);
+            background: linear-gradient(150deg, #7B1D1D 0%, #3A1010 48%, #130707 100%);
         }
 
         .left-section::before {
@@ -117,8 +124,65 @@
 
         .left-section > * {
             position: relative;
-            z-index: 1;
+            z-index: 2;
         }
+
+        /* ── Card ornamentation ───────────────────────────────── */
+        /* Campus cut-out, lifted and dropped to a whisper so it reads as
+           texture rather than a photo. */
+        .panel-photo {
+            position: absolute; right: -20%; bottom: -12%; width: 148%;
+            aspect-ratio: 1920 / 1080; opacity: .1; z-index: 0;
+            background: url("{{ asset('images/overaly.png') }}") no-repeat;
+            background-size: 100% 100%;
+            filter: grayscale(1) brightness(1.7) contrast(.9);
+            -webkit-mask-image: linear-gradient(to bottom, transparent 22%, #000 58%);
+                    mask-image: linear-gradient(to bottom, transparent 22%, #000 58%);
+        }
+
+        /* The skewed bars that run down the landing hero, scaled to the panel. */
+        .panel-slash { position: absolute; z-index: 1; transform: skewX(-19deg); border-radius: 6px; }
+        .ps-1 { top: -14%; right: 5%;   width: 58px; height: 58%; background: linear-gradient(180deg, rgba(161,38,38,.6), rgba(161,38,38,0)); }
+        .ps-2 { top: -14%; right: 17%;  width: 15px; height: 44%; background: linear-gradient(180deg, rgba(255,255,255,.11), rgba(255,255,255,0)); }
+        .ps-3 { bottom: -16%; left: -7%; width: 44px; height: 36%; background: linear-gradient(0deg, rgba(161,38,38,.5), rgba(161,38,38,0)); }
+
+        /* Hairline down the seam between the two halves. */
+        .card-seam {
+            position: absolute; top: 0; bottom: 0; left: 51.2%;
+            width: 3px; z-index: 4; pointer-events: none;
+            background: linear-gradient(180deg,
+                rgba(161,38,38,0) 0%, var(--maroon-bright) 26%,
+                var(--maroon-bright) 74%, rgba(161,38,38,0) 100%);
+        }
+
+        /* Quiet ornaments on the form side, same set the landing page uses. */
+        .rdeco { position: absolute; z-index: 0; pointer-events: none; }
+        .rdeco-dots {
+            color: rgba(123,29,29,.2);
+            background-image: radial-gradient(currentColor 1.3px, transparent 1.4px);
+            background-size: 17px 17px;
+            -webkit-mask-image: radial-gradient(ellipse at center, #000 26%, transparent 72%);
+                    mask-image: radial-gradient(ellipse at center, #000 26%, transparent 72%);
+        }
+        .rdeco-ring { border: 1.5px dashed rgba(123,29,29,.18); border-radius: 50%; animation: cardSpin 46s linear infinite; }
+        .rdeco-tile { border: 1.5px solid rgba(123,29,29,.14); border-radius: 14px; }
+        @keyframes cardSpin { to { transform: rotate(360deg); } }
+
+        .rd-1 { right: 10px; bottom: 14px; width: 170px; height: 100px; }
+        .rd-2 { right: 26px; top: 26px;    width: 84px;  height: 84px; }
+        .panel-tile {
+            position: absolute; z-index: 1; left: 44px; top: 33%;
+            width: 66px; height: 66px; transform: rotate(20deg);
+            border: 1.5px solid rgba(255,255,255,.14); border-radius: 15px;
+        }
+        .panel-ring {
+            position: absolute; z-index: 1; right: 46px; top: 25%;
+            width: 78px; height: 78px; border-radius: 50%;
+            border: 1.5px dashed rgba(255,255,255,.13);
+            animation: cardSpin 46s linear infinite;
+        }
+
+        @media (prefers-reduced-motion: reduce) { .rdeco-ring { animation: none; } }
 
         .logo {
             display: flex;
@@ -144,11 +208,12 @@
             object-fit: contain;
         }
 
-        .logo-text h1 {
-            font-size: 22px;
-            font-weight: 800;
-            letter-spacing: -.3px;
-        }
+        .wordmark { font-weight: 800; letter-spacing: -.035em; line-height: 1; }
+        .wordmark .w-a { color: var(--maroon); }
+        .wordmark .w-b { color: var(--ink); }
+        .wordmark.on-dark .w-a, .wordmark.on-dark .w-b { color: #fff; }
+
+        .logo-text h1 { font-size: 22px; }
 
         .logo-text p {
             font-size: 11.5px;
@@ -179,24 +244,19 @@
             width: 7px;
             height: 7px;
             border-radius: 50%;
-            background: #f5a0a0;
-            box-shadow: 0 0 0 4px rgba(245, 160, 160, .22);
+            background: var(--rose);
+            box-shadow: 0 0 0 4px rgba(239, 198, 198, .2);
         }
 
         .hero-content h2 {
-            font-size: 32px;
-            font-weight: 800;
-            line-height: 1.22;
-            letter-spacing: -.5px;
+            font-size: 31px;
+            font-weight: 700;
+            line-height: 1.28;
+            letter-spacing: -.022em;
             margin-bottom: 14px;
         }
 
-        .hero-content h2 span {
-            background: linear-gradient(135deg, #ffca6a 0%, #e8a830 100%);
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
+        .hero-content h2 span { color: var(--rose); }
 
         .hero-content p {
             font-size: 13.5px;
@@ -219,6 +279,12 @@
             font-size: 11px;
             font-weight: 600;
             letter-spacing: .4px;
+            transition: background .18s, border-color .18s, transform .18s;
+        }
+        .hero-subjects span:hover {
+            background: rgba(255, 255, 255, .14);
+            border-color: rgba(255, 255, 255, .24);
+            transform: translateY(-2px);
         }
 
         /* ── Right / form panel ── */
@@ -261,13 +327,14 @@
 
         .form-container {
             position: relative;
+            z-index: 1;
         }
 
         .form-container h3 {
-            font-size: 28px;
-            font-weight: 800;
+            font-size: 27px;
+            font-weight: 700;
             color: var(--ink);
-            letter-spacing: -.5px;
+            letter-spacing: -.022em;
             margin-bottom: 8px;
         }
 
@@ -313,7 +380,7 @@
         label {
             display: block;
             margin-bottom: 7px;
-            color: #333;
+            color: var(--ink);
             font-weight: 600;
             font-size: 12.5px;
         }
@@ -327,7 +394,7 @@
             left: 15px;
             top: 50%;
             transform: translateY(-50%);
-            color: #b9a3a3;
+            color: var(--muted);
             font-size: 14px;
             pointer-events: none;
             transition: color .25s;
@@ -339,15 +406,15 @@
             width: 100%;
             padding: 13px 15px 13px 42px;
             border: 1.5px solid var(--border);
-            border-radius: 11px;
+            border-radius: 9px;
             font-size: 14px;
             color: var(--ink);
-            font-family: 'Poppins', sans-serif;
-            background: #fbf9f9;
+            font-family: 'Montserrat', ui-sans-serif, system-ui, sans-serif;
+            background: #fff;
             transition: border-color .25s, box-shadow .25s, background .25s;
         }
 
-        input::placeholder { color: #b0a0a0; }
+        input::placeholder { color: #AFB9C4; }
 
         input[type="email"]:focus,
         input[type="password"]:focus,
@@ -355,7 +422,7 @@
             outline: none;
             border-color: var(--maroon);
             background: #fff;
-            box-shadow: 0 0 0 4px rgba(123, 29, 29, .10);
+            box-shadow: 0 0 0 3.5px rgba(123, 29, 29, .1);
         }
 
         .input-wrap:focus-within > i.field-ico { color: var(--maroon); }
@@ -371,7 +438,7 @@
             background: none;
             border: none;
             cursor: pointer;
-            color: #b9a3a3;
+            color: var(--muted);
             font-size: 15px;
             padding: 4px;
             display: flex;
@@ -393,7 +460,7 @@
             display: flex;
             align-items: center;
             gap: 7px;
-            color: #555;
+            color: var(--navy-soft);
         }
 
         .checkbox-wrapper label {
@@ -425,27 +492,28 @@
         .btn-login {
             width: 100%;
             padding: 14px;
-            background: linear-gradient(135deg, var(--maroon) 0%, var(--maroon-dark) 100%);
+            background: var(--maroon);
             color: #fff;
             border: none;
-            border-radius: 11px;
+            border-radius: 9px;
             font-size: 15px;
-            font-weight: 700;
-            font-family: 'Poppins', sans-serif;
+            font-weight: 600;
+            font-family: 'Montserrat', ui-sans-serif, system-ui, sans-serif;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 9px;
             letter-spacing: .3px;
-            box-shadow: 0 8px 24px -6px rgba(123, 29, 29, .55);
-            transition: transform .2s, box-shadow .2s;
+            box-shadow: 0 8px 20px rgba(123, 29, 29, .26);
+            transition: background .18s, transform .18s, box-shadow .18s;
         }
 
         .btn-login i { font-size: 12px; transition: transform .2s; }
         .btn-login:hover {
+            background: var(--maroon-dark);
             transform: translateY(-2px);
-            box-shadow: 0 14px 32px -8px rgba(123, 29, 29, .65);
+            box-shadow: 0 12px 26px rgba(123, 29, 29, .34);
         }
         .btn-login:hover i { transform: translateX(3px); }
         .btn-login:active { transform: translateY(0); }
@@ -454,7 +522,7 @@
             text-align: center;
             margin: 24px 0;
             position: relative;
-            color: #9a8f8f;
+            color: var(--muted);
             font-size: 12px;
         }
 
@@ -474,26 +542,25 @@
         .social-btn {
             padding: 12px;
             border: 1.5px solid var(--border);
-            border-radius: 11px;
+            border-radius: 9px;
             background: #fff;
             cursor: pointer;
             font-size: 13px;
             font-weight: 600;
-            font-family: 'Poppins', sans-serif;
+            font-family: 'Montserrat', ui-sans-serif, system-ui, sans-serif;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 9px;
             text-decoration: none;
-            color: #333;
-            transition: all .25s;
+            color: var(--ink);
+            transition: border-color .18s, background .18s, transform .18s, box-shadow .18s;
         }
 
         .social-btn:hover {
-            border-color: var(--maroon);
-            background: #fdf6f6;
-            transform: translateY(-1px);
-            box-shadow: 0 6px 18px -6px rgba(123, 29, 29, .28);
+            border-color: #CFD6DE;
+            background: var(--soft);
+            transform: translateY(-2px);
         }
 
         .signup-link {
@@ -537,13 +604,13 @@
         }
 
         .error-message {
-            color: #ef4444;
+            color: #C0392B;
             font-size: 12px;
             margin-top: 6px;
         }
 
-        .form-group.error input { border-color: #ef4444; }
-        .form-group.error input:focus { box-shadow: 0 0 0 4px rgba(239, 68, 68, .12); }
+        .form-group.error input { border-color: #C0392B; }
+        .form-group.error input:focus { box-shadow: 0 0 0 3.5px rgba(192, 57, 43, .13); }
 
         /* ── Tablet ── */
         @media (max-width: 1024px) {
@@ -562,6 +629,8 @@
                 max-width: 460px;
             }
             .left-section { display: none; }
+            .card-seam { display: none; }
+            .rd-2 { right: 14px; top: 14px; width: 66px; height: 66px; }
             .mobile-brand { display: flex; }
             .right-section { padding: 36px 30px; }
             .back-home { position: static; margin-bottom: 0; display: none; }
@@ -599,14 +668,23 @@
     <a href="{{ url('/') }}" class="back-home"><i class="fas fa-arrow-left"></i> Back to home</a>
 
     <div class="container">
+        <span class="card-seam" aria-hidden="true"></span>
+
         <!-- Left / Brand Section -->
         <div class="left-section">
+            <span class="panel-photo" aria-hidden="true"></span>
+            <span class="panel-slash ps-1" aria-hidden="true"></span>
+            <span class="panel-slash ps-2" aria-hidden="true"></span>
+            <span class="panel-slash ps-3" aria-hidden="true"></span>
+            <span class="panel-tile" aria-hidden="true"></span>
+            <span class="panel-ring" aria-hidden="true"></span>
+
             <div class="logo">
                 <div class="logo-circle">
                     <img src="{{ asset('images/logo-icon.png') }}" alt="CPAce">
                 </div>
                 <div class="logo-text">
-                    <img src="{{ asset('images/wordmark-cropped.png') }}" alt="CPAce" style="height: 22px; object-fit: contain;">
+                    <h1 class="wordmark on-dark"><span class="w-a">CPA</span><span class="w-b">ce</span></h1>
                     <p>Your Edge to Ace CPALE</p>
                 </div>
             </div>
@@ -630,9 +708,12 @@
         <!-- Right / Form Section -->
         <div class="right-section-wrap">
             <div class="right-section">
+                <span class="rdeco rdeco-ring rd-2" aria-hidden="true"></span>
+                <span class="rdeco rdeco-dots rd-1" aria-hidden="true"></span>
+
                 <div class="mobile-brand">
-                    <img src="{{ asset('images/logo-icon.png') }}" alt="CPAce">
-                    <img src="{{ asset('images/wordmark-cropped.png') }}" alt="CPAce">
+                    <img src="{{ asset('images/logo-icon.png') }}" alt="">
+                    <span class="wordmark" style="font-size:26px"><span class="w-a">CPA</span><span class="w-b">ce</span></span>
                 </div>
 
                 <div class="form-container">
