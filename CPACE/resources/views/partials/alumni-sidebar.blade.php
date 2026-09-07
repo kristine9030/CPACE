@@ -5,6 +5,23 @@
 --}}
 @php $active = $active ?? ''; @endphp
 
+{{-- Page header type, matched to the landing page --}}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+    /* Page header type, matched to the landing page. These sit in the body, so
+       they land after each page's own stylesheet and win on equal specificity.
+       The dark-mode rules in partials.student-theme are more specific
+       (html.dark .page-title), so they still take over where that applies. */
+    .page-title, .page-subtitle {
+        font-family: 'Montserrat', ui-sans-serif, system-ui, sans-serif;
+    }
+    .page-title    { color: #14283E; letter-spacing: -.022em; }
+    .page-subtitle { color: #66768A; }
+</style>
+
 <style>
     /* ─── SHARED ALUMNI SIDEBAR (mirrors faculty sidebar) ─── */
     .sidebar {
