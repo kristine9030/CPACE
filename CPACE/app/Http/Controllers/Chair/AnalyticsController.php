@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Chair;
 
 use App\Http\Controllers\Controller;
+use App\Models\Section;
 use App\Models\Subject;
 use App\Services\ChairAnalyticsService;
 use Illuminate\Http\Request;
@@ -17,13 +18,17 @@ class AnalyticsController extends Controller
     {
         $filters = $request->validate([
             'subject' => 'nullable|integer|exists:subjects,id',
+            'section' => 'nullable|string|exists:sections,name',
         ]);
         $subjectId = isset($filters['subject']) ? (int) $filters['subject'] : null;
+        $section = $filters['section'] ?? null;
 
         return view('chair.analytics.performance', [
-            'report' => $this->analytics->performanceReport($subjectId),
+            'report' => $this->analytics->performanceReport($subjectId, $section),
             'subjects' => Subject::orderBy('id')->get(),
+            'sections' => Section::where('is_active', true)->orderBy('name')->get(),
             'selectedSubject' => $subjectId,
+            'selectedSection' => $section,
         ]);
     }
 

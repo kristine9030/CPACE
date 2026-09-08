@@ -23,7 +23,7 @@ class ChairAnalyticsTest extends TestCase
     private const TABLES = [
         'messages', 'conversation_participants', 'conversations', 'student_profiles',
         'notifications', 'question_variants', 'quiz_answers', 'quiz_sessions',
-        'performance_records', 'questions', 'faculty_subjects', 'topics', 'subjects', 'users',
+        'performance_records', 'questions', 'faculty_subjects', 'topics', 'subjects', 'sections', 'users',
     ];
 
     protected function setUp(): void
@@ -88,6 +88,13 @@ class ChairAnalyticsTest extends TestCase
             $table->unsignedBigInteger('user_id')->unique();
             $table->boolean('is_alumni')->default(false);
             $table->boolean('is_shifted')->default(false);
+            $table->string('section')->nullable();
+            $table->timestamps();
+        });
+        Schema::create('sections', function (Blueprint $table) {
+            $table->id();
+            $table->string('name')->unique();
+            $table->boolean('is_active')->default(true);
             $table->timestamps();
         });
         Schema::create('subjects', function (Blueprint $table) {
@@ -221,6 +228,35 @@ class ChairAnalyticsTest extends TestCase
         $this->assertFalse($aud['meets_threshold']);
     }
 
+    public function test_section_filter_scopes_the_report_to_that_sections_students(): void
+    {
+        // Second student, in a different section, whose 0/10 record would drag
+        // the class-wide accuracy down if the section filter did not exclude them.
+        $other = User::create(['role_id' => Role::STUDENT, 'first_name' => 'Other', 'last_name' => 'Student', 'email' => 'other@example.com', 'password' => Hash::make('password'), 'is_active' => true, 'setup_completed_at' => now()]);
+        DB::table('student_profiles')->insert(['user_id' => $other->id, 'section' => 'BSA-1B', 'created_at' => now(), 'updated_at' => now()]);
+        $topicId = DB::table('topics')->first()->id;
+        DB::table('performance_records')->insert(['student_id' => $other->id, 'topic_id' => $topicId, 'correct_count' => 0, 'total_attempts' => 10, 'is_weak_area' => true]);
+
+        $analytics = app(ChairAnalyticsService::class);
+
+        $unfiltered = $analytics->performanceReport();
+        $this->assertSame(2, $unfiltered['participating_students']);
+
+        $sectionA = $analytics->performanceReport(null, 'BSA-1A');
+        $this->assertSame(1, $sectionA['participating_students']);
+        $this->assertSame(70, $sectionA['overall_accuracy']);
+
+        $sectionB = $analytics->performanceReport(null, 'BSA-1B');
+        $this->assertSame(1, $sectionB['participating_students']);
+        $this->assertSame(0, $sectionB['overall_accuracy']);
+
+        // The chair-facing page accepts the same filter via the query string.
+        $chair = User::where('email', 'chair@example.com')->firstOrFail();
+        $this->actingAs($chair)->get(route('chair.analytics.performance', ['section' => 'BSA-1A']))
+            ->assertOk()
+            ->assertSee('BSA-1A');
+    }
+
     public function test_engagement_distribution_and_difficulty_series_are_chart_ready(): void
     {
         $analytics = app(ChairAnalyticsService::class);
@@ -265,7 +301,9 @@ class ChairAnalyticsTest extends TestCase
         // requests into first-login onboarding before role checks are reached.
         User::create(['role_id' => Role::ADMIN, 'first_name' => 'Program', 'last_name' => 'Chair', 'email' => 'chair@example.com', 'password' => Hash::make('password'), 'is_active' => true, 'setup_completed_at' => now()]);
         $student = User::create(['role_id' => Role::STUDENT, 'first_name' => 'Test', 'last_name' => 'Student', 'email' => 'student@example.com', 'password' => Hash::make('password'), 'is_active' => true, 'setup_completed_at' => now()]);
-        DB::table('student_profiles')->insert(['user_id' => $student->id, 'created_at' => now(), 'updated_at' => now()]);
+        DB::table('student_profiles')->insert(['user_id' => $student->id, 'section' => 'BSA-1A', 'created_at' => now(), 'updated_at' => now()]);
+        DB::table('sections')->insert(['name' => 'BSA-1A', 'is_active' => true, 'created_at' => now(), 'updated_at' => now()]);
+        DB::table('sections')->insert(['name' => 'BSA-1B', 'is_active' => true, 'created_at' => now(), 'updated_at' => now()]);
 
         $firstTopicId = null;
         foreach ([['AUD', 'Auditing'], ['FAR', 'Financial Accounting'], ['TAX', 'Taxation']] as $index => [$code, $name]) {

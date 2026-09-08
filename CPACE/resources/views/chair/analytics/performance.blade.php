@@ -41,7 +41,7 @@
 
         .filter-card { padding:13px 16px; margin-bottom:18px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
         .filter-card label { font-size:10.5px; font-weight:600; color:#777; }
-        .filter-card select { min-width:230px; padding:8px 11px; border:1px solid #ddd; border-radius:8px; font:11px Poppins,sans-serif; color:#444; background:#fff; }
+        .filter-card select { min-width:190px; padding:8px 11px; border:1px solid #ddd; border-radius:8px; font:11px Poppins,sans-serif; color:#444; background:#fff; }
         .analytics-layout { display:grid; grid-template-columns:minmax(0,1.3fr) minmax(310px,.7fr); gap:18px; }
         .metric-row { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin-bottom:18px; }
         .metric { background:#fff; border:1px solid #eee; border-radius:12px; padding:15px; }
@@ -93,8 +93,13 @@
             <option value="">All CPALE subjects</option>
             @foreach($subjects as $subject)<option value="{{ $subject->id }}" @selected($selectedSubject === $subject->id)>{{ $subject->code }} — {{ $subject->name }}</option>@endforeach
         </select>
+        <label for="section">Section</label>
+        <select name="section" id="section">
+            <option value="">All sections</option>
+            @foreach($sections as $sec)<option value="{{ $sec->name }}" @selected($selectedSection === $sec->name)>{{ $sec->name }}</option>@endforeach
+        </select>
         <button class="btn btn-primary btn-sm" type="submit"><i class="fas fa-filter"></i> Apply</button>
-        @if($selectedSubject)<a class="btn btn-ghost btn-sm" href="{{ route('chair.analytics.performance') }}">Clear</a>@endif
+        @if($selectedSubject || $selectedSection)<a class="btn btn-ghost btn-sm" href="{{ route('chair.analytics.performance') }}">Clear</a>@endif
     </form>
 
     <div class="tab-bar" role="tablist">

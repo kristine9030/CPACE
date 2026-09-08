@@ -52,10 +52,10 @@ class ChairAnalyticsService
         ];
     }
 
-    public function performanceReport(?int $subjectId = null): array
+    public function performanceReport(?int $subjectId = null, ?string $section = null): array
     {
-        $subjects = $this->subjectPerformance($subjectId);
-        $readiness = $this->readinessSummary($subjectId);
+        $subjects = $this->subjectPerformance($subjectId, $section);
+        $readiness = $this->readinessSummary($subjectId, $section);
 
         return [
             'subjects' => $subjects,
@@ -63,22 +63,25 @@ class ChairAnalyticsService
                 ? (int) round($subjects->sum('correct') / $subjects->sum('attempts') * 100)
                 : null,
             'total_attempts' => (int) $subjects->sum('attempts'),
-            'participating_students' => $this->participatingStudentCount($subjectId),
+            'participating_students' => $this->participatingStudentCount($subjectId, $section),
             'readiness' => $readiness,
-            'trend' => $this->readinessTrend(8, $subjectId),
-            'engagement' => $this->engagementTrend(8, $subjectId),
-            'distribution' => $this->scoreDistribution($subjectId),
-            'difficulty' => $this->difficultyPerformance($subjectId),
-            'weak_topics' => $this->weakestTopics(10, $subjectId),
-            'cohort' => $this->cohortSummary(),
+            'trend' => $this->readinessTrend(8, $subjectId, $section),
+            'engagement' => $this->engagementTrend(8, $subjectId, $section),
+            'distribution' => $this->scoreDistribution($subjectId, $section),
+            'difficulty' => $this->difficultyPerformance($subjectId, $section),
+            'weak_topics' => $this->weakestTopics(10, $subjectId, $section),
+            'cohort' => $this->cohortSummary($section),
         ];
     }
 
-    public function subjectPerformance(?int $subjectId = null): Collection
+    public function subjectPerformance(?int $subjectId = null, ?string $section = null): Collection
     {
         $metrics = DB::table('performance_records')
             ->join('topics', 'topics.id', '=', 'performance_records.topic_id')
             ->when($subjectId, fn ($query) => $query->where('topics.subject_id', $subjectId))
+            ->when($section, fn ($query) => $query
+                ->join('student_profiles', 'student_profiles.user_id', '=', 'performance_records.student_id')
+                ->where('student_profiles.section', $section))
             ->groupBy('topics.subject_id')
             ->select(
                 'topics.subject_id',
@@ -116,9 +119,9 @@ class ChairAnalyticsService
             });
     }
 
-    public function readinessSummary(?int $subjectId = null): array
+    public function readinessSummary(?int $subjectId = null, ?string $section = null): array
     {
-        $rows = $this->studentReadinessRows($subjectId);
+        $rows = $this->studentReadinessRows($subjectId, $section);
         $eligible = $rows->where('attempts', '>=', self::DEVELOPING_ATTEMPTS);
         $ready = $eligible->where('band', 'ready')->count();
         $developing = $eligible->where('band', 'developing')->count();
@@ -138,13 +141,16 @@ class ChairAnalyticsService
         ];
     }
 
-    public function readinessTrend(int $weeks = 8, ?int $subjectId = null): Collection
+    public function readinessTrend(int $weeks = 8, ?int $subjectId = null, ?string $section = null): Collection
     {
         $sessions = DB::table('quiz_sessions')
             ->whereNotNull('completed_at')
             ->where('session_type', '!=', 'training')
             ->when($subjectId, fn ($query) => $query->where('subject_id', $subjectId))
-            ->select('student_id', 'subject_id', 'total_items', 'correct_answers', 'completed_at')
+            ->when($section, fn ($query) => $query
+                ->join('student_profiles', 'student_profiles.user_id', '=', 'quiz_sessions.student_id')
+                ->where('student_profiles.section', $section))
+            ->select('quiz_sessions.student_id', 'quiz_sessions.subject_id', 'quiz_sessions.total_items', 'quiz_sessions.correct_answers', 'quiz_sessions.completed_at')
             ->get();
 
         return collect(range($weeks - 1, 0))->map(function ($offset) use ($sessions, $subjectId) {
@@ -188,7 +194,7 @@ class ChairAnalyticsService
      * cumulative — it answers "is the cohort still practising?", which is the
      * leading indicator behind every readiness movement.
      */
-    public function engagementTrend(int $weeks = 8, ?int $subjectId = null): Collection
+    public function engagementTrend(int $weeks = 8, ?int $subjectId = null, ?string $section = null): Collection
     {
         $from = now()->startOfWeek()->subWeeks($weeks - 1);
 
@@ -197,7 +203,10 @@ class ChairAnalyticsService
             ->where('session_type', '!=', 'training')
             ->where('completed_at', '>=', $from)
             ->when($subjectId, fn ($query) => $query->where('subject_id', $subjectId))
-            ->select('student_id', 'total_items', 'correct_answers', 'duration_secs', 'completed_at')
+            ->when($section, fn ($query) => $query
+                ->join('student_profiles', 'student_profiles.user_id', '=', 'quiz_sessions.student_id')
+                ->where('student_profiles.section', $section))
+            ->select('quiz_sessions.student_id', 'quiz_sessions.total_items', 'quiz_sessions.correct_answers', 'quiz_sessions.duration_secs', 'quiz_sessions.completed_at')
             ->get();
 
         return collect(range($weeks - 1, 0))->map(function ($offset) use ($sessions) {
@@ -228,7 +237,7 @@ class ChairAnalyticsService
      * How the measured class is spread, not just its average. A 62% mean built
      * from a bimodal cohort needs a different intervention than a tight 62%.
      */
-    public function scoreDistribution(?int $subjectId = null): Collection
+    public function scoreDistribution(?int $subjectId = null, ?string $section = null): Collection
     {
         $bands = [
             ['label' => '0–49%', 'min' => 0, 'max' => 49],
@@ -239,7 +248,7 @@ class ChairAnalyticsService
             ['label' => '90–100%', 'min' => 90, 'max' => 100],
         ];
 
-        $rows = $this->studentReadinessRows($subjectId)
+        $rows = $this->studentReadinessRows($subjectId, $section)
             ->where('attempts', '>=', self::DEVELOPING_ATTEMPTS);
 
         return collect($bands)->map(fn ($band) => [
@@ -254,13 +263,17 @@ class ChairAnalyticsService
      * Class accuracy split by authored difficulty. Accuracy that does not fall
      * as difficulty rises means the difficulty labels in the bank are wrong.
      */
-    public function difficultyPerformance(?int $subjectId = null): Collection
+    public function difficultyPerformance(?int $subjectId = null, ?string $section = null): Collection
     {
         $rows = DB::table('quiz_answers')
             ->join('questions', 'questions.id', '=', 'quiz_answers.question_id')
             ->join('topics', 'topics.id', '=', 'questions.topic_id')
             ->whereNotNull('quiz_answers.is_correct')
             ->when($subjectId, fn ($query) => $query->where('topics.subject_id', $subjectId))
+            ->when($section, fn ($query) => $query
+                ->join('quiz_sessions', 'quiz_sessions.id', '=', 'quiz_answers.session_id')
+                ->join('student_profiles', 'student_profiles.user_id', '=', 'quiz_sessions.student_id')
+                ->where('student_profiles.section', $section))
             ->groupBy(DB::raw('LOWER(questions.difficulty)'))
             ->select(
                 DB::raw('LOWER(questions.difficulty) as difficulty'),
@@ -294,12 +307,15 @@ class ChairAnalyticsService
     }
 
     /** Lowest-scoring topics across the whole cohort — the remediation shortlist. */
-    public function weakestTopics(int $limit = 10, ?int $subjectId = null): Collection
+    public function weakestTopics(int $limit = 10, ?int $subjectId = null, ?string $section = null): Collection
     {
         return DB::table('performance_records')
             ->join('topics', 'topics.id', '=', 'performance_records.topic_id')
             ->join('subjects', 'subjects.id', '=', 'topics.subject_id')
             ->when($subjectId, fn ($query) => $query->where('subjects.id', $subjectId))
+            ->when($section, fn ($query) => $query
+                ->join('student_profiles', 'student_profiles.user_id', '=', 'performance_records.student_id')
+                ->where('student_profiles.section', $section))
             ->groupBy('topics.id', 'topics.name', 'subjects.code')
             ->havingRaw('SUM(performance_records.total_attempts) >= ?', [self::TOPIC_MIN_ATTEMPTS])
             ->select(
@@ -493,11 +509,12 @@ class ChairAnalyticsService
     }
 
     /** Enrollment health: who is on the platform and who has gone quiet. */
-    public function cohortSummary(): array
+    public function cohortSummary(?string $section = null): array
     {
         $students = DB::table('users')
             ->leftJoin('student_profiles', 'student_profiles.user_id', '=', 'users.id')
             ->where('users.role_id', Role::STUDENT)
+            ->when($section, fn ($query) => $query->where('student_profiles.section', $section))
             ->select('users.id', 'users.is_active', 'users.last_login_at',
                 'student_profiles.is_alumni', 'student_profiles.is_shifted')
             ->get();
@@ -537,7 +554,7 @@ class ChairAnalyticsService
         };
     }
 
-    private function studentReadinessRows(?int $subjectId = null): Collection
+    private function studentReadinessRows(?int $subjectId = null, ?string $section = null): Collection
     {
         return DB::table('users')
             ->leftJoin('quiz_sessions', function ($join) use ($subjectId) {
@@ -548,6 +565,9 @@ class ChairAnalyticsService
                     $join->where('quiz_sessions.subject_id', '=', $subjectId);
                 }
             })
+            ->when($section, fn ($query) => $query
+                ->join('student_profiles', 'student_profiles.user_id', '=', 'users.id')
+                ->where('student_profiles.section', $section))
             ->where('users.role_id', Role::STUDENT)
             ->where('users.is_active', true)
             ->groupBy('users.id')
@@ -575,12 +595,15 @@ class ChairAnalyticsService
             });
     }
 
-    private function participatingStudentCount(?int $subjectId = null): int
+    private function participatingStudentCount(?int $subjectId = null, ?string $section = null): int
     {
         return DB::table('performance_records')
             ->join('topics', 'topics.id', '=', 'performance_records.topic_id')
             ->where('performance_records.total_attempts', '>', 0)
             ->when($subjectId, fn ($query) => $query->where('topics.subject_id', $subjectId))
+            ->when($section, fn ($query) => $query
+                ->join('student_profiles', 'student_profiles.user_id', '=', 'performance_records.student_id')
+                ->where('student_profiles.section', $section))
             ->distinct('performance_records.student_id')
             ->count('performance_records.student_id');
     }
