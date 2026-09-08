@@ -174,6 +174,68 @@ class FacultyMaterialTest extends TestCase
         $this->assertNull(DB::table('materials')->find($materialId));
     }
 
+    public function test_a_material_saved_as_draft_is_not_active_and_hidden_from_students(): void
+    {
+        $faculty = $this->faculty();
+        $topicId = $this->topicUnderAssignedSubject($faculty);
+
+        $this->actingAs($faculty)->post(route('faculty.materials.store'), [
+            'topic_id' => $topicId,
+            'title' => 'Unfinished Notes',
+            'kind' => 'link',
+            'external_url' => 'https://example.com/slides',
+            'status' => 'draft',
+        ])->assertRedirect();
+
+        $this->assertSame(0, DB::table('materials')->where('topic_id', $topicId)->where('is_active', true)->count());
+        $this->assertSame(1, DB::table('materials')->where('topic_id', $topicId)->where('is_active', false)->count());
+    }
+
+    public function test_a_material_with_no_status_given_defaults_to_published(): void
+    {
+        $faculty = $this->faculty();
+        $topicId = $this->topicUnderAssignedSubject($faculty);
+
+        $this->actingAs($faculty)->post(route('faculty.materials.store'), [
+            'topic_id' => $topicId,
+            'title' => 'Reference Slides',
+            'kind' => 'link',
+            'external_url' => 'https://example.com/slides',
+        ])->assertRedirect();
+
+        $this->assertSame(1, DB::table('materials')->where('topic_id', $topicId)->where('is_active', true)->count());
+    }
+
+    public function test_a_faculty_member_can_toggle_a_material_between_draft_and_published(): void
+    {
+        $faculty = $this->faculty();
+        $topicId = $this->topicUnderAssignedSubject($faculty);
+        $materialId = DB::table('materials')->insertGetId([
+            'topic_id' => $topicId, 'title' => 'My Material', 'kind' => 'link', 'external_url' => 'https://example.com',
+            'is_active' => true, 'created_at' => now(), 'updated_at' => now(),
+        ]);
+
+        $this->actingAs($faculty)->post(route('faculty.materials.toggle-status', $materialId))->assertRedirect();
+        $this->assertFalse((bool) DB::table('materials')->find($materialId)->is_active);
+
+        $this->actingAs($faculty)->post(route('faculty.materials.toggle-status', $materialId))->assertRedirect();
+        $this->assertTrue((bool) DB::table('materials')->find($materialId)->is_active);
+    }
+
+    public function test_a_faculty_member_cannot_toggle_a_materials_status_outside_their_assigned_subjects(): void
+    {
+        $faculty = $this->faculty();
+        $subjectId = DB::table('subjects')->insertGetId(['code' => 'FAR', 'name' => 'Financial Accounting', 'created_at' => now(), 'updated_at' => now()]);
+        $topicId = DB::table('topics')->insertGetId(['subject_id' => $subjectId, 'name' => 'Inventory', 'created_at' => now(), 'updated_at' => now()]);
+        $materialId = DB::table('materials')->insertGetId([
+            'topic_id' => $topicId, 'title' => 'Foreign Material', 'kind' => 'link', 'external_url' => 'https://example.com',
+            'is_active' => true, 'created_at' => now(), 'updated_at' => now(),
+        ]);
+
+        $this->actingAs($faculty)->post(route('faculty.materials.toggle-status', $materialId))->assertForbidden();
+        $this->assertTrue((bool) DB::table('materials')->find($materialId)->is_active);
+    }
+
     private function faculty(): User
     {
         return User::create([

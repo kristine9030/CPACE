@@ -81,6 +81,7 @@ class MaterialController extends Controller
             'kind'         => ['required', 'in:file,link'],
             'file'         => ['required_if:kind,file', 'file', 'mimes:' . self::ALLOWED_EXTENSIONS, 'max:20480'],
             'external_url' => ['required_if:kind,link', 'nullable', 'url', 'max:2048'],
+            'status'       => ['nullable', 'in:draft,publish'],
         ]);
 
         $this->authorizeTopic((int) $data['topic_id']);
@@ -91,7 +92,8 @@ class MaterialController extends Controller
             'title'       => $data['title'],
             'description' => $data['description'] ?? null,
             'kind'        => $data['kind'],
-            'is_active'   => true,
+            // Default to published so existing callers (and the API) keep working unchanged.
+            'is_active'   => ($data['status'] ?? 'publish') !== 'draft',
         ]);
 
         if ($data['kind'] === 'file') {
@@ -109,7 +111,21 @@ class MaterialController extends Controller
 
         $material->save();
 
-        return back()->with('status', 'Material added successfully.');
+        return back()->with('status', 'Material ' . ($material->is_active ? 'published' : 'saved as draft') . '.');
+    }
+
+    /**
+     * Flip a material between draft and published. Drafts stay hidden from
+     * students (Student\SubjectController only queries is_active materials)
+     * so faculty can prep a file before it's visible in class.
+     */
+    public function toggleStatus(Material $material)
+    {
+        $this->authorizeTopic($material->topic_id);
+
+        $material->update(['is_active' => ! $material->is_active]);
+
+        return back()->with('status', 'Material ' . ($material->is_active ? 'published' : 'moved back to draft') . '.');
     }
 
     /**

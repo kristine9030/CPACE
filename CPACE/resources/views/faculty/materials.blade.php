@@ -74,6 +74,13 @@
         .mb-view:hover { background:#dde6f8; }
         .mb-del { background:#fdeaea; color:var(--accent); }
         .mb-del:hover { background:#f8d5d5; }
+        .mb-draft { background:#fff5e6; color:#b5790a; }
+        .mb-draft:hover { background:#fbead0; }
+        .mb-publish { background:#e8f7ee; color:#1e7e46; }
+        .mb-publish:hover { background:#d7f0e1; }
+        .status-badge { display:inline-flex; align-items:center; gap:4px; font-size:10px; font-weight:600; padding:2px 8px; border-radius:20px; margin-left:8px; vertical-align:middle; }
+        .status-badge.s-pub { background:#e8f7ee; color:#1e7e46; }
+        .status-badge.s-draft { background:#fff5e6; color:#b5790a; }
 
         /* Upload form */
         .upload-box { padding:18px 20px; border-top:1px solid #f2f2f2; background:#fbfbfb; }
@@ -168,7 +175,14 @@
                             <div class="mat-item">
                                 <div class="mat-icon" style="background:{{ $meta['color'] }};"><i class="fas {{ $meta['icon'] }}"></i></div>
                                 <div class="mat-info">
-                                    <div class="mat-title">{{ $m->title }}</div>
+                                    <div class="mat-title">
+                                        {{ $m->title }}
+                                        @if($m->is_active)
+                                            <span class="status-badge s-pub"><i class="fas fa-circle-check"></i> Published</span>
+                                        @else
+                                            <span class="status-badge s-draft"><i class="fas fa-pen"></i> Draft</span>
+                                        @endif
+                                    </div>
                                     @if($m->description)<div class="mat-desc">{{ $m->description }}</div>@endif
                                     <div class="mat-meta">
                                         @if($m->kind === 'file')
@@ -181,6 +195,14 @@
                                 </div>
                                 <div class="mat-actions">
                                     <a class="mat-btn mb-view" href="{{ $m->url() }}" target="_blank" title="Open"><i class="fas fa-up-right-from-square"></i></a>
+                                    <form method="POST" action="{{ route('faculty.materials.toggle-status', $m->id) }}">
+                                        @csrf
+                                        @if($m->is_active)
+                                            <button class="mat-btn mb-draft" title="Move to draft (hide from students)"><i class="fas fa-eye-slash"></i></button>
+                                        @else
+                                            <button class="mat-btn mb-publish" title="Publish (show to students)"><i class="fas fa-eye"></i></button>
+                                        @endif
+                                    </form>
                                     <form method="POST" action="{{ route('faculty.materials.destroy', $m->id) }}"
                                           data-confirm="&quot;{{ $m->title }}&quot; will be permanently deleted and students will lose access to it."
                                           data-confirm-title="Delete this material?"
@@ -207,6 +229,18 @@
                               data-loading="Uploading material...">
                             @csrf
                             <input type="hidden" name="topic_id" value="{{ $selectedTopic->id }}">
+
+                            <div class="kind-toggle" id="statusToggle">
+                                <div class="kind-opt">
+                                    <input type="radio" name="status" id="statusDraft" value="draft">
+                                    <label for="statusDraft"><i class="fas fa-pen"></i> Save as draft</label>
+                                </div>
+                                <div class="kind-opt">
+                                    <input type="radio" name="status" id="statusPublish" value="publish" checked>
+                                    <label for="statusPublish"><i class="fas fa-circle-check"></i> Publish now</label>
+                                </div>
+                            </div>
+                            <p style="font-size:11px;color:#999;margin:-6px 0 12px;">A draft stays hidden from students until you publish it.</p>
 
                             <div class="kind-toggle">
                                 <div class="kind-opt">
@@ -244,7 +278,7 @@
                                 <input type="url" name="external_url" value="{{ old('external_url') }}" placeholder="https://...">
                             </div>
 
-                            <button type="submit" class="btn-primary"><i class="fas fa-plus"></i> Add Material</button>
+                            <button type="submit" class="btn-primary" id="matSubmit"><i class="fas fa-plus"></i> Add Material</button>
                         </form>
                     </div>
                 @else
@@ -287,6 +321,29 @@
                 : 'Click to choose a file';
         });
     }
+
+    // Only ask for the "this becomes visible to students" confirmation when
+    // actually publishing — saving as a draft doesn't need one, nothing changes for students.
+    const matForm = document.getElementById('matForm');
+    const statusDraft = document.getElementById('statusDraft');
+    const statusPublish = document.getElementById('statusPublish');
+    const matSubmit = document.getElementById('matSubmit');
+    const confirmText = matForm ? matForm.getAttribute('data-confirm') : null;
+
+    function syncStatus() {
+        if (!matForm || !statusDraft) return;
+        const isDraft = statusDraft.checked;
+        if (isDraft) {
+            matForm.removeAttribute('data-confirm');
+            matSubmit.innerHTML = '<i class="fas fa-plus"></i> Save Draft';
+        } else {
+            matForm.setAttribute('data-confirm', confirmText);
+            matSubmit.innerHTML = '<i class="fas fa-plus"></i> Publish Material';
+        }
+    }
+    if (statusDraft) statusDraft.addEventListener('change', syncStatus);
+    if (statusPublish) statusPublish.addEventListener('change', syncStatus);
+    syncStatus();
 })();
 </script>
 

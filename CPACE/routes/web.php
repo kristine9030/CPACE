@@ -169,6 +169,7 @@ Route::middleware('auth')->group(function () {
         // Learning Materials (upload PDFs, Word, PPT, links per topic for students)
         Route::get('/materials', [MaterialController::class, 'index'])->name('materials');
         Route::post('/materials', [MaterialController::class, 'store'])->name('materials.store');
+        Route::post('/materials/{material}/toggle-status', [MaterialController::class, 'toggleStatus'])->name('materials.toggle-status');
         Route::delete('/materials/{material}', [MaterialController::class, 'destroy'])->name('materials.destroy');
 
         // Class quizzes (faculty-authored, deadline-bound, shared by link)
