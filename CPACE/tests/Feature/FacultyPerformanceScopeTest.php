@@ -21,6 +21,7 @@ class FacultyPerformanceScopeTest extends TestCase
 {
     private const TABLES = [
         'faculty_subject_sections', 'sections', 'student_profiles',
+        'quiz_answers', 'question_choices', 'questions',
         'performance_records', 'quiz_sessions', 'topics', 'subjects', 'faculty_subjects',
         'notifications', 'messages', 'conversation_participants', 'conversations', 'users',
     ];
@@ -117,6 +118,28 @@ class FacultyPerformanceScopeTest extends TestCase
             $table->unsignedInteger('total_attempts')->default(0);
             $table->unsignedInteger('correct_count')->default(0);
             $table->unsignedInteger('consecutive_wrong')->default(0);
+            $table->boolean('is_weak_area')->default(false);
+        });
+
+        // Empty in every test here - only exist so classWeakTopics()'s
+        // "most-missed question" lookup (a left-joinable extra, not the
+        // subject of this test) has tables to query instead of erroring.
+        Schema::create('questions', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('topic_id');
+            $table->text('question_text');
+        });
+        Schema::create('question_choices', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('question_id');
+            $table->text('choice_text');
+        });
+        Schema::create('quiz_answers', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('session_id');
+            $table->unsignedBigInteger('question_id');
+            $table->unsignedBigInteger('selected_choice')->nullable();
+            $table->boolean('is_correct')->nullable();
         });
 
         Schema::create('faculty_subjects', function (Blueprint $table) {
