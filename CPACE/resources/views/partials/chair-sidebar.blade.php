@@ -385,7 +385,6 @@
         <li><a href="{{ route('chair.subjects') }}" class="{{ $active === 'subjects' ? 'active' : '' }}"><i class="fas fa-layer-group"></i><span>Subject Assignments</span></a></li>
         <li><a href="{{ route('chair.sections') }}" class="{{ $active === 'sections' ? 'active' : '' }}"><i class="fas fa-people-group"></i><span>Sections</span></a></li>
         <li><a href="{{ route('chair.communications') }}" class="{{ $active === 'communications' ? 'active' : '' }}"><i class="fas fa-bullhorn"></i><span>Communications</span></a></li>
-        <li><a href="{{ route('notifications.index') }}" class="{{ $active === 'notifications' ? 'active' : '' }}"><i class="fas fa-bell"></i><span>Notifications{{ $unreadNotifications ? ' ('.$unreadNotifications.')' : '' }}</span></a></li>
 
         <li class="nav-label">Analytics</li>
         <li><a href="{{ route('chair.analytics.performance') }}" class="{{ $active === 'analytics-performance' ? 'active' : '' }}"><i class="fas fa-chart-line"></i><span>Class-Level Performance</span></a></li>
