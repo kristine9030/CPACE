@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.1/chart.umd.min.js"></script>
     <style>
         :root { --primary:#7B1D1D; --primary-hover:#6a1818; --primary-light:#f5e8e8; --accent:#c0392b; --green:#10b981; --blue:#3b82f6; --orange:#f59e0b; }
         * { margin:0; padding:0; box-sizing:border-box; }
@@ -56,7 +57,16 @@
         .bar span { display:block; height:100%; border-radius:4px; }
         .item-meta { display:flex; justify-content:space-between; font-size:11px; color:#999; margin-top:5px; }
 
-        @media (max-width:1100px) { .stats-row { grid-template-columns:repeat(3,1fr); } .layout { grid-template-columns:1fr; } }
+        .charts-row { display:grid; grid-template-columns:1fr 1fr 320px; gap:20px; margin-bottom:20px; align-items:stretch; }
+        .chart-card { background:#fff; border-radius:14px; padding:18px 20px; }
+        .chart-card h4 { font-size:13px; font-weight:700; color:#222; margin-bottom:14px; }
+        .chart-card .chart-wrap { position:relative; height:220px; }
+        .chart-empty { height:220px; display:flex; align-items:center; justify-content:center; color:#bbb; font-size:12.5px; text-align:center; }
+        .donut-legend { display:flex; justify-content:center; gap:18px; margin-top:12px; font-size:11.5px; color:#666; }
+        .donut-legend span { display:inline-flex; align-items:center; gap:6px; }
+        .donut-legend i { width:9px; height:9px; border-radius:3px; display:inline-block; }
+
+        @media (max-width:1100px) { .stats-row { grid-template-columns:repeat(3,1fr); } .layout { grid-template-columns:1fr; } .charts-row { grid-template-columns:1fr; } }
         @media (max-width:900px) { .main { margin-left:68px; } }
         @media (max-width:768px) { .main { margin-left:0; padding:16px; } .stats-row { grid-template-columns:repeat(2,1fr); } .card { overflow-x:auto; } .topbar { flex-direction:column; align-items:flex-start; } }
     </style>
@@ -88,6 +98,37 @@
         <div class="stat"><b>{{ $stats['average'] !== null ? $stats['average'] . '%' : '—' }}</b><span>Average score</span></div>
         <div class="stat"><b>{{ $stats['highest'] !== null ? $stats['highest'] . '%' : '—' }}</b><span>Highest</span></div>
         <div class="stat"><b>{{ $stats['lowest'] !== null ? $stats['lowest'] . '%' : '—' }}</b><span>Lowest</span></div>
+    </div>
+
+    <div class="charts-row">
+        <div class="chart-card">
+            <h4>Score distribution</h4>
+            @if($stats['submitted'] > 0)
+                <div class="chart-wrap"><canvas id="distChart"></canvas></div>
+            @else
+                <div class="chart-empty">No submissions yet</div>
+            @endif
+        </div>
+        <div class="chart-card">
+            <h4>Per-question accuracy</h4>
+            @if($stats['submitted'] > 0 && $quiz->items->count() > 0)
+                <div class="chart-wrap"><canvas id="qChart"></canvas></div>
+            @else
+                <div class="chart-empty">No data yet</div>
+            @endif
+        </div>
+        <div class="chart-card">
+            <h4>Pass rate <span style="font-weight:500;color:#aaa;font-size:11px;">(≥75%)</span></h4>
+            @if($stats['submitted'] > 0)
+                <div class="chart-wrap" style="height:180px;"><canvas id="passChart"></canvas></div>
+                <div class="donut-legend">
+                    <span><i style="background:#10b981;"></i> Passed ({{ $passRate }})</span>
+                    <span><i style="background:#e5484d;"></i> Failed ({{ $stats['submitted'] - $passRate }})</span>
+                </div>
+            @else
+                <div class="chart-empty">No submissions yet</div>
+            @endif
+        </div>
     </div>
 
     <div class="layout">
@@ -147,5 +188,72 @@
 </main>
 
 @include('partials.alerts')
+
+@if($stats['submitted'] > 0)
+<script>
+Chart.defaults.font.family = "'Poppins', sans-serif";
+Chart.defaults.color = '#999';
+
+@if($stats['submitted'] > 0)
+new Chart(document.getElementById('distChart'), {
+    type: 'bar',
+    data: {
+        labels: {!! json_encode(array_keys($buckets)) !!},
+        datasets: [{
+            data: {!! json_encode(array_values($buckets)) !!},
+            backgroundColor: '#7B1D1D',
+            borderRadius: 5,
+            maxBarThickness: 34,
+        }],
+    },
+    options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => c.parsed.y + ' student' + (c.parsed.y === 1 ? '' : 's') } } },
+        scales: { y: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: '#f2f2f2' } }, x: { grid: { display: false } } },
+    },
+});
+
+new Chart(document.getElementById('passChart'), {
+    type: 'doughnut',
+    data: {
+        labels: ['Passed', 'Failed'],
+        datasets: [{
+            data: [{{ $passRate }}, {{ $stats['submitted'] - $passRate }}],
+            backgroundColor: ['#10b981', '#e5484d'],
+            borderWidth: 0,
+        }],
+    },
+    options: {
+        responsive: true, maintainAspectRatio: false, cutout: '68%',
+        plugins: { legend: { display: false } },
+    },
+});
+@endif
+
+@if($quiz->items->count() > 0)
+new Chart(document.getElementById('qChart'), {
+    type: 'bar',
+    data: {
+        labels: {!! json_encode($quiz->items->values()->map(fn ($item, $idx) => 'Q' . ($idx + 1))) !!},
+        datasets: [{
+            data: {!! json_encode($quiz->items->map(fn ($i) => $itemStats[$i->id]['rate'] ?? 0)->values()) !!},
+            backgroundColor: {!! json_encode($quiz->items->map(function ($i) use ($itemStats) {
+                $rate = $itemStats[$i->id]['rate'] ?? null;
+                if ($rate === null) return '#ddd';
+                return $rate >= 75 ? '#10b981' : ($rate >= 50 ? '#f59e0b' : '#c0392b');
+            })->values()) !!},
+            borderRadius: 5,
+            maxBarThickness: 34,
+        }],
+    },
+    options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => c.parsed.y + '% correct' } } },
+        scales: { y: { beginAtZero: true, max: 100, grid: { color: '#f2f2f2' } }, x: { grid: { display: false } } },
+    },
+});
+@endif
+</script>
+@endif
 </body>
 </html>

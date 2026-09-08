@@ -210,7 +210,25 @@ class FacultyQuizController extends Controller
             'lowest' => $submitted->count() > 0 ? round($submitted->min('percent'), 1) : null,
         ];
 
-        return view('faculty.quiz-results', compact('quiz', 'attempts', 'stats', 'itemStats'));
+        // Score distribution histogram, for the results chart.
+        $buckets = ['0-49' => 0, '50-59' => 0, '60-69' => 0, '70-79' => 0, '80-89' => 0, '90-100' => 0];
+        foreach ($submitted as $a) {
+            $p = (float) $a->percent;
+            $key = match (true) {
+                $p < 50 => '0-49',
+                $p < 60 => '50-59',
+                $p < 70 => '60-69',
+                $p < 80 => '70-79',
+                $p < 90 => '80-89',
+                default => '90-100',
+            };
+            $buckets[$key]++;
+        }
+
+        // Pass/fail split, using the same 75% threshold the table uses to color scores.
+        $passRate = $submitted->filter(fn ($a) => (float) $a->percent >= 75)->count();
+
+        return view('faculty.quiz-results', compact('quiz', 'attempts', 'stats', 'itemStats', 'buckets', 'passRate'));
     }
 
     /**
