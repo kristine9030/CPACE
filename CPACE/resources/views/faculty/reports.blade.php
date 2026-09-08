@@ -765,14 +765,16 @@
     /* ═══ QUESTION QUALITY CHARTS ═══ */
     @if($f['report'] === 'question_quality' && $questions->count() > 0)
 
+    const qqData = @json($questions);
+
     /* Difficulty Distribution – Doughnut */
-    const diffCounts = { easy: 0, medium: 0, hard: 0 };
-    @json($questions)->forEach(q => { if (diffCounts[q.difficulty] !== undefined) diffCounts[q.difficulty]++; });
+    const diffCounts = { easy: 0, moderate: 0, difficult: 0 };
+    qqData.forEach(q => { if (diffCounts[q.difficulty] !== undefined) diffCounts[q.difficulty]++; });
     new Chart(document.getElementById('chartDiffDonut'), {
         type: 'doughnut',
         data: {
-            labels: ['Easy', 'Medium', 'Hard'],
-            datasets: [{ data: [diffCounts.easy, diffCounts.medium, diffCounts.hard], backgroundColor: ['#10b981', '#f59e0b', '#ef4444'], borderWidth: 2, borderColor: '#fff' }]
+            labels: ['Easy', 'Moderate', 'Difficult'],
+            datasets: [{ data: [diffCounts.easy, diffCounts.moderate, diffCounts.difficult], backgroundColor: ['#10b981', '#f59e0b', '#ef4444'], borderWidth: 2, borderColor: '#fff' }]
         },
         options: {
             ...chartDefaults,
@@ -783,7 +785,7 @@
 
     /* Quality Flags – Doughnut */
     const flagCounts = { Healthy: 0, Unused: 0, 'Too Easy': 0, 'Too Hard': 0 };
-    @json($questions)->forEach(q => { if (flagCounts[q.flag] !== undefined) flagCounts[q.flag]++; });
+    qqData.forEach(q => { if (flagCounts[q.flag] !== undefined) flagCounts[q.flag]++; });
     new Chart(document.getElementById('chartFlagDonut'), {
         type: 'doughnut',
         data: {
@@ -798,20 +800,20 @@
     });
 
     /* Accuracy by Difficulty – Bar */
-    const diffBuckets = { easy: { total: 0, correct: 0 }, medium: { total: 0, correct: 0 }, hard: { total: 0, correct: 0 } };
-    @json($questions)->forEach(q => {
+    const diffBuckets = { easy: { total: 0, correct: 0 }, moderate: { total: 0, correct: 0 }, difficult: { total: 0, correct: 0 } };
+    qqData.forEach(q => {
         if (diffBuckets[q.difficulty]) {
             diffBuckets[q.difficulty].total += q.answered;
             diffBuckets[q.difficulty].correct += Math.round(q.answered * q.accuracy / 100);
         }
     });
-    const diffAccData = ['easy', 'medium', 'hard'].map(d => diffBuckets[d].total > 0 ? Math.round((diffBuckets[d].correct / diffBuckets[d].total) * 100) : 0);
+    const diffAccData = ['easy', 'moderate', 'difficult'].map(d => diffBuckets[d].total > 0 ? Math.round((diffBuckets[d].correct / diffBuckets[d].total) * 100) : 0);
     new Chart(document.getElementById('chartDiffAccuracy'), {
         type: 'bar',
         data: {
-            labels: ['Easy', 'Medium', 'Hard'],
+            labels: ['Easy', 'Moderate', 'Difficult'],
             datasets: [
-                { label: 'Total Answered', data: [diffBuckets.easy.total, diffBuckets.medium.total, diffBuckets.hard.total], backgroundColor: ['#d1fae5', '#fef3c7', '#fde8e8'], borderRadius: 8, barThickness: 40, yAxisID: 'y' },
+                { label: 'Total Answered', data: [diffBuckets.easy.total, diffBuckets.moderate.total, diffBuckets.difficult.total], backgroundColor: ['#d1fae5', '#fef3c7', '#fde8e8'], borderRadius: 8, barThickness: 40, yAxisID: 'y' },
                 { label: 'Accuracy %', data: diffAccData, backgroundColor: ['#10b981', '#f59e0b', '#ef4444'], borderRadius: 8, barThickness: 40, yAxisID: 'y1' }
             ]
         },
