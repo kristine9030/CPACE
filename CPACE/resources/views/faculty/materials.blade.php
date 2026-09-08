@@ -42,6 +42,10 @@
         .panel-head small { font-weight:500; color:#aaa; font-size:11px; }
 
         /* Topics list */
+        .topic-list { max-height:calc(100vh - 230px); overflow-y:auto; }
+        .topic-list::-webkit-scrollbar { width:7px; }
+        .topic-list::-webkit-scrollbar-thumb { background:#e0d0d0; border-radius:6px; }
+        .topic-list::-webkit-scrollbar-track { background:transparent; }
         .topic-link {
             display:flex; align-items:center; gap:10px;
             padding:13px 20px; border-bottom:1px solid #f6f6f6;
@@ -135,17 +139,19 @@
 
         <div class="layout">
             {{-- Topics --}}
-            <div class="panel">
+            <div class="panel" style="position:sticky; top:26px;">
                 <div class="panel-head">Topics <small>{{ $topics->count() }}</small></div>
-                @forelse($topics as $t)
-                    <a href="{{ route('faculty.materials', ['subject' => $selectedSubject->id, 'topic' => $t->id]) }}"
-                       class="topic-link {{ $selectedTopic && $selectedTopic->id === $t->id ? 'active' : '' }}">
-                        <span class="t-name">{{ $t->name }}</span>
-                        <span class="t-badge">{{ $t->materials_count }}</span>
-                    </a>
-                @empty
-                    <div class="empty">No topics in this subject yet.</div>
-                @endforelse
+                <div class="topic-list">
+                    @forelse($topics as $t)
+                        <a href="{{ route('faculty.materials', ['subject' => $selectedSubject->id, 'topic' => $t->id]) }}"
+                           class="topic-link {{ $selectedTopic && $selectedTopic->id === $t->id ? 'active' : '' }}">
+                            <span class="t-name">{{ $t->name }}</span>
+                            <span class="t-badge">{{ $t->materials_count }}</span>
+                        </a>
+                    @empty
+                        <div class="empty">No topics in this subject yet.</div>
+                    @endforelse
+                </div>
             </div>
 
             {{-- Materials for selected topic --}}
