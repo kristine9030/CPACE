@@ -6,9 +6,20 @@ use Illuminate\Database\Eloquent\Model;
 
 class Section extends Model
 {
-    protected $fillable = ['name', 'is_active'];
+    /** Display labels for the curated 1-6 year_level range used across chair views. */
+    public const YEAR_LABELS = [
+        1 => '1st Year',
+        2 => '2nd Year',
+        3 => '3rd Year',
+        4 => '4th Year',
+        5 => '5th Year',
+        6 => 'Irregular / 6th Year',
+    ];
+
+    protected $fillable = ['name', 'year_level', 'is_active'];
 
     protected $casts = [
+        'year_level' => 'integer',
         'is_active' => 'boolean',
     ];
 

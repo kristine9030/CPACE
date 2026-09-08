@@ -12,7 +12,7 @@ class SectionManagementController extends Controller
     public function index()
     {
         return view('chair.sections', [
-            'sections' => Section::withCount('faculty')->orderBy('name')->get(),
+            'sections' => Section::withCount('faculty')->orderBy('year_level')->orderBy('name')->get(),
         ]);
     }
 
@@ -20,11 +20,24 @@ class SectionManagementController extends Controller
     {
         $data = $request->validate([
             'name' => ['required', 'string', 'max:30', Rule::unique('sections', 'name')],
+            'year_level' => ['required', 'integer', 'between:1,6'],
         ]);
 
         Section::create($data);
 
         return back()->with('status', "Section \"{$data['name']}\" was added.");
+    }
+
+    public function update(Request $request, Section $section)
+    {
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:30', Rule::unique('sections', 'name')->ignore($section->id)],
+            'year_level' => ['required', 'integer', 'between:1,6'],
+        ]);
+
+        $section->update($data);
+
+        return back()->with('status', "Section \"{$section->name}\" was updated.");
     }
 
     public function toggle(Section $section)

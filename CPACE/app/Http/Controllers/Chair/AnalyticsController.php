@@ -32,6 +32,25 @@ class AnalyticsController extends Controller
         ]);
     }
 
+    /**
+     * The specific students behind an "eligible students" count on the
+     * dashboard's cohort breakdown, for one section or a whole year level.
+     */
+    public function eligibleStudents(Request $request)
+    {
+        $filters = $request->validate([
+            'section' => 'nullable|string|exists:sections,name',
+            'year' => 'nullable|integer|between:1,6',
+        ]);
+
+        $students = $this->analytics->eligibleStudentRoster(
+            $filters['section'] ?? null,
+            $filters['year'] ?? null
+        );
+
+        return response()->json(['students' => $students->values()]);
+    }
+
     public function testBankCoverage(Request $request)
     {
         $filters = $request->validate([

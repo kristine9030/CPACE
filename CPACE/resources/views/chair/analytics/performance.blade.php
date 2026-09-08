@@ -96,7 +96,7 @@
         <label for="section">Section</label>
         <select name="section" id="section">
             <option value="">All sections</option>
-            @foreach($sections as $sec)<option value="{{ $sec->name }}" @selected($selectedSection === $sec->name)>{{ $sec->name }}</option>@endforeach
+            @foreach($sections as $sec)<option value="{{ $sec->name }}" @selected($selectedSection === $sec->name)>{{ $sec->name }}{{ $sec->year_level ? ' — '.(\App\Models\Section::YEAR_LABELS[$sec->year_level] ?? '') : '' }}</option>@endforeach
         </select>
         <button class="btn btn-primary btn-sm" type="submit"><i class="fas fa-filter"></i> Apply</button>
         @if($selectedSubject || $selectedSection)<a class="btn btn-ghost btn-sm" href="{{ route('chair.analytics.performance') }}">Clear</a>@endif
@@ -112,7 +112,7 @@
             ['Class-Level Accuracy', $report['overall_accuracy'] === null ? '—' : $report['overall_accuracy'].'%', 'Weighted across all student attempts'],
             ['Participating Students', $report['participating_students'], 'With at least one recorded attempt'],
             ['Total Attempts', number_format($report['total_attempts']), 'Across the selected scope'],
-            ['Board Ready', $report['readiness']['readiness_rate'] === null ? '—' : $report['readiness']['readiness_rate'].'%', $report['readiness']['ready'].' of '.$report['readiness']['eligible'].' eligible'],
+            ['Board Ready', $report['readiness']['readiness_rate'] === null ? '—' : $report['readiness']['readiness_rate'].'%', $report['readiness']['ready'].' of '.$report['readiness']['eligible'].' measured'],
         ];
         $cohort = $report['cohort'];
     @endphp
@@ -154,7 +154,7 @@
                 <div class="card-head"><span class="card-title">Board Readiness Trend</span><span class="small-meta">Cumulative, ending each week</span></div>
                 <div class="trend-chart" role="img" aria-label="Eight-week readiness trend">
                     @foreach($report['trend'] as $point)
-                        <div class="trend-col" title="{{ $point['ready'] }} of {{ $point['eligible'] }} eligible students">
+                        <div class="trend-col" title="{{ $point['ready'] }} of {{ $point['eligible'] }} measured students">
                             <span class="trend-value">{{ $point['rate'] }}%</span>
                             <span class="trend-bar" style="height:{{ max(2, $point['rate']) }}%"></span>
                             <span class="trend-label">{{ $point['label'] }}</span>
@@ -417,7 +417,7 @@
                 legend: { position: 'bottom' },
                 tooltip: { callbacks: { afterBody: (items) => {
                     const point = trend[items[0].dataIndex];
-                    return point.ready + ' of ' + point.eligible + ' eligible students ready';
+                    return point.ready + ' of ' + point.eligible + ' measured students ready';
                 } } },
             },
         },

@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Role;
+use App\Models\Section;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -31,6 +32,7 @@ class ChairAnalyticsService
         $engagement = $this->engagementTrend(8);
         $last = $trend->last();
         $previous = $trend->count() > 1 ? $trend->slice(-2, 1)->first() : null;
+        $bySection = $this->sectionBreakdown();
 
         return [
             'class_accuracy' => $subjects->sum('attempts') > 0
@@ -49,7 +51,136 @@ class ChairAnalyticsService
             'trend' => $trend,
             'engagement' => $engagement,
             'cohort' => $this->cohortSummary(),
+            'by_section' => $bySection['sections'],
+            'by_year' => $bySection['years'],
         ];
+    }
+
+    /**
+     * Class-level accuracy, board readiness and pass projection, broken out per
+     * curated section, and rolled up per year level — so the chair dashboard
+     * can show more than a single institution-wide number.
+     *
+     * @return array{sections: Collection, years: Collection}
+     */
+    public function sectionBreakdown(): array
+    {
+        $rows = Section::where('is_active', true)
+            ->orderBy('year_level')
+            ->orderBy('name')
+            ->get()
+            ->map(function ($section) {
+                $subjects = $this->subjectPerformance(null, $section->name);
+                $readiness = $this->readinessSummary(null, $section->name);
+                $attempts = (int) $subjects->sum('attempts');
+                $correct = (int) $subjects->sum('correct');
+
+                return [
+                    'section' => $section->name,
+                    'year_level' => $section->year_level,
+                    'year_label' => $section->year_level ? (Section::YEAR_LABELS[$section->year_level] ?? null) : null,
+                    'attempts' => $attempts,
+                    'correct' => $correct,
+                    'class_accuracy' => $attempts > 0 ? (int) round($correct / $attempts * 100) : null,
+                    'ready' => $readiness['ready'],
+                    'developing' => $readiness['developing'],
+                    'readiness_rate' => $readiness['readiness_rate'],
+                    'pass_projection' => $readiness['pass_projection'],
+                    'eligible_students' => $readiness['eligible'],
+                    'participating_students' => $this->participatingStudentCount(null, $section->name),
+                ];
+            })
+            ->values();
+
+        $years = $rows
+            ->filter(fn ($row) => $row['year_level'] !== null)
+            ->groupBy('year_level')
+            ->map(function ($group, $year) {
+                $attempts = $group->sum('attempts');
+                $correct = $group->sum('correct');
+                $eligible = $group->sum('eligible_students');
+                $ready = $group->sum('ready');
+                $developing = $group->sum('developing');
+
+                return [
+                    'year_level' => (int) $year,
+                    'year_label' => Section::YEAR_LABELS[(int) $year] ?? "Year {$year}",
+                    'sections' => $group->count(),
+                    'class_accuracy' => $attempts > 0 ? (int) round($correct / $attempts * 100) : null,
+                    'readiness_rate' => $eligible > 0 ? (int) round($ready / $eligible * 100) : null,
+                    'pass_projection' => $eligible > 0
+                        ? (int) round(($ready + $developing * .5) / $eligible * 100)
+                        : null,
+                    'eligible_students' => $eligible,
+                    'participating_students' => $group->sum('participating_students'),
+                ];
+            })
+            ->sortBy('year_level')
+            ->values();
+
+        return ['sections' => $rows, 'years' => $years];
+    }
+
+    /**
+     * The individual students behind an "eligible students" count on the
+     * dashboard's per-section / per-year breakdown — either one specific
+     * section, or every active section in a year level.
+     */
+    public function eligibleStudentRoster(?string $section = null, ?int $yearLevel = null, ?int $subjectId = null): Collection
+    {
+        $sectionNames = $section
+            ? [$section]
+            : ($yearLevel
+                ? Section::where('is_active', true)->where('year_level', $yearLevel)->pluck('name')->all()
+                : null);
+
+        return DB::table('users')
+            ->leftJoin('quiz_sessions', function ($join) use ($subjectId) {
+                $join->on('quiz_sessions.student_id', '=', 'users.id')
+                    ->whereNotNull('quiz_sessions.completed_at')
+                    ->where('quiz_sessions.session_type', '!=', 'training');
+                if ($subjectId) {
+                    $join->where('quiz_sessions.subject_id', '=', $subjectId);
+                }
+            })
+            ->join('student_profiles', 'student_profiles.user_id', '=', 'users.id')
+            ->when($sectionNames !== null, fn ($query) => $query->whereIn('student_profiles.section', $sectionNames))
+            ->where('users.role_id', Role::STUDENT)
+            ->where('users.is_active', true)
+            ->groupBy('users.id', 'users.first_name', 'users.last_name', 'users.email', 'student_profiles.section')
+            ->select(
+                'users.id',
+                'users.first_name',
+                'users.last_name',
+                'users.email',
+                'student_profiles.section',
+                DB::raw('COALESCE(SUM(quiz_sessions.total_items), 0) as attempts'),
+                DB::raw('COALESCE(SUM(quiz_sessions.correct_answers), 0) as correct'),
+                DB::raw('COUNT(DISTINCT quiz_sessions.subject_id) as subjects')
+            )
+            ->get()
+            ->map(function ($row) use ($subjectId) {
+                $attempts = (int) $row->attempts;
+                $accuracy = $attempts ? (int) round((int) $row->correct / $attempts * 100) : 0;
+                $ready = $attempts >= self::READY_ATTEMPTS
+                    && $accuracy >= self::READY_ACCURACY
+                    && ($subjectId || (int) $row->subjects >= self::READY_SUBJECTS);
+
+                return [
+                    'id' => $row->id,
+                    'name' => trim($row->first_name.' '.$row->last_name),
+                    'email' => $row->email,
+                    'section' => $row->section,
+                    'attempts' => $attempts,
+                    'accuracy' => $accuracy,
+                    'band' => $ready
+                        ? 'ready'
+                        : (($attempts >= self::DEVELOPING_ATTEMPTS && $accuracy >= self::DEVELOPING_ACCURACY) ? 'developing' : 'at_risk'),
+                ];
+            })
+            ->filter(fn ($row) => $row['attempts'] >= self::DEVELOPING_ATTEMPTS)
+            ->sortBy('name')
+            ->values();
     }
 
     public function performanceReport(?int $subjectId = null, ?string $section = null): array

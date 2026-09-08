@@ -80,6 +80,7 @@ Route::middleware('auth')->group(function () {
         // System-wide student performance and test-bank analytics
         Route::prefix('analytics')->name('analytics.')->group(function () {
             Route::get('/performance', [AnalyticsController::class, 'performance'])->name('performance');
+            Route::get('/eligible-students', [AnalyticsController::class, 'eligibleStudents'])->name('eligible-students');
             Route::get('/test-bank-coverage', [AnalyticsController::class, 'testBankCoverage'])->name('test-bank-coverage');
         });
 
@@ -117,6 +118,7 @@ Route::middleware('auth')->group(function () {
         // Section catalog (used to scope faculty-to-section assignment)
         Route::get('/sections', [SectionManagementController::class, 'index'])->name('sections');
         Route::post('/sections', [SectionManagementController::class, 'store'])->name('sections.store');
+        Route::put('/sections/{section}', [SectionManagementController::class, 'update'])->name('sections.update');
         Route::post('/sections/{section}/toggle', [SectionManagementController::class, 'toggle'])->name('sections.toggle');
 
         // Subject assignment overview

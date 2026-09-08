@@ -94,6 +94,7 @@ class ChairAnalyticsTest extends TestCase
         Schema::create('sections', function (Blueprint $table) {
             $table->id();
             $table->string('name')->unique();
+            $table->unsignedTinyInteger('year_level')->nullable();
             $table->boolean('is_active')->default(true);
             $table->timestamps();
         });
@@ -257,6 +258,85 @@ class ChairAnalyticsTest extends TestCase
             ->assertSee('BSA-1A');
     }
 
+    public function test_dashboard_summary_breaks_class_metrics_out_by_section(): void
+    {
+        $other = User::create(['role_id' => Role::STUDENT, 'first_name' => 'Other', 'last_name' => 'Student', 'email' => 'other-section@example.com', 'password' => Hash::make('password'), 'is_active' => true, 'setup_completed_at' => now()]);
+        DB::table('student_profiles')->insert(['user_id' => $other->id, 'section' => 'BSA-1B', 'created_at' => now(), 'updated_at' => now()]);
+        $topicId = DB::table('topics')->first()->id;
+        DB::table('performance_records')->insert(['student_id' => $other->id, 'topic_id' => $topicId, 'correct_count' => 0, 'total_attempts' => 10, 'is_weak_area' => true]);
+
+        $analytics = app(ChairAnalyticsService::class);
+        $summary = $analytics->dashboardSummary();
+        $bySection = $summary['by_section'];
+        $byYear = $summary['by_year'];
+
+        $this->assertCount(2, $bySection);
+
+        $sectionA = $bySection->firstWhere('section', 'BSA-1A');
+        $this->assertSame(70, $sectionA['class_accuracy']);
+        $this->assertSame(1, $sectionA['participating_students']);
+        $this->assertSame('1st Year', $sectionA['year_label']);
+
+        $sectionB = $bySection->firstWhere('section', 'BSA-1B');
+        $this->assertSame(0, $sectionB['class_accuracy']);
+        $this->assertSame(1, $sectionB['participating_students']);
+        $this->assertSame('1st Year', $sectionB['year_label']);
+
+        // Both sections share year level 1, so the year-level rollup combines them.
+        $this->assertCount(1, $byYear);
+        $year1 = $byYear->firstWhere('year_level', 1);
+        $this->assertSame('1st Year', $year1['year_label']);
+        $this->assertSame(2, $year1['sections']);
+        $this->assertSame(2, $year1['participating_students']);
+        $this->assertSame(61, $year1['class_accuracy']); // round((49+0)/(70+10)*100)
+        $this->assertSame(100, $year1['readiness_rate']);
+        $this->assertSame(100, $year1['pass_projection']);
+
+        // The dashboard renders both the per-year and per-section breakdowns.
+        $chair = User::where('email', 'chair@example.com')->firstOrFail();
+        $this->actingAs($chair)->get(route('chair.dashboard'))
+            ->assertOk()
+            ->assertSee('Class-Level Performance by Cohort')
+            ->assertSee('1st Year')
+            ->assertSee('BSA-1A')
+            ->assertSee('BSA-1B');
+    }
+
+    public function test_eligible_students_endpoint_lists_the_students_behind_a_count(): void
+    {
+        $other = User::create(['role_id' => Role::STUDENT, 'first_name' => 'Casey', 'last_name' => 'Reyes', 'email' => 'casey@example.com', 'password' => Hash::make('password'), 'is_active' => true, 'setup_completed_at' => now()]);
+        DB::table('student_profiles')->insert(['user_id' => $other->id, 'section' => 'BSA-1B', 'created_at' => now(), 'updated_at' => now()]);
+
+        // A section roster only ever includes students who cleared the
+        // "developing" attempt floor — this one hasn't, so it's excluded.
+        $tooFewAttempts = User::create(['role_id' => Role::STUDENT, 'first_name' => 'Too', 'last_name' => 'Few', 'email' => 'toofew@example.com', 'password' => Hash::make('password'), 'is_active' => true, 'setup_completed_at' => now()]);
+        DB::table('student_profiles')->insert(['user_id' => $tooFewAttempts->id, 'section' => 'BSA-1A', 'created_at' => now(), 'updated_at' => now()]);
+
+        $analytics = app(ChairAnalyticsService::class);
+
+        $sectionA = $analytics->eligibleStudentRoster('BSA-1A');
+        $this->assertCount(1, $sectionA);
+        $this->assertSame('BSA-1A', $sectionA->first()['section']);
+        $this->assertSame(70, $sectionA->first()['accuracy']);
+        $this->assertSame('ready', $sectionA->first()['band']);
+
+        // Both sections share year level 1, so the year roster is empty here —
+        // section A's only eligible student needs real quiz_sessions attempts,
+        // which only the primary seeded student in BSA-1A has.
+        $byYear = $analytics->eligibleStudentRoster(null, 1);
+        $this->assertCount(1, $byYear);
+
+        $chair = User::where('email', 'chair@example.com')->firstOrFail();
+        $this->actingAs($chair)->getJson(route('chair.analytics.eligible-students', ['section' => 'BSA-1A']))
+            ->assertOk()
+            ->assertJsonCount(1, 'students')
+            ->assertJsonFragment(['section' => 'BSA-1A']);
+
+        $this->actingAs($chair)->getJson(route('chair.analytics.eligible-students', ['year' => 1]))
+            ->assertOk()
+            ->assertJsonCount(1, 'students');
+    }
+
     public function test_engagement_distribution_and_difficulty_series_are_chart_ready(): void
     {
         $analytics = app(ChairAnalyticsService::class);
@@ -302,8 +382,8 @@ class ChairAnalyticsTest extends TestCase
         User::create(['role_id' => Role::ADMIN, 'first_name' => 'Program', 'last_name' => 'Chair', 'email' => 'chair@example.com', 'password' => Hash::make('password'), 'is_active' => true, 'setup_completed_at' => now()]);
         $student = User::create(['role_id' => Role::STUDENT, 'first_name' => 'Test', 'last_name' => 'Student', 'email' => 'student@example.com', 'password' => Hash::make('password'), 'is_active' => true, 'setup_completed_at' => now()]);
         DB::table('student_profiles')->insert(['user_id' => $student->id, 'section' => 'BSA-1A', 'created_at' => now(), 'updated_at' => now()]);
-        DB::table('sections')->insert(['name' => 'BSA-1A', 'is_active' => true, 'created_at' => now(), 'updated_at' => now()]);
-        DB::table('sections')->insert(['name' => 'BSA-1B', 'is_active' => true, 'created_at' => now(), 'updated_at' => now()]);
+        DB::table('sections')->insert(['name' => 'BSA-1A', 'year_level' => 1, 'is_active' => true, 'created_at' => now(), 'updated_at' => now()]);
+        DB::table('sections')->insert(['name' => 'BSA-1B', 'year_level' => 1, 'is_active' => true, 'created_at' => now(), 'updated_at' => now()]);
 
         $firstTopicId = null;
         foreach ([['AUD', 'Auditing'], ['FAR', 'Financial Accounting'], ['TAX', 'Taxation']] as $index => [$code, $name]) {

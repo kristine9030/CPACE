@@ -50,6 +50,7 @@ class ChairFacultySectionAssignmentTest extends TestCase
         Schema::create('sections', function (Blueprint $table) {
             $table->id();
             $table->string('name', 30)->unique();
+            $table->unsignedTinyInteger('year_level')->nullable();
             $table->boolean('is_active')->default(true);
             $table->timestamps();
         });
@@ -164,19 +165,40 @@ class ChairFacultySectionAssignmentTest extends TestCase
     {
         $chair = $this->chair();
 
-        $this->actingAs($chair)->post(route('chair.sections.store'), ['name' => 'BSA-4C'])
+        $this->actingAs($chair)->post(route('chair.sections.store'), ['name' => 'BSA-4C', 'year_level' => 4])
             ->assertRedirect();
 
-        $this->assertTrue(DB::table('sections')->where('name', 'BSA-4C')->exists());
+        $this->assertDatabaseHas('sections', ['name' => 'BSA-4C', 'year_level' => 4]);
+    }
+
+    public function test_a_section_cannot_be_created_without_a_year_level(): void
+    {
+        $chair = $this->chair();
+
+        $this->actingAs($chair)->post(route('chair.sections.store'), ['name' => 'BSA-4C'])
+            ->assertSessionHasErrors('year_level');
+
+        $this->assertFalse(DB::table('sections')->where('name', 'BSA-4C')->exists());
     }
 
     public function test_a_duplicate_section_name_is_rejected(): void
     {
         $chair = $this->chair();
-        DB::table('sections')->insert(['name' => 'BSA-4C', 'is_active' => true, 'created_at' => now(), 'updated_at' => now()]);
+        DB::table('sections')->insert(['name' => 'BSA-4C', 'year_level' => 4, 'is_active' => true, 'created_at' => now(), 'updated_at' => now()]);
 
-        $this->actingAs($chair)->post(route('chair.sections.store'), ['name' => 'BSA-4C'])
+        $this->actingAs($chair)->post(route('chair.sections.store'), ['name' => 'BSA-4C', 'year_level' => 4])
             ->assertSessionHasErrors('name');
+    }
+
+    public function test_chair_can_edit_a_sections_name_and_year_level(): void
+    {
+        $chair = $this->chair();
+        $sectionId = DB::table('sections')->insertGetId(['name' => 'BSA-4C', 'year_level' => 4, 'is_active' => true, 'created_at' => now(), 'updated_at' => now()]);
+
+        $this->actingAs($chair)->put(route('chair.sections.update', $sectionId), ['name' => 'BSA-4D', 'year_level' => 5])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('sections', ['id' => $sectionId, 'name' => 'BSA-4D', 'year_level' => 5]);
     }
 
     public function test_chair_can_toggle_a_section_inactive(): void

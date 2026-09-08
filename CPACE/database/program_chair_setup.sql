@@ -31,6 +31,7 @@ CREATE TABLE IF NOT EXISTS faculty_subjects (
 CREATE TABLE IF NOT EXISTS sections (
     id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     name        VARCHAR(30) NOT NULL UNIQUE,
+    year_level  TINYINT UNSIGNED NULL,             -- 1-6; which year this section belongs to
     is_active   BOOLEAN NOT NULL DEFAULT TRUE,
     created_at  DATETIME NULL,
     updated_at  DATETIME NULL

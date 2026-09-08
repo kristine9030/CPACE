@@ -55,6 +55,40 @@
         .analytics-card-value { margin-top:10px; font-size:23px; line-height:1; font-weight:700; color:#1b1b1b; }
         .analytics-card-note { margin-top:7px; font-size:9.5px; color:#aaa; min-height:14px; }
         .trend-up { color:#047857; } .trend-down { color:#b91c1c; }
+        .section-table-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+        .section-table { width:100%; border-collapse:collapse; min-width:560px; }
+        .section-table th { text-align:left; color:#aaa; font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.4px; padding:0 10px 10px; }
+        .section-table td { padding:12px 10px; border-top:1px solid #f5f5f5; font-size:13px; }
+        .section-table td:not(:first-child), .section-table th:not(:first-child) { text-align:center; }
+        .section-name { font-weight:600; color:#1a1a1a; }
+        .section-name .muted { display:block; font-size:10.5px; font-weight:500; color:#999; }
+        .section-metric { font-weight:700; color:#1b1b1b; }
+        .section-metric.na { color:#ccc; font-weight:500; }
+        .section-empty { padding:20px 10px 6px; text-align:center; color:#999; font-size:12px; }
+        .year-tag { display:inline-flex; align-items:center; padding:2px 9px; border-radius:20px; font-size:10px; font-weight:700; background:#eef2ff; color:#4338ca; }
+        .year-tag.na { background:#f3f4f6; color:#9ca3af; }
+        .breakdown-tabs { display:flex; gap:6px; margin-bottom:14px; }
+        .breakdown-tab { padding:6px 14px; border-radius:20px; border:1px solid #eee; background:#fff; color:#777; font-size:11.5px; font-weight:600; cursor:pointer; }
+        .breakdown-tab.active { background:var(--primary); color:#fff; border-color:var(--primary); }
+        .breakdown-pane[hidden] { display:none; }
+        .eligible-link { border:none; background:none; padding:0; font:inherit; font-weight:700; color:var(--accent); cursor:pointer; text-decoration:underline; text-underline-offset:2px; }
+        .eligible-link:hover { color:var(--primary); }
+        .roster-modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:2000; align-items:center; justify-content:center; padding:20px; }
+        .roster-modal-overlay.open { display:flex; }
+        .roster-modal { background:#fff; border-radius:16px; width:100%; max-width:520px; padding:24px; max-height:80vh; overflow-y:auto; }
+        .roster-modal h3 { font-size:16px; color:#1a1a1a; margin-bottom:4px; }
+        .roster-modal-sub { font-size:11px; color:#999; margin-bottom:16px; }
+        .roster-row { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 0; border-top:1px solid #f5f5f5; }
+        .roster-row:first-of-type { border-top:none; }
+        .roster-name { font-size:13px; font-weight:600; color:#1a1a1a; }
+        .roster-email { font-size:10.5px; color:#999; }
+        .roster-meta { text-align:right; font-size:11px; color:#666; white-space:nowrap; }
+        .roster-band { display:inline-block; margin-top:3px; padding:2px 8px; border-radius:20px; font-size:9.5px; font-weight:700; }
+        .roster-band.ready { background:#d1fae5; color:#059669; }
+        .roster-band.developing { background:#fef3c7; color:#b45309; }
+        .roster-band.at_risk { background:#fde8e8; color:#b91c1c; }
+        .roster-empty, .roster-loading { padding:20px 4px; text-align:center; color:#999; font-size:12px; }
+        .roster-modal-close { display:flex; justify-content:flex-end; margin-top:16px; }
         @media (max-width: 980px) {
             .risk-row { grid-template-columns:minmax(180px, 1.3fr) minmax(145px, 1fr) 85px 70px; }
             .risk-last { display:none; }
@@ -139,10 +173,106 @@
             <a class="analytics-card" href="{{ route('chair.analytics.performance') }}#pass-projection">
                 <div class="analytics-card-top"><span class="analytics-card-label">Pass Projection</span><span class="analytics-card-icon"><i class="fas fa-graduation-cap"></i></span></div>
                 <div class="analytics-card-value">{{ $analytics['pass_projection'] === null ? '—' : $analytics['pass_projection'].'%' }}</div>
-                <div class="analytics-card-note">Readiness-based · {{ $analytics['eligible_students'] }} eligible students</div>
+                <div class="analytics-card-note">Readiness-based · {{ $analytics['eligible_students'] }} measured students</div>
             </a>
         </div>
     </section>
+
+    <div class="card" style="margin-bottom:18px;">
+        <div class="card-head">
+            <span class="card-title"><i class="fas fa-layer-group" style="color:var(--accent);margin-right:7px;"></i>Class-Level Performance by Cohort</span>
+            <a href="{{ route('chair.analytics.performance') }}" class="card-link">Full Analytics</a>
+        </div>
+
+        <div class="breakdown-tabs" role="tablist">
+            <button type="button" class="breakdown-tab active" data-pane="byYear">By Year Level</button>
+            <button type="button" class="breakdown-tab" data-pane="bySection">By Section</button>
+        </div>
+
+        <div class="breakdown-pane" id="byYear">
+            @if(($analytics['by_year'] ?? collect())->isNotEmpty())
+                <div class="section-table-wrap">
+                <table class="section-table">
+                    <thead>
+                        <tr><th>Year Level</th><th>Class Accuracy</th><th>Board Readiness</th><th>Pass Projection</th><th>Measured Students</th></tr>
+                    </thead>
+                    <tbody>
+                    @foreach($analytics['by_year'] as $row)
+                        <tr>
+                            <td class="section-name">
+                                {{ $row['year_label'] }}
+                                <span class="muted">{{ $row['sections'] }} section{{ $row['sections'] === 1 ? '' : 's' }} · {{ $row['participating_students'] }} participating</span>
+                            </td>
+                            <td><span class="section-metric {{ $row['class_accuracy'] === null ? 'na' : '' }}">{{ $row['class_accuracy'] === null ? '—' : $row['class_accuracy'].'%' }}</span></td>
+                            <td><span class="section-metric {{ $row['readiness_rate'] === null ? 'na' : '' }}">{{ $row['readiness_rate'] === null ? '—' : $row['readiness_rate'].'%' }}</span></td>
+                            <td><span class="section-metric {{ $row['pass_projection'] === null ? 'na' : '' }}">{{ $row['pass_projection'] === null ? '—' : $row['pass_projection'].'%' }}</span></td>
+                            <td>
+                                @if($row['eligible_students'] > 0)
+                                    <button type="button" class="eligible-link" onclick='openEligible({year: {{ $row['year_level'] }}, label: @json($row['year_label'])})'>{{ $row['eligible_students'] }}</button>
+                                @else
+                                    {{ $row['eligible_students'] }}
+                                @endif
+                            </td>
+                        </tr>
+                    @endforeach
+                    </tbody>
+                </table>
+                </div>
+            @else
+                <div class="section-empty"><i class="fas fa-circle-info"></i> No section has a year level set yet — set one under <a href="{{ route('chair.sections') }}">Program Chair &rarr; Sections</a> to see this breakdown.</div>
+            @endif
+        </div>
+
+        <div class="breakdown-pane" id="bySection" hidden>
+            @if(($analytics['by_section'] ?? collect())->isNotEmpty())
+                <div class="section-table-wrap">
+                <table class="section-table">
+                    <thead>
+                        <tr><th>Section</th><th>Year</th><th>Class Accuracy</th><th>Board Readiness</th><th>Pass Projection</th><th>Measured Students</th></tr>
+                    </thead>
+                    <tbody>
+                    @foreach($analytics['by_section'] as $row)
+                        <tr>
+                            <td class="section-name">
+                                <a href="{{ route('chair.analytics.performance', ['section' => $row['section']]) }}" style="color:inherit;text-decoration:none;">{{ $row['section'] }}</a>
+                                <span class="muted">{{ $row['participating_students'] }} participating</span>
+                            </td>
+                            <td>
+                                @if($row['year_label'])
+                                    <span class="year-tag">{{ $row['year_label'] }}</span>
+                                @else
+                                    <span class="year-tag na">Not set</span>
+                                @endif
+                            </td>
+                            <td><span class="section-metric {{ $row['class_accuracy'] === null ? 'na' : '' }}">{{ $row['class_accuracy'] === null ? '—' : $row['class_accuracy'].'%' }}</span></td>
+                            <td><span class="section-metric {{ $row['readiness_rate'] === null ? 'na' : '' }}">{{ $row['readiness_rate'] === null ? '—' : $row['readiness_rate'].'%' }}</span></td>
+                            <td><span class="section-metric {{ $row['pass_projection'] === null ? 'na' : '' }}">{{ $row['pass_projection'] === null ? '—' : $row['pass_projection'].'%' }}</span></td>
+                            <td>
+                                @if($row['eligible_students'] > 0)
+                                    <button type="button" class="eligible-link" onclick='openEligible({section: @json($row['section']), label: @json($row['section'])})'>{{ $row['eligible_students'] }}</button>
+                                @else
+                                    {{ $row['eligible_students'] }}
+                                @endif
+                            </td>
+                        </tr>
+                    @endforeach
+                    </tbody>
+                </table>
+                </div>
+            @else
+                <div class="section-empty"><i class="fas fa-circle-info"></i> No active sections yet — add one under Program Chair &rarr; Sections to see per-section breakdowns here.</div>
+            @endif
+        </div>
+    </div>
+
+    <div class="roster-modal-overlay" id="rosterModal">
+        <div class="roster-modal">
+            <h3 id="rosterModalTitle">Measured Students</h3>
+            <div class="roster-modal-sub" id="rosterModalSub">Attempted enough items to be measured for board readiness — includes Ready, Developing, and At-risk students.</div>
+            <div id="rosterModalBody"><div class="roster-loading"><i class="fas fa-spinner fa-spin"></i> Loading students…</div></div>
+            <div class="roster-modal-close"><button type="button" class="btn btn-ghost btn-sm" onclick="closeRoster()">Close</button></div>
+        </div>
+    </div>
 
     <section class="health-grid" aria-labelledby="health-title">
         <div class="viz-card">
@@ -287,7 +417,7 @@
                 legend: { position: 'bottom' },
                 tooltip: { callbacks: { afterBody: (items) => {
                     const point = trend[items[0].dataIndex];
-                    return point.ready + ' of ' + point.eligible + ' eligible students ready';
+                    return point.ready + ' of ' + point.eligible + ' measured students ready';
                 } } },
             },
         },
@@ -332,7 +462,62 @@
             },
         },
     });
+
+    document.querySelectorAll('.breakdown-tab').forEach((tab) => {
+        tab.addEventListener('click', () => {
+            document.querySelectorAll('.breakdown-tab').forEach((t) => t.classList.remove('active'));
+            document.querySelectorAll('.breakdown-pane').forEach((p) => p.hidden = true);
+            tab.classList.add('active');
+            document.getElementById(tab.dataset.pane).hidden = false;
+        });
+    });
 })();
+
+const BAND_LABELS = { ready: 'Ready', developing: 'Developing', at_risk: 'At risk' };
+const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+function openEligible({ section = null, year = null, label = '' }) {
+    const overlay = document.getElementById('rosterModal');
+    const body = document.getElementById('rosterModalBody');
+    document.getElementById('rosterModalTitle').textContent = `Measured Students — ${label}`;
+    body.innerHTML = '<div class="roster-loading"><i class="fas fa-spinner fa-spin"></i> Loading students…</div>';
+    overlay.classList.add('open');
+
+    const params = new URLSearchParams();
+    if (section) params.set('section', section);
+    if (year) params.set('year', year);
+
+    fetch(`{{ route('chair.analytics.eligible-students') }}?${params.toString()}`, {
+        headers: { 'Accept': 'application/json' },
+    })
+        .then((res) => res.json())
+        .then((data) => {
+            const students = data.students || [];
+            if (!students.length) {
+                body.innerHTML = '<div class="roster-empty"><i class="fas fa-circle-info"></i> No measured students found.</div>';
+                return;
+            }
+            body.innerHTML = students.map((s) => `
+                <div class="roster-row">
+                    <div>
+                        <div class="roster-name">${escapeHtml(s.name)}</div>
+                        <div class="roster-email">${escapeHtml(s.email)}${s.section ? ' · ' + escapeHtml(s.section) : ''}</div>
+                    </div>
+                    <div class="roster-meta">
+                        ${s.accuracy}% · ${s.attempts} items
+                        <div class="roster-band ${escapeHtml(s.band)}">${escapeHtml(BAND_LABELS[s.band] || s.band)}</div>
+                    </div>
+                </div>
+            `).join('');
+        })
+        .catch(() => {
+            body.innerHTML = '<div class="roster-empty"><i class="fas fa-triangle-exclamation"></i> Could not load students. Try again.</div>';
+        });
+}
+
+function closeRoster() { document.getElementById('rosterModal').classList.remove('open'); }
+document.getElementById('rosterModal').addEventListener('click', (event) => { if (event.target.id === 'rosterModal') closeRoster(); });
+document.addEventListener('keydown', (event) => { if (event.key === 'Escape') closeRoster(); });
 </script>
 
     @include('partials.alerts')
