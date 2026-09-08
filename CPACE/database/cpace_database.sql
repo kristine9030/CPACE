@@ -267,6 +267,43 @@ CREATE TABLE faculty_quiz_attempts (
     CONSTRAINT fk_fqa_student FOREIGN KEY (student_id) REFERENCES users(id)           ON DELETE CASCADE
 );
 
+-- Import-from-file staging: an uploaded PDF/Word/Excel/image is parsed into
+-- question_import_items for faculty to review/edit/approve before anything
+-- reaches the real Test Bank (questions/question_choices).
+CREATE TABLE question_import_batches (
+    id                  BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    faculty_id          INT UNSIGNED NOT NULL,
+    subject_id          TINYINT UNSIGNED NULL,
+    original_filename   VARCHAR(255) NOT NULL,
+    file_type           VARCHAR(20) NOT NULL,
+    status              VARCHAR(20) NOT NULL DEFAULT 'parsing',   -- parsing | ready | committed | failed
+    parse_source        VARCHAR(10) NULL,                         -- rule | ai | mixed
+    error_message       TEXT NULL,
+    created_at          DATETIME NULL,
+    updated_at          DATETIME NULL,
+    CONSTRAINT fk_qib_faculty FOREIGN KEY (faculty_id) REFERENCES users(id)    ON DELETE CASCADE,
+    CONSTRAINT fk_qib_subject FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE SET NULL
+);
+
+CREATE TABLE question_import_items (
+    id              BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    batch_id        BIGINT UNSIGNED NOT NULL,
+    topic_id        SMALLINT UNSIGNED NULL,
+    question_text   TEXT NOT NULL,
+    question_type   VARCHAR(20) NOT NULL DEFAULT 'mcq',
+    choices         JSON NULL,                                -- [{"label":"A","text":"...","is_correct":true}]
+    explanation     TEXT NULL,
+    difficulty      VARCHAR(20) NOT NULL DEFAULT 'moderate',
+    source          VARCHAR(10) NOT NULL DEFAULT 'rule',       -- rule | ai
+    confidence      TINYINT UNSIGNED NOT NULL DEFAULT 100,
+    status          VARCHAR(20) NOT NULL DEFAULT 'pending',    -- pending | approved | rejected
+    sort_order      SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+    created_at      DATETIME NULL,
+    updated_at      DATETIME NULL,
+    CONSTRAINT fk_qii_batch FOREIGN KEY (batch_id) REFERENCES question_import_batches(id) ON DELETE CASCADE,
+    CONSTRAINT fk_qii_topic FOREIGN KEY (topic_id) REFERENCES topics(id)                  ON DELETE SET NULL
+);
+
 -- =============================================================
 -- 5. PERFORMANCE ANALYTICS  (D2 in Diagram 0)
 -- Tracks per-topic accuracy for weakness detection & SM-2

@@ -23,6 +23,7 @@ use App\Http\Controllers\Student\MockExamController;
 use App\Http\Controllers\Student\ReviewNoteController;
 use App\Http\Controllers\Student\AiTutorController;
 use App\Http\Controllers\Faculty\TestBankController;
+use App\Http\Controllers\Faculty\QuestionImportController;
 use App\Http\Controllers\Faculty\MaterialController;
 use App\Http\Controllers\Faculty\FacultyQuizController;
 use App\Http\Controllers\Student\ClassQuizController;
@@ -149,6 +150,14 @@ Route::middleware('auth')->group(function () {
         Route::get('/test-bank/{id}/edit', [TestBankController::class, 'edit'])->name('question.edit');
         Route::put('/test-bank/{id}', [TestBankController::class, 'update'])->name('question.update');
         Route::delete('/test-bank/{id}', [TestBankController::class, 'destroy'])->name('question.destroy');
+
+        // Import questions from a file (PDF/Word/Excel/CSV/image) -> staged for review -> Test Bank
+        Route::get('/test-bank/import', [QuestionImportController::class, 'create'])->name('test-bank.import');
+        Route::get('/test-bank/import/template/{type}', [QuestionImportController::class, 'downloadTemplate'])->name('test-bank.import.template');
+        Route::post('/test-bank/import', [QuestionImportController::class, 'store'])->middleware('throttle:10,1')->name('test-bank.import.store');
+        Route::get('/test-bank/import/{batch}/review', [QuestionImportController::class, 'review'])->name('test-bank.import.review');
+        Route::post('/test-bank/import/{batch}/commit', [QuestionImportController::class, 'commit'])->name('test-bank.import.commit');
+        Route::delete('/test-bank/import/{batch}', [QuestionImportController::class, 'destroy'])->name('test-bank.import.destroy');
 
         // Question variants (alternative wordings)
         Route::get('/test-bank/{id}/variants', [TestBankController::class, 'variants'])->name('question.variants');

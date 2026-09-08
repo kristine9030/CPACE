@@ -162,7 +162,7 @@
             </div>
         </div>
         <div class="topbar-right">
-            <button class="btn btn-ghost"><i class="fas fa-file-import"></i> Import</button>
+            <a href="{{ route('faculty.test-bank.import') }}" class="btn btn-ghost"><i class="fas fa-file-import"></i> Import</a>
             <div class="export-wrap">
                 <button class="btn btn-ghost" id="exportBtn" type="button">
                     <i class="fas fa-file-export"></i> Export <i class="fas fa-chevron-down" style="font-size:10px;"></i>

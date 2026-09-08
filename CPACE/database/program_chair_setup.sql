@@ -114,6 +114,41 @@ CREATE TABLE IF NOT EXISTS faculty_quiz_attempts (
     CONSTRAINT fk_fqa_student FOREIGN KEY (student_id) REFERENCES users(id)           ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- 2c. Import-from-file staging (PDF/Word/Excel/image -> review -> Test Bank).
+CREATE TABLE IF NOT EXISTS question_import_batches (
+    id                  BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    faculty_id          INT UNSIGNED NOT NULL,
+    subject_id          TINYINT UNSIGNED NULL,
+    original_filename   VARCHAR(255) NOT NULL,
+    file_type           VARCHAR(20) NOT NULL,
+    status              VARCHAR(20) NOT NULL DEFAULT 'parsing',
+    parse_source        VARCHAR(10) NULL,
+    error_message       TEXT NULL,
+    created_at          DATETIME NULL,
+    updated_at          DATETIME NULL,
+    CONSTRAINT fk_qib_faculty FOREIGN KEY (faculty_id) REFERENCES users(id)    ON DELETE CASCADE,
+    CONSTRAINT fk_qib_subject FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS question_import_items (
+    id              BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    batch_id        BIGINT UNSIGNED NOT NULL,
+    topic_id        SMALLINT UNSIGNED NULL,
+    question_text   TEXT NOT NULL,
+    question_type   VARCHAR(20) NOT NULL DEFAULT 'mcq',
+    choices         JSON NULL,
+    explanation     TEXT NULL,
+    difficulty      VARCHAR(20) NOT NULL DEFAULT 'moderate',
+    source          VARCHAR(10) NOT NULL DEFAULT 'rule',
+    confidence      TINYINT UNSIGNED NOT NULL DEFAULT 100,
+    status          VARCHAR(20) NOT NULL DEFAULT 'pending',
+    sort_order      SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+    created_at      DATETIME NULL,
+    updated_at      DATETIME NULL,
+    CONSTRAINT fk_qii_batch FOREIGN KEY (batch_id) REFERENCES question_import_batches(id) ON DELETE CASCADE,
+    CONSTRAINT fk_qii_topic FOREIGN KEY (topic_id) REFERENCES topics(id)                  ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- 3. Default Program Chair account (Admin role = 1).
 --    Safe to re-run: updates the password/role if the email already exists.
 INSERT INTO users (role_id, first_name, last_name, email, password, is_active, email_verified)
