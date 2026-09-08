@@ -44,7 +44,8 @@
         .paper { width:794px; min-height:1123px; background:white; margin:0 auto; box-shadow:0 12px 28px rgba(0,0,0,.14); padding:48px 54px; color:var(--ink); transform-origin:top center; }
         .paper-head { display:flex; justify-content:space-between; gap:24px; border-bottom:3px solid var(--primary); padding-bottom:18px; margin-bottom:22px; }
         .brand { display:flex; gap:12px; align-items:center; }
-        .brand-mark { width:48px; height:48px; border-radius:10px; background:var(--primary-light); display:flex; align-items:center; justify-content:center; color:var(--primary); font-size:22px; }
+        .brand-mark { width:48px; height:48px; border-radius:10px; background:var(--primary); display:flex; align-items:center; justify-content:center; color:#fff; font-size:22px; overflow:hidden; padding:5px; }
+        .brand-mark img { width:100%; height:100%; object-fit:contain; }
         .brand h1 { font-size:20px; color:var(--primary); line-height:1.1; }
         .brand p, .report-meta p { font-size:10px; color:#6b7280; margin-top:3px; }
         .report-meta { text-align:right; }
@@ -237,7 +238,7 @@
             <article class="paper" id="reportPaper">
                 <header class="paper-head">
                     <div class="brand">
-                        <div class="brand-mark"><i class="fas fa-graduation-cap"></i></div>
+                        <div class="brand-mark"><img src="{{ asset('images/cpace_logo.png') }}" alt="CPACE Logo"></div>
                         <div>
                             <h1>CPACE</h1>
                             <p>CPA Reviewer Faculty Report</p>
