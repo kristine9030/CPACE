@@ -122,7 +122,7 @@
         <div class="side-card">
             <div class="side-title"><i class="fas fa-chart-bar" style="margin-right:6px;color:var(--accent);"></i>Class Weak Topics</div>
             @if($weakTopics->isNotEmpty())
-            <div class="chart-box-sm" id="classWeakChartBox"><canvas id="chartClassWeak"></canvas></div>
+            <div class="chart-box-sm" id="classWeakChartBox"><div class="chart-inner" id="classWeakChartInner"><canvas id="chartClassWeak"></canvas></div></div>
             @endif
             <div class="weak-list-scroll">
                 @forelse($weakTopics as $t)

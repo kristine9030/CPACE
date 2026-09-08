@@ -125,7 +125,11 @@
         .weak-rate { font-size:12px; font-weight:700; color:var(--accent); }
         .weak-why { font-size:10.5px; color:#8a8a8a; font-weight:500; margin-top:3px; line-height:1.4; }
         .weak-why.weak-miss { color:#b45309; }
-        .chart-box-sm { position:relative; height:210px; margin-bottom:14px; }
+        .chart-box-sm { position:relative; height:210px; margin-bottom:14px; overflow-y:auto; overflow-x:hidden; }
+        .chart-box-sm .chart-inner { position:relative; width:100%; height:100%; }
+        .chart-box-sm::-webkit-scrollbar { width:5px; }
+        .chart-box-sm::-webkit-scrollbar-thumb { background:#e5d5d5; border-radius:3px; }
+        .chart-box-sm::-webkit-scrollbar-track { background:transparent; }
         .weak-list-scroll { max-height:280px; overflow-y:auto; padding-right:4px; margin-right:-4px; }
         .weak-list-scroll::-webkit-scrollbar { width:5px; }
         .weak-list-scroll::-webkit-scrollbar-thumb { background:#e5d5d5; border-radius:3px; }
@@ -276,7 +280,7 @@
         <div class="modal-sec-title">Accuracy by Subject</div>
         <div id="mSubjects"></div>
         <div class="modal-sec-title">Weak Topics</div>
-        <div class="chart-box-sm" id="mWeakChartBox"><canvas id="chartStudentWeak"></canvas></div>
+        <div class="chart-box-sm" id="mWeakChartBox"><div class="chart-inner" id="mWeakChartInner"><canvas id="chartStudentWeak"></canvas></div></div>
         <div class="modal-weak-list" id="mWeak"></div>
     </div>
 </div>
@@ -312,6 +316,19 @@
         return lines;
     }
 
+    // Grows the scrollable chart wrapper to fit however many bars/label-lines
+    // there are, instead of squeezing every topic into one fixed-height box
+    // (which is what caused labels to overlap when a list got long).
+    function sizeChartInner(innerId, topics, wrapLen) {
+        const inner = document.getElementById(innerId);
+        if (!inner) return;
+        const perBar = 26;
+        const perLine = 12;
+        const rowHeights = topics.map(t => perBar + wrapChartLabel(t.topic, wrapLen).length * perLine);
+        const total = rowHeights.reduce((a, b) => a + b, 0) + 20;
+        inner.style.height = Math.max(210, total) + 'px';
+    }
+
     function hydratePerf() {
         const el = document.getElementById('perfData');
         if (!el) return;
@@ -332,6 +349,7 @@
         const canvas = document.getElementById('chartClassWeak');
         if (!canvas || !weakTopics.length) return;
 
+        sizeChartInner('classWeakChartInner', weakTopics, 15);
         classWeakChart = new Chart(canvas, {
             type: 'bar',
             data: {
@@ -414,6 +432,7 @@
             // Chart shows the weakest few (already sorted ascending by accuracy);
             // the full detail with why/misconception lives in the scroll list below.
             const top = d.weak.slice(0, 8);
+            sizeChartInner('mWeakChartInner', top, 15);
             studentWeakChart = new Chart(document.getElementById('chartStudentWeak'), {
                 type: 'bar',
                 data: {
