@@ -360,6 +360,7 @@ class FacultyPerformanceController extends Controller
             ->where('performance_records.total_attempts', '>', 0)
             ->select(
                 'performance_records.student_id',
+                'performance_records.topic_id',
                 'performance_records.correct_count',
                 'performance_records.total_attempts',
                 'performance_records.consecutive_wrong',
@@ -369,6 +370,21 @@ class FacultyPerformanceController extends Controller
             )
             ->get()
             ->groupBy('student_id');
+
+        // Weak (student, topic) pairs across the whole page, evaluated once so we
+        // can fetch each one's "why" (the misconception behind it) in one query.
+        $weakByStudent = [];
+        $pairs = [];
+        foreach ($studentIds as $sid) {
+            $weakByStudent[$sid] = $records->get($sid, collect())->filter(function ($r) {
+                [$isWeak] = $this->weakness->evaluate($r);
+                return $isWeak;
+            });
+            foreach ($weakByStudent[$sid] as $r) {
+                $pairs[] = [$sid, $r->topic_id];
+            }
+        }
+        $misses = $this->topMissedQuestions($pairs, 'quiz_sessions.student_id');
 
         $details = [];
         foreach ($studentIds as $sid) {
@@ -386,16 +402,21 @@ class FacultyPerformanceController extends Controller
                 ];
             })->sortByDesc('accuracy')->values()->all();
 
-            // Weak topics, using the shared detector rule.
-            $weak = $recs->filter(function ($r) {
-                [$isWeak] = $this->weakness->evaluate($r);
-                return $isWeak;
-            })->map(function ($r) {
+            // Weak topics, using the shared detector rule - with the reason and
+            // the specific misconception driving it, so faculty know *why*.
+            $weak = $weakByStudent[$sid]->map(function ($r) use ($misses, $sid) {
+                [, $reason] = $this->weakness->evaluate($r);
                 $att = (int) $r->total_attempts;
+                $miss = $misses[$sid . ':' . $r->topic_id] ?? null;
+
                 return [
                     'topic'    => $r->topic,
                     'subject'  => $r->subject_code,
                     'accuracy' => $att > 0 ? (int) round($r->correct_count / $att * 100) : 0,
+                    'why'      => $reason === 'consecutive_wrong'
+                        ? "Missed {$r->consecutive_wrong} in a row most recently"
+                        : "Below 60% accuracy over {$att} attempts",
+                    'miss'     => $miss ? "Often picks \"{$miss['choice']}\" on \"{$miss['question']}\"" : null,
                 ];
             })->sortBy('accuracy')->values()->all();
 
@@ -409,6 +430,65 @@ class FacultyPerformanceController extends Controller
     }
 
     /**
+     * For each (owner, topic_id) pair — owner being a student id (per-student
+     * view) or null (class-wide view) — find the single question that owner
+     * gets wrong the most within that topic, and the wrong choice they pick
+     * most often on it. This is the concrete "why" behind a weak-topic flag:
+     * not just a low percentage, but the actual misconception driving it.
+     *
+     * @param  array<int, array{0: int|null, 1: int}>  $pairs  [owner, topic_id]
+     * @param  string  $ownerColumn  Fully-qualified column identifying the owner
+     *                               (student_id for per-student, or a topic-only
+     *                               grouping when $pairs entries use owner=null).
+     * @return array<string, array{question: string, choice: string, times: int}>
+     */
+    private function topMissedQuestions(array $pairs, string $ownerColumn): array
+    {
+        if (empty($pairs)) {
+            return [];
+        }
+
+        $topicIds = array_unique(array_column($pairs, 1));
+        $studentIds = array_filter(array_unique(array_column($pairs, 0)), fn ($v) => $v !== null);
+
+        $query = DB::table('quiz_answers')
+            ->join('quiz_sessions', 'quiz_sessions.id', '=', 'quiz_answers.session_id')
+            ->join('questions', 'questions.id', '=', 'quiz_answers.question_id')
+            ->join('question_choices', 'question_choices.id', '=', 'quiz_answers.selected_choice')
+            ->whereIn('questions.topic_id', $topicIds)
+            ->where('quiz_answers.is_correct', false)
+            ->whereNotNull('quiz_answers.selected_choice');
+
+        if (! empty($studentIds)) {
+            $query->whereIn('quiz_sessions.student_id', $studentIds);
+        }
+
+        $rows = $query
+            ->select(
+                DB::raw("{$ownerColumn} as owner_id"),
+                'questions.topic_id',
+                'questions.question_text',
+                'question_choices.choice_text',
+                DB::raw('COUNT(*) as times')
+            )
+            ->groupBy('owner_id', 'questions.topic_id', 'questions.id', 'questions.question_text', 'question_choices.id', 'question_choices.choice_text')
+            ->get()
+            ->groupBy(fn ($r) => ($r->owner_id ?? 'class') . ':' . $r->topic_id);
+
+        $out = [];
+        foreach ($rows as $key => $group) {
+            $top = $group->sortByDesc('times')->first();
+            $out[$key] = [
+                'question' => \Illuminate\Support\Str::limit($top->question_text, 60),
+                'choice'   => \Illuminate\Support\Str::limit($top->choice_text, 40),
+                'times'    => (int) $top->times,
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
      * The class's weakest topics: aggregate accuracy across every student in the
      * current subject/period window, lowest 5 (with a real sample behind them).
      */
@@ -416,17 +496,19 @@ class FacultyPerformanceController extends Controller
     {
         $subjectIds = $filters['subject_ids'];
 
-        return DB::table('performance_records')
+        $topics = DB::table('performance_records')
             ->join('topics', 'topics.id', '=', 'performance_records.topic_id')
             ->join('subjects', 'subjects.id', '=', 'topics.subject_id')
             ->when($subjectIds !== null, fn ($q) => $q->whereIn('subjects.id', $subjectIds))
             ->groupBy('topics.id', 'topics.name', 'subjects.code')
             ->havingRaw('SUM(performance_records.total_attempts) >= 5')
             ->select(
+                'topics.id as topic_id',
                 'topics.name as topic',
                 'subjects.code as subject_code',
                 DB::raw('SUM(performance_records.correct_count) as correct'),
-                DB::raw('SUM(performance_records.total_attempts) as attempts')
+                DB::raw('SUM(performance_records.total_attempts) as attempts'),
+                DB::raw('COUNT(DISTINCT CASE WHEN performance_records.is_weak_area = 1 THEN performance_records.student_id END) as students_affected')
             )
             ->get()
             ->map(function ($r) {
@@ -436,6 +518,23 @@ class FacultyPerformanceController extends Controller
             ->sortBy('accuracy')
             ->take(5)
             ->values();
+
+        // The class-wide misconception behind each weak topic - the wrong
+        // choice picked most often across every student, on the question
+        // most students get wrong within it.
+        $misses = $this->topMissedQuestions(
+            $topics->map(fn ($t) => [null, $t->topic_id])->all(),
+            'NULL'
+        );
+
+        return $topics->map(function ($t) use ($misses) {
+            $miss = $misses['class:' . $t->topic_id] ?? null;
+            $t->why = $t->students_affected > 0
+                ? "{$t->students_affected} student" . ($t->students_affected === 1 ? '' : 's') . " flagged weak"
+                : "Class average below par over {$t->attempts} attempts";
+            $t->miss = $miss ? "Most often pick \"{$miss['choice']}\" on \"{$miss['question']}\"" : null;
+            return $t;
+        });
     }
 
     /**

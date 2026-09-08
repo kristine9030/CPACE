@@ -121,17 +121,26 @@
         <!-- WEAKEST TOPICS -->
         <div class="side-card">
             <div class="side-title"><i class="fas fa-chart-bar" style="margin-right:6px;color:var(--accent);"></i>Class Weak Topics</div>
-            @forelse($weakTopics as $t)
-            <div class="weak-item">
-                <div class="weak-icon" style="background:{{ ($subjColors[$t->subject_code] ?? '#888') }}20;color:{{ $subjColors[$t->subject_code] ?? '#888' }};">
-                    <i class="fas {{ $subjIcons[$t->subject_code] ?? 'fa-book' }}"></i>
+            @if($weakTopics->isNotEmpty())
+            <div class="chart-box-sm" id="classWeakChartBox"><canvas id="chartClassWeak"></canvas></div>
+            @endif
+            <div class="weak-list-scroll">
+                @forelse($weakTopics as $t)
+                <div class="weak-item" style="align-items:flex-start;">
+                    <div class="weak-icon" style="background:{{ ($subjColors[$t->subject_code] ?? '#888') }}20;color:{{ $subjColors[$t->subject_code] ?? '#888' }};">
+                        <i class="fas {{ $subjIcons[$t->subject_code] ?? 'fa-book' }}"></i>
+                    </div>
+                    <span class="weak-name">
+                        {{ $t->topic }}<br><span class="weak-sub">{{ $t->subject_code }}</span>
+                        <div class="weak-why">{{ $t->why }}</div>
+                        @if($t->miss)<div class="weak-why weak-miss">{{ $t->miss }}</div>@endif
+                    </span>
+                    <span class="weak-rate">{{ $t->accuracy }}%</span>
                 </div>
-                <span class="weak-name">{{ $t->topic }}<br><span class="weak-sub">{{ $t->subject_code }}</span></span>
-                <span class="weak-rate">{{ $t->accuracy }}%</span>
+                @empty
+                    <div class="muted-empty">Not enough attempts yet to rank topics.</div>
+                @endforelse
             </div>
-            @empty
-                <div class="muted-empty">Not enough attempts yet to rank topics.</div>
-            @endforelse
             <a href="{{ route('faculty.test-bank') }}" style="display:flex;align-items:center;justify-content:center;gap:6px;font-size:12px;color:var(--accent);text-decoration:none;margin-top:14px;font-weight:600;">Add Questions for These Topics <i class="fas fa-arrow-right"></i></a>
         </div>
 
@@ -156,9 +165,11 @@
         </div>
     </div>
 
-    {{-- Per-student data for the detail modal (current page only). --}}
+    {{-- Per-student data for the detail modal, plus the class weak-topics chart
+         data (current page + current filters). Re-read after each AJAX swap. --}}
     <script type="application/json" id="perfData">{!! json_encode([
-        'students' => $students->keyBy('id'),
-        'details'  => $details,
+        'students'   => $students->keyBy('id'),
+        'details'    => $details,
+        'weakTopics' => $weakTopics->map(fn ($t) => ['topic' => $t->topic, 'subject' => $t->subject_code, 'accuracy' => $t->accuracy])->values(),
     ], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) !!}</script>
 </div>

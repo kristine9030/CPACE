@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <style>
         :root { --primary:#7B1D1D; --primary-hover:#6a1818; --primary-light:#f5e8e8; --accent:#c0392b; --green:#10b981; --blue:#3b82f6; --orange:#f59e0b; }
         * { margin:0; padding:0; box-sizing:border-box; }
@@ -122,6 +123,13 @@
         .weak-name { font-size:12px; font-weight:600; color:#1a1a1a; flex:1; }
         .weak-sub { font-size:10px; color:#bbb; font-weight:500; }
         .weak-rate { font-size:12px; font-weight:700; color:var(--accent); }
+        .weak-why { font-size:10.5px; color:#8a8a8a; font-weight:500; margin-top:3px; line-height:1.4; }
+        .weak-why.weak-miss { color:#b45309; }
+        .chart-box-sm { position:relative; height:210px; margin-bottom:14px; }
+        .weak-list-scroll { max-height:280px; overflow-y:auto; padding-right:4px; margin-right:-4px; }
+        .weak-list-scroll::-webkit-scrollbar { width:5px; }
+        .weak-list-scroll::-webkit-scrollbar-thumb { background:#e5d5d5; border-radius:3px; }
+        .weak-list-scroll::-webkit-scrollbar-track { background:transparent; }
 
         .muted-empty { font-size:12px; color:#bbb; padding:6px 0; }
 
@@ -146,9 +154,17 @@
         .subj-row { margin-bottom:10px; }
         .subj-row-top { display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px; }
         .subj-row-bar { height:6px; background:#f0f0f0; border-radius:4px; overflow:hidden; }
-        .modal-weak-item { display:flex; justify-content:space-between; align-items:center; font-size:12px; padding:7px 10px; background:#fef2f2; border-radius:8px; margin-bottom:6px; }
+        .modal-weak-item { font-size:12px; padding:8px 10px; background:#fef2f2; border-radius:8px; margin-bottom:6px; }
+        .modal-weak-item .wt-row { display:flex; justify-content:space-between; align-items:center; }
         .modal-weak-item .wt { color:#7f1d1d; font-weight:600; }
         .modal-weak-item .wr { color:var(--accent); font-weight:700; }
+        .modal-weak-item .wt-why { color:#9a4a4a; font-weight:500; font-size:10.5px; margin-top:4px; line-height:1.4; }
+        .modal-weak-item .wt-miss { color:#b45309; font-weight:500; font-size:10.5px; margin-top:2px; line-height:1.4; }
+        .modal-weak-list { max-height:260px; overflow-y:auto; padding-right:4px; margin-right:-4px; }
+        .modal-weak-list::-webkit-scrollbar { width:5px; }
+        .modal-weak-list::-webkit-scrollbar-thumb { background:#e5d5d5; border-radius:3px; }
+        .modal-weak-list::-webkit-scrollbar-track { background:transparent; }
+        .modal-more-note { font-size:11px; color:#aaa; text-align:center; padding:4px 0 2px; }
 
         @keyframes fadeUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
         .a0{animation:fadeUp .4s ease both} .a1{animation:fadeUp .4s .07s ease both} .a2{animation:fadeUp .4s .14s ease both}
@@ -260,7 +276,8 @@
         <div class="modal-sec-title">Accuracy by Subject</div>
         <div id="mSubjects"></div>
         <div class="modal-sec-title">Weak Topics</div>
-        <div id="mWeak"></div>
+        <div class="chart-box-sm" id="mWeakChartBox"><canvas id="chartStudentWeak"></canvas></div>
+        <div class="modal-weak-list" id="mWeak"></div>
     </div>
 </div>
 
@@ -271,15 +288,90 @@
     // Per-student data for the detail modal - re-read after each AJAX swap.
     let STUDENTS = {};
     let DETAILS  = {};
+    let classWeakChart   = null;
+    let studentWeakChart = null;
+    const chartFont = "'Poppins', sans-serif";
+    function weakBarColor(acc) { return acc < 40 ? '#c0392b' : (acc < 60 ? '#e8567d' : '#f59e0b'); }
+
+    // Break a topic name into short lines so Chart.js renders the full label
+    // (as a multi-line tick) instead of clipping it against the narrow
+    // side-panel width.
+    function wrapChartLabel(label, maxLen = 16) {
+        const words = String(label).split(' ');
+        const lines = [];
+        let line = '';
+        words.forEach(w => {
+            if (line && (line + ' ' + w).length > maxLen) {
+                lines.push(line);
+                line = w;
+            } else {
+                line = line ? line + ' ' + w : w;
+            }
+        });
+        if (line) lines.push(line);
+        return lines;
+    }
 
     function hydratePerf() {
         const el = document.getElementById('perfData');
         if (!el) return;
+        let weakTopics = [];
         try {
             const data = JSON.parse(el.textContent);
-            STUDENTS = data.students || {};
-            DETAILS  = data.details  || {};
+            STUDENTS   = data.students   || {};
+            DETAILS    = data.details    || {};
+            weakTopics = data.weakTopics || [];
         } catch (e) { STUDENTS = {}; DETAILS = {}; }
+        renderClassWeakChart(weakTopics);
+    }
+
+    // Rebuilt after every AJAX swap (subject/period filter change), since the
+    // canvas element itself is replaced along with the rest of #perfBody.
+    function renderClassWeakChart(weakTopics) {
+        if (classWeakChart) { classWeakChart.destroy(); classWeakChart = null; }
+        const canvas = document.getElementById('chartClassWeak');
+        if (!canvas || !weakTopics.length) return;
+
+        classWeakChart = new Chart(canvas, {
+            type: 'bar',
+            data: {
+                labels: weakTopics.map(t => t.topic),
+                datasets: [{
+                    data: weakTopics.map(t => t.accuracy),
+                    backgroundColor: weakTopics.map(t => weakBarColor(t.accuracy)),
+                    borderRadius: 5,
+                    borderSkipped: false,
+                    barThickness: 16
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                indexAxis: 'y',
+                layout: { padding: { left: 10 } },
+                scales: {
+                    x: { beginAtZero: true, max: 100, grid: { color: '#f3f4f6' }, ticks: { font: { family: chartFont, size: 9 }, callback: v => v + '%' } },
+                    y: {
+                        grid: { display: false },
+                        ticks: {
+                            font: { family: chartFont, size: 10, weight: '600' },
+                            color: '#374151',
+                            autoSkip: false,
+                            callback: function (val) { return wrapChartLabel(this.getLabelForValue(val), 15); }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            title: items => weakTopics[items[0].dataIndex].topic,
+                            label: ctx => ctx.raw + '% accuracy',
+                            afterLabel: ctx => weakTopics[ctx.dataIndex].subject
+                        }
+                    }
+                }
+            }
+        });
     }
 
     function scoreColor(s) { return s >= 75 ? '#059669' : (s >= 60 ? '#d97706' : '#c0392b'); }
@@ -311,11 +403,63 @@
         }
 
         const weakEl = document.getElementById('mWeak');
+        const chartBox = document.getElementById('mWeakChartBox');
+        if (studentWeakChart) { studentWeakChart.destroy(); studentWeakChart = null; }
+
         if (!d.weak.length) {
+            chartBox.style.display = 'none';
             weakEl.innerHTML = '<div class="muted-empty"><i class="fas fa-check-circle" style="color:#10b981;margin-right:5px;"></i>No weak topics — on track.</div>';
         } else {
+            chartBox.style.display = '';
+            // Chart shows the weakest few (already sorted ascending by accuracy);
+            // the full detail with why/misconception lives in the scroll list below.
+            const top = d.weak.slice(0, 8);
+            studentWeakChart = new Chart(document.getElementById('chartStudentWeak'), {
+                type: 'bar',
+                data: {
+                    labels: top.map(w => w.topic),
+                    datasets: [{
+                        data: top.map(w => w.accuracy),
+                        backgroundColor: top.map(w => weakBarColor(w.accuracy)),
+                        borderRadius: 5,
+                        borderSkipped: false,
+                        barThickness: 14
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    layout: { padding: { left: 10 } },
+                    scales: {
+                        x: { beginAtZero: true, max: 100, grid: { color: '#f3f4f6' }, ticks: { font: { family: chartFont, size: 9 }, callback: v => v + '%' } },
+                        y: {
+                            grid: { display: false },
+                            ticks: {
+                                font: { family: chartFont, size: 10, weight: '600' },
+                                color: '#7f1d1d',
+                                autoSkip: false,
+                                callback: function (val) { return wrapChartLabel(this.getLabelForValue(val), 15); }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                title: items => top[items[0].dataIndex].topic,
+                                label: ctx => ctx.raw + '% accuracy'
+                            }
+                        }
+                    }
+                }
+            });
+
             weakEl.innerHTML = d.weak.map(w => `
-                <div class="modal-weak-item"><span class="wt">${w.topic} <span style="color:#c89;font-weight:500;">(${w.subject})</span></span><span class="wr">${w.accuracy}%</span></div>`).join('');
+                <div class="modal-weak-item">
+                    <div class="wt-row"><span class="wt">${w.topic} <span style="color:#c89;font-weight:500;">(${w.subject})</span></span><span class="wr">${w.accuracy}%</span></div>
+                    <div class="wt-why"><i class="fas fa-circle-info" style="margin-right:4px;"></i>${w.why}</div>
+                    ${w.miss ? `<div class="wt-miss"><i class="fas fa-lightbulb" style="margin-right:4px;"></i>${w.miss}</div>` : ''}
+                </div>`).join('');
         }
 
         document.getElementById('studentModal').classList.add('open');
