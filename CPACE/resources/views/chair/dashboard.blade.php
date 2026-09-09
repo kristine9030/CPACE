@@ -42,6 +42,18 @@
         .risk-head { color:#aaa; font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.4px; padding-top:0; border-top:0; }
         .risk-empty { padding:24px 10px 8px; text-align:center; color:#999; font-size:12px; }
         .risk-empty i { color:var(--green); margin-right:6px; }
+        .action-list { display:flex; flex-direction:column; gap:10px; }
+        .action-row { display:flex; gap:12px; padding:12px 10px; border-top:1px solid #f5f5f5; }
+        .action-row:first-child { border-top:0; }
+        .action-icon { flex:none; width:30px; height:30px; border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:12px; }
+        .action-icon.high { background:#fde8e8; color:#b91c1c; }
+        .action-icon.watch { background:#fef3c7; color:#b45309; }
+        .action-body { min-width:0; }
+        .action-subject { font-size:12.5px; font-weight:600; color:#1a1a1a; }
+        .action-detail { font-size:11px; color:#888; margin-top:2px; }
+        .action-next { font-size:11px; color:var(--accent); font-weight:600; margin-top:4px; }
+        .action-empty { padding:24px 10px 8px; text-align:center; color:#999; font-size:12px; }
+        .action-empty i { color:var(--green); margin-right:6px; }
         .analytics-strip { margin:18px 0; }
         .analytics-head { display:flex; align-items:end; justify-content:space-between; gap:12px; margin-bottom:10px; }
         .analytics-title { font-size:14px; font-weight:700; color:#222; }
@@ -389,6 +401,32 @@
             </div>
         @else
             <div class="risk-empty"><i class="fas fa-circle-check"></i>No students currently need intervention.</div>
+        @endif
+    </div>
+
+    <div class="card" style="margin-top:18px;">
+        <div class="card-head">
+            <span class="card-title"><i class="fas fa-list-check" style="color:var(--accent);margin-right:7px;"></i>Recommended Actions</span>
+            <span class="risk-meta">Rule-based, drawn from the alerts and weak topics above — not a prediction</span>
+        </div>
+
+        @if($recommendedActions->isNotEmpty())
+            <div class="action-list">
+                @foreach($recommendedActions as $action)
+                    <div class="action-row">
+                        <div class="action-icon {{ $action['severity'] }}">
+                            <i class="fas {{ $action['type'] === 'student' ? 'fa-user' : 'fa-book' }}"></i>
+                        </div>
+                        <div class="action-body">
+                            <div class="action-subject">{{ $action['subject'] }}</div>
+                            <div class="action-detail">{{ $action['detail'] }}</div>
+                            <div class="action-next"><i class="fas fa-arrow-right" style="font-size:9px;margin-right:4px;"></i>{{ $action['action'] }}</div>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        @else
+            <div class="action-empty"><i class="fas fa-circle-check"></i>Nothing needs action right now.</div>
         @endif
     </div>
 </main>

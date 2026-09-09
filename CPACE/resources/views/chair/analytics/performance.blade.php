@@ -212,11 +212,30 @@
                 <div class="method-note">Ready requires at least {{ \App\Services\ChairAnalyticsService::READY_ATTEMPTS }} completed items, {{ \App\Services\ChairAnalyticsService::READY_ACCURACY }}% accuracy, and—when viewing all subjects—activity in at least {{ \App\Services\ChairAnalyticsService::READY_SUBJECTS }} subjects. Students need {{ \App\Services\ChairAnalyticsService::DEVELOPING_ATTEMPTS }} items to be included in the measured class.</div>
             </section>
 
+            @php
+                $confidence = $report['readiness']['confidence'];
+                $confidenceLabel = ['high' => 'High confidence', 'medium' => 'Medium confidence', 'low' => 'Low confidence'][$confidence];
+                $confidenceColor = ['high' => '#047857', 'medium' => '#b45309', 'low' => '#b91c1c'][$confidence];
+                $confidenceBg = ['high' => '#e7f6ef', 'medium' => '#fef3c7', 'low' => '#fde8e8'][$confidence];
+            @endphp
             <section class="card" id="pass-projection" style="margin-top:18px;">
-                <div class="card-head"><span class="card-title">Predicted Pass Rate</span><i class="fas fa-graduation-cap" style="color:var(--accent)"></i></div>
+                <div class="card-head">
+                    <span class="card-title">Predicted Pass Rate</span>
+                    <span style="font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;color:{{ $confidenceColor }};background:{{ $confidenceBg }};">{{ $confidenceLabel }}</span>
+                </div>
                 <div style="text-align:center;padding:12px 0 6px;"><div style="font-size:42px;font-weight:700;color:#222;">{{ $report['readiness']['pass_projection'] === null ? '—' : $report['readiness']['pass_projection'].'%' }}</div><div class="small-meta">Readiness-based class-level projection</div></div>
                 <div class="method-note"><strong>Planning estimate only.</strong> The projection counts ready students fully and developing students at 50%. It is not an official board-exam prediction and becomes more useful as students complete more practice.</div>
-                @if($report['readiness']['insufficient'] > 0)<div class="method-note"><i class="fas fa-circle-info"></i> {{ $report['readiness']['insufficient'] }} active student{{ $report['readiness']['insufficient'] === 1 ? '' : 's' }} currently have insufficient activity for the projection.</div>@endif
+                <div class="method-note">
+                    <i class="fas fa-circle-info"></i>
+                    Based on {{ $report['readiness']['eligible'] }} of {{ $report['readiness']['total_active'] }} active student{{ $report['readiness']['total_active'] === 1 ? '' : 's' }} ({{ $report['readiness']['coverage_percent'] }}% coverage)
+                    — {{ $report['readiness']['ready'] }} ready, {{ $report['readiness']['developing'] }} developing, {{ $report['readiness']['at_risk'] }} at-risk.
+                    @if($report['readiness']['insufficient'] > 0)
+                        {{ $report['readiness']['insufficient'] }} student{{ $report['readiness']['insufficient'] === 1 ? '' : 's' }} {{ $report['readiness']['insufficient'] === 1 ? "hasn't" : "haven't" }} done enough items yet to count.
+                    @endif
+                    @if($confidence === 'low')
+                        Treat this number as a rough placeholder until more students build up a history.
+                    @endif
+                </div>
             </section>
 
             <section class="card" style="margin-top:18px;">

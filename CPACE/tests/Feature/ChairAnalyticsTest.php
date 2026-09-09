@@ -369,6 +369,75 @@ class ChairAnalyticsTest extends TestCase
         }
     }
 
+    public function test_pass_projection_reports_coverage_and_confidence(): void
+    {
+        // Base seed: 1 active student, all 1 eligible → 100% coverage, but
+        // eligibleCount(1) < 5 so confidence is still "low" even at full coverage.
+        $report = app(ChairAnalyticsService::class)->performanceReport();
+
+        $this->assertSame(1, $report['readiness']['total_active']);
+        $this->assertSame(1, $report['readiness']['eligible']);
+        $this->assertSame(100, $report['readiness']['coverage_percent']);
+        $this->assertSame('low', $report['readiness']['confidence']);
+
+        // Add 4 more eligible students with the same profile so the eligible
+        // pool clears the "at least 5" floor and coverage stays high (5/5).
+        for ($i = 0; $i < 4; $i++) {
+            $student = User::create(['role_id' => Role::STUDENT, 'first_name' => "More$i", 'last_name' => 'Student', 'email' => "more$i@example.com", 'password' => Hash::make('password'), 'is_active' => true, 'setup_completed_at' => now()]);
+            DB::table('student_profiles')->insert(['user_id' => $student->id, 'section' => 'BSA-1A', 'created_at' => now(), 'updated_at' => now()]);
+            $topicId = DB::table('topics')->first()->id;
+            $subjectId = DB::table('subjects')->first()->id;
+            DB::table('performance_records')->insert(['student_id' => $student->id, 'topic_id' => $topicId, 'correct_count' => 14, 'total_attempts' => 20, 'is_weak_area' => false]);
+            DB::table('quiz_sessions')->insert(['student_id' => $student->id, 'subject_id' => $subjectId, 'session_type' => 'adaptive', 'total_items' => 20, 'correct_answers' => 14, 'duration_secs' => 600, 'completed_at' => now()]);
+        }
+
+        $withMore = app(ChairAnalyticsService::class)->performanceReport();
+        $this->assertSame(5, $withMore['readiness']['total_active']);
+        $this->assertSame(5, $withMore['readiness']['eligible']);
+        $this->assertSame(100, $withMore['readiness']['coverage_percent']);
+        $this->assertSame('high', $withMore['readiness']['confidence']);
+
+        // The card renders the coverage note and a confidence badge.
+        $chair = User::where('email', 'chair@example.com')->firstOrFail();
+        $this->actingAs($chair)->get(route('chair.analytics.performance'))
+            ->assertOk()
+            ->assertSee('coverage')
+            ->assertSee('High confidence');
+    }
+
+    public function test_recommended_actions_surface_at_risk_students_and_weak_topics(): void
+    {
+        // A student with no activity at all → "No learning activity" alert,
+        // which recommendedActions() should turn into a concrete next step.
+        $idle = User::create(['role_id' => Role::STUDENT, 'first_name' => 'Idle', 'last_name' => 'Student', 'email' => 'idle@example.com', 'password' => Hash::make('password'), 'is_active' => true, 'setup_completed_at' => now()]);
+        // created_at isn't mass-assignable on User, so backdate it directly —
+        // atRiskStudents() falls back to created_at as the "last active" date
+        // for a student with no login/quiz activity at all.
+        DB::table('users')->where('id', $idle->id)->update(['created_at' => now()->subDays(10)]);
+        DB::table('student_profiles')->insert(['user_id' => $idle->id, 'section' => 'BSA-1A', 'created_at' => now(), 'updated_at' => now()]);
+
+        // A weak topic well below the developing threshold.
+        $subjectId = DB::table('subjects')->first()->id;
+        $topicId = DB::table('topics')->insertGetId(['subject_id' => $subjectId, 'name' => 'Struggling Topic', 'sort_order' => 1, 'is_active' => true, 'created_at' => now(), 'updated_at' => now()]);
+        DB::table('performance_records')->insert(['student_id' => $idle->id, 'topic_id' => $topicId, 'correct_count' => 2, 'total_attempts' => 15, 'is_weak_area' => true]);
+
+        $atRisk = app(\App\Http\Controllers\Chair\ProgramChairController::class);
+        $reflection = new \ReflectionMethod($atRisk, 'atRiskStudents');
+        $reflection->setAccessible(true);
+        $atRiskStudents = $reflection->invoke($atRisk);
+
+        $actions = app(ChairAnalyticsService::class)->recommendedActions($atRiskStudents);
+
+        $this->assertTrue($actions->contains(fn ($a) => $a['type'] === 'student' && str_contains($a['detail'], "hasn't started")));
+        $this->assertTrue($actions->contains(fn ($a) => $a['type'] === 'topic' && str_contains($a['subject'], 'Struggling Topic')));
+
+        $chair = User::where('email', 'chair@example.com')->firstOrFail();
+        $this->actingAs($chair)->get(route('chair.dashboard'))
+            ->assertOk()
+            ->assertSee('Recommended Actions')
+            ->assertSee('Struggling Topic');
+    }
+
     public function test_student_cannot_open_chair_analytics(): void
     {
         $student = User::where('email', 'student@example.com')->firstOrFail();

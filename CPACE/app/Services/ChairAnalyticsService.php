@@ -258,18 +258,112 @@ class ChairAnalyticsService
         $developing = $eligible->where('band', 'developing')->count();
         $atRisk = $eligible->where('band', 'at_risk')->count();
         $eligibleCount = $eligible->count();
+        $totalActive = $rows->count();
+        $coverage = $totalActive ? (int) round($eligibleCount / $totalActive * 100) : 0;
 
         return [
             'ready' => $ready,
             'developing' => $developing,
             'at_risk' => $atRisk,
             'eligible' => $eligibleCount,
-            'insufficient' => $rows->count() - $eligibleCount,
+            'insufficient' => $totalActive - $eligibleCount,
+            'total_active' => $totalActive,
+            // How much of the active student body the projection is actually
+            // based on, and a plain-language read of that ratio - this is the
+            // number that was missing before: the projection used to present
+            // a single confident-looking percentage with no indication of how
+            // thin its sample could be (e.g. 33% off a handful of students out
+            // of dozens). Same ratio-based reasoning as RivalTierService's
+            // data-sufficiency gate, just surfaced instead of gating on/off.
+            'coverage_percent' => $coverage,
+            'confidence' => $this->projectionConfidence($coverage, $eligibleCount),
             'readiness_rate' => $eligibleCount ? (int) round($ready / $eligibleCount * 100) : null,
             'pass_projection' => $eligibleCount
                 ? (int) round(($ready + ($developing * .5)) / $eligibleCount * 100)
                 : null,
         ];
+    }
+
+    /**
+     * How much weight the chair should put on the pass projection, based on
+     * how much of the active student body it's actually derived from. A
+     * small qualifying pool can swing wildly on one or two students, so this
+     * is deliberately conservative rather than trying to express it as a
+     * false-precision statistic.
+     */
+    private function projectionConfidence(int $coveragePercent, int $eligibleCount): string
+    {
+        if ($eligibleCount < 5) {
+            return 'low';
+        }
+        if ($coveragePercent >= 50) {
+            return 'high';
+        }
+        if ($coveragePercent >= 25) {
+            return 'medium';
+        }
+
+        return 'low';
+    }
+
+    /**
+     * Turns the existing at-risk list and weakest-topic figures into a short,
+     * ranked list of concrete next steps for the chair - the "why" and "what
+     * to do" that the raw alert count and topic table leave the chair to work
+     * out themselves. Deliberately rule-based rather than predictive: with
+     * this few students per topic/cohort, a model would mostly be fitting
+     * noise (the same reason RivalTierService falls back below its data
+     * threshold instead of guessing).
+     *
+     * @param  Collection  $atRiskStudents  The list already computed by
+     *                                      ProgramChairController::atRiskStudents(),
+     *                                      passed in so this doesn't re-run that query.
+     */
+    public function recommendedActions(Collection $atRiskStudents, int $limit = 5): Collection
+    {
+        // Already sorted with the highest-priority students first (see
+        // ProgramChairController::atRiskStudents()), so this stays high-first
+        // without re-sorting; taking the top 3 regardless of priority level
+        // means the panel still surfaces something useful before any student
+        // has crossed into "high".
+        $studentActions = $atRiskStudents
+            ->take(3)
+            ->map(function (array $s) {
+                if (in_array('No learning activity', $s['reasons'], true)) {
+                    $detail = "{$s['name']} hasn't started any quizzes yet.";
+                    $action = 'Reach out and help them get started.';
+                } elseif (in_array('Inactive', $s['reasons'], true)) {
+                    $detail = "{$s['name']} has been inactive for {$s['days_idle']} days.";
+                    $action = 'Send a check-in reminder.';
+                } else {
+                    $detail = "{$s['name']} is at {$s['score']}% accuracy after {$s['attempted']} items.";
+                    $action = 'Assign a focused review session.';
+                }
+
+                return [
+                    'type' => 'student',
+                    'severity' => $s['priority'],
+                    'subject' => $s['name'],
+                    'detail' => $detail,
+                    'action' => $action,
+                ];
+            });
+
+        $topicActions = $this->weakestTopics(5)
+            ->filter(fn ($t) => $t['accuracy'] < self::DEVELOPING_ACCURACY)
+            ->take(2)
+            ->map(fn ($t) => [
+                'type' => 'topic',
+                'severity' => $t['accuracy'] < 40 ? 'high' : 'watch',
+                'subject' => "{$t['subject_code']} \u{2014} {$t['name']}",
+                'detail' => "Class accuracy is {$t['accuracy']}% across {$t['attempts']} attempts from {$t['students']} student".($t['students'] === 1 ? '' : 's').'.',
+                'action' => 'Consider re-teaching this topic or assigning a focused practice set.',
+            ]);
+
+        return $studentActions->concat($topicActions)
+            ->sortBy(fn ($a) => $a['severity'] === 'high' ? 0 : 1)
+            ->take($limit)
+            ->values();
     }
 
     public function readinessTrend(int $weeks = 8, ?int $subjectId = null, ?string $section = null): Collection

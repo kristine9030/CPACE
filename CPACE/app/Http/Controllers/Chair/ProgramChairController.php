@@ -51,6 +51,7 @@ class ProgramChairController extends Controller
                 ->take(5)
                 ->get(),
             'atRiskStudents' => $atRiskStudents,
+            'recommendedActions' => $analytics->recommendedActions($atRiskStudents),
             'analytics' => $analytics->dashboardSummary(),
         ]);
     }
