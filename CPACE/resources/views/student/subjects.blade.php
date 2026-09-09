@@ -311,7 +311,7 @@
             position: relative;
             margin-top: 26px;                 /* room for the tab */
             border-radius: 0 12px 12px 12px;  /* square where the tab joins */
-            background: #7B1D1D;
+            background: linear-gradient(180deg, #7e1d1d 0%, #5c1616 34%, #2b0808 74%, #0f0505 100%);
             display: flex;
             flex-direction: column;
             box-shadow:
@@ -336,7 +336,7 @@
             width: 33%; min-width: 84px; max-width: 128px;
             height: 27px;
             border-radius: 9px 0 0 0;
-            background: #8d2626;
+            background: linear-gradient(180deg, #8d2626 0%, #7e1d1d 100%);
             box-shadow: inset 0 1px 0 rgba(255,255,255,0.14);
         }
         .folder-tab::after {
@@ -344,7 +344,7 @@
             position: absolute;
             left: 100%; top: 0; bottom: 0;
             width: 27px;
-            background: #8d2626;
+            background: linear-gradient(180deg, #8d2626 0%, #7e1d1d 100%);
             clip-path: polygon(0 0, 100% 100%, 0 100%);
         }
 
