@@ -288,7 +288,7 @@
     @php $isAlumniStudent = Auth::user()?->hasAlumniAccess() ?? false; @endphp
     <ul class="sidebar-nav">
         <li class="nav-label">Main</li>
-        <li><a href="{{ route('dashboard') }}" class="{{ $active === 'dashboard' ? 'active' : '' }}"><i class="fas fa-home"></i><span>Dashboard</span></a></li>
+        <li><a href="{{ route('dashboard') }}" class="{{ $active === 'dashboard' ? 'active' : '' }}"><i class="fas fa-home"></i><span>Home</span></a></li>
         <li><a href="{{ route('subjects') }}" class="{{ $active === 'subjects' ? 'active' : '' }}"><i class="fas fa-book-open"></i><span>Subjects</span></a></li>
 
         <li class="nav-label">Study</li>

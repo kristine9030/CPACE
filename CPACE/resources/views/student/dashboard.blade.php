@@ -1085,7 +1085,7 @@
     <div class="page-header anim" style="animation-delay:0s">
         <div class="page-header-left">
             <div>
-                <div class="page-title">Dashboard</div>
+                <div class="page-title">Home</div>
                 <div class="page-subtitle">Welcome back, {{ Auth::user()->name }}! Let's keep up the momentum.</div>
             </div>
         </div>
