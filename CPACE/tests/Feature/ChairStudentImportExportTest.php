@@ -82,6 +82,7 @@ class ChairStudentImportExportTest extends TestCase
             $table->id();
             $table->unsignedBigInteger('student_id');
             $table->string('session_type', 20)->default('testing');
+            $table->boolean('is_practice_room')->default(false);
             $table->integer('total_items')->default(0);
             $table->integer('correct_answers')->default(0);
             $table->timestamp('completed_at')->nullable();

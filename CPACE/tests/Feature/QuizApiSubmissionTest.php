@@ -121,6 +121,7 @@ class QuizApiSubmissionTest extends TestCase
             $table->id();
             $table->unsignedBigInteger('student_id');
             $table->string('session_type')->default('testing');
+            $table->boolean('is_practice_room')->default(false);
             $table->string('mode')->default('adaptive');
             $table->integer('total_items')->default(0);
             $table->integer('correct_answers')->default(0);

@@ -11,6 +11,8 @@ class QuizSession extends Model
     protected $fillable = [
         'student_id',
         'session_type',
+        'is_practice_room',
+        'practice_difficulty',
         'mode',
         'subject_id',
         'topic_id',
@@ -23,8 +25,9 @@ class QuizSession extends Model
     ];
 
     protected $casts = [
-        'started_at'   => 'datetime',
-        'completed_at' => 'datetime',
+        'started_at'       => 'datetime',
+        'completed_at'     => 'datetime',
+        'is_practice_room' => 'boolean',
     ];
 
     public function subject()

@@ -45,7 +45,7 @@ class PerformanceController extends Controller
         // figure on this page (it is still saved for the results review).
         $sessions = fn () => DB::table('quiz_sessions')
             ->where('student_id', $studentId)
-            ->where('session_type', '!=', 'training')
+            ->where('session_type', '!=', 'training')->where('is_practice_room', false)
             ->whereNotNull('completed_at');
 
         // Sum the session summaries over an optional date window (by started_at).
@@ -163,7 +163,7 @@ class PerformanceController extends Controller
         $recentActivity = DB::table('quiz_sessions')
             ->leftJoin('subjects', 'subjects.id', '=', 'quiz_sessions.subject_id')
             ->where('quiz_sessions.student_id', $studentId)
-            ->where('quiz_sessions.session_type', '!=', 'training')
+            ->where('quiz_sessions.session_type', '!=', 'training')->where('quiz_sessions.is_practice_room', false)
             ->whereNotNull('quiz_sessions.completed_at')
             ->orderByDesc('quiz_sessions.completed_at')
             ->limit(4)
@@ -327,7 +327,7 @@ class PerformanceController extends Controller
         // how many questions served (total_items) and how many correct.
         $byMode = DB::table('quiz_sessions')
             ->where('student_id', $studentId)
-            ->where('session_type', '!=', 'training')
+            ->where('session_type', '!=', 'training')->where('is_practice_room', false)
             ->whereNotNull('completed_at')
             ->groupBy('mode')
             ->select('mode',
@@ -705,7 +705,7 @@ class PerformanceController extends Controller
         // Encourage timed practice when the student rarely uses Timed mode.
         $timedCount = (int) DB::table('quiz_sessions')
             ->where('student_id', $studentId)
-            ->where('session_type', '!=', 'training')
+            ->where('session_type', '!=', 'training')->where('is_practice_room', false)
             ->whereNotNull('completed_at')
             ->where('mode', 'timed')
             ->count();

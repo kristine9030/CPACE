@@ -22,7 +22,7 @@ class PerformanceApiController extends Controller
 
         $sessions = fn () => DB::table('quiz_sessions')
             ->where('student_id', $studentId)
-            ->where('session_type', '!=', 'training')
+            ->where('session_type', '!=', 'training')->where('is_practice_room', false)
             ->whereNotNull('completed_at');
 
         $sumWindow = function ($from = null, $to = null) use ($sessions) {
@@ -123,7 +123,7 @@ class PerformanceApiController extends Controller
     {
         $byMode = DB::table('quiz_sessions')
             ->where('student_id', $studentId)
-            ->where('session_type', '!=', 'training')
+            ->where('session_type', '!=', 'training')->where('is_practice_room', false)
             ->whereNotNull('completed_at')
             ->groupBy('mode')
             ->select('mode', DB::raw('COUNT(*) as sessions'), DB::raw('COALESCE(SUM(total_items),0) as attempted'), DB::raw('COALESCE(SUM(correct_answers),0) as correct'))

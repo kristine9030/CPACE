@@ -82,7 +82,7 @@ class AiTutorController extends Controller
     {
         $sessions = fn () => DB::table('quiz_sessions')
             ->where('student_id', $studentId)
-            ->where('session_type', '!=', 'training')
+            ->where('session_type', '!=', 'training')->where('is_practice_room', false)
             ->whereNotNull('completed_at');
 
         $window = function ($from = null) use ($sessions) {

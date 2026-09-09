@@ -51,13 +51,13 @@ class QuizApiController extends Controller
         $totalAttempted = (int) DB::table('quiz_sessions')
             ->where('student_id', $studentId)
             ->whereNotNull('completed_at')
-            ->where('session_type', '!=', 'training')
+            ->where('session_type', '!=', 'training')->where('is_practice_room', false)
             ->sum('total_items');
 
         $recentSessions = QuizSession::with('subject')
             ->where('student_id', $studentId)
             ->whereNotNull('completed_at')
-            ->where('session_type', '!=', 'training')
+            ->where('session_type', '!=', 'training')->where('is_practice_room', false)
             ->orderByDesc('completed_at')
             ->limit(4)
             ->get()
@@ -181,7 +181,7 @@ class QuizApiController extends Controller
             ->get()
             ->keyBy('id');
 
-        $countsTowardProgress = $session->session_type !== 'training';
+        $countsTowardProgress = $session->session_type !== 'training' && ! $session->is_practice_room;
 
         $correctCount  = 0;
         $topicTally    = [];

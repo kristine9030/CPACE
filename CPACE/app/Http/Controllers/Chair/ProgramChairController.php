@@ -62,7 +62,7 @@ class ProgramChairController extends Controller
     private function atRiskStudents()
     {
         $quizActivity = DB::table('quiz_sessions')
-            ->where('session_type', '!=', 'training')
+            ->where('session_type', '!=', 'training')->where('is_practice_room', false)
             ->whereNotNull('completed_at')
             ->groupBy('student_id')
             ->select(

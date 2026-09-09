@@ -138,7 +138,7 @@ class ChairAnalyticsService
             ->leftJoin('quiz_sessions', function ($join) use ($subjectId) {
                 $join->on('quiz_sessions.student_id', '=', 'users.id')
                     ->whereNotNull('quiz_sessions.completed_at')
-                    ->where('quiz_sessions.session_type', '!=', 'training');
+                    ->where('quiz_sessions.session_type', '!=', 'training')->where('quiz_sessions.is_practice_room', false);
                 if ($subjectId) {
                     $join->where('quiz_sessions.subject_id', '=', $subjectId);
                 }
@@ -276,7 +276,7 @@ class ChairAnalyticsService
     {
         $sessions = DB::table('quiz_sessions')
             ->whereNotNull('completed_at')
-            ->where('session_type', '!=', 'training')
+            ->where('session_type', '!=', 'training')->where('is_practice_room', false)
             ->when($subjectId, fn ($query) => $query->where('subject_id', $subjectId))
             ->when($section, fn ($query) => $query
                 ->join('student_profiles', 'student_profiles.user_id', '=', 'quiz_sessions.student_id')
@@ -331,7 +331,7 @@ class ChairAnalyticsService
 
         $sessions = DB::table('quiz_sessions')
             ->whereNotNull('completed_at')
-            ->where('session_type', '!=', 'training')
+            ->where('session_type', '!=', 'training')->where('is_practice_room', false)
             ->where('completed_at', '>=', $from)
             ->when($subjectId, fn ($query) => $query->where('subject_id', $subjectId))
             ->when($section, fn ($query) => $query
@@ -691,7 +691,7 @@ class ChairAnalyticsService
             ->leftJoin('quiz_sessions', function ($join) use ($subjectId) {
                 $join->on('quiz_sessions.student_id', '=', 'users.id')
                     ->whereNotNull('quiz_sessions.completed_at')
-                    ->where('quiz_sessions.session_type', '!=', 'training');
+                    ->where('quiz_sessions.session_type', '!=', 'training')->where('quiz_sessions.is_practice_room', false);
                 if ($subjectId) {
                     $join->where('quiz_sessions.subject_id', '=', $subjectId);
                 }

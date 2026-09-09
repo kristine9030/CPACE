@@ -199,7 +199,7 @@ class FacultyPerformanceController extends Controller
         $base = function () use ($from, $subjectIds, $faculty) {
             $query = DB::table('quiz_sessions')
                 ->leftJoin('student_profiles', 'student_profiles.user_id', '=', 'quiz_sessions.student_id')
-                ->where('quiz_sessions.session_type', '!=', 'training')
+                ->where('quiz_sessions.session_type', '!=', 'training')->where('quiz_sessions.is_practice_room', false)
                 ->whereNotNull('quiz_sessions.completed_at')
                 ->when($from, fn ($q) => $q->where('quiz_sessions.started_at', '>=', $from));
 
@@ -305,7 +305,7 @@ class FacultyPerformanceController extends Controller
     {
         $window = function (Carbon $start, Carbon $end) use ($subjectIds, $studentIds) {
             return DB::table('quiz_sessions')
-                ->where('session_type', '!=', 'training')
+                ->where('session_type', '!=', 'training')->where('is_practice_room', false)
                 ->whereNotNull('completed_at')
                 ->whereIn('student_id', $studentIds)
                 ->whereBetween('started_at', [$start, $end])

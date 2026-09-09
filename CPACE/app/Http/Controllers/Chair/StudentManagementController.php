@@ -497,7 +497,7 @@ class StudentManagementController extends Controller
 
     private function studentRows(?array $onlyIds = null)
     {
-        $activity = DB::table('quiz_sessions')->where('session_type', '!=', 'training')
+        $activity = DB::table('quiz_sessions')->where('session_type', '!=', 'training')->where('is_practice_room', false)
             ->whereNotNull('completed_at')->when($onlyIds, fn($query) => $query->whereIn('student_id', $onlyIds))
             ->groupBy('student_id')->select(
                 'student_id',

@@ -773,7 +773,11 @@
             <div class="room-block" id="roomD">
                 <div class="room-head">
                     <div class="qs-section-title" style="margin:0;">Live Room</div>
-                    <span class="room-live"><span class="live-dot"></span> LIVE</span>
+                    @if ($session->is_practice_room)
+                        <span class="room-live" style="background:#6b7280;" title="Practice difficulty: {{ ucfirst(str_replace('-', ' ', $session->practice_difficulty ?? 'average')) }}. Not counted in your records.">PRACTICE</span>
+                    @else
+                        <span class="room-live"><span class="live-dot"></span> LIVE</span>
+                    @endif
                 </div>
 
                 <div class="room-hero">
@@ -796,7 +800,11 @@
                 <div class="room-feed" data-room="feed"></div>
                 <div class="room-note">
                     <i class="fas fa-robot"></i>
-                    <span>AI pace partners, tuned to stay ahead of you &mdash; not real students.</span>
+                    @if ($session->is_practice_room)
+                        <span>AI pace partners set to your chosen practice difficulty &mdash; not real students, and this session isn't counted in your records.</span>
+                    @else
+                        <span>AI pace partners, modeled on real top-performer data &mdash; not real students.</span>
+                    @endif
                 </div>
             </div>
 
@@ -1076,19 +1084,12 @@ const Room = {
     paceSamples: [], youCorrect: 0,
     lastPlace: null, lastRankToastAt: -99,
 
-    /* Rival personalities. Every one of them is a strong candidate — this is
-       a topnotcher's room, not a random crowd — but the seconds-per-question
-       and accuracy still give each a recognisable rhythm. */
-    POOL: [
-        { name:'Aria', tag:'Speedster',  color:'#ef4444', spq:13, acc:0.81 },
-        { name:'Dex',  tag:'Risk-taker', color:'#f59e0b', spq:15, acc:0.78 },
-        { name:'Mira', tag:'Methodical', color:'#3b82f6', spq:24, acc:0.93 },
-        { name:'Kip',  tag:'Steady',     color:'#10b981', spq:19, acc:0.87 },
-        { name:'Nova', tag:'Clutch',     color:'#8b5cf6', spq:17, acc:0.90 },
-        { name:'Rio',  tag:'Grinder',    color:'#0ea5e9', spq:21, acc:0.85 },
-        { name:'Sage', tag:'Precise',    color:'#14b8a6', spq:26, acc:0.95 },
-        { name:'Zed',  tag:'Sprinter',   color:'#e11d48', spq:11, acc:0.76 },
-    ],
+    /* Rival personalities, from the server: locked/data-derived tiers for
+       Assessment mode (RivalTierService), or the student's picked difficulty
+       for Practice mode (never the same source - see QuizController::take()).
+       spq/acc still give each a recognisable rhythm even when data-derived. */
+    POOL: @json($rivalPool),
+    isPracticeRoom: @json($session->is_practice_room),
 
     /* How much faster than the student each rival aims to be, strongest first.
        Training is ranked on accuracy, so every rival can out-pace you there and

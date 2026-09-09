@@ -136,6 +136,7 @@ class ChairAnalyticsTest extends TestCase
             $table->unsignedBigInteger('student_id');
             $table->unsignedBigInteger('subject_id')->nullable();
             $table->string('session_type');
+            $table->boolean('is_practice_room')->default(false);
             $table->integer('total_items');
             $table->integer('correct_answers');
             $table->integer('duration_secs')->default(0);

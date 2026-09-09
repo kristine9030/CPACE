@@ -105,6 +105,7 @@ class StudentDashboardTest extends TestCase
             $table->unsignedBigInteger('student_id');
             $table->unsignedBigInteger('subject_id')->nullable();
             $table->string('session_type')->default('testing');
+            $table->boolean('is_practice_room')->default(false);
             $table->integer('total_items')->default(0);
             $table->integer('correct_answers')->default(0);
             $table->decimal('score_percent', 5, 2)->nullable();

@@ -24,14 +24,14 @@ class DashboardApiController extends Controller
 
         $base = fn () => DB::table('quiz_sessions')
             ->where('student_id', $studentId)
-            ->where('session_type', '!=', 'training')
+            ->where('session_type', '!=', 'training')->where('is_practice_room', false)
             ->whereNotNull('completed_at');
 
         $questionsAttempted = (int) $base()->sum('total_items');
         $questionsThisWeek  = (int) $base()->where('started_at', '>=', Carbon::now()->subDays(7))->sum('total_items');
 
-        $studySeconds     = (int) DB::table('quiz_sessions')->where('student_id', $studentId)->where('session_type', '!=', 'training')->sum('duration_secs');
-        $studySecondsWeek = (int) DB::table('quiz_sessions')->where('student_id', $studentId)->where('session_type', '!=', 'training')->where('started_at', '>=', Carbon::now()->subDays(7))->sum('duration_secs');
+        $studySeconds     = (int) DB::table('quiz_sessions')->where('student_id', $studentId)->where('session_type', '!=', 'training')->where('is_practice_room', false)->sum('duration_secs');
+        $studySecondsWeek = (int) DB::table('quiz_sessions')->where('student_id', $studentId)->where('session_type', '!=', 'training')->where('is_practice_room', false)->where('started_at', '>=', Carbon::now()->subDays(7))->sum('duration_secs');
 
         $agg = DB::table('performance_records')
             ->where('student_id', $studentId)
@@ -80,7 +80,7 @@ class DashboardApiController extends Controller
         $recentActivity = DB::table('quiz_sessions')
             ->leftJoin('subjects', 'subjects.id', '=', 'quiz_sessions.subject_id')
             ->where('quiz_sessions.student_id', $studentId)
-            ->where('quiz_sessions.session_type', '!=', 'training')
+            ->where('quiz_sessions.session_type', '!=', 'training')->where('quiz_sessions.is_practice_room', false)
             ->orderByDesc('quiz_sessions.started_at')
             ->limit(5)
             ->select(

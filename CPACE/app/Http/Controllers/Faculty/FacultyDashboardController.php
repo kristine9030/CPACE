@@ -81,7 +81,7 @@ class FacultyDashboardController extends Controller
     {
         $query = DB::table('quiz_sessions')
             ->leftJoin('student_profiles', 'student_profiles.user_id', '=', 'quiz_sessions.student_id')
-            ->where('quiz_sessions.session_type', '!=', 'training')
+            ->where('quiz_sessions.session_type', '!=', 'training')->where('quiz_sessions.is_practice_room', false)
             ->whereNotNull('quiz_sessions.completed_at')
             ->select('quiz_sessions.*');
 

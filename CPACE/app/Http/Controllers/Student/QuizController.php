@@ -9,6 +9,7 @@ use App\Models\QuizAnswer;
 use App\Models\QuizSession;
 use App\Models\Subject;
 use App\Services\QuestionParaphraser;
+use App\Services\RivalTierService;
 use App\Services\SpacedRepetitionScheduler;
 use App\Services\StreakService;
 use App\Services\WeaknessDetector;
@@ -31,6 +32,33 @@ class QuizController extends Controller
 
     /** Seconds the student gets per question in Timed mode. */
     private const TIMED_SECONDS_PER_QUESTION = 60;
+
+    /**
+     * Practice Room difficulty labels the student can pick when opting into
+     * user-set rival difficulty. Deliberately labeled by difficulty, not by
+     * rival identity, so this never reads as "the real standard to chase" -
+     * that's what the locked Assessment-mode tiers (RivalTierService) are
+     * for. Practice Room sessions never feed analytics (see is_practice_room).
+     */
+    private const PRACTICE_TIERS = [
+        'easy'       => ['tag' => 'Easy',          'spq' => 22, 'acc' => 0.70],
+        'average'    => ['tag' => 'Average',       'spq' => 17, 'acc' => 0.82],
+        'challenger' => ['tag' => 'Challenger',    'spq' => 14, 'acc' => 0.88],
+        'top'        => ['tag' => 'Top-Performer', 'spq' => 11, 'acc' => 0.95],
+    ];
+
+    /**
+     * Cosmetic-only rival names/colors reused for Practice Room, since the
+     * Live Room panel always draws 4 rivals from a pool (see
+     * take-quiz.blade.php Room.init(), which does POOL.slice(0,4)). All 4
+     * share the picked difficulty's spq/acc - only presentation differs.
+     */
+    private const PRACTICE_ROSTER = [
+        ['name' => 'Practice Rival A', 'color' => '#10b981'],
+        ['name' => 'Practice Rival B', 'color' => '#3b82f6'],
+        ['name' => 'Practice Rival C', 'color' => '#f59e0b'],
+        ['name' => 'Practice Rival D', 'color' => '#ef4444'],
+    ];
 
     /**
      * Adaptive quiz landing page with live per-subject question counts.
@@ -62,13 +90,13 @@ class QuizController extends Controller
         $totalAttempted = (int) DB::table('quiz_sessions')
             ->where('student_id', $studentId)
             ->whereNotNull('completed_at')
-            ->where('session_type', '!=', 'training')
+            ->where('session_type', '!=', 'training')->where('is_practice_room', false)
             ->sum('total_items');
 
         $recentSessions = QuizSession::with('subject')
             ->where('student_id', $studentId)
             ->whereNotNull('completed_at')
-            ->where('session_type', '!=', 'training')
+            ->where('session_type', '!=', 'training')->where('is_practice_room', false)
             ->orderByDesc('completed_at')
             ->limit(4)
             ->get();
@@ -155,6 +183,10 @@ class QuizController extends Controller
             // Optional: focus a Topic-mode quiz on a specific topic (used by
             // the Calendar's "Start as Exam" action on a scheduled review).
             'topic_id'      => ['nullable', Rule::exists('topics', 'id')->where('is_active', true)],
+            // Live Room: opting into a user-picked practice difficulty instead
+            // of the locked, data-derived Assessment/Ranked rivals.
+            'is_practice_room'    => 'nullable|boolean',
+            'practice_difficulty' => ['nullable', Rule::in(array_keys(self::PRACTICE_TIERS))],
         ], [
             'count.required' => 'Please choose how many questions before starting a quiz.',
             'count.min'      => 'Please choose at least 1 question.',
@@ -177,6 +209,12 @@ class QuizController extends Controller
             ? $data['session_type']
             : 'testing';
 
+        // Live Room: only a genuine opt-in with a valid difficulty counts as
+        // Practice Room. Anything else stays on the locked Assessment room,
+        // so this can never be forced on by a missing/malformed field.
+        $isPracticeRoom = (bool) ($data['is_practice_room'] ?? false) && ! empty($data['practice_difficulty']);
+        $practiceDifficulty = $isPracticeRoom ? $data['practice_difficulty'] : null;
+
         // How many questions the student wants this sitting (capped to the max).
         $count = max(1, min((int) $data['count'], self::MAX_QUIZ_LENGTH));
 
@@ -198,9 +236,11 @@ class QuizController extends Controller
         }
 
         $session = QuizSession::create([
-            'student_id'      => Auth::id(),
-            'session_type'    => $sessionType,
-            'mode'            => $mode,
+            'student_id'          => Auth::id(),
+            'session_type'        => $sessionType,
+            'is_practice_room'    => $isPracticeRoom,
+            'practice_difficulty' => $practiceDifficulty,
+            'mode'                => $mode,
             'subject_id'      => $sessionSubjectId,
             'topic_id'        => $focusTopicId,
             'started_at'      => now(),
@@ -377,7 +417,21 @@ class QuizController extends Controller
             ? $questions->count() * self::TIMED_SECONDS_PER_QUESTION
             : null;
 
-        return view('student.take-quiz', compact('session', 'questions', 'timeLimit'));
+        // Live Room pool: locked/data-derived for Assessment mode, or the
+        // student's own picked difficulty tier for Practice mode. Either way
+        // the view gets a plain array of >= 4 rival definitions - the JS
+        // always draws 4 from this pool, so Practice mode fills it with 4
+        // cosmetic variants of the one difficulty the student chose.
+        if ($session->is_practice_room) {
+            $tier = self::PRACTICE_TIERS[$session->practice_difficulty] ?? self::PRACTICE_TIERS['average'];
+            $rivalPool = collect(self::PRACTICE_ROSTER)->map(fn ($r) => array_merge($r, [
+                'tag' => $tier['tag'], 'spq' => $tier['spq'], 'acc' => $tier['acc'],
+            ]))->all();
+        } else {
+            $rivalPool = app(RivalTierService::class)->tiers();
+        }
+
+        return view('student.take-quiz', compact('session', 'questions', 'timeLimit', 'rivalPool'));
     }
 
     /**
@@ -398,10 +452,13 @@ class QuizController extends Controller
             ->get()
             ->keyBy('id');
 
-        // Training is a no-stakes practice sandbox: the session and its answers
-        // are still saved (so the student can review the results), but it must
-        // not touch performance analytics, gamification or the review schedule.
-        $countsTowardProgress = $session->session_type !== 'training';
+        // Training is a no-stakes practice sandbox, and a Practice Room session
+        // (user-picked Live Room difficulty) is likewise excluded so a student
+        // sparring against an easier/harder rival can never skew their real
+        // performance data: the session and its answers are still saved (so
+        // the student can review the results), but neither type touches
+        // performance analytics, gamification or the review schedule.
+        $countsTowardProgress = $session->session_type !== 'training' && ! $session->is_practice_room;
 
         $correctCount = 0;
         // Per-topic tally for performance records: [topic_id => ['attempts'=>, 'correct'=>]]

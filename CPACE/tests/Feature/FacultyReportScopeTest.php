@@ -89,6 +89,7 @@ class FacultyReportScopeTest extends TestCase
             $table->id();
             $table->unsignedBigInteger('student_id');
             $table->string('session_type')->default('testing');
+            $table->boolean('is_practice_room')->default(false);
             $table->unsignedBigInteger('subject_id')->nullable();
             $table->unsignedBigInteger('topic_id')->nullable();
             $table->timestamp('started_at')->useCurrent();

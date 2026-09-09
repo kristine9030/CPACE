@@ -185,6 +185,8 @@ CREATE TABLE quiz_sessions (
     id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     student_id      INT UNSIGNED NOT NULL,
     session_type    ENUM('training','testing','mock_exam','spaced_review') NOT NULL,
+    is_practice_room TINYINT(1) NOT NULL DEFAULT 0, -- 1 = user-picked Live Room difficulty, excluded from analytics
+    practice_difficulty VARCHAR(20) NULL,            -- e.g. 'easy','average','challenger','top' when is_practice_room=1
     mode            VARCHAR(20) NOT NULL DEFAULT 'adaptive', -- student-facing practice mode
     subject_id      TINYINT UNSIGNED NULL,             -- NULL = mock exam (all subjects)
     topic_id        SMALLINT UNSIGNED NULL,            -- NULL = full-subject or mock

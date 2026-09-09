@@ -277,7 +277,7 @@ class FacultyReportController extends Controller
 
         $base = DB::table('quiz_sessions')
             ->leftJoin('student_profiles', 'student_profiles.user_id', '=', 'quiz_sessions.student_id')
-            ->where('quiz_sessions.session_type', '!=', 'training')
+            ->where('quiz_sessions.session_type', '!=', 'training')->where('quiz_sessions.is_practice_room', false)
             ->whereNotNull('quiz_sessions.completed_at')
             ->when($from, fn ($q) => $q->where('quiz_sessions.started_at', '>=', $from));
 
@@ -404,7 +404,7 @@ class FacultyReportController extends Controller
 
         return DB::table('quiz_sessions')
             ->join('subjects', 'subjects.id', '=', 'quiz_sessions.subject_id')
-            ->where('quiz_sessions.session_type', '!=', 'training')
+            ->where('quiz_sessions.session_type', '!=', 'training')->where('quiz_sessions.is_practice_room', false)
             ->whereNotNull('quiz_sessions.completed_at')
             ->whereIn('quiz_sessions.subject_id', $subjectIds)
             ->when($from, fn ($q) => $q->where('quiz_sessions.started_at', '>=', $from))

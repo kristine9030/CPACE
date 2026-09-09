@@ -998,6 +998,33 @@
         .live-room-toggle.on .lrt-switch { background: #7B1D1D; }
         .live-room-toggle.on .lrt-switch span { transform: translateX(19px); }
 
+        /* ROOM MODE PICKER — Ranked (locked/objective) vs Practice (user-set difficulty) */
+        .room-mode-picker {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+            margin-top: 10px;
+        }
+        .room-mode-card {
+            border: 1.5px solid #eee; border-radius: 12px; padding: 12px 14px;
+            cursor: pointer; transition: all .2s; background: #fff;
+        }
+        .room-mode-card:hover { border-color: #ddd; }
+        .room-mode-card.active {
+            border-color: #7B1D1D;
+            background: linear-gradient(135deg, #fdf4f4 0%, #ffffff 70%);
+        }
+        .rm-title { font-size: 13px; font-weight: 700; color: #333; display: flex; align-items: center; gap: 6px; }
+        .room-mode-card.active .rm-title { color: #7B1D1D; }
+        .rm-desc { font-size: 11px; color: #8b9096; margin-top: 4px; line-height: 1.45; }
+        .rm-diff-select {
+            margin-top: 8px; width: 100%; padding: 6px 8px;
+            border: 1px solid #ddd; border-radius: 8px; font-size: 12px; color: #333;
+            background: #fff;
+        }
+        .room-mode-card:not(.active) .rm-diff-select { opacity: .5; pointer-events: none; }
+        @media (max-width: 640px) {
+            .room-mode-picker { grid-template-columns: 1fr; }
+        }
+
         /* RESPONSIVE */
         @media (max-width: 1150px) {
             .flow-layout { grid-template-columns: 1fr; }
@@ -1041,7 +1068,7 @@
             <div class="header">
                 <div class="header-left">
                     <div>
-                        <div class="header-title">Adaptive Quizzes</div>
+                        <div class="header-title">Practice Quizzes</div>
                         <div class="header-subtitle">Follow the 4 steps below to build your practice session.</div>
                     </div>
                 </div>
@@ -1171,6 +1198,25 @@
                             </div>
                             <div class="lrt-switch"><span></span></div>
                         </div>
+
+                        <!-- Room mode: Ranked (locked/objective, counts toward your records)
+                             vs. Practice (student picks difficulty, excluded from records). -->
+                        <div class="room-mode-picker" id="roomModePicker">
+                            <div class="room-mode-card active" data-roommode="ranked" onclick="event.stopPropagation(); selectRoomMode('ranked')">
+                                <div class="rm-title"><i class="fas fa-chart-line"></i> Ranked Room</div>
+                                <div class="rm-desc">Rivals are calibrated from real top-performer data. Counts toward your performance records.</div>
+                            </div>
+                            <div class="room-mode-card" data-roommode="practice" onclick="event.stopPropagation(); selectRoomMode('practice')">
+                                <div class="rm-title"><i class="fas fa-sliders"></i> Practice Room</div>
+                                <div class="rm-desc">Pick the rivals' difficulty yourself. For training only &mdash; <strong>not</strong> counted in your records.</div>
+                                <select class="rm-diff-select" id="practiceDiffSelect" onclick="event.stopPropagation()" onchange="applyRoomMode()">
+                                    <option value="easy">Easy</option>
+                                    <option value="average" selected>Average</option>
+                                    <option value="challenger">Challenger</option>
+                                    <option value="top">Top-Performer</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- STEP 2 : SESSION TYPE -->
@@ -1246,6 +1292,8 @@
                             <input type="hidden" name="mode" value="adaptive" class="mode-input">
                             <input type="hidden" name="count" value="" class="count-input">
                             <input type="hidden" name="session_type" value="training" class="stype-input">
+                            <input type="hidden" name="is_practice_room" value="0" id="isPracticeRoomInput">
+                            <input type="hidden" name="practice_difficulty" value="" id="practiceDifficultyInput">
 
                             <div class="subject-toolbar" id="subjectToolbar">
                                 <div class="subject-quick">
@@ -1432,11 +1480,34 @@
         // without needing to be carried through the form or the session row.
         function applyLiveRoom(on) {
             document.getElementById('liveRoomToggle').classList.toggle('on', on);
+            document.getElementById('roomModePicker').style.display = on ? '' : 'none';
             localStorage.setItem('quizLiveRoom', on ? '1' : '0');
             document.getElementById('sumRoom').textContent = on ? 'On' : 'Off';
         }
         function toggleLiveRoom() {
             applyLiveRoom(!document.getElementById('liveRoomToggle').classList.contains('on'));
+        }
+
+        // ── Room mode: Ranked (locked, data-derived, counts toward records) vs.
+        // Practice (student picks the difficulty, excluded from analytics).
+        // Posted to the server on quiz.start so it can be persisted per-session
+        // (unlike the on/off preference above, this must reach the backend).
+        function selectRoomMode(m) {
+            document.querySelectorAll('.room-mode-card').forEach(c => c.classList.toggle('active', c.dataset.roommode === m));
+            localStorage.setItem('quizRoomMode', m);
+            applyRoomMode();
+        }
+        function applyRoomMode() {
+            const active = document.querySelector('.room-mode-card.active');
+            const mode = active ? active.dataset.roommode : 'ranked';
+            const isPractice = mode === 'practice';
+            document.getElementById('isPracticeRoomInput').value = isPractice ? '1' : '0';
+            document.getElementById('practiceDifficultyInput').value = isPractice
+                ? document.getElementById('practiceDiffSelect').value
+                : '';
+            document.getElementById('sumRoom').textContent = document.getElementById('liveRoomToggle').classList.contains('on')
+                ? (isPractice ? 'Practice' : 'Ranked')
+                : 'Off';
         }
 
         // ── Select Mode ── highlight the card + push into every subject form.
@@ -1595,6 +1666,7 @@
         applyStype(localStorage.getItem('quizStype') || 'training');
         applyMode(localStorage.getItem('quizMode') || 'adaptive');
         applyLiveRoom(localStorage.getItem('quizLiveRoom') !== '0');   // on by default
+        selectRoomMode(localStorage.getItem('quizRoomMode') === 'practice' ? 'practice' : 'ranked'); // ranked by default
         updateSubjectsEnabled(0); // start locked
     </script>
     @include('partials.global-search')

@@ -178,6 +178,7 @@ class GlobalSearchTest extends TestCase
             $table->unsignedBigInteger('student_id');
             $table->unsignedBigInteger('subject_id')->nullable();
             $table->string('session_type')->default('testing');
+            $table->boolean('is_practice_room')->default(false);
             $table->string('mode')->default('adaptive');
             $table->decimal('score_percent', 5, 2)->nullable();
             $table->timestamp('started_at')->nullable();

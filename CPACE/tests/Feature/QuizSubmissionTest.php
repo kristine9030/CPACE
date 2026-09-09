@@ -115,6 +115,8 @@ class QuizSubmissionTest extends TestCase
             $table->unsignedBigInteger('subject_id')->nullable();
             $table->unsignedBigInteger('topic_id')->nullable();
             $table->string('session_type')->default('adaptive');
+            $table->boolean('is_practice_room')->default(false);
+            $table->string('practice_difficulty', 20)->nullable();
             $table->string('mode')->default('adaptive');
             $table->integer('total_items')->default(0);
             $table->integer('correct_answers')->default(0);
@@ -355,6 +357,32 @@ class QuizSubmissionTest extends TestCase
         $this->assertSame(0, DB::table('points_log')->where('student_id', $student->id)->count());
     }
 
+    public function test_practice_room_grades_the_quiz_but_skips_all_progress_tracking(): void
+    {
+        $student = $this->student();
+        [$topicId, $questions] = $this->seedTwoQuestionTopic();
+        $session = $this->beginQuizSession($student->id, $topicId, $questions, sessionType: 'testing', isPracticeRoom: true);
+
+        $this->actingAs($student)->post(route('quiz.submit', $session), [
+            'answers' => [
+                $questions[0]['id'] => $questions[0]['correct_choice_id'],
+                $questions[1]['id'] => $questions[1]['correct_choice_id'],
+            ],
+        ]);
+
+        // Graded and saved for the student's own review, exactly like Training...
+        $updated = DB::table('quiz_sessions')->find($session);
+        $this->assertNotNull($updated->completed_at);
+        $this->assertSame(2, $updated->correct_answers);
+
+        // ...but a user-picked practice difficulty must never feed real
+        // analytics - that would let students inflate their own records by
+        // choosing an easy rival, which defeats the point of measuring anything.
+        $this->assertSame(0, DB::table('performance_records')->where('student_id', $student->id)->count());
+        $this->assertSame(0, DB::table('spaced_repetition_items')->where('student_id', $student->id)->count());
+        $this->assertSame(0, DB::table('points_log')->where('student_id', $student->id)->count());
+    }
+
     public function test_a_completed_quiz_cannot_be_resubmitted_to_double_count_progress(): void
     {
         $student = $this->student();
@@ -435,12 +463,13 @@ class QuizSubmissionTest extends TestCase
      * Create a quiz session with placeholder answer rows already served, exactly
      * as QuizController::start() does, so submit() has something to grade.
      */
-    private function beginQuizSession(int $studentId, int $topicId, array $questions, string $sessionType = 'testing'): int
+    private function beginQuizSession(int $studentId, int $topicId, array $questions, string $sessionType = 'testing', bool $isPracticeRoom = false): int
     {
         $sessionId = DB::table('quiz_sessions')->insertGetId([
             'student_id' => $studentId,
             'topic_id' => $topicId,
             'session_type' => $sessionType,
+            'is_practice_room' => $isPracticeRoom,
             'mode' => 'adaptive',
             'total_items' => count($questions),
             'started_at' => now(),

@@ -292,7 +292,7 @@
         <li><a href="{{ route('subjects') }}" class="{{ $active === 'subjects' ? 'active' : '' }}"><i class="fas fa-book-open"></i><span>Subjects</span></a></li>
 
         <li class="nav-label">Study</li>
-        <li><a href="{{ route('adaptive-quizzes') }}" class="{{ $active === 'quizzes' ? 'active' : '' }}"><i class="fas fa-pen-fancy"></i><span>Quizzes</span></a></li>
+        <li><a href="{{ route('adaptive-quizzes') }}" class="{{ $active === 'quizzes' ? 'active' : '' }}"><i class="fas fa-pen-fancy"></i><span>Practice Quizzes</span></a></li>
         <li><a href="{{ route('class-quizzes') }}" class="{{ $active === 'class-quizzes' ? 'active' : '' }}"><i class="fas fa-clipboard-list"></i><span>Class Quizzes</span></a></li>
         <li>
             <a href="{{ route('mock-exams') }}" class="{{ $active === 'mock-exams' ? 'active' : '' }}">

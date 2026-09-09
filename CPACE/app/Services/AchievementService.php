@@ -228,7 +228,7 @@ class AchievementService
         // ── Completed, non-training sessions in chronological order ─────
         $sessions = DB::table('quiz_sessions')
             ->where('student_id', $studentId)
-            ->where('session_type', '!=', 'training')
+            ->where('session_type', '!=', 'training')->where('is_practice_room', false)
             ->whereNotNull('completed_at')
             ->orderBy('completed_at')
             ->get(['mode', 'total_items', 'correct_answers', 'score_percent', 'duration_secs', 'completed_at']);
@@ -310,7 +310,7 @@ class AchievementService
             ->join('quiz_sessions as qs', 'qs.id', '=', 'qa.session_id')
             ->join('questions as q', 'q.id', '=', 'qa.question_id')
             ->where('qs.student_id', $studentId)
-            ->where('qs.session_type', '!=', 'training')
+            ->where('qs.session_type', '!=', 'training')->where('qs.is_practice_room', false)
             ->whereNotNull('qa.answered_at')
             ->orderBy('qa.answered_at')
             ->get(['qa.answered_at', 'q.topic_id']);
@@ -468,7 +468,7 @@ class AchievementService
             ->join('users as u', 'u.id', '=', 'qs.student_id')
             ->where('u.role_id', Role::STUDENT)
             ->where('u.is_active', true)
-            ->where('qs.session_type', '!=', 'training')
+            ->where('qs.session_type', '!=', 'training')->where('qs.is_practice_room', false)
             ->whereNotNull('qs.completed_at');
 
         if ($from) { $q->where('qs.completed_at', '>=', $from); }

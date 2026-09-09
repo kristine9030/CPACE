@@ -158,6 +158,7 @@ class ChairAccountProvisioningTest extends TestCase
             $table->id();
             $table->unsignedBigInteger('student_id');
             $table->string('session_type');
+            $table->boolean('is_practice_room')->default(false);
             $table->integer('total_items');
             $table->integer('correct_answers');
             $table->timestamp('completed_at')->nullable();
