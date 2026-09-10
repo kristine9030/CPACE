@@ -798,6 +798,66 @@
         }
         .card-link:hover { text-decoration: underline; }
 
+        /* ─── HOVER INSIGHT TOOLTIPS ─── */
+        .info-tip {
+            position: absolute;
+            top: 10px; right: 10px;
+            z-index: 4;
+            width: 20px; height: 20px;
+            border-radius: 50%;
+            background: rgba(0,0,0,0.05);
+            color: var(--gray-500);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 11px;
+            cursor: help;
+        }
+        .info-tip.inline {
+            position: static;
+            display: inline-flex;
+            margin-left: 6px;
+            width: 16px; height: 16px;
+            font-size: 10px;
+            vertical-align: middle;
+            background: transparent;
+        }
+        .info-tip .info-tip-pop {
+            position: absolute;
+            bottom: calc(100% + 9px);
+            right: 0;
+            width: max-content;
+            max-width: 230px;
+            background: #1f2430;
+            color: #fff;
+            font-size: 11.5px;
+            font-weight: 500;
+            line-height: 1.5;
+            padding: 9px 12px;
+            border-radius: 10px;
+            box-shadow: 0 12px 28px rgba(0,0,0,0.22);
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(4px);
+            transition: opacity .15s ease, transform .15s ease;
+            text-align: left;
+            pointer-events: none;
+        }
+        .info-tip.inline .info-tip-pop { right: auto; left: 0; }
+        .info-tip .info-tip-pop::after {
+            content: '';
+            position: absolute;
+            top: 100%; right: 8px;
+            border: 6px solid transparent;
+            border-top-color: #1f2430;
+        }
+        .info-tip.inline .info-tip-pop::after { right: auto; left: 8px; }
+        .info-tip:hover .info-tip-pop, .info-tip:focus-within .info-tip-pop {
+            opacity: 1; visibility: visible; transform: translateY(0);
+        }
+        .metric-card:has(.info-tip:hover),
+        .metric-card:has(.info-tip:focus-within) { overflow: visible; z-index: 6; }
+        .card { position: relative; }
+        .subject-item, .weakness-item { position: relative; }
+
         /* ─── SUBJECT MASTERY ─── */
         .subject-item {
             display: flex;
@@ -1173,6 +1233,9 @@
     <div class="metrics-grid anim" style="animation-delay:0.14s">
         <!-- Board Readiness Score -->
         <div class="metric-card accent-red">
+            <span class="info-tip" tabindex="0"><i class="fas fa-circle-info"></i>
+                <span class="info-tip-pop">How close your practiced subjects are to their passing threshold. 100 means every subject you've practiced is at or above its pass mark.</span>
+            </span>
             <div class="metric-left">
                 <div class="metric-number-lg">{{ $readiness }}<small>%</small></div>
                 <div class="metric-label-lg">Board Readiness Score</div>
@@ -1183,6 +1246,9 @@
 
         <!-- Questions Attempted -->
         <div class="metric-card accent-red">
+            <span class="info-tip" tabindex="0"><i class="fas fa-circle-info"></i>
+                <span class="info-tip-pop">Total questions served across every completed quiz, lifetime (Training and Practice Room excluded).</span>
+            </span>
             <div class="metric-left">
                 <div class="metric-number-lg">{{ number_format($questionsAttempted) }}</div>
                 <div class="metric-label-lg">Questions Attempted</div>
@@ -1195,6 +1261,9 @@
 
         <!-- Study Time -->
         <div class="metric-card accent-red">
+            <span class="info-tip" tabindex="0"><i class="fas fa-circle-info"></i>
+                <span class="info-tip-pop">Time spent in quizzes, measured from when each quiz starts to when it's submitted.</span>
+            </span>
             <div class="metric-left">
                 <div class="metric-number-lg">{{ $studyHours }}<small>h</small></div>
                 <div class="metric-label-lg">Study Time</div>
@@ -1207,6 +1276,9 @@
 
         <!-- Day Streak -->
         <div class="metric-card accent-red">
+            <span class="info-tip" tabindex="0"><i class="fas fa-circle-info"></i>
+                <span class="info-tip-pop">Consecutive days with quiz or training activity. Missing a day resets the streak.</span>
+            </span>
             <div class="metric-left">
                 <div class="metric-number-lg">{{ $streak }}</div>
                 <div class="metric-label-lg">Day Streak</div>
@@ -1222,7 +1294,11 @@
         <!-- Subject Mastery -->
         <div class="card">
             <div class="card-header">
-                <span class="card-title">Subject Mastery</span>
+                <span class="card-title">Subject Mastery
+                    <span class="info-tip inline" tabindex="0"><i class="fas fa-circle-info"></i>
+                        <span class="info-tip-pop">Your accuracy per subject against its own passing threshold. Green means you're at or above the pass mark.</span>
+                    </span>
+                </span>
                 <a class="card-link" href="{{ route('subjects') }}">View All</a>
             </div>
             @php
@@ -1232,7 +1308,7 @@
                 ];
             @endphp
             @foreach($subjectMastery as $i => $subject)
-                <a href="{{ route('subjects') }}" class="subject-item" style="text-decoration:none;">
+                <a href="{{ route('subjects') }}" class="subject-item" style="text-decoration:none;" title="{{ $subject->name }}: {{ $subject->mastery }}% &middot; passing mark {{ $subject->passing_threshold }}%">
                     <div class="subject-icon s{{ $i % 5 + 1 }}"><i class="fas {{ $subjectIcons[$subject->code] ?? 'fa-book' }}"></i></div>
                     <span class="subject-name">{{ $subject->name }}</span>
                     <span style="font-size:11px;font-weight:600;color:{{ $subject->is_passing ? '#059669' : 'var(--gray-500)' }};margin-right:10px;text-align:right;">
@@ -1246,11 +1322,15 @@
         <!-- Top Weaknesses -->
         <div class="card">
             <div class="card-header">
-                <span class="card-title">Top Weaknesses</span>
+                <span class="card-title">Top Weaknesses
+                    <span class="info-tip inline" tabindex="0"><i class="fas fa-circle-info"></i>
+                        <span class="info-tip-pop">Topics under 60% accuracy over 5+ attempts, or 3 wrong in a row - the same rule the Spaced Repetition Calendar uses.</span>
+                    </span>
+                </span>
                 <a class="card-link" href="{{ route('performance') }}">Focus Areas</a>
             </div>
             @forelse($weaknesses as $i => $weakness)
-                <div class="weakness-item">
+                <div class="weakness-item" title="{{ $weakness->topic }} ({{ $weakness->subject_code }}): {{ round($weakness->accuracy_rate) }}% accuracy">
                     <div class="weakness-num n{{ $i + 1 }}">{{ $i + 1 }}</div>
                     <div class="weakness-info">
                         <div class="weakness-title">{{ $weakness->topic }}</div>
@@ -1270,7 +1350,11 @@
             <!-- Overall Progress -->
             <div class="card">
                 <div class="card-header">
-                    <span class="card-title">Overall Progress</span>
+                    <span class="card-title">Overall Progress
+                        <span class="info-tip inline" tabindex="0"><i class="fas fa-circle-info"></i>
+                            <span class="info-tip-pop">{{ $readiness }}% readiness - how close you are to passing across your practiced subjects.</span>
+                        </span>
+                    </span>
                     <button class="card-menu-btn"><i class="fas fa-ellipsis-h"></i></button>
                 </div>
                 <div class="progress-wrap">

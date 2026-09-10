@@ -394,7 +394,45 @@
         }
 
         .date-range .fa-calendar { color: var(--ink-2); font-size: 12px; }
-        .date-range .fa-chevron-down { color: var(--ink-3); font-size: 10px; }
+        .date-range .fa-chevron-down { color: var(--ink-3); font-size: 10px; transition: transform 0.15s; }
+        .date-range { position: relative; cursor: pointer; user-select: none; }
+        .date-range.open .fa-chevron-down { transform: rotate(180deg); }
+
+        .date-range-menu {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            background: white;
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            min-width: 180px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+            display: none;
+            z-index: 2000;
+            overflow: hidden;
+        }
+        .date-range-menu.active { display: block; }
+        .date-range-menu button {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 10px 14px;
+            font-size: 13px;
+            font-family: 'Poppins', sans-serif;
+            color: var(--ink);
+            background: none;
+            border: none;
+            width: 100%;
+            text-align: left;
+            cursor: pointer;
+            transition: background 0.2s;
+            border-bottom: 1px solid #f5f5f5;
+        }
+        .date-range-menu button:last-child { border-bottom: none; }
+        .date-range-menu button:hover { background: #f8f9fa; }
+        .date-range-menu button.active { color: var(--primary); font-weight: 600; }
+        .date-range-menu button .fa-check { color: var(--primary); font-size: 11px; }
 
         /* ─── CARD BASE ─── */
         .card {
@@ -516,6 +554,67 @@
         .kpi-card .kpi-delta .d.up    { color: #21a366; }
         .kpi-card .kpi-delta .d.down  { color: #c0392b; }
         .kpi-card .kpi-delta .d.muted { color: #999; }
+
+        /* ─── HOVER INSIGHT TOOLTIPS ─── */
+        .info-tip {
+            position: absolute;
+            top: 10px; right: 10px;
+            z-index: 4;
+            width: 20px; height: 20px;
+            border-radius: 50%;
+            background: rgba(0,0,0,0.05);
+            color: var(--ink-3);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 11px;
+            cursor: help;
+        }
+        .info-tip.inline {
+            position: static;
+            display: inline-flex;
+            margin-left: 6px;
+            width: 16px; height: 16px;
+            font-size: 10px;
+            vertical-align: middle;
+            background: transparent;
+        }
+        .info-tip .info-tip-pop {
+            position: absolute;
+            bottom: calc(100% + 9px);
+            right: 0;
+            width: max-content;
+            max-width: 230px;
+            background: #1f2430;
+            color: #fff;
+            font-size: 11.5px;
+            font-weight: 500;
+            line-height: 1.5;
+            padding: 9px 12px;
+            border-radius: 10px;
+            box-shadow: 0 12px 28px rgba(0,0,0,0.22);
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(4px);
+            transition: opacity .15s ease, transform .15s ease;
+            text-align: left;
+            pointer-events: none;
+        }
+        .info-tip.inline .info-tip-pop { right: auto; left: 0; }
+        .info-tip .info-tip-pop::after {
+            content: '';
+            position: absolute;
+            top: 100%; right: 8px;
+            border: 6px solid transparent;
+            border-top-color: #1f2430;
+        }
+        .info-tip.inline .info-tip-pop::after { right: auto; left: 8px; }
+        .info-tip:hover .info-tip-pop, .info-tip:focus-within .info-tip-pop {
+            opacity: 1; visibility: visible; transform: translateY(0);
+        }
+        .kpi-card:has(.info-tip:hover),
+        .kpi-card:has(.info-tip:focus-within),
+        .mini-card:has(.info-tip:hover),
+        .mini-card:has(.info-tip:focus-within) { overflow: visible; z-index: 6; }
+        .subject-row { position: relative; }
 
         .kpi-illust {
             width: 96px; height: 96px;
@@ -843,6 +942,7 @@
             display: flex;
             flex-direction: column;
             min-width: 0;
+            position: relative;
             transition: box-shadow 0.2s;
         }
 
@@ -1150,10 +1250,15 @@
                     onclick="document.getElementById('aiOverlay').classList.add('open')">
                     <i class="fas fa-wand-magic-sparkles"></i> AI Insights
                 </button>
-                <div class="date-range">
+                <div class="date-range" id="dateRangeBtn" tabindex="0">
                     <i class="fas fa-calendar"></i>
-                    <span id="dateRangeText">{{ $chartSeries['daily']['range'] }}</span>
+                    <span id="dateRangeText">{{ $chartSeries['monthly']['range'] }}</span>
                     <i class="fas fa-chevron-down"></i>
+                    <div class="date-range-menu" id="dateRangeMenu">
+                        <button type="button" data-range="daily">Last 7 Days <i class="fas fa-check" style="visibility:hidden;"></i></button>
+                        <button type="button" data-range="weekly">Last 8 Weeks <i class="fas fa-check" style="visibility:hidden;"></i></button>
+                        <button type="button" data-range="monthly" class="active">Last 6 Months <i class="fas fa-check"></i></button>
+                    </div>
                 </div>
             </div>
 
@@ -1232,6 +1337,9 @@
             <div class="kpi-grid">
                 {{-- Overall Accuracy --}}
                 <div class="kpi-card">
+                    <span class="info-tip" tabindex="0"><i class="fas fa-circle-info"></i>
+                        <span class="info-tip-pop">{{ $stats['correct'] }} correct out of {{ number_format($stats['attempted']) }} questions attempted, across all quizzes (Training and Practice Room excluded).</span>
+                    </span>
                     <div class="kpi-left">
                         <div class="kpi-number">{!! $stats['accuracy'] !!}<small>%</small></div>
                         <span class="kpi-label">Overall Accuracy</span>
@@ -1245,6 +1353,9 @@
 
                 {{-- Questions Answered --}}
                 <div class="kpi-card">
+                    <span class="info-tip" tabindex="0"><i class="fas fa-circle-info"></i>
+                        <span class="info-tip-pop">Total questions served across every completed quiz, lifetime. {{ $stats['attempted_delta'] >= 0 ? '+' : '' }}{{ $stats['attempted_delta'] }} this week vs last week.</span>
+                    </span>
                     <div class="kpi-left">
                         <div class="kpi-number">{!! number_format($stats['attempted']) !!}</div>
                         <span class="kpi-label">Questions Answered</span>
@@ -1258,6 +1369,9 @@
 
                 {{-- Study Hours --}}
                 <div class="kpi-card">
+                    <span class="info-tip" tabindex="0"><i class="fas fa-circle-info"></i>
+                        <span class="info-tip-pop">Time spent in quizzes, measured from when each quiz starts to when it's submitted. {{ $studyHours }} hrs total.</span>
+                    </span>
                     <div class="kpi-left">
                         <div class="kpi-number">{!! $studyHours !!}<small> hrs</small></div>
                         <span class="kpi-label">Study Hours</span>
@@ -1271,6 +1385,9 @@
 
                 {{-- Readiness Score --}}
                 <div class="kpi-card">
+                    <span class="info-tip" tabindex="0"><i class="fas fa-circle-info"></i>
+                        <span class="info-tip-pop">How close your practiced subjects are to their passing threshold. 100 means every subject you've practiced is at or above its pass mark.</span>
+                    </span>
                     <div class="kpi-left">
                         <div class="kpi-number">{!! $readiness !!}<small>/100</small></div>
                         <span class="kpi-label">Readiness Score</span>
@@ -1288,7 +1405,11 @@
                 <!-- ACCURACY OVER TIME -->
                 <div class="card">
                     <div class="card-head">
-                        <span class="card-title">Accuracy Over Time</span>
+                        <span class="card-title">Accuracy Over Time
+                            <span class="info-tip inline" tabindex="0"><i class="fas fa-circle-info"></i>
+                                <span class="info-tip-pop">Your accuracy trend, bucketed by day, week, or month. Days with no quizzes carry the last known accuracy forward so the line stays continuous.</span>
+                            </span>
+                        </span>
                         <select class="chart-select" id="chartGranularity">
                             <option value="daily">Daily</option>
                             <option value="weekly">Weekly</option>
@@ -1334,7 +1455,11 @@
                 <!-- STUDY DISTRIBUTION -->
                 <div class="card">
                     <div class="card-head">
-                        <span class="card-title">Study Distribution</span>
+                        <span class="card-title">Study Distribution
+                            <span class="info-tip inline" tabindex="0"><i class="fas fa-circle-info"></i>
+                                <span class="info-tip-pop">Share of your total study time spent per subject, based on time-in-quiz across completed sessions.</span>
+                            </span>
+                        </span>
                     </div>
                     @if($studyDist['has_data'])
                         <div class="donut-body">
@@ -1396,11 +1521,15 @@
                 <!-- PERFORMANCE BY SUBJECT -->
                 <div class="card">
                     <div class="card-head">
-                        <span class="card-title">Performance by Subject</span>
+                        <span class="card-title">Performance by Subject
+                            <span class="info-tip inline" tabindex="0"><i class="fas fa-circle-info"></i>
+                                <span class="info-tip-pop">Accuracy across every topic you've practiced in each subject. Hover a bar for the exact tally and pass mark.</span>
+                            </span>
+                        </span>
                     </div>
                     @php $subjColors = ['#c0392b', '#3b7ddd', '#e8910b', '#8e44ad', '#21a366', '#d4589e']; @endphp
                     @foreach($subjectAccuracy as $si => $subj)
-                        <div class="subject-row">
+                        <div class="subject-row" title="{{ $subj->name }}: {{ $subj->correct }}/{{ $subj->attempts }} correct &middot; passing mark {{ $subj->passing_threshold }}%">
                             <span class="code">{{ $subj->code }}</span>
                             <div class="track"><span class="fill" style="width:{{ $subj->accuracy }}%;background:{{ $subjColors[$si % count($subjColors)] }};"></span></div>
                             <span class="val">{{ $subj->accuracy }}%</span>
@@ -1412,28 +1541,40 @@
                 <!-- MINI STATS 2x2 -->
                 <div class="mini-grid">
                     <div class="mini-card">
+                        <span class="info-tip" tabindex="0"><i class="fas fa-circle-info"></i>
+                            <span class="info-tip-pop">Time spent in quizzes today, compared to the same time yesterday.</span>
+                        </span>
                         <div class="mini-head"><i class="fas fa-clock red"></i><span>Study Time Today</span></div>
                         <div class="mini-value">{{ $todayStudy }}</div>
                         @php [$cls, $ic, $txt] = $deltaRow($todayDelta); @endphp
                         <div class="mini-sub"><span class="d {{ $cls }}"><i class="fas {{ $ic }}"></i> {{ $txt }}</span> vs yesterday</div>
                     </div>
                     <div class="mini-card">
+                        <span class="info-tip" tabindex="0"><i class="fas fa-circle-info"></i>
+                            <span class="info-tip-pop">Share of the last 7 days with at least one completed quiz.</span>
+                        </span>
                         <div class="mini-head"><i class="fas fa-circle-check green"></i><span>Consistency</span></div>
                         <div class="mini-value">{{ $consistencyPct }}%</div>
                         @php [$cls, $ic, $txt] = $deltaRow($consistencyDelta); @endphp
                         <div class="mini-sub"><span class="d {{ $cls }}"><i class="fas {{ $ic }}"></i> {{ $txt }}</span> vs last week</div>
                     </div>
                     <div class="mini-card">
+                        <span class="info-tip" tabindex="0"><i class="fas fa-circle-info"></i>
+                            <span class="info-tip-pop">Your lowest-accuracy topic, using the same rule as the Spaced Repetition Calendar: under 60% accuracy over 5+ attempts, or 3 wrong in a row.</span>
+                        </span>
                         <div class="mini-head"><i class="fas fa-triangle-exclamation red"></i><span>Weakest Topic</span></div>
                         @if($weakestTopic)
                             <div class="mini-value" title="{{ $weakestTopic->topic }}">{{ $weakestTopic->topic }}</div>
-                            <div class="mini-sub">Accuracy <span class="d down">{{ $weakestTopic->accuracy }}%</span></div>
+                            <div class="mini-sub">{{ $weakestTopic->subject_code }} &middot; Accuracy <span class="d down">{{ $weakestTopic->accuracy }}%</span></div>
                         @else
                             <div class="mini-value">None yet</div>
                             <div class="mini-sub">No weak topics flagged</div>
                         @endif
                     </div>
                     <div class="mini-card">
+                        <span class="info-tip" tabindex="0"><i class="fas fa-circle-info"></i>
+                            <span class="info-tip-pop">Weekly study-time goal of {{ $goalTarget }} hrs. You've logged {{ $goalHours }} hrs this week.</span>
+                        </span>
                         <div class="mini-head"><i class="fas fa-bullseye amber"></i><span>Goal Progress</span></div>
                         <div class="mini-value">{{ $goalHours }} <small style="font-size:11px;color:var(--ink-3);font-weight:500;">/ {{ $goalTarget }} hrs</small></div>
                         <div class="mini-bar"><span style="width:{{ $goalPct }}%"></span></div>
@@ -1447,7 +1588,11 @@
                 <!-- STUDY ACTIVITY (ONE YEAR) -->
                 <div class="card hm-card">
                     <div class="card-head">
-                        <span class="card-title">Study Activity (One Year)</span>
+                        <span class="card-title">Study Activity (One Year)
+                            <span class="info-tip inline" tabindex="0"><i class="fas fa-circle-info"></i>
+                                <span class="info-tip-pop">Darker squares mean more questions answered that day (Training included). Hover a square for the exact date and count.</span>
+                            </span>
+                        </span>
                         <span class="card-more">&#8230;</span>
                     </div>
                     @php $hmColors = ['#eef0f2', '#f6cdc9', '#ec9d96', '#dd6b62', '#c0392b']; @endphp
@@ -1627,6 +1772,52 @@
             if (granularity) {
                 granularity.addEventListener('change', function () {
                     renderPerfChart(chartSeries[this.value]);
+                    syncDateRangeMenu(this.value);
+                });
+            }
+
+            // Date range chip in the toolbar — same three windows as the
+            // Accuracy Over Time granularity selector, kept in sync with it
+            // so there is a single source of truth for "which window am I
+            // looking at".
+            const dateRangeBtn  = document.getElementById('dateRangeBtn');
+            const dateRangeMenu = document.getElementById('dateRangeMenu');
+
+            function syncDateRangeMenu(value) {
+                if (granularity) granularity.value = value;
+                if (!dateRangeMenu) return;
+                dateRangeMenu.querySelectorAll('button').forEach(btn => {
+                    const active = btn.dataset.range === value;
+                    btn.classList.toggle('active', active);
+                    btn.querySelector('.fa-check').style.visibility = active ? 'visible' : 'hidden';
+                });
+            }
+
+            if (dateRangeBtn && dateRangeMenu) {
+                dateRangeBtn.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    dateRangeMenu.classList.toggle('active');
+                    dateRangeBtn.classList.toggle('open', dateRangeMenu.classList.contains('active'));
+                });
+                dateRangeMenu.querySelectorAll('button').forEach(btn => {
+                    btn.addEventListener('click', function (e) {
+                        e.stopPropagation();
+                        const value = this.dataset.range;
+                        renderPerfChart(chartSeries[value]);
+                        syncDateRangeMenu(value);
+                        dateRangeMenu.classList.remove('active');
+                        dateRangeBtn.classList.remove('open');
+                    });
+                });
+                document.addEventListener('click', function () {
+                    dateRangeMenu.classList.remove('active');
+                    dateRangeBtn.classList.remove('open');
+                });
+                dateRangeBtn.addEventListener('keydown', function (e) {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        dateRangeBtn.click();
+                    }
                 });
             }
         });
