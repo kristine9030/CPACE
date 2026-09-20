@@ -42,6 +42,10 @@
         .preview-title { font-size:13px; font-weight:700; color:#444; display:flex; align-items:center; gap:8px; }
         .zoom-group { display:flex; align-items:center; gap:8px; font-size:12px; color:#777; }
         .paper { width:794px; min-height:1123px; background:white; margin:0 auto; box-shadow:0 12px 28px rgba(0,0,0,.14); padding:48px 54px; color:var(--ink); transform-origin:top center; }
+        /* .paper-table's <thead> repeats on every printed page once the content
+           overflows a single sheet, giving continuation pages their own header. */
+        .paper-table { width:100%; border-collapse:collapse; }
+        .paper-table > thead > tr > td, .paper-table > tbody > tr > td { padding:0; border:none; }
         .paper-head { display:flex; justify-content:space-between; gap:24px; border-bottom:3px solid var(--primary); padding-bottom:18px; margin-bottom:22px; }
         .brand { display:flex; gap:12px; align-items:center; }
         .brand-mark { width:48px; height:48px; border-radius:10px; background:var(--primary); display:flex; align-items:center; justify-content:center; color:#fff; font-size:22px; overflow:hidden; padding:5px; }
@@ -137,6 +141,11 @@
             .report-shell { display:block !important; }
             .preview-wrap { background:white !important; padding:0 !important; min-height:auto !important; overflow:visible !important; }
             .paper { width:auto !important; min-height:auto !important; box-shadow:none !important; margin:0 !important; padding:0 !important; transform:none !important; }
+            .paper-head { margin-bottom:16px; }
+            .paper-table thead { display:table-header-group; }
+            .paper-table tbody { display:table-row-group; }
+            .summary-box, .paper-card, .chart-card, .report-table tr, .signature-row { page-break-inside:avoid; }
+            .paper-section { page-break-inside:auto; }
             @page { size:A4 portrait; margin:14mm; }
         }
     </style>
@@ -236,6 +245,9 @@
             </div>
 
             <article class="paper" id="reportPaper">
+              <table class="paper-table">
+                <thead>
+                <tr><td>
                 <header class="paper-head">
                     <div class="brand">
                         <div class="brand-mark"><img src="{{ asset('images/cpace_logo.png') }}" alt="CPACE Logo"></div>
@@ -252,6 +264,10 @@
                         <p>Generated: {{ $generatedAt->format('M d, Y g:i A') }}</p>
                     </div>
                 </header>
+                </td></tr>
+                </thead>
+                <tbody>
+                <tr><td>
 
                 <section class="doc-title">
                     <h2>Student Performance and Intervention Report</h2>
@@ -513,6 +529,10 @@
                     <span>CPACE CPA Reviewer · {{ $reportLabel }}</span>
                     <span>Generated {{ $generatedAt->format('M d, Y') }}</span>
                 </footer>
+
+                </td></tr>
+                </tbody>
+              </table>
             </article>
         </section>
 

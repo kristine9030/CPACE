@@ -40,7 +40,18 @@
         .print-bar button { background:#fff; color:#7B1D1D; border:none; padding:7px 16px; border-radius:6px; font-weight:600; cursor:pointer; font-size:13px; margin-left:8px; }
         .print-bar button.ghost { background:transparent; color:#fff; border:1px solid rgba(255,255,255,.6); }
         .print-spacer { height:46px; }
-        @media print { .print-bar, .print-spacer { display:none !important; } }
+
+        /* .doc-table's <thead> repeats on every page once printed content
+           spans more than one sheet, so the export header carries over. */
+        .doc-table { width:100%; border-collapse:collapse; }
+        .doc-table > thead > tr > td, .doc-table > tbody > tr > td { padding:0; border:none; }
+
+        @media print {
+            .print-bar, .print-spacer { display:none !important; }
+            .doc-head { margin-bottom:12px; }
+            .doc-table thead { display:table-header-group; }
+            .doc-table tbody { display:table-row-group; }
+        }
     </style>
 </head>
 <body>
@@ -54,6 +65,9 @@
 </div>
 <div class="print-spacer"></div>
 
+<table class="doc-table">
+<thead>
+<tr><td>
 <div class="doc-head">
     <div class="doc-title">CPACE Test Bank Export</div>
     <div class="doc-sub">Generated {{ now()->format('F j, Y \a\t g:i A') }} &middot; {{ $questions->count() }} question{{ $questions->count() === 1 ? '' : 's' }}</div>
@@ -69,6 +83,10 @@
         </div>
     @endif
 </div>
+</td></tr>
+</thead>
+<tbody>
+<tr><td>
 
 @forelse($questions as $i => $q)
     @php
@@ -97,6 +115,10 @@
 @empty
     <div class="empty">No questions match the current filters.</div>
 @endforelse
+
+</td></tr>
+</tbody>
+</table>
 
 
     @include('partials.alerts')
