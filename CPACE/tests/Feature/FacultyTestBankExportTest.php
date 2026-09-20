@@ -141,9 +141,26 @@ class FacultyTestBankExportTest extends TestCase
         $response = $this->actingAs($faculty)->get(route('faculty.test-bank.export'));
 
         $response->assertOk();
-        $csv = $response->streamedContent();
-        $this->assertStringContainsString('My assigned-subject question', $csv);
-        $this->assertStringNotContainsString('A question from a subject I am not assigned to', $csv);
+        $sheetText = $this->readXlsxText($response->streamedContent());
+        $this->assertStringContainsString('My assigned-subject question', $sheetText);
+        $this->assertStringNotContainsString('A question from a subject I am not assigned to', $sheetText);
+    }
+
+    /** Export moved from raw CSV to a branded .xlsx download; read it back as plain text for content assertions. */
+    private function readXlsxText(string $bytes): string
+    {
+        $path = tempnam(sys_get_temp_dir(), 'xlsx');
+        file_put_contents($path, $bytes);
+
+        $sheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($path)->getActiveSheet();
+        unlink($path);
+
+        $text = '';
+        foreach ($sheet->toArray() as $row) {
+            $text .= implode(' ', array_map(fn ($cell) => (string) $cell, $row)) . "\n";
+        }
+
+        return $text;
     }
 
     public function test_the_json_export_format_is_also_scoped_to_assigned_subjects(): void

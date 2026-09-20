@@ -35,6 +35,7 @@ class NotificationTest extends TestCase
             $table->timestamp('setup_completed_at')->nullable();
             $table->string('temp_password')->nullable();
             $table->string('profile_photo')->nullable();
+            $table->string('avatar_color', 20)->nullable();
             $table->rememberToken();
             $table->timestamps();
         });

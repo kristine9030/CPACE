@@ -363,7 +363,9 @@ class FacultyQuizTest extends TestCase
         $this->quiz($faculty, 'published', [$this->mcqItem('Q', 'A')], ['title' => 'Visible quiz']);
         $this->quiz($faculty, 'draft', [$this->mcqItem('Q', 'A')], ['title' => 'Hidden draft']);
 
-        $this->actingAs($student)->get(route('class-quizzes'))
+        // Quiz titles are listed on the per-subject page (Classroom-style);
+        // the index page only shows a summary card per subject/class.
+        $this->actingAs($student)->get(route('class-quizzes.subject', 'general'))
             ->assertOk()
             ->assertSee('Visible quiz')
             ->assertDontSee('Hidden draft');

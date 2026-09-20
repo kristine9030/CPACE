@@ -284,9 +284,26 @@ class FacultyPerformanceScopeTest extends TestCase
         $response = $this->actingAs($faculty)->get(route('faculty.performance.export'));
 
         $response->assertOk();
-        $csv = $response->streamedContent();
-        $this->assertStringContainsString($farStudent->email, $csv);
-        $this->assertStringNotContainsString($audStudent->email, $csv);
+        $sheetText = $this->readXlsxText($response->streamedContent());
+        $this->assertStringContainsString($farStudent->email, $sheetText);
+        $this->assertStringNotContainsString($audStudent->email, $sheetText);
+    }
+
+    /** Export moved from raw CSV to a branded .xlsx download; read it back as plain text for content assertions. */
+    private function readXlsxText(string $bytes): string
+    {
+        $path = tempnam(sys_get_temp_dir(), 'xlsx');
+        file_put_contents($path, $bytes);
+
+        $sheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($path)->getActiveSheet();
+        unlink($path);
+
+        $text = '';
+        foreach ($sheet->toArray() as $row) {
+            $text .= implode(' ', array_map(fn ($cell) => (string) $cell, $row)) . "\n";
+        }
+
+        return $text;
     }
 
     public function test_sending_a_reminder_notifies_only_at_risk_students_by_default(): void
