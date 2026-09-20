@@ -121,6 +121,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/sections', [SectionManagementController::class, 'store'])->name('sections.store');
         Route::put('/sections/{section}', [SectionManagementController::class, 'update'])->name('sections.update');
         Route::post('/sections/{section}/toggle', [SectionManagementController::class, 'toggle'])->name('sections.toggle');
+        Route::delete('/sections/{section}', [SectionManagementController::class, 'destroy'])->name('sections.destroy');
 
         // Subject assignment overview
         Route::get('/subjects', [SubjectManagementController::class, 'index'])->name('subjects');

@@ -20,7 +20,8 @@ use Tests\TestCase;
 class ChairFacultySectionAssignmentTest extends TestCase
 {
     private const TABLES = [
-        'faculty_subject_sections', 'faculty_subjects', 'faculty_profiles', 'sections', 'subjects', 'users',
+        'faculty_subject_sections', 'faculty_subjects', 'faculty_profiles', 'student_profiles',
+        'sections', 'subjects', 'notifications', 'messages', 'conversation_participants', 'conversations', 'users',
     ];
 
     protected function setUp(): void
@@ -74,6 +75,40 @@ class ChairFacultySectionAssignmentTest extends TestCase
             $table->unsignedBigInteger('user_id')->primary();
             $table->string('employee_number', 20)->nullable();
             $table->string('department', 100)->nullable();
+        });
+        Schema::create('student_profiles', function (Blueprint $table) {
+            $table->unsignedBigInteger('user_id')->primary();
+            $table->string('section', 30)->nullable();
+            $table->boolean('is_alumni')->default(false);
+            $table->boolean('is_shifted')->default(false);
+        });
+        Schema::create('notifications', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('recipient_id');
+            $table->boolean('is_read')->default(false);
+        });
+        Schema::create('conversations', function (Blueprint $table) {
+            $table->id();
+            $table->string('type')->default('group');
+            $table->string('name')->nullable();
+            $table->boolean('is_default_group')->default(false);
+            $table->unsignedBigInteger('created_by')->nullable();
+            $table->timestamps();
+        });
+        Schema::create('conversation_participants', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('conversation_id');
+            $table->unsignedBigInteger('user_id');
+            $table->timestamp('joined_at')->nullable();
+            $table->timestamp('last_read_at')->nullable();
+            $table->timestamps();
+        });
+        Schema::create('messages', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('conversation_id');
+            $table->unsignedBigInteger('sender_id');
+            $table->text('body')->nullable();
+            $table->timestamps();
         });
     }
 
@@ -147,6 +182,27 @@ class ChairFacultySectionAssignmentTest extends TestCase
 
         $this->assertFalse(DB::table('faculty_subjects')->where('faculty_id', $faculty->id)->exists());
         $this->assertFalse(DB::table('faculty_subject_sections')->where('faculty_id', $faculty->id)->exists());
+    }
+
+    public function test_an_unrestricted_all_sections_assignment_is_counted_on_every_active_section(): void
+    {
+        $chair = $this->chair();
+        $faculty = $this->faculty();
+        $subjectId = DB::table('subjects')->insertGetId(['code' => 'FAR', 'name' => 'Financial Accounting']);
+        DB::table('sections')->insert(['name' => 'BSA-3A', 'is_active' => true, 'created_at' => now(), 'updated_at' => now()]);
+        DB::table('sections')->insert(['name' => 'BSA-3B', 'is_active' => true, 'created_at' => now(), 'updated_at' => now()]);
+
+        // "All sections" in the UI submits the subject with no sections[] for it.
+        $this->actingAs($chair)->post(route('chair.faculty.assign', $faculty->id), [
+            'subjects' => [$subjectId],
+        ])->assertRedirect(route('chair.faculty'));
+
+        $response = $this->actingAs($chair)->get(route('chair.sections'));
+
+        $response->assertOk();
+        $sections = collect($response->viewData('sections'));
+        $this->assertSame(1, $sections->firstWhere('name', 'BSA-3A')->faculty_count);
+        $this->assertSame(1, $sections->firstWhere('name', 'BSA-3B')->faculty_count);
     }
 
     public function test_a_section_id_that_does_not_exist_is_rejected(): void

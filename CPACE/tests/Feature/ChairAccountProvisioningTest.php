@@ -420,6 +420,48 @@ class ChairAccountProvisioningTest extends TestCase
         $this->assertSame('after@example.com', $fresh->email);
     }
 
+    public function test_updating_a_student_rejects_a_section_that_is_not_in_the_curated_catalog(): void
+    {
+        $chair = $this->chair();
+        $student = $this->student('typo-section@example.com');
+
+        $this->actingAs($chair)->put(route('chair.students.update', $student->id), [
+            'first_name' => $student->first_name,
+            'last_name' => $student->last_name,
+            'email' => $student->email,
+            'section' => 'BSA-4A-TYPO',
+            'is_active' => '1',
+        ])->assertSessionHasErrors('section');
+    }
+
+    public function test_updating_a_student_can_reassign_them_to_a_curated_section(): void
+    {
+        DB::table('sections')->insert(['name' => 'BSA-4A', 'is_active' => true]);
+        $chair = $this->chair();
+        $student = $this->student('reassign@example.com');
+
+        $this->actingAs($chair)->put(route('chair.students.update', $student->id), [
+            'first_name' => $student->first_name,
+            'last_name' => $student->last_name,
+            'email' => $student->email,
+            'section' => 'BSA-4A',
+            'is_active' => '1',
+        ])->assertRedirect();
+
+        $this->assertSame('BSA-4A', DB::table('student_profiles')->where('user_id', $student->id)->value('section'));
+    }
+
+    public function test_edit_form_keeps_a_students_current_section_selectable_even_if_no_longer_curated(): void
+    {
+        $chair = $this->chair();
+        $student = $this->student('legacy-section@example.com');
+        DB::table('student_profiles')->where('user_id', $student->id)->update(['section' => 'OLD-BATCH-99']);
+
+        $this->actingAs($chair)->get(route('chair.students.edit', $student->id))
+            ->assertOk()
+            ->assertSee('OLD-BATCH-99');
+    }
+
     public function test_a_students_email_must_be_unique_when_updating(): void
     {
         $chair = $this->chair();

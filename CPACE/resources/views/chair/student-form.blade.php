@@ -217,12 +217,17 @@
                 </div>
                 <div class="form-group">
                     <label>Section / Batch</label>
-                    <input
-                        type="text"
-                        name="section"
-                        value="{{ old('section', $profile?->section) }}"
-                        placeholder="e.g. BSA-4A"
-                    >
+                    <select name="section">
+                        <option value="">Not specified</option>
+                        @foreach ($sections as $sec)
+                            <option
+                                value="{{ $sec->name }}"
+                                @selected(old('section', $profile?->section) === $sec->name)
+                            >
+                                {{ $sec->name }}{{ $sec->is_active ? '' : ' (inactive)' }}
+                            </option>
+                        @endforeach
+                    </select>
                 </div>
                 <div class="form-group">
                     <label>Target Exam Date</label>

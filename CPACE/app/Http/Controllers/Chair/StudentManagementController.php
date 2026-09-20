@@ -8,6 +8,7 @@ use App\Mail\AccountCredentialsMail;
 use App\Models\AlumniProfile;
 use App\Models\QuizSession;
 use App\Models\Role;
+use App\Models\Section;
 use App\Models\StudentProfile;
 use App\Models\User;
 use App\Services\WeaknessDetector;
@@ -45,12 +46,17 @@ class StudentManagementController extends Controller
             ['path' => $request->url(), 'query' => $request->query()]
         );
 
-        $withScores = $allRows->whereNotNull('score');
+        // KPI cards count currently-enrolled students only (excludes alumni and
+        // shifted-out accounts), matching the "enrolled" definition used on the
+        // chair analytics cohort strip. The table below still lists every
+        // account, including alumni/shifted, for record-keeping.
+        $enrolledRows = $allRows->where('is_alumni', false)->where('is_shifted', false);
+        $withScores = $enrolledRows->whereNotNull('score');
         $stats = [
-            'total' => $allRows->count(),
-            'active' => $allRows->where('is_active', true)->count(),
+            'total' => $enrolledRows->count(),
+            'active' => $enrolledRows->where('is_active', true)->count(),
             'average' => $withScores->isNotEmpty() ? (int) round($withScores->avg('score')) : 0,
-            'at_risk' => $allRows->where('at_risk', true)->count(),
+            'at_risk' => $enrolledRows->where('at_risk', true)->count(),
         ];
 
         $groups = User::where('role_id', Role::STUDENT)
@@ -124,7 +130,10 @@ class StudentManagementController extends Controller
 
     public function create()
     {
-        return view('chair.student-form', ['editMode' => false]);
+        return view('chair.student-form', [
+            'editMode' => false,
+            'sections' => Section::where('is_active', true)->orderBy('year_level')->orderBy('name')->get(),
+        ]);
     }
 
     public function store(Request $request)
@@ -160,9 +169,22 @@ class StudentManagementController extends Controller
 
     public function edit(int $id)
     {
+        $student = User::where('role_id', Role::STUDENT)->with(['studentProfile', 'alumniProfile'])->findOrFail($id);
+        $sections = Section::orderByDesc('is_active')->orderBy('year_level')->orderBy('name')->get();
+
+        // The student's current section might be inactive or, for older
+        // records, a legacy string that was never added to the curated
+        // catalog - keep it selectable so saving the form without touching
+        // this field doesn't silently blank it out or fail validation.
+        $currentSection = $student->studentProfile?->section;
+        if ($currentSection && ! $sections->contains('name', $currentSection)) {
+            $sections->push(new Section(['name' => $currentSection, 'is_active' => false]));
+        }
+
         return view('chair.student-form', [
             'editMode' => true,
-            'student' => User::where('role_id', Role::STUDENT)->with(['studentProfile', 'alumniProfile'])->findOrFail($id),
+            'student' => $student,
+            'sections' => $sections,
         ]);
     }
 
@@ -484,12 +506,13 @@ class StudentManagementController extends Controller
     {
         $filters = $this->filters($request);
         $rows = $this->applyFilters($this->studentRows(), $filters);
-        $scored = $rows->whereNotNull('score');
+        $enrolledRows = $rows->where('is_alumni', false)->where('is_shifted', false);
+        $scored = $enrolledRows->whereNotNull('score');
         $stats = [
-            'total' => $rows->count(),
-            'active' => $rows->where('is_active', true)->count(),
+            'total' => $enrolledRows->count(),
+            'active' => $enrolledRows->where('is_active', true)->count(),
             'average' => $scored->isNotEmpty() ? (int) round($scored->avg('score')) : 0,
-            'at_risk' => $rows->where('at_risk', true)->count(),
+            'at_risk' => $enrolledRows->where('at_risk', true)->count(),
         ];
 
         return view('chair.student-report', compact('rows', 'stats', 'filters'));
@@ -536,6 +559,8 @@ class StudentManagementController extends Controller
                     'days_idle' => $daysIdle,
                     'at_risk' => $student->is_active && ($low || $inactive),
                     'is_active' => (bool) $student->is_active,
+                    'is_alumni' => (bool) ($profile?->is_alumni ?? false),
+                    'is_shifted' => (bool) ($profile?->is_shifted ?? false),
                     'setup_completed' => $student->setup_completed_at !== null,
                     // Manual fallback for the chair to read the OTP directly when a
                     // "sent" email never actually reaches the student (bounce/spam).
@@ -599,7 +624,7 @@ class StudentManagementController extends Controller
             'email' => ['required', 'email', 'max:120', Rule::unique('users', 'email')->ignore($student?->id)],
             'student_number' => ['nullable', 'string', 'max:30', Rule::unique('student_profiles', 'student_number')->ignore($student?->id, 'user_id')],
             'year_level' => ['nullable', 'integer', 'between:1,6'],
-            'section' => ['nullable', 'string', 'max:30'],
+            'section' => ['nullable', 'string', 'max:30', Rule::exists('sections', 'name')],
             'exam_target_date' => ['nullable', 'date'],
             'is_active' => ['required', 'boolean'],
             'is_alumni' => ['nullable', 'boolean'],

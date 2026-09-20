@@ -61,6 +61,8 @@
         .ab-toggle:hover { background:#fde68a; }
         .ab-toggle.is-deactivate { background:#fde8e8; color:#b91c1c; }
         .ab-toggle.is-deactivate:hover { background:#fbd4d4; }
+        .ab-delete { background:#fde8e8; color:#b91c1c; }
+        .ab-delete:hover { background:#fbd4d4; }
         .year-pill { display:inline-flex; align-items:center; padding:3px 10px; border-radius:20px; font-size:10px; font-weight:700; background:#eef2ff; color:#4338ca; }
         .year-pill.na { background:#f3f4f6; color:#9ca3af; }
         tr.is-inactive .section-name,
@@ -109,10 +111,11 @@
                     : 'No sections yet — add the first one to begin.',
             ],
             [
-                'value' => $totalStudents, 'unit' => 'Students', 'label' => 'Total Enrollment',
+                'value' => $totalStudents, 'unit' => 'Students', 'label' => 'Sectioned Students',
                 'tone' => 'si-green', 'icon' => 'fa-user-graduate',
                 'context' => $totalSections > 0
-                    ? '<strong>' . $avgPerSection . ' students</strong> per section on average.'
+                    ? '<strong>' . $avgPerSection . ' students</strong> per section on average'
+                        . ($unsectioned > 0 ? ', <strong style="color:var(--accent);">' . $unsectioned . '</strong> enrolled ' . ($unsectioned === 1 ? 'student is' : 'students are') . ' not assigned to a section yet.' : '.')
                     : 'No enrollment to report yet.',
             ],
             [
@@ -205,6 +208,19 @@
                             @csrf
                             <button type="submit" class="action-btn ab-toggle {{ $s->is_active ? 'is-deactivate' : '' }}" title="{{ $s->is_active ? 'Deactivate' : 'Activate' }}">
                                 <i class="fas fa-power-off"></i>
+                            </button>
+                        </form>
+                        <form method="POST" action="{{ route('chair.sections.destroy', $s->id) }}" style="display:inline;"
+                              data-confirm="{{ $s->student_count > 0 || $s->faculty_count > 0
+                                  ? 'This section still has ' . $s->student_count . ' student(s) and ' . $s->faculty_count . ' faculty assignment(s) tied to it — it cannot be removed until those are reassigned.'
+                                  : 'This will permanently remove "' . $s->name . '" from the catalog. This cannot be undone.' }}"
+                              data-confirm-title="Delete this section?"
+                              data-confirm-ok="Yes, delete"
+                              data-confirm-icon="warning"
+                              data-confirm-danger>
+                            @csrf @method('DELETE')
+                            <button type="submit" class="action-btn ab-delete" title="Delete">
+                                <i class="fas fa-trash"></i>
                             </button>
                         </form>
                     </td>
