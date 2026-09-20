@@ -578,6 +578,47 @@
 
         .signup-link a:hover { text-decoration: underline; }
 
+        .demo-accounts { margin-top: 26px; }
+
+        .demo-accounts .divider { margin: 0 0 16px; }
+
+        .demo-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .demo-btn {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            padding: 10px 12px;
+            border: 1.5px solid var(--border);
+            border-radius: 9px;
+            background: #fff;
+            cursor: pointer;
+            font-family: 'Montserrat', ui-sans-serif, system-ui, sans-serif;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--ink);
+            text-align: left;
+            transition: border-color .18s, background .18s, transform .18s;
+        }
+
+        .demo-btn:hover {
+            border-color: var(--maroon);
+            background: var(--soft);
+            transform: translateY(-2px);
+        }
+
+        .demo-btn i {
+            width: 20px;
+            text-align: center;
+            font-size: 13px;
+            color: var(--maroon);
+            flex-shrink: 0;
+        }
+
         .back-home {
             position: fixed;
             top: 22px;
@@ -775,12 +816,36 @@
                         </svg>
                         Google
                     </a>
+
+                    <div class="demo-accounts">
+                        <div class="divider">or try a demo account</div>
+                        <div class="demo-grid">
+                            <button type="button" class="demo-btn" onclick="fillDemo('chair@cpace.test', 'ProgramChair123')">
+                                <i class="fas fa-user-tie"></i> Program Chair
+                            </button>
+                            <button type="button" class="demo-btn" onclick="fillDemo('layscapricorn@gmail.com', '123millan')">
+                                <i class="fas fa-user-graduate"></i> Student
+                            </button>
+                            <button type="button" class="demo-btn" onclick="fillDemo('felman@gmail.com', '123millan')">
+                                <i class="fas fa-chalkboard-teacher"></i> Faculty
+                            </button>
+                            <button type="button" class="demo-btn" onclick="fillDemo('adrian.cornado@cpace.edu', '123_Adrian')">
+                                <i class="fas fa-user-clock"></i> Alumni
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
 <script>
+function fillDemo(email, password) {
+    document.getElementById('email').value = email;
+    document.getElementById('password').value = password;
+    document.querySelector('.btn-login').closest('form').submit();
+}
+
 function togglePassword(id, btn) {
     const input = document.getElementById(id);
     const icon = btn.querySelector('i');
