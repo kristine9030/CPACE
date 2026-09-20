@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Faculty;
+namespace App\Http\Controllers\Student;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -10,9 +10,8 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
-class FacultySettingsController extends Controller
+class StudentSettingsController extends Controller
 {
-    /** Same swatch palette as the student side, so the picker (and stored value) match everywhere. */
     public const AVATAR_COLORS = [
         'maroon', 'crimson', 'blue', 'teal', 'green',
         'purple', 'pink', 'orange', 'navy', 'slate',
@@ -22,14 +21,14 @@ class FacultySettingsController extends Controller
     {
         $user = Auth::user();
 
-        return view('faculty.settings', [
-            'profile' => $user->facultyProfile,
+        return view('student.settings', [
+            'profile' => $user->studentProfile,
         ]);
     }
 
     /**
      * Quick profile edit (name, email, avatar) — used by both the topbar/sidebar
-     * profile modal and the Account card on the full settings page.
+     * "Profile Settings" links and the Account card on the full settings page.
      */
     public function update(Request $request)
     {
@@ -61,16 +60,16 @@ class FacultySettingsController extends Controller
     }
 
     /**
-     * Faculty-specific details (employee number, department) on the full settings page.
+     * Student-specific contact details on the full settings page.
      */
     public function updateDetails(Request $request)
     {
         $data = $request->validate([
-            'employee_number' => ['nullable', 'string', 'max:20', Rule::unique('faculty_profiles', 'employee_number')->ignore(Auth::id(), 'user_id')],
-            'department'      => ['nullable', 'string', 'max:100'],
+            'mobile'           => ['nullable', 'string', 'max:20'],
+            'exam_target_date' => ['nullable', 'date'],
         ]);
 
-        Auth::user()->facultyProfile()->updateOrCreate(
+        Auth::user()->studentProfile()->updateOrCreate(
             ['user_id' => Auth::id()],
             $data
         );

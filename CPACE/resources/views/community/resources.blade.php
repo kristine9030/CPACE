@@ -16,7 +16,7 @@
         .lib-wrap { max-width:960px; margin:0 auto; padding-bottom:40px; }
 
         .topbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
-        .page-title { font-size:24px; font-weight:700; color:#1a1a1a; }
+        .page-title { font-size:24px; font-weight:700; color:#14283E; }
         .page-sub { font-size:12px; color:#999; margin-top:2px; }
 
         .flash { background:#e8f7ee; color:#1e7e46; border:1px solid #bfead0; padding:11px 16px; border-radius:10px; font-size:13px; font-weight:500; margin-bottom:16px; display:flex; align-items:center; gap:9px; }

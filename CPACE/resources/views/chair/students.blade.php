@@ -8,6 +8,30 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        /* ── KPI cards — same treatment as the Program Chair Dashboard: a
+           darker, more pronounced shadow than the rest of the page's cards,
+           a bold dark title (was a faint 11px gray label), an inline unit
+           next to the number, and a dashed-border context line underneath
+           explaining what the number means. ── */
+        .stats-row .stat-card {
+            display:flex; flex-direction:column; height:100%;
+            box-shadow:0 4px 10px rgba(10,5,5,.14), 0 16px 32px -8px rgba(10,5,5,.34);
+            transition:transform .18s ease, box-shadow .18s ease;
+        }
+        .stats-row .stat-card:hover {
+            transform:translateY(-2px);
+            box-shadow:0 6px 14px rgba(10,5,5,.18), 0 22px 40px -8px rgba(10,5,5,.4);
+        }
+        .stats-row .stat-top { flex:1; }
+        .stats-row .stat-icon { width:52px; height:52px; border-radius:13px; font-size:24px; flex-shrink:0; }
+        .stats-row .stat-lbl { font-size:13.5px; font-weight:700; color:#1a1a1a; margin-bottom:6px; letter-spacing:-.01em; }
+        .stat-unit { font-size:12px; font-weight:600; color:#aaa; vertical-align:middle; margin-left:2px; }
+        .stat-context {
+            font-size:10.5px; color:#999; margin-top:12px;
+            padding-top:10px; border-top:1px dashed #eee; line-height:1.4;
+        }
+        .stat-context strong { color:#1a1a1a; font-weight:700; }
+
         .filter-card {
             background: #fff;
             border-radius: 14px;
@@ -276,26 +300,50 @@
          SweetAlert popups via partials.alerts --}}
 
     <!-- Roster summary -->
+    @php
+        $activePct = $stats['total'] > 0 ? (int) round($stats['active'] / $stats['total'] * 100) : 0;
+        $atRiskPct = $stats['total'] > 0 ? (int) round($stats['at_risk'] / $stats['total'] * 100) : 0;
+        $readinessGap = $stats['average'] - 75;
+        $summaryCards = [
+            [
+                'value' => $stats['total'], 'unit' => 'Students', 'label' => 'Enrolled Students',
+                'tone' => 'si-blue', 'icon' => 'fa-user-graduate',
+                'context' => 'Across <strong>' . $years->count() . '</strong> year level' . ($years->count() === 1 ? '' : 's') . ' and <strong>' . $sections->count() . '</strong> section' . ($sections->count() === 1 ? '' : 's') . '.',
+            ],
+            [
+                'value' => $stats['active'], 'unit' => 'Active', 'label' => 'Active Accounts',
+                'tone' => 'si-green', 'icon' => 'fa-circle-check',
+                'context' => '<strong>' . $activePct . '%</strong> of enrolled students.',
+            ],
+            [
+                'value' => $stats['average'] . '%', 'unit' => 'Readiness', 'label' => 'Average Readiness',
+                'tone' => 'si-orange', 'icon' => 'fa-chart-line',
+                'context' => $readinessGap >= 0
+                    ? '<strong style="color:#059669;">+' . $readinessGap . ' pts</strong> above the 75% benchmark.'
+                    : '<strong style="color:var(--accent);">' . $readinessGap . ' pts</strong> below the 75% benchmark.',
+            ],
+            [
+                'value' => $stats['at_risk'], 'unit' => 'At Risk', 'label' => 'Need Intervention',
+                'tone' => 'si-red', 'icon' => 'fa-triangle-exclamation',
+                'context' => $stats['at_risk'] > 0
+                    ? '<strong style="color:var(--accent);">' . $atRiskPct . '%</strong> of enrolled students need support.'
+                    : '<strong style="color:#059669;">No students</strong> currently need intervention.',
+            ],
+        ];
+    @endphp
     <div class="stats-row">
-        @php
-            $summaryCards = [
-                ['value' => $stats['total'], 'label' => 'Enrolled Students', 'tone' => 'si-blue', 'icon' => 'fa-user-graduate'],
-                ['value' => $stats['active'], 'label' => 'Active Accounts', 'tone' => 'si-green', 'icon' => 'fa-circle-check'],
-                ['value' => $stats['average'].'%', 'label' => 'Average Readiness', 'tone' => 'si-orange', 'icon' => 'fa-chart-line'],
-                ['value' => $stats['at_risk'], 'label' => 'Need Intervention', 'tone' => 'si-red', 'icon' => 'fa-triangle-exclamation'],
-            ];
-        @endphp
         @foreach ($summaryCards as $card)
             <div class="stat-card">
                 <div class="stat-top">
                     <div>
-                        <div class="stat-num">{{ $card['value'] }}</div>
                         <div class="stat-lbl">{{ $card['label'] }}</div>
+                        <div class="stat-num">{{ $card['value'] }} <span class="stat-unit">{{ $card['unit'] }}</span></div>
                     </div>
                     <div class="stat-icon {{ $card['tone'] }}">
                         <i class="fas {{ $card['icon'] }}"></i>
                     </div>
                 </div>
+                <div class="stat-context">{!! $card['context'] !!}</div>
             </div>
         @endforeach
     </div>

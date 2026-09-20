@@ -8,7 +8,7 @@
     <!-- Google Fonts - Poppins -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
 
     <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -39,7 +39,7 @@
 
         body {
             font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #f6f7f9;
+            background: #f4f5f7;
             color: var(--ink);
         }
 
@@ -58,18 +58,30 @@
         }
 
         .page-title {
-            font-size: 28px;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 30px;
             font-weight: 700;
-            color: var(--ink);
+            color: #14283E;
             line-height: 1.2;
+            margin-bottom: 6px;
+            padding-bottom: 10px;
+            position: relative;
+        }
+
+        .page-title::after {
+            content: '';
+            position: absolute;
+            left: 0; bottom: 0;
+            width: 40px; height: 4px;
+            border-radius: 2px;
+            background: linear-gradient(90deg, #c0392b, #7B1D1D);
         }
 
         .page-title .spark { color: var(--accent-red); font-size: 20px; }
 
         .page-subtitle {
-            font-size: 13px;
-            color: var(--ink-3);
-            margin-top: 2px;
+            font-size: 14px;
+            color: #999;
         }
 
         .page-header-right {
@@ -90,8 +102,8 @@
         }
 
         .search-wrap input {
-            width: 300px;
-            padding: 10px 14px 10px 38px;
+            width: 280px;
+            padding: 10px 14px 10px 36px;
             border: 1px solid var(--line);
             border-radius: 24px;
             font-size: 13px;
@@ -109,35 +121,34 @@
             position: relative;
             width: 40px;
             height: 40px;
-            border: 1px solid var(--line);
+            border: none;
             background: white;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 15px;
-            color: var(--ink-2);
+            font-size: 17px;
+            color: #555;
             cursor: pointer;
-            box-shadow: var(--card-shadow);
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
             transition: background 0.2s;
         }
 
-        .notif-btn:hover { background: #f1f2f4; }
+        .notif-btn:hover { background: #f0f0f0; }
 
         .badge {
             position: absolute;
             top: -3px;
             right: -3px;
-            min-width: 17px;
-            height: 17px;
-            padding: 0 4px;
+            width: 18px;
+            height: 18px;
             background: var(--accent-red);
             color: white;
-            border-radius: 9px;
+            border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 9.5px;
+            font-size: 10px;
             font-weight: 700;
         }
 
@@ -146,13 +157,14 @@
             height: 40px;
             background: var(--primary);
             border: none;
-            border-radius: 50%;
+            border-radius: 10px;
             color: white;
             font-weight: 700;
             cursor: pointer;
-            font-size: 13px;
+            font-size: 14px;
             position: relative;
             font-family: 'Poppins', sans-serif;
+            transition: background 0.2s;
         }
 
         .profile-avatar:hover { background: var(--primary-hover); }
@@ -1221,7 +1233,7 @@
                     <div style="position: relative;">
                         <button class="profile-avatar" id="profileBtn">@include('partials.avatar-content')</button>
                         <div class="dropdown-menu" id="profileDropdown">
-                            <a href="{{ route('settings') }}"><i class="fas fa-user"></i> Profile Settings</a>
+                            <a href="#" class="js-open-profile-modal"><i class="fas fa-user"></i> Profile Settings</a>
                             <a href="{{ route('performance') }}"><i class="fas fa-chart-line"></i> My Progress</a>
                             <a href="{{ route('achievements') }}"><i class="fas fa-trophy"></i> Achievements</a>
                             <form method="POST" action="{{ route('logout') }}"

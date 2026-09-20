@@ -14,7 +14,7 @@
         .main { padding:26px 30px; }
         .wrap { max-width:560px; margin:0 auto; }
         .topbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
-        .page-title { font-size:24px; font-weight:700; color:#1a1a1a; }
+        .page-title { font-size:24px; font-weight:700; color:#14283E; }
         .page-sub { font-size:12px; color:#999; margin-top:2px; }
         .flash { background:#e8f7ee; color:#1e7e46; border:1px solid #bfead0; padding:11px 16px; border-radius:10px; font-size:13px; font-weight:500; margin-bottom:16px; display:flex; align-items:center; gap:9px; }
         .card { background:#fff; border-radius:16px; box-shadow:0 2px 10px rgba(0,0,0,.04); padding:22px; }

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Student;
 use App\Http\Controllers\Controller;
 use App\Models\FacultyQuiz;
 use App\Models\FacultyQuizAttempt;
+use App\Models\Subject;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -15,7 +16,12 @@ use Illuminate\Support\Facades\Auth;
  */
 class ClassQuizController extends Controller
 {
-    /** Every published quiz, with this student's attempt (if any) attached. */
+    /**
+     * Class list — one card per subject the student is enrolled in, whether
+     * or not a quiz has been posted there yet. There is no per-student
+     * enrolment table, so every active subject counts as "their class"; a
+     * subject with nothing posted still shows up, just empty.
+     */
     public function index()
     {
         $user = Auth::user();
@@ -24,28 +30,178 @@ class ClassQuizController extends Controller
         }
         abort_unless($user->isStudent(), 403);
 
-        $quizzes = FacultyQuiz::with(['subject', 'faculty:id,first_name,last_name'])
+        $quizzes = $this->visibleQuizzes()->get();
+        $attempts = $this->attemptsFor($user->id, $quizzes);
+        $bySubject = $quizzes->groupBy(fn (FacultyQuiz $quiz) => $quiz->subject_id ?? 'general');
+
+        $classes = Subject::where('is_active', true)
+            ->orderBy('id')
+            ->get()
+            ->map(fn (Subject $subject) => $this->classCard($subject, $bySubject->get($subject->id, collect()), $attempts));
+
+        // Quizzes posted with no subject at all still need a home.
+        if ($general = $bySubject->get('general')) {
+            $classes->push($this->classCard(null, $general, $attempts));
+        }
+
+        // Classes with quizzes posted come first (unfinished work floats to
+        // the very top of those), empty classes trail at the end.
+        $classes = $classes->sortBy([
+            ['total', 'desc'],
+            ['todo', 'desc'],
+            ['code', 'asc'],
+        ])->values();
+
+        return view('student.class-quizzes', compact('classes'));
+    }
+
+    /** One class-list card's worth of data for a subject (or "general"). */
+    private function classCard(?Subject $subject, $group, $attempts): array
+    {
+        $todo = $group->filter(fn ($quiz) => $quiz->isOpen() && ! $attempts->get($quiz->id)?->isSubmitted());
+        $faculty = $group->isNotEmpty()
+            ? $group->pluck('faculty')->filter()->unique('id')->values()
+            : ($subject?->faculty()->get() ?? collect());
+
+        return [
+            'key' => $subject?->id ?? 'general',
+            'code' => $subject?->code ?? 'General',
+            'name' => $subject?->name ?? 'Quizzes without a subject',
+            'icon' => self::SUBJECT_ICONS[strtoupper((string) $subject?->code)] ?? 'fa-layer-group',
+            'icon2' => self::SUBJECT_ICONS_2[strtoupper((string) $subject?->code)] ?? 'fa-shapes',
+            'theme' => self::theme($subject?->code),
+            'faculty' => $faculty,
+            'total' => $group->count(),
+            'done' => $group->filter(fn ($quiz) => $attempts->get($quiz->id)?->isSubmitted())->count(),
+            'todo' => $todo->count(),
+            // Headline on the card: the soonest deadline still waiting on them.
+            'next' => $todo->filter(fn ($quiz) => $quiz->due_at)->sortBy('due_at')->first() ?: $todo->first(),
+        ];
+    }
+
+    /** One class: every quiz posted in a single subject, Classroom-style. */
+    public function subject(string $subject)
+    {
+        $user = Auth::user();
+        if ($user->isFaculty()) {
+            return redirect()->route('faculty.quizzes');
+        }
+        abort_unless($user->isStudent(), 403);
+
+        $isGeneral = $subject === 'general';
+        $subjectModel = $isGeneral ? null : Subject::find($subject);
+        abort_if(! $isGeneral && ! $subjectModel, 404);
+
+        $quizzes = $this->visibleQuizzes()
+            ->when(
+                $isGeneral,
+                fn ($query) => $query->whereNull('subject_id'),
+                fn ($query) => $query->where('subject_id', $subjectModel->id)
+            )
+            ->get();
+
+        $attempts = $this->attemptsFor($user->id, $quizzes);
+        $quizzes = $this->todoFirst($quizzes, $attempts);
+
+        $faculty = $quizzes->isNotEmpty()
+            ? $quizzes->pluck('faculty')->filter()->unique('id')->values()
+            : ($subjectModel?->faculty()->get() ?? collect());
+
+        return view('student.class-quiz-subject', [
+            'subject' => $subjectModel,
+            'code' => $subjectModel?->code ?? 'General',
+            'name' => $subjectModel?->name ?? 'Quizzes without a subject',
+            'icon' => self::SUBJECT_ICONS[strtoupper((string) $subjectModel?->code)] ?? 'fa-layer-group',
+            'icon2' => self::SUBJECT_ICONS_2[strtoupper((string) $subjectModel?->code)] ?? 'fa-shapes',
+            'theme' => self::theme($subjectModel?->code),
+            'faculty' => $faculty,
+            'quizzes' => $quizzes,
+            'attempts' => $attempts,
+            'done' => $quizzes->filter(fn ($quiz) => $attempts->get($quiz->id)?->isSubmitted())->count(),
+        ]);
+    }
+
+    /** Published / closed quizzes, soonest deadline first. */
+    private function visibleQuizzes()
+    {
+        return FacultyQuiz::with(['subject', 'faculty:id,first_name,last_name,profile_photo'])
             ->withCount('items')
             ->whereIn('status', [FacultyQuiz::STATUS_PUBLISHED, FacultyQuiz::STATUS_CLOSED])
             ->orderByRaw('due_at IS NULL')
-            ->orderBy('due_at')
-            ->get();
+            ->orderBy('due_at');
+    }
 
-        $attempts = FacultyQuizAttempt::where('student_id', $user->id)
+    /** This student's attempts on the given quizzes, keyed by quiz id. */
+    private function attemptsFor(int $studentId, $quizzes)
+    {
+        return FacultyQuizAttempt::where('student_id', $studentId)
             ->whereIn('quiz_id', $quizzes->pluck('id'))
             ->get()
             ->keyBy('quiz_id');
+    }
 
-        // Open quizzes the student hasn't finished float to the top.
-        $quizzes = $quizzes->sortBy(function ($quiz) use ($attempts) {
-            $attempt = $attempts->get($quiz->id);
-            if ($quiz->isOpen() && ! ($attempt && $attempt->isSubmitted())) {
+    /** Open quizzes the student hasn't finished float to the top. */
+    private function todoFirst($quizzes, $attempts)
+    {
+        return $quizzes->sortBy(function (FacultyQuiz $quiz) use ($attempts) {
+            $submitted = (bool) $attempts->get($quiz->id)?->isSubmitted();
+            if ($quiz->isOpen() && ! $submitted) {
                 return 0;
             }
-            return $attempt && $attempt->isSubmitted() ? 1 : 2;
+            return $submitted ? 1 : 2;
         })->values();
+    }
 
-        return view('student.class-quizzes', compact('quizzes', 'attempts'));
+    /**
+     * Card colour per subject — the same palette already used on Quiz History
+     * and Adaptive Quizzes, so a subject reads as the same colour everywhere
+     * in the student side, not a different one invented for this page.
+     */
+    private const SUBJECT_COLORS = [
+        'FAR' => '#4A90E2', 'AFAR' => '#17A2B8', 'MS' => '#F39C12',
+        'TAX' => '#27AE60', 'AUD' => '#c0392b', 'RFBT' => '#9B59B6',
+    ];
+
+    /** Same icon each subject wears on Adaptive Quizzes — one identity per subject everywhere. */
+    private const SUBJECT_ICONS = [
+        'FAR' => 'fa-chart-line', 'AFAR' => 'fa-coins', 'MS' => 'fa-gears',
+        'TAX' => 'fa-file-invoice-dollar', 'AUD' => 'fa-magnifying-glass', 'RFBT' => 'fa-scale-balanced',
+    ];
+
+    /** A second, complementary icon for the little illustration cluster on each card. */
+    private const SUBJECT_ICONS_2 = [
+        'FAR' => 'fa-calculator', 'AFAR' => 'fa-file-invoice', 'MS' => 'fa-chart-pie',
+        'TAX' => 'fa-percent', 'AUD' => 'fa-clipboard-list', 'RFBT' => 'fa-book',
+    ];
+
+    /** [from, to] gradient stops for a subject's banner: its exact brand
+     *  colour, deepened for the second stop so the banner still has depth. */
+    private static function theme(?string $code): array
+    {
+        $base = self::SUBJECT_COLORS[strtoupper((string) $code)] ?? '#7B1D1D';
+
+        return [
+            'base' => $base,
+            'dark' => self::darken($base, 0.32),
+            'pastel' => self::tint($base, 0.88),
+            'soft' => self::tint($base, 0.72),
+        ];
+    }
+
+    /** Darken a #rrggbb colour by the given fraction (0–1) toward black. */
+    private static function darken(string $hex, float $amount): string
+    {
+        [$r, $g, $b] = sscanf($hex, '#%02x%02x%02x');
+
+        return sprintf('#%02x%02x%02x', $r * (1 - $amount), $g * (1 - $amount), $b * (1 - $amount));
+    }
+
+    /** Lighten a #rrggbb colour toward white — the pastel card background. */
+    private static function tint(string $hex, float $amount): string
+    {
+        [$r, $g, $b] = sscanf($hex, '#%02x%02x%02x');
+
+        return sprintf('#%02x%02x%02x', $r + (255 - $r) * $amount, $g + (255 - $g) * $amount, $b + (255 - $b) * $amount);
     }
 
     /** Quiz landing page: what it is, when it's due, and the Start button. */

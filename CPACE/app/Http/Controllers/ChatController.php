@@ -45,6 +45,9 @@ class ChatController extends Controller
         $conversations = $user->conversations()
             ->with(['latestMessage.sender', 'participants'])
             ->get()
+            // Hide empty threads from the list — except the one you're currently
+            // looking at, so starting a new chat doesn't vanish before you send anything.
+            ->filter(fn (Conversation $c) => $c->latestMessage !== null || $active?->id === $c->id)
             ->sortByDesc(fn (Conversation $c) => $c->latestMessage?->created_at ?? $c->created_at)
             ->values();
 
@@ -52,8 +55,44 @@ class ChatController extends Controller
             ? $active->messages()->with('sender')->get()
             : collect();
 
+        $otherUser = null;
+        $sharedMedia = collect();
+        $sharedFiles = collect();
+        $sharedLinks = collect();
+
         if ($active) {
             $active->load(['participants.role']);
+
+            if ($active->type === 'direct') {
+                $otherUser = $active->participants->firstWhere('id', '!=', $user->id);
+            }
+
+            $attachments = $active->messages()
+                ->whereNotNull('file_path')
+                ->latest()
+                ->limit(60)
+                ->get();
+
+            $sharedMedia = $attachments->where('file_category', 'image')->values();
+            $sharedFiles = $attachments->where('file_category', '!=', 'image')->values();
+
+            $sharedLinks = $active->messages()
+                ->where('body', 'like', '%http%')
+                ->latest()
+                ->limit(50)
+                ->get()
+                ->flatMap(function (Message $m) {
+                    preg_match_all('/https?:\/\/[^\s<>"]+/i', $m->body, $matches);
+
+                    return collect($matches[0])->map(fn ($url) => [
+                        'url' => $url,
+                        'host' => parse_url($url, PHP_URL_HOST) ?: $url,
+                        'created_at' => $m->created_at,
+                    ]);
+                })
+                ->unique('url')
+                ->values()
+                ->take(20);
         }
 
         // Anyone active except the current user — used by the "New Message" picker.
@@ -87,7 +126,32 @@ class ChatController extends Controller
             'groupCandidates' => $groupCandidates,
             'addableCandidates' => $addableCandidates,
             'unreadNotifications' => $unreadNotifications,
+            'otherUser' => $otherUser,
+            'sharedMedia' => $sharedMedia,
+            'sharedFiles' => $sharedFiles,
+            'sharedLinks' => $sharedLinks,
+            'presence' => $otherUser ? $this->presenceLabel($otherUser) : null,
         ]);
+    }
+
+    /**
+     * "Active now" / "Active X ago" based on last_login_at — there's no live
+     * presence tracking, so this is a best-effort heuristic like most chat
+     * apps show when they don't have a websocket presence channel.
+     */
+    private function presenceLabel(User $user): string
+    {
+        if (! $user->last_login_at) {
+            return 'Offline';
+        }
+
+        $minutes = $user->last_login_at->diffInMinutes(now());
+
+        if ($minutes <= 5) {
+            return 'Active now';
+        }
+
+        return 'Active ' . $user->last_login_at->diffForHumans(null, true) . ' ago';
     }
 
     /**

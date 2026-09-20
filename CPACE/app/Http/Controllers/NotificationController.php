@@ -18,7 +18,13 @@ class NotificationController extends Controller
             ->leftJoin('users as senders', 'senders.id', '=', 'notifications.sender_id')
             ->where('notifications.recipient_id', Auth::id())
             ->orderByDesc('notifications.created_at')
-            ->select('notifications.*', 'senders.first_name as sender_first_name', 'senders.last_name as sender_last_name')
+            ->select(
+                'notifications.*',
+                'senders.first_name as sender_first_name',
+                'senders.last_name as sender_last_name',
+                'senders.profile_photo as sender_photo',
+                'senders.avatar_color as sender_avatar_color'
+            )
             ->paginate(15);
 
         return view('notifications.index', compact('notifications', 'unreadCount'));

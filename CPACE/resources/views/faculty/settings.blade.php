@@ -29,11 +29,23 @@
 
         .topbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; gap:16px; position:relative; z-index:50; }
         .topbar-left { display:flex; align-items:center; gap:12px; }
-        .page-title { font-size:26px; font-weight:700; color:#1a1a1a; }
+        .page-title { font-size:26px; font-weight:700; color:#14283E; }
         .page-sub { font-size:12px; color:#999; margin-top:2px; }
         .topbar-right { display:flex; align-items:center; gap:12px; }
 
-        .settings-wrap { max-width: 760px; }
+        .settings-wrap {
+            max-width: 1240px;
+            display: grid;
+            grid-template-columns: 1.6fr 1fr;
+            align-items: start;
+            gap: 20px;
+        }
+        .settings-wrap > .alert-status { grid-column: 1 / -1; }
+        .settings-col { display: flex; flex-direction: column; min-width: 0; }
+
+        @media (max-width: 980px) {
+            .settings-wrap { grid-template-columns: 1fr; max-width: 760px; }
+        }
 
         .alert-status {
             display: flex; align-items: center; gap: 10px;
@@ -57,6 +69,28 @@
         .info-row:last-child { border-bottom: none; }
         .info-row .k { color: var(--gray-500); }
         .info-row .v { color: var(--gray-900); font-weight: 500; }
+
+        /* ─── ACCOUNT PROFILE HEADER (avatar, same as the student side) ─── */
+        .account-head { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+        .account-avatar {
+            width: 64px; height: 64px; border-radius: 16px;
+            background: var(--primary); color: #fff;
+            font-weight: 700; font-size: 22px;
+            display: flex; align-items: center; justify-content: center;
+            position: relative; overflow: hidden; flex-shrink: 0;
+            box-shadow: 0 4px 14px rgba(123,29,29,0.25);
+        }
+        .account-avatar img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
+        .account-info { flex: 1; min-width: 160px; }
+        .account-name { font-size: 17px; font-weight: 700; color: var(--gray-900); line-height: 1.3; }
+        .account-email { font-size: 12.5px; color: var(--gray-500); margin-top: 2px; }
+        .role-badge {
+            display: inline-flex; align-items: center; gap: 5px;
+            margin-top: 8px; padding: 3px 10px; border-radius: 20px;
+            background: var(--primary-light); color: var(--primary);
+            font-size: 11px; font-weight: 600; letter-spacing: 0.2px;
+        }
+        .role-badge i { font-size: 9px; }
 
         .btn { display:inline-flex; align-items:center; gap:7px; padding:9px 18px; border-radius:8px; font-size:13px; font-weight:600; font-family:'Poppins',sans-serif; cursor:pointer; border:none; text-decoration:none; transition:all .2s; }
         .btn-primary { background:var(--primary); color:white; }
@@ -104,6 +138,8 @@
             <div class="alert-status"><i class="fas fa-check-circle"></i> {{ session('status') }}</div>
         @endif
 
+        <div class="settings-col">
+
         <!-- ACCOUNT -->
         <div class="settings-card">
             <div class="settings-card-head">
@@ -116,13 +152,15 @@
 
             <div class="settings-divider"></div>
 
-            <div class="info-row"><span class="k">Name</span><span class="v">{{ Auth::user()->name }}</span></div>
-            <div class="info-row"><span class="k">Email</span><span class="v">{{ Auth::user()->email }}</span></div>
-            <div class="info-row"><span class="k">Role</span><span class="v">Faculty</span></div>
-
-            <div class="settings-divider"></div>
-
-            <button type="button" class="btn btn-outline" id="settingsEditProfileBtn"><i class="fas fa-pen"></i> Edit name, email &amp; photo</button>
+            <div class="account-head">
+                <div class="account-avatar">@include('partials.avatar-content')</div>
+                <div class="account-info">
+                    <div class="account-name">{{ Auth::user()->name }}</div>
+                    <div class="account-email">{{ Auth::user()->email }}</div>
+                    <span class="role-badge"><i class="fas fa-circle"></i> Faculty</span>
+                </div>
+                <button type="button" class="btn btn-outline" id="settingsEditProfileBtn"><i class="fas fa-pen"></i> Edit</button>
+            </div>
         </div>
 
         <!-- EMPLOYEE DETAILS -->
@@ -152,6 +190,10 @@
                 <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Details</button>
             </form>
         </div>
+
+        </div>
+
+        <div class="settings-col">
 
         <!-- PASSWORD -->
         <div class="settings-card">
@@ -183,6 +225,8 @@
                 </div>
                 <button type="submit" class="btn btn-primary"><i class="fas fa-key"></i> Change Password</button>
             </form>
+        </div>
+
         </div>
 
     </div>

@@ -8,7 +8,7 @@
     <!-- Google Fonts - Poppins -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
 
     <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -178,54 +178,67 @@
         }
 
         .header-left { flex: 1; display: flex; align-items: center; gap: 20px; }
-        .header-title { font-size: 28px; font-weight: 700; color: var(--ink); font-family: 'Poppins', sans-serif; }
-        .header-subtitle { color: var(--muted); font-size: 14px; margin-top: 2px; }
+        .header-title {
+            font-size: 30px; font-weight: 700; color: #14283E; font-family: 'Montserrat', sans-serif;
+            margin-bottom: 6px; padding-bottom: 10px; position: relative;
+        }
+        .header-title::after {
+            content: ''; position: absolute; left: 0; bottom: 0;
+            width: 40px; height: 4px; border-radius: 2px;
+            background: linear-gradient(90deg, #c0392b, #7B1D1D);
+        }
+        .header-subtitle { color: #999; font-size: 14px; }
         .header-right { display: flex; align-items: center; gap: 20px; }
 
-        .search-box { flex: 0 1 300px; }
+        .search-box { position: relative; }
+        .search-box i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #aaa; font-size: 14px; }
         .search-box input {
-            width: 100%;
-            padding: 10px 15px;
-            border: 1px solid var(--line);
-            border-radius: 8px;
+            width: 280px;
+            padding: 10px 14px 10px 36px;
+            border: 1px solid #e0e0e0;
+            border-radius: 24px;
             font-size: 13px;
             background: white;
-            color: #666;
+            color: #555;
             font-family: 'Poppins', sans-serif;
+            outline: none;
         }
+        .search-box input:focus { border-color: #7B1D1D; }
+        .search-box input::placeholder { color: #bbb; }
 
-        .header-icons { display: flex; gap: 15px; align-items: center; }
+        .header-icons { display: flex; gap: 14px; align-items: center; }
         .icon-btn {
             width: 40px;
             height: 40px;
             border: none;
             background: white;
-            border-radius: 8px;
+            border-radius: 50%;
             cursor: pointer;
-            font-size: 18px;
+            font-size: 17px;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.3s;
+            transition: background 0.2s;
             position: relative;
-            color: #7B1D1D;
+            color: #555;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
         }
         .icon-btn:hover { background: #f0f0f0; }
 
         .badge {
             position: absolute;
-            top: -5px;
-            right: -5px;
-            width: 20px;
-            height: 20px;
+            top: -3px;
+            right: -3px;
+            width: 18px;
+            height: 18px;
             background: #c0392b;
             color: white;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 11px;
-            font-weight: 600;
+            font-size: 10px;
+            font-weight: 700;
         }
 
         .profile-avatar {
@@ -233,13 +246,14 @@
             height: 40px;
             background: #7B1D1D;
             border: none;
-            border-radius: 8px;
+            border-radius: 10px;
             color: white;
-            font-weight: 600;
+            font-weight: 700;
             cursor: pointer;
             font-size: 14px;
             position: relative;
             font-family: 'Poppins', sans-serif;
+            transition: background 0.2s;
         }
         .profile-avatar:hover { background: #6a1818; }
 
@@ -1074,6 +1088,7 @@
                 </div>
                 <div class="header-right">
                     <div class="search-box gs-wrap">
+                        <i class="fas fa-search"></i>
                         <input type="text" data-gs="true" placeholder="Search topics, questions...">
                     </div>
                     <div class="header-icons">
@@ -1088,7 +1103,7 @@
                         <div class="header-dropdown-wrap">
                             <button class="profile-avatar" id="profileBtn">@include('partials.avatar-content')</button>
                             <div class="dropdown-menu" id="profileDropdown">
-                                <a href="#"><i class="fas fa-user"></i> Profile Settings</a>
+                                <a href="#" class="js-open-profile-modal"><i class="fas fa-user"></i> Profile Settings</a>
                                 <a href="#"><i class="fas fa-chart-line"></i> My Progress</a>
                                 <a href="#"><i class="fas fa-question-circle"></i> Help &amp; Support</a>
                                 <form method="POST" action="{{ route('logout') }}"

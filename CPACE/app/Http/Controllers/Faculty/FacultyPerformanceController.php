@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Mail\StudentReminderMail;
 use App\Models\Role;
 use App\Models\Subject;
+use App\Services\BrandedXlsxReport;
 use App\Services\WeaknessDetector;
 use App\Support\FacultySectionScope;
 use Illuminate\Http\Request;
@@ -83,17 +84,34 @@ class FacultyPerformanceController extends Controller
             'last'    => $lastPage,
         ];
 
+        $distribution = $this->scoreDistribution($rows);
+        $weakTopics   = $this->classWeakTopics($filters);
+        $trendCounts  = [
+            'up'   => $rows->where('trend', 'up')->count(),
+            'down' => $rows->where('trend', 'down')->count(),
+            'flat' => $rows->where('trend', 'flat')->count(),
+        ];
+        // Board-readiness pass rate: same 75% threshold used everywhere else
+        // in CPALE analytics (quiz results, faculty dashboard benchmark).
+        $passRate = $withAttempts->count() > 0
+            ? (int) round($withAttempts->where('score', '>=', 75)->count() / $withAttempts->count() * 100)
+            : null;
+
         $data = [
             'stats'        => $stats,
             'students'     => $pageRows,
             'details'      => $details,
             'pagination'   => $pagination,
             'atRisk'       => $rows->where('at_risk', true)->sortBy('score')->take(5)->values(),
-            'weakTopics'   => $this->classWeakTopics($filters),
-            'distribution' => $this->scoreDistribution($rows),
+            'weakTopics'   => $weakTopics,
+            'distribution' => $distribution,
             'subjects'     => $this->subjectsFor(Auth::user())->orderBy('id')->get(),
             'filters'      => $filters,
             'activeQuery'  => $this->activeQuery($filters),
+            'weeklyTrend'  => $this->weeklyAccuracyTrend($filters['subject_ids']),
+            'passRate'     => $passRate,
+            'trendCounts'  => $trendCounts,
+            'insights'     => $this->buildPerformanceInsights($stats, $trendCounts, $passRate, $weakTopics, $distribution),
         ];
 
         // Live search / sort / filter / pagination only need the data area,
@@ -560,7 +578,134 @@ class FacultyPerformanceController extends Controller
     }
 
     /**
-     * Export the currently filtered student list as a CSV (opens in Excel).
+     * Last 8 calendar weeks of class accuracy + active-student count, honouring
+     * the subject filter (but not the period filter, so the trend line always
+     * shows real week-over-week movement regardless of the table's window).
+     */
+    private function weeklyAccuracyTrend(?array $subjectIds)
+    {
+        $now = Carbon::now();
+
+        return collect(range(7, 0))->map(function (int $i) use ($subjectIds, $now) {
+            $start = $now->copy()->subWeeks($i)->startOfWeek();
+            $end   = $start->copy()->endOfWeek();
+
+            $row = DB::table('quiz_sessions')
+                ->where('session_type', '!=', 'training')->where('is_practice_room', false)
+                ->whereNotNull('completed_at')
+                ->whereBetween('completed_at', [$start, $end])
+                ->when($subjectIds !== null, fn ($q) => $q->whereIn('subject_id', $subjectIds))
+                ->select(
+                    DB::raw('COUNT(DISTINCT student_id) as active_students'),
+                    DB::raw('COALESCE(SUM(total_items),0) as attempted'),
+                    DB::raw('COALESCE(SUM(correct_answers),0) as correct')
+                )
+                ->first();
+
+            $attempted = (int) ($row->attempted ?? 0);
+
+            return [
+                'label'           => $start->format('M j'),
+                'active_students' => (int) ($row->active_students ?? 0),
+                'accuracy'        => $attempted > 0 ? (int) round(((int) $row->correct) / $attempted * 100) : null,
+            ];
+        })->values();
+    }
+
+    /**
+     * Turn the headline numbers into short, decision-oriented takeaways for
+     * the performance dashboard — same tone/icon/title/text shape as the
+     * faculty dashboard's insight cards, so it reads as the same feature.
+     */
+    private function buildPerformanceInsights(array $stats, array $trendCounts, ?int $passRate, $weakTopics, array $distribution): array
+    {
+        $insights = [];
+
+        if ($stats['active'] === 0) {
+            return $insights;
+        }
+
+        // Board-readiness pass rate vs the 75% benchmark.
+        if ($passRate !== null) {
+            if ($passRate >= 75) {
+                $insights[] = [
+                    'tone' => 'good', 'icon' => 'fa-check-circle',
+                    'title' => 'Class is board-ready',
+                    'text' => "{$passRate}% of active students are averaging 75% or higher — the section is tracking well against the readiness benchmark.",
+                ];
+            } elseif ($passRate < 40) {
+                $insights[] = [
+                    'tone' => 'crit', 'icon' => 'fa-triangle-exclamation',
+                    'title' => 'Most students are below benchmark',
+                    'text' => "Only {$passRate}% are averaging 75% or higher. Consider a full-class review before the next mock exam.",
+                ];
+            } else {
+                $insights[] = [
+                    'tone' => 'warn', 'icon' => 'fa-scale-unbalanced',
+                    'title' => 'Readiness is mixed',
+                    'text' => "{$passRate}% are averaging 75% or higher — worth splitting review time between reinforcing strong students and supporting the rest.",
+                ];
+            }
+        }
+
+        // At-risk headcount — actionable via the Send Reminder button right on this page.
+        if ($stats['at_risk'] > 0) {
+            $insights[] = [
+                'tone' => 'crit', 'icon' => 'fa-user-clock',
+                'title' => $stats['at_risk'] . ' student' . ($stats['at_risk'] === 1 ? '' : 's') . ' at risk',
+                'text' => 'Averaging below the at-risk threshold with enough attempts to be measured. Use "Send Reminder to All" in the panel on the right.',
+            ];
+        }
+
+        // Momentum: are more students trending up or down this week?
+        $up = $trendCounts['up'];
+        $down = $trendCounts['down'];
+        if ($up + $down > 0) {
+            if ($up > $down) {
+                $insights[] = [
+                    'tone' => 'good', 'icon' => 'fa-arrow-trend-up',
+                    'title' => 'Momentum is positive',
+                    'text' => "{$up} student" . ($up === 1 ? ' is' : 's are') . ' trending up this week, versus ' . $down . ' trending down.',
+                ];
+            } elseif ($down > $up) {
+                $insights[] = [
+                    'tone' => 'warn', 'icon' => 'fa-arrow-trend-down',
+                    'title' => 'More students are slipping than improving',
+                    'text' => "{$down} student" . ($down === 1 ? ' is' : 's are') . ' trending down this week, versus ' . $up . ' trending up — worth a closer look at what changed.',
+                ];
+            }
+        }
+
+        // Weakest class topic, from the same data behind the side panel.
+        if ($weakTopics->isNotEmpty()) {
+            $worst = $weakTopics->first();
+            $insights[] = [
+                'tone' => $worst->accuracy < 50 ? 'crit' : 'warn', 'icon' => 'fa-magnifying-glass-chart',
+                'title' => "{$worst->topic} is the class's weakest topic",
+                'text' => "Only {$worst->accuracy}% class-wide accuracy ({$worst->subject_code}) — a good candidate for a class quiz or a Test Bank refresh.",
+            ];
+        }
+
+        // Score distribution skew.
+        if ($distribution['total'] > 0) {
+            $below60 = collect($distribution['bands'])->firstWhere('label', 'Below 60%');
+            if ($below60 && $below60['pct'] >= 40) {
+                $insights[] = [
+                    'tone' => 'crit', 'icon' => 'fa-chart-column',
+                    'title' => 'Scores are skewing low',
+                    'text' => "{$below60['pct']}% of students are scoring below 60% in this view — the material may need reteaching rather than one-on-one support.",
+                ];
+            }
+        }
+
+        return $insights;
+    }
+
+    /**
+     * Download the currently filtered student list as a designed .xlsx — a
+     * maroon CPACE title banner, a summary strip of the headline numbers,
+     * and a styled, bordered roster table, matching the Reports page's
+     * export so every faculty-side export reads as the same product.
      */
     public function export(Request $request)
     {
@@ -575,34 +720,51 @@ class FacultyPerformanceController extends Controller
         }
         $rows = $this->sortRows($rows, $filters['sort']);
 
-        $filename = 'student-performance-' . now()->format('Y-m-d_His') . '.csv';
-        $headers = [
-            'Content-Type'        => 'text/csv; charset=UTF-8',
-            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
-        ];
+        $withAttempts = $rows->where('attempted', '>', 0);
+        $periodLabel = match ($filters['period']) {
+            '7' => 'Last 7 Days', '90' => 'Last 3 Months', 'all' => 'All Time', default => 'Last 30 Days',
+        };
+        $subjectLabel = $filters['subject']
+            ? (Subject::find($filters['subject'])?->code ?? 'Selected Subject')
+            : 'All Subjects';
 
-        return response()->stream(function () use ($rows) {
-            $out = fopen('php://output', 'w');
-            fwrite($out, "\xEF\xBB\xBF"); // UTF-8 BOM
+        $filename = 'cpace-student-performance-' . now()->format('Y-m-d_His') . '.xlsx';
 
-            fputcsv($out, ['Student', 'Email', 'Avg Score (%)', 'Questions Attempted', 'Quizzes', 'Subjects Covered', 'Trend', 'At Risk', 'Last Active']);
+        $report = new BrandedXlsxReport('Student Performance');
+        $sheet = $report->sheet('Student Performance');
 
-            foreach ($rows as $r) {
-                fputcsv($out, [
-                    $r['name'],
-                    $r['email'],
-                    $r['score'],
-                    $r['attempted'],
-                    $r['quizzes'],
-                    implode(' / ', $r['subjects']),
-                    ucfirst($r['trend']),
-                    $r['at_risk'] ? 'Yes' : 'No',
-                    $r['last_active'] ? Carbon::parse($r['last_active'])->format('Y-m-d H:i') : '',
-                ]);
-            }
+        $row = $report->writeBanner($sheet, 'Student Performance Report', [
+            'Generated ' . now()->format('F j, Y \a\t g:i A') . ' by ' . Auth::user()->name,
+            'Scope: ' . $subjectLabel . ' · ' . $periodLabel,
+        ], 9);
 
-            fclose($out);
-        }, 200, $headers);
+        $row = $report->writeSummaryStrip($sheet, $row, [
+            'Students' => $rows->count(),
+            'Avg. Score' => ($withAttempts->count() ? (int) round($withAttempts->avg('score')) : 0) . '%',
+            'At Risk' => $rows->where('at_risk', true)->count(),
+            'Top Score' => ($withAttempts->count() ? (int) $withAttempts->max('score') : 0) . '%',
+        ]);
+
+        $tableRows = $rows->map(fn ($r) => [
+            $r['name'],
+            $r['email'],
+            $r['score'] . '%',
+            $r['attempted'],
+            $r['quizzes'],
+            implode(' / ', $r['subjects']),
+            ucfirst($r['trend']),
+            $r['at_risk'] ? 'Yes' : 'No',
+            $r['last_active'] ? Carbon::parse($r['last_active'])->format('Y-m-d H:i') : '—',
+        ])->all();
+
+        $report->writeTable(
+            $sheet, $row,
+            ['Student', 'Email', 'Avg Score', 'Questions Attempted', 'Quizzes', 'Subjects Covered', 'Trend', 'At Risk', 'Last Active'],
+            $tableRows,
+            [1 => 22, 2 => 28, 3 => 11, 4 => 14, 5 => 10, 6 => 20, 7 => 10, 8 => 9, 9 => 18]
+        );
+
+        return $report->download($filename);
     }
 
     /**

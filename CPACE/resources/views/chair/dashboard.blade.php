@@ -9,6 +9,75 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     @include('partials.chart-kit')
     <style>
+        /* ── Elevated cards — a real dark-tinted shadow (not just a hairline
+           border) so every card on this dashboard reads as a raised surface
+           and stands out from the page background, matching the faculty
+           dashboard's card treatment. Scoped to this page like every other
+           analytics-heavy dashboard in the app (Test Bank, Performance,
+           Quiz Results all do the same) rather than the shared chair
+           sidebar partial, so other Program Chair pages are unaffected. */
+        .card, .stat-card, .viz-card, .roster-modal {
+            box-shadow:0 2px 6px rgba(15,10,10,.08), 0 10px 22px -10px rgba(15,10,10,.22);
+        }
+        .viz-card { border-color:transparent; }
+        /* .viz-sub is normally scoped to .viz-card (chart-kit.blade.php) — the
+           Faculty Workload card reuses the same caption style but lives in a
+           plain .card, so it needs its own copy of the same small, muted
+           look instead of falling back to unstyled body text. */
+        .card .viz-sub { font-size:10.5px; color:#999; margin-bottom:14px; line-height:1.5; }
+        .card, .stat-card { transition:transform .18s ease, box-shadow .18s ease; }
+        .card:hover, .stat-card:hover {
+            transform:translateY(-2px);
+            box-shadow:0 4px 10px rgba(15,10,10,.1), 0 16px 30px -10px rgba(15,10,10,.3);
+        }
+
+        /* KPI cards get an even darker, more pronounced shadow than the rest
+           of the page's cards so they read as the headline row and visibly
+           pop off the background. */
+        .stats-row .stat-card {
+            box-shadow:0 4px 10px rgba(10,5,5,.14), 0 16px 32px -8px rgba(10,5,5,.34);
+        }
+        .stats-row .stat-card:hover {
+            box-shadow:0 6px 14px rgba(10,5,5,.18), 0 22px 40px -8px rgba(10,5,5,.4);
+        }
+
+        /* ── KPI cards — bolder, darker titles (was a faint 11px gray label)
+           and an inline unit next to the number so a bare count like "6"
+           reads as "6 Subjects" at a glance, matching the faculty
+           dashboard's KPI card treatment. ── */
+        .stats-row .stat-card { display:flex; flex-direction:column; height:100%; }
+        .stats-row .stat-top { flex:1; }
+        .stats-row .stat-icon { width:52px; height:52px; border-radius:13px; font-size:24px; flex-shrink:0; }
+        .stats-row .stat-lbl { font-size:13.5px; font-weight:700; color:#1a1a1a; margin-bottom:6px; letter-spacing:-.01em; }
+        .stat-unit { font-size:12px; font-weight:600; color:#aaa; vertical-align:middle; margin-left:2px; }
+        .stat-context {
+            font-size:10.5px; color:#999; margin-top:12px;
+            padding-top:10px; border-top:1px dashed #eee; line-height:1.4;
+        }
+        .stat-context strong { color:#1a1a1a; font-weight:700; }
+
+        /* ── KPI comparison badges ── */
+        .stat-delta { display:inline-flex; align-items:center; gap:4px; font-size:10.5px; font-weight:700; margin-top:6px; }
+        .stat-delta.up { color:#047857; }
+        .stat-delta.down { color:#b91c1c; }
+        .stat-delta.flat { color:#999; }
+        .stat-delta-note { font-size:9.5px; color:#bbb; font-weight:500; margin-left:2px; }
+
+        /* ── Faculty workload table ── */
+        .workload-table { width:100%; border-collapse:collapse; }
+        .workload-table th { text-align:left; color:#aaa; font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.4px; padding:0 10px 10px; }
+        .workload-table td { padding:11px 10px; border-top:1px solid #f5f5f5; font-size:13px; vertical-align:middle; }
+        .workload-table td:not(:first-child), .workload-table th:not(:first-child) { text-align:center; }
+        .workload-name { font-weight:600; color:#1a1a1a; }
+        .workload-email { font-size:10.5px; color:#999; }
+        .workload-metric { font-weight:700; color:#1b1b1b; }
+        .workload-flag { display:inline-flex; align-items:center; gap:5px; padding:3px 10px; border-radius:20px; font-size:10px; font-weight:700; }
+        .workload-flag.unassigned { background:#f3f4f6; color:#6b7280; }
+        .workload-flag.overloaded { background:#fef3c7; color:#b45309; }
+        .workload-flag.idle { background:#fde8e8; color:#b91c1c; }
+        .workload-flag.ok { background:#d1fae5; color:#059669; }
+        .workload-empty { padding:20px 10px 6px; text-align:center; color:#999; font-size:12px; }
+
         .health-grid { display:grid; grid-template-columns:minmax(0,1.6fr) minmax(0,1fr) minmax(0,1fr); gap:18px; margin-bottom:18px; }
         @media (max-width: 1200px) { .health-grid { grid-template-columns:1fr 1fr; } .health-grid > :first-child { grid-column:1 / -1; } }
         @media (max-width: 760px) { .health-grid { grid-template-columns:1fr; } }
@@ -42,6 +111,18 @@
         .risk-head { color:#aaa; font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.4px; padding-top:0; border-top:0; }
         .risk-empty { padding:24px 10px 8px; text-align:center; color:#999; font-size:12px; }
         .risk-empty i { color:var(--green); margin-right:6px; }
+
+        /* ── Lightweight client-side pagination for the At-Risk list — all
+           rows already render server-side, JS just shows/hides a page at a
+           time so a long alert list doesn't stretch the whole dashboard. ── */
+        .mini-pagination { display:flex; justify-content:space-between; align-items:center; padding:14px 10px 2px; border-top:1px solid #f5f5f5; margin-top:6px; }
+        .mini-pag-info { font-size:11.5px; color:#999; }
+        .mini-pag-btns { display:flex; gap:5px; }
+        .mini-pag-btn { min-width:28px; height:28px; padding:0 7px; border:1px solid #e5e5e5; background:#fff; border-radius:7px; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:12px; color:#555; transition:all .15s; font-family:'Poppins',sans-serif; }
+        .mini-pag-btn.active { background:var(--primary); color:#fff; border-color:var(--primary); }
+        .mini-pag-btn:hover:not(.active):not(:disabled) { background:#f5f5f5; }
+        .mini-pag-btn:disabled { opacity:.4; cursor:not-allowed; }
+        @media (max-width:620px) { .mini-pagination { flex-direction:column; gap:8px; align-items:flex-start; } }
         .action-list { display:flex; flex-direction:column; gap:10px; }
         .action-row { display:flex; gap:12px; padding:12px 10px; border-top:1px solid #f5f5f5; }
         .action-row:first-child { border-top:0; }
@@ -59,13 +140,18 @@
         .analytics-title { font-size:14px; font-weight:700; color:#222; }
         .analytics-sub { font-size:10.5px; color:#999; margin-top:2px; }
         .analytics-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; }
-        .analytics-card { display:block; background:#fff; border:1px solid #eee; border-radius:12px; padding:15px; text-decoration:none; transition:.18s ease; }
-        .analytics-card:hover { transform:translateY(-2px); border-color:#ddd; box-shadow:0 8px 22px rgba(0,0,0,.06); }
+        .analytics-card {
+            display:block; background:#fff; border:1px solid transparent; border-radius:12px; padding:15px; text-decoration:none; transition:.18s ease;
+            box-shadow:0 2px 6px rgba(15,10,10,.08), 0 10px 22px -10px rgba(15,10,10,.22);
+        }
+        .analytics-card:hover { transform:translateY(-2px); box-shadow:0 4px 10px rgba(15,10,10,.1), 0 16px 30px -10px rgba(15,10,10,.3); }
         .analytics-card-top { display:flex; align-items:center; justify-content:space-between; gap:8px; }
-        .analytics-card-label { color:#777; font-size:10.5px; font-weight:600; }
+        /* Same type scale as the KPI row above (.stat-lbl / .stat-num) so the
+           two card families read as one consistent system, not two. */
+        .analytics-card-label { color:#777; font-size:11px; font-weight:600; }
         .analytics-card-icon { width:30px; height:30px; border-radius:9px; display:grid; place-items:center; background:#fef2f2; color:var(--accent); }
-        .analytics-card-value { margin-top:10px; font-size:23px; line-height:1; font-weight:700; color:#1b1b1b; }
-        .analytics-card-note { margin-top:7px; font-size:9.5px; color:#aaa; min-height:14px; }
+        .analytics-card-value { margin-top:10px; font-size:28px; line-height:1; font-weight:700; color:#1b1b1b; }
+        .analytics-card-note { margin-top:7px; font-size:10.5px; color:#aaa; min-height:14px; }
         .trend-up { color:#047857; } .trend-down { color:#b91c1c; }
         .section-table-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; }
         .section-table { width:100%; border-collapse:collapse; min-width:560px; }
@@ -134,29 +220,66 @@
 
     {{-- Flash messages surface as SweetAlert popups via partials.alerts --}}
 
+    @php
+        // A stat where "up" is good (faculty, subjects, coverage) vs where
+        // "up" is bad (unassigned) need opposite coloring for the same sign.
+        $deltaClass = fn ($delta, $goodWhenUp = true) => $delta === 0 ? 'flat' : (($delta > 0) === $goodWhenUp ? 'up' : 'down');
+        $deltaText = fn ($delta) => $delta === 0 ? 'No change' : (($delta > 0 ? '+' : '') . $delta);
+        $coveragePct = $stats['subjects'] > 0 ? (int) round($stats['assigned'] / $stats['subjects'] * 100) : 0;
+    @endphp
     <div class="stats-row">
         <div class="stat-card">
             <div class="stat-top">
-                <div><div class="stat-lbl">Faculty Members</div><div class="stat-num">{{ $stats['faculty'] }}</div></div>
+                <div>
+                    <div class="stat-lbl">Faculty Members</div>
+                    <div class="stat-num">{{ $stats['faculty'] }} <span class="stat-unit">Faculty</span></div>
+                    <div class="stat-delta {{ $deltaClass($kpiDeltas['faculty']) }}">
+                        <i class="fas {{ $kpiDeltas['faculty'] > 0 ? 'fa-arrow-up' : ($kpiDeltas['faculty'] < 0 ? 'fa-arrow-down' : 'fa-minus') }}"></i>
+                        {{ $deltaText($kpiDeltas['faculty']) }}<span class="stat-delta-note">vs 30 days ago</span>
+                    </div>
+                </div>
                 <div class="stat-icon si-red"><i class="fas fa-chalkboard-user"></i></div>
             </div>
+            <div class="stat-context">Currently supporting <strong>{{ $stats['subjects'] }}</strong> CPALE subject{{ $stats['subjects'] === 1 ? '' : 's' }}.</div>
         </div>
         <div class="stat-card">
             <div class="stat-top">
-                <div><div class="stat-lbl">CPALE Subjects</div><div class="stat-num">{{ $stats['subjects'] }}</div></div>
+                <div>
+                    <div class="stat-lbl">CPALE Subjects</div>
+                    <div class="stat-num">{{ $stats['subjects'] }} <span class="stat-unit">Subjects</span></div>
+                </div>
                 <div class="stat-icon si-blue"><i class="fas fa-book-open"></i></div>
             </div>
+            <div class="stat-context">The full CPALE board exam curriculum tracked in CPACE.</div>
         </div>
         <div class="stat-card">
             <div class="stat-top">
-                <div><div class="stat-lbl">Subjects Covered</div><div class="stat-num">{{ $stats['assigned'] }}</div></div>
+                <div>
+                    <div class="stat-lbl">Subjects Covered</div>
+                    <div class="stat-num">{{ $stats['assigned'] }} <span class="stat-unit">Covered</span></div>
+                    <div class="stat-delta {{ $deltaClass($kpiDeltas['assigned']) }}">
+                        <i class="fas {{ $kpiDeltas['assigned'] > 0 ? 'fa-arrow-up' : ($kpiDeltas['assigned'] < 0 ? 'fa-arrow-down' : 'fa-minus') }}"></i>
+                        {{ $deltaText($kpiDeltas['assigned']) }}<span class="stat-delta-note">vs 30 days ago</span>
+                    </div>
+                </div>
                 <div class="stat-icon si-green"><i class="fas fa-circle-check"></i></div>
             </div>
+            <div class="stat-context"><strong>{{ $coveragePct }}%</strong> of subjects have at least one faculty assigned.</div>
         </div>
         <div class="stat-card">
             <div class="stat-top">
-                <div><div class="stat-lbl">Unassigned</div><div class="stat-num">{{ $stats['unassigned'] }}</div></div>
+                <div>
+                    <div class="stat-lbl">Unassigned</div>
+                    <div class="stat-num">{{ $stats['unassigned'] }} <span class="stat-unit">Unassigned</span></div>
+                </div>
                 <div class="stat-icon si-orange"><i class="fas fa-triangle-exclamation"></i></div>
+            </div>
+            <div class="stat-context">
+                @if($stats['unassigned'] > 0)
+                    <strong style="color:var(--accent);">{{ $stats['unassigned'] }}</strong> subject{{ $stats['unassigned'] === 1 ? '' : 's' }} still need{{ $stats['unassigned'] === 1 ? 's' : '' }} a faculty.
+                @else
+                    <strong style="color:#059669;">All subjects</strong> have faculty coverage.
+                @endif
             </div>
         </div>
     </div>
@@ -304,6 +427,54 @@
         </div>
     </section>
 
+    <div class="card" style="margin-bottom:18px;">
+        <div class="card-head">
+            <span class="card-title"><i class="fas fa-scale-balanced" style="color:var(--accent);margin-right:7px;"></i>Faculty Workload &amp; Activity</span>
+            <a href="{{ route('chair.faculty') }}" class="card-link">Manage Faculty</a>
+        </div>
+        <div class="viz-sub" style="margin-bottom:6px;">Subject/section load and account activity per faculty — the staffing signals a chair acts on directly.</div>
+        @if($facultyWorkload->isNotEmpty())
+            <div class="dash-table-wrap">
+            <table class="workload-table">
+                <thead>
+                    <tr><th>Faculty</th><th>Subjects</th><th>Sections</th><th>Questions Added (30d)</th><th>Last Login</th><th>Status</th></tr>
+                </thead>
+                <tbody>
+                @foreach($facultyWorkload as $f)
+                    <tr>
+                        <td>
+                            <div class="workload-name">{{ $f['name'] }}</div>
+                            <div class="workload-email">{{ $f['email'] }}</div>
+                        </td>
+                        <td><span class="workload-metric">{{ $f['subjects'] }}</span></td>
+                        <td><span class="workload-metric">{{ $f['sections'] }}</span></td>
+                        <td><span class="workload-metric">{{ $f['questions_added_30d'] }}</span></td>
+                        <td style="font-size:12px;color:#666;">{{ $f['last_login_at'] ? $f['last_login_at']->diffForHumans() : 'Never' }}</td>
+                        <td>
+                            @switch($f['flag'])
+                                @case('unassigned')
+                                    <span class="workload-flag unassigned"><i class="fas fa-circle-minus"></i> Unassigned</span>
+                                    @break
+                                @case('overloaded')
+                                    <span class="workload-flag overloaded"><i class="fas fa-layer-group"></i> Overloaded</span>
+                                    @break
+                                @case('idle')
+                                    <span class="workload-flag idle"><i class="fas fa-clock"></i> Idle 30+ days</span>
+                                    @break
+                                @default
+                                    <span class="workload-flag ok"><i class="fas fa-check"></i> On track</span>
+                            @endswitch
+                        </td>
+                    </tr>
+                @endforeach
+                </tbody>
+            </table>
+            </div>
+        @else
+            <div class="workload-empty"><i class="fas fa-user-slash"></i> No faculty accounts yet.</div>
+        @endif
+    </div>
+
     <div class="dash-content-grid" style="display:grid; grid-template-columns:1fr 340px; gap:18px;">
         <div class="card">
             <div class="card-head">
@@ -367,12 +538,13 @@
         </div>
 
         @if($atRiskStudents->isNotEmpty())
-            <div class="risk-list">
+            @php $riskPageSize = 5; $riskPages = (int) ceil($atRiskStudents->count() / $riskPageSize); @endphp
+            <div class="risk-list" id="riskList" data-page-size="{{ $riskPageSize }}">
                 <div class="risk-row risk-head" aria-hidden="true">
                     <span>Student</span><span>Alert reason</span><span>Readiness</span><span class="risk-last">Last active</span><span>Priority</span>
                 </div>
                 @foreach($atRiskStudents as $student)
-                    <div class="risk-row">
+                    <div class="risk-row" data-page="{{ intdiv($loop->index, $riskPageSize) + 1 }}">
                         <div class="risk-student">
                             <div class="user-av" style="background:var(--primary);">{{ $student['initials'] }}</div>
                             <div style="min-width:0;">
@@ -399,6 +571,12 @@
                     </div>
                 @endforeach
             </div>
+            @if($riskPages > 1)
+                <div class="mini-pagination" id="riskPagination" data-pages="{{ $riskPages }}">
+                    <span class="mini-pag-info" id="riskPagInfo"></span>
+                    <div class="mini-pag-btns" id="riskPagBtns"></div>
+                </div>
+            @endif
         @else
             <div class="risk-empty"><i class="fas fa-circle-check"></i>No students currently need intervention.</div>
         @endif
@@ -556,6 +734,51 @@ function openEligible({ section = null, year = null, label = '' }) {
 function closeRoster() { document.getElementById('rosterModal').classList.remove('open'); }
 document.getElementById('rosterModal').addEventListener('click', (event) => { if (event.target.id === 'rosterModal') closeRoster(); });
 document.addEventListener('keydown', (event) => { if (event.key === 'Escape') closeRoster(); });
+
+/* ── At-Risk list pagination — every row is already in the DOM; this just
+   shows one page's worth at a time so the card doesn't run on forever. ── */
+(function () {
+    const list = document.getElementById('riskList');
+    const pagination = document.getElementById('riskPagination');
+    if (!list || !pagination) return;
+
+    const rows = Array.from(list.querySelectorAll('.risk-row:not(.risk-head)'));
+    const pageSize = parseInt(list.dataset.pageSize, 10) || 5;
+    const totalPages = parseInt(pagination.dataset.pages, 10) || Math.ceil(rows.length / pageSize);
+    const infoEl = document.getElementById('riskPagInfo');
+    const btnsEl = document.getElementById('riskPagBtns');
+    let currentPage = 1;
+
+    function render() {
+        rows.forEach((row) => {
+            const rowPage = parseInt(row.dataset.page, 10) || 1;
+            row.style.display = rowPage === currentPage ? '' : 'none';
+        });
+
+        const from = (currentPage - 1) * pageSize + 1;
+        const to = Math.min(currentPage * pageSize, rows.length);
+        infoEl.textContent = `Showing ${from}–${to} of ${rows.length} students`;
+
+        let html = `<button type="button" class="mini-pag-btn" data-go="prev" ${currentPage <= 1 ? 'disabled' : ''}><i class="fas fa-chevron-left"></i></button>`;
+        for (let p = 1; p <= totalPages; p++) {
+            html += `<button type="button" class="mini-pag-btn ${p === currentPage ? 'active' : ''}" data-go="${p}">${p}</button>`;
+        }
+        html += `<button type="button" class="mini-pag-btn" data-go="next" ${currentPage >= totalPages ? 'disabled' : ''}><i class="fas fa-chevron-right"></i></button>`;
+        btnsEl.innerHTML = html;
+    }
+
+    btnsEl.addEventListener('click', (event) => {
+        const btn = event.target.closest('[data-go]');
+        if (!btn || btn.disabled) return;
+        const go = btn.dataset.go;
+        if (go === 'prev') currentPage = Math.max(1, currentPage - 1);
+        else if (go === 'next') currentPage = Math.min(totalPages, currentPage + 1);
+        else currentPage = parseInt(go, 10);
+        render();
+    });
+
+    render();
+})();
 </script>
 
     @include('partials.alerts')

@@ -99,11 +99,23 @@
         .dropdown-menu .logout-btn { color:#e53e3e; }
         .dropdown-menu .logout-btn i { color:#e53e3e; }
 
-        .page-title { font-size: 28px; font-weight: 700; color: var(--gray-900); line-height: 1.2; }
+        .page-title { font-size: 28px; font-weight: 700; color: #14283E; line-height: 1.2; }
         .page-subtitle { font-size: 13px; color: var(--gray-500); margin-top: 2px; }
 
         /* ─── SETTINGS LAYOUT ─── */
-        .settings-wrap { max-width: 760px; }
+        .settings-wrap {
+            max-width: 1240px;
+            display: grid;
+            grid-template-columns: 1.6fr 1fr;
+            align-items: start;
+            gap: 20px;
+        }
+        .settings-wrap > .alert-status { grid-column: 1 / -1; }
+        .settings-col { display: flex; flex-direction: column; min-width: 0; }
+
+        @media (max-width: 980px) {
+            .settings-wrap { grid-template-columns: 1fr; max-width: 760px; }
+        }
 
         .settings-card {
             background: var(--white);
@@ -229,12 +241,98 @@
         .info-row .k { color: var(--gray-500); }
         .info-row .v { color: var(--gray-900); font-weight: 500; }
 
+        /* ─── ACCOUNT PROFILE HEADER ─── */
+        .account-head {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        .account-avatar {
+            width: 64px; height: 64px;
+            border-radius: 16px;
+            background: var(--primary);
+            color: #fff;
+            font-weight: 700;
+            font-size: 22px;
+            display: flex; align-items: center; justify-content: center;
+            position: relative;
+            overflow: hidden;
+            flex-shrink: 0;
+            box-shadow: 0 4px 14px rgba(123,29,29,0.25);
+        }
+        .account-avatar img {
+            position: absolute; inset: 0;
+            width: 100%; height: 100%;
+            object-fit: cover;
+            border-radius: inherit;
+        }
+        .account-info { flex: 1; min-width: 160px; }
+        .account-name { font-size: 17px; font-weight: 700; color: var(--gray-900); line-height: 1.3; }
+        .account-email { font-size: 12.5px; color: var(--gray-500); margin-top: 2px; }
+        .role-badge {
+            display: inline-flex; align-items: center; gap: 5px;
+            margin-top: 8px;
+            padding: 3px 10px;
+            border-radius: 20px;
+            background: var(--primary-light);
+            color: var(--primary);
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.2px;
+        }
+        .role-badge i { font-size: 9px; }
+
+        /* ─── ACCOUNT DETAIL GRID ─── */
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+        }
+        .detail-box {
+            background: var(--gray-100);
+            border: 1px solid var(--gray-200);
+            border-radius: 10px;
+            padding: 12px 14px;
+        }
+        .detail-box .dk {
+            display: flex; align-items: center; gap: 6px;
+            font-size: 11px; font-weight: 600; text-transform: uppercase;
+            letter-spacing: 0.4px; color: var(--gray-500);
+            margin-bottom: 4px;
+        }
+        .detail-box .dk i { font-size: 10px; color: var(--primary); }
+        .detail-box .dv { font-size: 14.5px; font-weight: 600; color: var(--gray-900); }
+
         .save-hint {
             display: inline-flex; align-items: center; gap: 7px;
             font-size: 12.5px; color: var(--green); font-weight: 500;
             opacity: 0; transition: opacity 0.3s;
         }
         .save-hint.show { opacity: 1; }
+
+        .alert-status {
+            display: flex; align-items: center; gap: 10px;
+            background: #ecfdf5; color: #047857;
+            padding: 12px 18px; border-radius: 10px;
+            font-size: 13px; margin-bottom: 18px;
+        }
+
+        .btn { display:inline-flex; align-items:center; gap:7px; padding:9px 18px; border-radius:8px; font-size:13px; font-weight:600; font-family:'Poppins',sans-serif; cursor:pointer; border:none; text-decoration:none; transition:all .2s; }
+        .btn-primary { background:var(--primary); color:white; }
+        .btn-primary:hover { background:var(--primary-hover); }
+        .btn-outline { background:white; color:var(--primary); border:1.5px solid var(--primary); }
+        .btn-outline:hover { background:var(--primary-light); }
+
+        .form-field { margin-bottom: 16px; }
+        .form-field label { display: block; font-size: 12.5px; font-weight: 500; color: #555; margin-bottom: 6px; }
+        .form-field input {
+            width: 100%; max-width: 320px; padding: 10px 12px;
+            border: 1px solid var(--gray-300); border-radius: 8px;
+            font-size: 13.5px; font-family: 'Poppins', sans-serif; color: #1a1a1a; outline: none;
+        }
+        .form-field input:focus { border-color: var(--primary); }
+        .form-errors { color: #b91c1c; font-size: 12px; margin-top: 4px; }
 
         @media (max-width: 768px) {
             .page-title { font-size: 22px; }
@@ -279,7 +377,7 @@
             <div class="header-dropdown-wrap">
                 <button class="profile-avatar" id="profileBtn">@include('partials.avatar-content')</button>
                 <div class="dropdown-menu" id="profileDropdown">
-                    <a href="#"><i class="fas fa-user"></i> Profile Settings</a>
+                    <a href="#" class="js-open-profile-modal"><i class="fas fa-user"></i> Profile Settings</a>
                     <a href="#"><i class="fas fa-chart-line"></i> My Progress</a>
                     <a href="#"><i class="fas fa-question-circle"></i> Help &amp; Support</a>
                     <form method="POST" action="{{ route('logout') }}"
@@ -298,6 +396,12 @@
     <span class="save-hint" id="saveHint"><i class="fas fa-check-circle"></i> Saved</span>
 
     <div class="settings-wrap">
+
+        @if (session('status'))
+            <div class="alert-status"><i class="fas fa-check-circle"></i> {{ session('status') }}</div>
+        @endif
+
+        <div class="settings-col">
 
         <!-- APPEARANCE -->
         <div class="settings-card">
@@ -366,9 +470,106 @@
 
             <div class="settings-divider"></div>
 
-            <div class="info-row"><span class="k">Name</span><span class="v">{{ Auth::user()->name }}</span></div>
-            <div class="info-row"><span class="k">Email</span><span class="v">{{ Auth::user()->email }}</span></div>
-            <div class="info-row"><span class="k">Role</span><span class="v">Student Reviewer</span></div>
+            <div class="account-head">
+                <div class="account-avatar">@include('partials.avatar-content')</div>
+                <div class="account-info">
+                    <div class="account-name">{{ Auth::user()->name }}</div>
+                    <div class="account-email">{{ Auth::user()->email }}</div>
+                    <span class="role-badge"><i class="fas fa-circle"></i> {{ ($isAlumniStudent ?? false) ? 'Alumni' : 'Student Reviewer' }}</span>
+                </div>
+                <button type="button" class="btn btn-outline js-open-profile-modal"><i class="fas fa-pen"></i> Edit</button>
+            </div>
+
+            @if($profile?->student_number || $profile?->year_level || $profile?->section)
+                <div class="settings-divider"></div>
+
+                <div class="detail-grid">
+                    @if($profile?->student_number)
+                        <div class="detail-box">
+                            <div class="dk"><i class="fas fa-id-badge"></i> Student Number</div>
+                            <div class="dv">{{ $profile->student_number }}</div>
+                        </div>
+                    @endif
+                    @if($profile?->year_level)
+                        <div class="detail-box">
+                            <div class="dk"><i class="fas fa-layer-group"></i> Year Level</div>
+                            <div class="dv">{{ $profile->year_level }}</div>
+                        </div>
+                    @endif
+                    @if($profile?->section)
+                        <div class="detail-box">
+                            <div class="dk"><i class="fas fa-users"></i> Section</div>
+                            <div class="dv">{{ $profile->section }}</div>
+                        </div>
+                    @endif
+                </div>
+            @endif
+        </div>
+
+        </div>
+
+        <div class="settings-col">
+
+        <!-- CONTACT DETAILS -->
+        <div class="settings-card">
+            <div class="settings-card-head">
+                <div class="sc-icon"><i class="fas fa-id-card"></i></div>
+                <div>
+                    <div class="settings-card-title">Contact Details</div>
+                    <div class="settings-card-desc">Used to reach you and plan your review timeline.</div>
+                </div>
+            </div>
+
+            <div class="settings-divider"></div>
+
+            <form method="POST" action="{{ route('settings.details') }}">
+                @csrf
+                <div class="form-field">
+                    <label>Mobile Number</label>
+                    <input type="text" name="mobile" value="{{ old('mobile', $profile->mobile ?? '') }}" placeholder="e.g. 09171234567">
+                    @error('mobile') <div class="form-errors">{{ $message }}</div> @enderror
+                </div>
+                <div class="form-field">
+                    <label>Target Exam Date</label>
+                    <input type="date" name="exam_target_date" value="{{ old('exam_target_date', optional($profile?->exam_target_date)->format('Y-m-d')) }}">
+                    @error('exam_target_date') <div class="form-errors">{{ $message }}</div> @enderror
+                </div>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Details</button>
+            </form>
+        </div>
+
+        <!-- PASSWORD -->
+        <div class="settings-card">
+            <div class="settings-card-head">
+                <div class="sc-icon"><i class="fas fa-lock"></i></div>
+                <div>
+                    <div class="settings-card-title">Password</div>
+                    <div class="settings-card-desc">Change the password used to sign in to CPACE.</div>
+                </div>
+            </div>
+
+            <div class="settings-divider"></div>
+
+            <form method="POST" action="{{ route('settings.password') }}">
+                @csrf
+                <div class="form-field">
+                    <label>Current Password</label>
+                    <input type="password" name="current_password" required>
+                    @error('current_password') <div class="form-errors">{{ $message }}</div> @enderror
+                </div>
+                <div class="form-field">
+                    <label>New Password</label>
+                    <input type="password" name="new_password" required>
+                    @error('new_password') <div class="form-errors">{{ $message }}</div> @enderror
+                </div>
+                <div class="form-field">
+                    <label>Confirm New Password</label>
+                    <input type="password" name="new_password_confirmation" required>
+                </div>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-key"></i> Change Password</button>
+            </form>
+        </div>
+
         </div>
 
     </div>

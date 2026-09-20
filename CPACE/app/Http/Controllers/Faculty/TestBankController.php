@@ -9,6 +9,7 @@ use App\Models\QuestionVariant;
 use App\Models\Subject;
 use App\Models\Topic;
 use App\Services\AiQuestionAssistantService;
+use App\Services\BrandedXlsxReport;
 use App\Services\QuestionParaphraser;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -106,15 +107,18 @@ class TestBankController extends Controller
      */
     public function export(Request $request)
     {
-        $format = $request->input('format', 'csv');
+        $format = $request->input('format', 'excel');
+        if ($format === 'csv') {
+            $format = 'excel'; // old query links from before the CSV → Excel switch
+        }
 
         $questions = $this->filteredQuery($request)->with('choices')->get();
-        $filename  = 'test-bank-' . now()->format('Y-m-d_His');
+        $filename  = 'cpace-test-bank-' . now()->format('Y-m-d_His');
 
         return match ($format) {
             'json'  => $this->exportJson($questions, $filename),
             'pdf'   => view('faculty.test-bank-export', ['questions' => $questions, 'filters' => $request->only(['search', 'subject', 'type', 'difficulty', 'status'])]),
-            default => $this->exportCsv($questions, $filename),
+            default => $this->exportExcel($questions, $filename, $request),
         };
     }
 
@@ -141,42 +145,54 @@ class TestBankController extends Controller
         return $correct ? trim($correct->choice_label . '. ' . $correct->choice_text) : '';
     }
 
-    /** Stream the questions as a CSV file (opens directly in Excel / Sheets). */
-    private function exportCsv($questions, string $filename)
+    /** Download the questions as a designed .xlsx — CPACE title banner, a
+     *  summary strip, and a styled, bordered table of every question. */
+    private function exportExcel($questions, string $filename, Request $request)
     {
-        $headers = [
-            'Content-Type'        => 'text/csv; charset=UTF-8',
-            'Content-Disposition' => "attachment; filename=\"{$filename}.csv\"",
-        ];
+        $activeCount = $questions->where('is_active', true)->count();
+        $filterBits = array_filter([
+            $request->filled('subject') ? Subject::find($request->input('subject'))?->code : null,
+            $request->filled('type') ? ($request->input('type') === 'mcq' ? 'Multiple Choice' : 'True / False') : null,
+            $request->filled('difficulty') ? self::DIFFICULTY_LABELS[$request->input('difficulty')] ?? ucfirst($request->input('difficulty')) : null,
+            $request->filled('status') ? ucfirst($request->input('status')) : null,
+        ]);
 
-        return response()->stream(function () use ($questions) {
-            $out = fopen('php://output', 'w');
-            // UTF-8 BOM so Excel renders accented characters correctly.
-            fwrite($out, "\xEF\xBB\xBF");
+        $report = new BrandedXlsxReport('Test Bank');
+        $sheet = $report->sheet('Test Bank');
 
-            fputcsv($out, [
-                'ID', 'Subject', 'Topic', 'Type', 'Difficulty', 'Status',
-                'Question', 'Choices', 'Correct Answer', 'Explanation', 'Variants',
-            ]);
+        $row = $report->writeBanner($sheet, 'Test Bank Export', [
+            'Generated ' . now()->format('F j, Y \a\t g:i A') . ' by ' . Auth::user()->name,
+            'Filters: ' . ($filterBits ? implode(' · ', $filterBits) : 'None') . ($request->filled('search') ? ' · Search: "' . $request->input('search') . '"' : ''),
+        ], 11);
 
-            foreach ($questions as $q) {
-                fputcsv($out, [
-                    $q->id,
-                    $q->subject_code,
-                    $q->topic_name,
-                    $q->question_type === 'mcq' ? 'Multiple Choice' : 'True / False',
-                    self::DIFFICULTY_LABELS[$q->difficulty] ?? $q->difficulty,
-                    $q->is_active ? 'Active' : 'Draft',
-                    $q->question_text,
-                    implode("\n", $this->choiceLines($q)),
-                    $this->correctAnswer($q),
-                    $q->explanation,
-                    $q->variants_count,
-                ]);
-            }
+        $row = $report->writeSummaryStrip($sheet, $row, [
+            'Total Questions' => $questions->count(),
+            'Active' => $activeCount,
+            'Drafts' => $questions->count() - $activeCount,
+        ]);
 
-            fclose($out);
-        }, 200, $headers);
+        $rows = $questions->map(fn (Question $q) => [
+            $q->id,
+            $q->subject_code,
+            $q->topic_name,
+            $q->question_type === 'mcq' ? 'Multiple Choice' : 'True / False',
+            self::DIFFICULTY_LABELS[$q->difficulty] ?? $q->difficulty,
+            $q->is_active ? 'Active' : 'Draft',
+            $q->question_text,
+            implode("\n", $this->choiceLines($q)),
+            $this->correctAnswer($q),
+            $q->explanation,
+            $q->variants_count,
+        ])->all();
+
+        $report->writeTable(
+            $sheet, $row,
+            ['ID', 'Subject', 'Topic', 'Type', 'Difficulty', 'Status', 'Question', 'Choices', 'Correct Answer', 'Explanation', 'Variants'],
+            $rows,
+            [1 => 7, 2 => 11, 3 => 20, 4 => 15, 5 => 12, 6 => 10, 7 => 44, 8 => 34, 9 => 22, 10 => 34, 11 => 10]
+        );
+
+        return $report->download("{$filename}.xlsx");
     }
 
     /** Download the questions as a structured JSON file. */

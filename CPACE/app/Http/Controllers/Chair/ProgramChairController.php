@@ -27,6 +27,9 @@ class ProgramChairController extends Controller
 
     private const INACTIVITY_DAYS = 7;
 
+    /** How far back the top KPI cards look to show a "vs 30 days ago" comparison. */
+    private const KPI_COMPARISON_DAYS = 30;
+
     /**
      * Program Chair overview: faculty count, subject coverage, assignments.
      */
@@ -44,6 +47,7 @@ class ProgramChairController extends Controller
 
         return view('chair.dashboard', [
             'stats'    => $stats,
+            'kpiDeltas' => $this->kpiComparisons($stats),
             'subjects' => $subjects,
             'faculty'  => User::where('role_id', Role::FACULTY)
                 ->with('assignedSubjects')
@@ -53,7 +57,30 @@ class ProgramChairController extends Controller
             'atRiskStudents' => $atRiskStudents,
             'recommendedActions' => $analytics->recommendedActions($atRiskStudents),
             'analytics' => $analytics->dashboardSummary(),
+            'facultyWorkload' => $analytics->facultyWorkload(),
         ]);
+    }
+
+    /**
+     * "Vs 30 days ago" deltas for the KPI cards where a trend is actually
+     * meaningful: faculty headcount and subject coverage. "CPALE Subjects"
+     * is a fixed curriculum count and "Unassigned" is just the inverse of
+     * coverage, so neither gets its own comparison badge.
+     */
+    private function kpiComparisons(array $stats): array
+    {
+        $cutoff = now()->subDays(self::KPI_COMPARISON_DAYS);
+
+        $facultyThen = User::where('role_id', Role::FACULTY)->where('created_at', '<=', $cutoff)->count();
+        $assignedThen = DB::table('faculty_subjects')
+            ->where('assigned_at', '<=', $cutoff)
+            ->distinct('subject_id')
+            ->count('subject_id');
+
+        return [
+            'faculty'  => $stats['faculty'] - $facultyThen,
+            'assigned' => $stats['assigned'] - $assignedThen,
+        ];
     }
 
     /**

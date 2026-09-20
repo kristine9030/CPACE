@@ -20,7 +20,7 @@
         /* TOPBAR */
         .topbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; position:relative; z-index:100; }
         .topbar-left { display:flex; align-items:center; gap:12px; }
-        .page-title { font-size:26px; font-weight:700; color:#1a1a1a; }
+        .page-title { font-size:26px; font-weight:700; color:#14283E; }
         .page-sub { font-size:12px; color:#999; margin-top:2px; }
         .btn { display:inline-flex; align-items:center; gap:7px; padding:9px 18px; border-radius:8px; font-size:13px; font-weight:600; font-family:'Poppins',sans-serif; cursor:pointer; border:none; text-decoration:none; transition:all .2s; }
         .btn-primary { background:var(--primary); color:white; }

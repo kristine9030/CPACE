@@ -8,7 +8,7 @@
     <!-- Google Fonts - Poppins -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
 
     <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -206,7 +206,7 @@
         }
         .toggle-btn:hover { background: var(--gray-200); }
 
-        .page-title { font-size: 28px; font-weight: 700; color: var(--gray-900); line-height: 1.2; }
+        .page-title { font-family: 'Montserrat', sans-serif; font-size: 28px; font-weight: 700; color: #14283E; line-height: 1.2; }
         .page-subtitle { font-size: 13px; color: var(--gray-500); margin-top: 2px; }
 
         .page-header-right { display: flex; align-items: center; gap: 14px; }
@@ -223,7 +223,7 @@
             font-size: 14px;
         }
         .search-wrap input {
-            width: 300px;
+            width: 280px;
             padding: 10px 14px 10px 36px;
             border: 1px solid var(--gray-300);
             border-radius: 24px;
@@ -1169,7 +1169,7 @@
             <div class="header-dropdown-wrap">
                 <button class="profile-avatar" id="profileBtn">@include('partials.avatar-content')</button>
                 <div class="dropdown-menu" id="profileDropdown">
-                    <a href="#"><i class="fas fa-user"></i> Profile Settings</a>
+                    <a href="#" class="js-open-profile-modal"><i class="fas fa-user"></i> Profile Settings</a>
                     <a href="#"><i class="fas fa-chart-line"></i> My Progress</a>
                     <a href="#"><i class="fas fa-question-circle"></i> Help &amp; Support</a>
                     <form method="POST" action="{{ route('logout') }}"

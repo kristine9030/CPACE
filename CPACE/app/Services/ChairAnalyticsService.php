@@ -57,6 +57,86 @@ class ChairAnalyticsService
     }
 
     /**
+     * Faculty roster with the numbers a Program Chair actually manages people
+     * by: how many subjects/sections they carry (workload balance), how much
+     * test-bank content they've authored (are they contributing), and when
+     * they were last seen (are they using the account at all). This is the
+     * chair's own staffing surface — distinct from the student-facing
+     * performance analytics elsewhere on the dashboard.
+     */
+    public function facultyWorkload(): Collection
+    {
+        $faculty = DB::table('users')
+            ->where('role_id', Role::FACULTY)
+            ->select('id', 'first_name', 'last_name', 'email', 'is_active', 'last_login_at', 'created_at')
+            ->get();
+
+        $facultyIds = $faculty->pluck('id')->all();
+        if (empty($facultyIds)) {
+            return collect();
+        }
+
+        $subjectCounts = DB::table('faculty_subjects')
+            ->whereIn('faculty_id', $facultyIds)
+            ->groupBy('faculty_id')
+            ->select('faculty_id', DB::raw('COUNT(DISTINCT subject_id) as subjects'))
+            ->get()
+            ->keyBy('faculty_id');
+
+        $sectionCounts = DB::table('faculty_subject_sections')
+            ->whereIn('faculty_id', $facultyIds)
+            ->groupBy('faculty_id')
+            ->select('faculty_id', DB::raw('COUNT(DISTINCT section_id) as sections'))
+            ->get()
+            ->keyBy('faculty_id');
+
+        // Content contribution in the last 30 days, straight from each
+        // question's own authorship — the chair's clearest "who's actually
+        // contributing to the bank" signal.
+        $since = now()->subDays(30);
+        $questionsAdded = DB::table('questions')
+            ->whereIn('created_by', $facultyIds)
+            ->where('created_at', '>=', $since)
+            ->groupBy('created_by')
+            ->select('created_by', DB::raw('COUNT(*) as total'))
+            ->get()
+            ->keyBy('created_by');
+
+        return $faculty->map(function ($f) use ($subjectCounts, $sectionCounts, $questionsAdded) {
+            $lastLogin = $f->last_login_at ? Carbon::parse($f->last_login_at) : null;
+            $daysSinceLogin = $lastLogin ? $lastLogin->diffInDays(now()) : null;
+
+            return [
+                'id' => (int) $f->id,
+                'name' => trim("{$f->first_name} {$f->last_name}"),
+                'email' => $f->email,
+                'is_active' => (bool) $f->is_active,
+                'subjects' => (int) ($subjectCounts->get($f->id)?->subjects ?? 0),
+                'sections' => (int) ($sectionCounts->get($f->id)?->sections ?? 0),
+                'questions_added_30d' => (int) ($questionsAdded->get($f->id)?->total ?? 0),
+                'last_login_at' => $lastLogin,
+                'days_since_login' => $daysSinceLogin,
+                // Workload flags the chair acts on: overloaded (many subjects,
+                // no help), idle (assigned but hasn't logged in this month),
+                // or simply unassigned (has nothing to teach yet).
+                'flag' => match (true) {
+                    ($subjectCounts->get($f->id)?->subjects ?? 0) === 0 => 'unassigned',
+                    $daysSinceLogin !== null && $daysSinceLogin > 30 => 'idle',
+                    ($subjectCounts->get($f->id)?->subjects ?? 0) >= 3 => 'overloaded',
+                    default => 'ok',
+                },
+            ];
+        })
+        ->sortBy(fn ($row) => match ($row['flag']) {
+            'unassigned' => 0,
+            'overloaded' => 1,
+            'idle' => 2,
+            default => 3,
+        })
+        ->values();
+    }
+
+    /**
      * Class-level accuracy, board readiness and pass projection, broken out per
      * curated section, and rolled up per year level — so the chair dashboard
      * can show more than a single institution-wide number.

@@ -70,48 +70,78 @@ class MaterialController extends Controller
     }
 
     /**
-     * Store a new material — either an uploaded file or an external link.
+     * Store one or more new materials — either uploaded files (bulk-capable)
+     * or a single external link.
      */
     public function store(Request $request)
     {
         $data = $request->validate([
             'topic_id'     => ['required', 'exists:topics,id'],
-            'title'        => ['required', 'string', 'max:255'],
+            'title'        => ['nullable', 'string', 'max:255', 'required_if:kind,link'],
             'description'  => ['nullable', 'string', 'max:1000'],
             'kind'         => ['required', 'in:file,link'],
-            'file'         => ['required_if:kind,file', 'file', 'mimes:' . self::ALLOWED_EXTENSIONS, 'max:20480'],
+            'file'         => ['required_if:kind,file', 'array', 'min:1'],
+            'file.*'       => ['file', 'mimes:' . self::ALLOWED_EXTENSIONS, 'max:20480'],
             'external_url' => ['required_if:kind,link', 'nullable', 'url', 'max:2048'],
             'status'       => ['nullable', 'in:draft,publish'],
         ]);
 
         $this->authorizeTopic((int) $data['topic_id']);
 
-        $material = new Material([
-            'topic_id'    => $data['topic_id'],
-            'uploaded_by' => Auth::id(),
-            'title'       => $data['title'],
-            'description' => $data['description'] ?? null,
-            'kind'        => $data['kind'],
-            // Default to published so existing callers (and the API) keep working unchanged.
-            'is_active'   => ($data['status'] ?? 'publish') !== 'draft',
-        ]);
+        $isActive = ($data['status'] ?? 'publish') !== 'draft';
+        $count = 0;
 
         if ($data['kind'] === 'file') {
-            $file = $request->file('file');
-            $extension = strtolower($file->getClientOriginalExtension());
+            $files = $request->file('file', []);
 
-            $material->file_path = $file->store('materials', 'public');
-            $material->original_name = $file->getClientOriginalName();
-            $material->file_size = $file->getSize();
-            $material->file_category = Material::categoryFor($extension);
+            foreach ($files as $file) {
+                $extension = strtolower($file->getClientOriginalExtension());
+
+                // A single upload keeps the faculty-typed title; a bulk batch
+                // names each material after its own file since one title
+                // can't sensibly describe several different files.
+                $title = (count($files) === 1 && filled($data['title']))
+                    ? $data['title']
+                    : pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+
+                $material = new Material([
+                    'topic_id'    => $data['topic_id'],
+                    'uploaded_by' => Auth::id(),
+                    'title'       => $title,
+                    'description' => $data['description'] ?? null,
+                    'kind'        => 'file',
+                    'is_active'   => $isActive,
+                ]);
+
+                $material->file_path = $file->store('materials', 'public');
+                $material->original_name = $file->getClientOriginalName();
+                $material->file_size = $file->getSize();
+                $material->file_category = Material::categoryFor($extension);
+                $material->save();
+
+                $count++;
+            }
         } else {
+            $material = new Material([
+                'topic_id'    => $data['topic_id'],
+                'uploaded_by' => Auth::id(),
+                'title'       => $data['title'],
+                'description' => $data['description'] ?? null,
+                'kind'        => 'link',
+                'is_active'   => $isActive,
+            ]);
+
             $material->external_url = $data['external_url'];
             $material->file_category = 'link';
+            $material->save();
+
+            $count = 1;
         }
 
-        $material->save();
+        $verb = $isActive ? 'published' : 'saved as draft';
+        $message = $count > 1 ? "{$count} materials {$verb}." : 'Material ' . $verb . '.';
 
-        return back()->with('status', 'Material ' . ($material->is_active ? 'published' : 'saved as draft') . '.');
+        return back()->with('status', $message);
     }
 
     /**

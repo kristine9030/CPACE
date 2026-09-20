@@ -18,7 +18,7 @@
         .topbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:22px; gap:16px; position:relative; z-index:100; }
         .breadcrumb { display:flex; align-items:center; gap:6px; font-size:12px; color:#aaa; margin-bottom:4px; }
         .breadcrumb a { color:var(--accent); text-decoration:none; }
-        .page-title { font-size:24px; font-weight:700; color:#1a1a1a; }
+        .page-title { font-size:24px; font-weight:700; color:#14283E; }
         .page-sub { font-size:12px; color:#999; margin-top:2px; }
         .topbar-right { display:flex; align-items:center; gap:10px; }
         .btn { display:inline-flex; align-items:center; gap:7px; padding:9px 16px; border-radius:8px; font-size:13px; font-weight:600; font-family:'Poppins',sans-serif; cursor:pointer; border:none; text-decoration:none; transition:all .2s; }
@@ -27,10 +27,47 @@
         .btn-outline { background:#fff; color:var(--primary); border:1.5px solid var(--primary); }
         .btn-outline:hover { background:var(--primary-light); }
 
-        .stats-row { display:grid; grid-template-columns:repeat(5,1fr); gap:14px; margin-bottom:20px; }
-        .stat { background:#fff; border-radius:12px; padding:16px 18px; }
-        .stat b { display:block; font-size:22px; color:#1a1a1a; line-height:1; }
-        .stat span { font-size:11px; color:#999; margin-top:4px; display:block; }
+        /* KPI cards — same card shape used on the faculty dashboard and Test
+           Bank: label + big number + icon badge up top, a context line
+           pinned to the bottom that adds the "so what" for this number. */
+        .stats-row { display:grid; grid-template-columns:repeat(auto-fit, minmax(190px, 1fr)); gap:16px; margin-bottom:22px; }
+        .stat {
+            background:#fff; border-radius:14px; padding:18px 20px;
+            display:flex; flex-direction:column; height:100%;
+            box-shadow:0 2px 6px rgba(15,10,10,.06), 0 8px 18px -10px rgba(15,10,10,.15);
+            transition:transform .18s ease, box-shadow .18s ease;
+        }
+        .stat:hover { transform:translateY(-2px); box-shadow:0 4px 10px rgba(15,10,10,.08), 0 14px 26px -10px rgba(15,10,10,.22); }
+        .stat-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px; }
+        .stat-icon { width:38px; height:38px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:15px; flex-shrink:0; }
+        .si-blue   { background:#dbeafe; color:var(--blue); }
+        .si-green  { background:#d1fae5; color:var(--green); }
+        .si-orange { background:#fef3c7; color:var(--orange); }
+        .si-red    { background:#fde8e8; color:var(--accent); }
+        .si-gray   { background:#f3f4f6; color:#9ca3af; }
+        .stat-lbl { font-size:11.5px; font-weight:600; color:#999; text-transform:uppercase; letter-spacing:.3px; }
+        .stat b { display:block; font-size:26px; font-weight:700; color:#1a1a1a; line-height:1; margin-top:8px; }
+        .stat-context { font-size:11px; color:#aaa; margin-top:auto; padding-top:12px; border-top:1px dashed #eee; line-height:1.4; }
+        .stat-context strong { color:#1a1a1a; font-weight:700; }
+        .stat-context.warn strong { color:var(--accent); }
+        .stat-context.good strong { color:var(--green); }
+
+        /* Insight cards — same shape as the faculty dashboard's insight panel */
+        .insights-head { font-size:13px; font-weight:700; color:#333; margin:4px 0 12px; display:flex; align-items:center; gap:8px; }
+        .insights-head i { color:var(--primary); }
+        .insights-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(270px, 1fr)); gap:14px; margin-bottom:20px; align-items:stretch; }
+        .insight-card { background:#fff; border-radius:12px; padding:16px 18px; display:flex; gap:13px; align-items:flex-start; border-left:4px solid #ccc; }
+        .insight-card.tone-good { border-left-color:var(--green); }
+        .insight-card.tone-warn { border-left-color:var(--orange); }
+        .insight-card.tone-crit { border-left-color:var(--accent); }
+        .insight-card.tone-info { border-left-color:var(--blue); }
+        .insight-icon { width:34px; height:34px; border-radius:9px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:14px; }
+        .insight-card.tone-good .insight-icon { background:#d1fae5; color:var(--green); }
+        .insight-card.tone-warn .insight-icon { background:#fef3c7; color:var(--orange); }
+        .insight-card.tone-crit .insight-icon { background:#fde8e8; color:var(--accent); }
+        .insight-card.tone-info .insight-icon { background:#dbeafe; color:var(--blue); }
+        .insight-title { font-size:12.5px; font-weight:700; color:#1a1a1a; margin-bottom:3px; }
+        .insight-text { font-size:11.5px; color:#777; line-height:1.5; }
 
         .layout { display:grid; grid-template-columns:1fr 360px; gap:20px; align-items:start; }
         .card { background:#fff; border-radius:14px; overflow:hidden; }
@@ -75,10 +112,25 @@
 
 @include('partials.faculty-sidebar', ['active' => 'quizzes'])
 
+@php
+    // Land back on the subject's own quiz list this quiz belongs to, not
+    // all the way back at the top-level subject grid.
+    $backRoute = $quiz->subject_id
+        ? route('faculty.quizzes.subject', $quiz->subject_id)
+        : route('faculty.quizzes');
+@endphp
+
 <main class="main">
     <div class="topbar">
         <div>
-            <div class="breadcrumb"><a href="{{ route('faculty.quizzes') }}">Class Quizzes</a> <i class="fas fa-chevron-right" style="font-size:9px;"></i> Results</div>
+            <div class="breadcrumb">
+                <a href="{{ route('faculty.quizzes') }}">Class Quizzes</a>
+                @if($quiz->subject_id)
+                    <i class="fas fa-chevron-right" style="font-size:9px;"></i>
+                    <a href="{{ $backRoute }}">{{ $quiz->subject?->code }}</a>
+                @endif
+                <i class="fas fa-chevron-right" style="font-size:9px;"></i> Results
+            </div>
             <div class="page-title">{{ $quiz->title }}</div>
             <div class="page-sub">
                 {{ $quiz->subject?->code ?? 'No subject' }} · {{ $quiz->items->count() }} question{{ $quiz->items->count() === 1 ? '' : 's' }} · {{ $quiz->totalPoints() }} points
@@ -88,16 +140,83 @@
         <div class="topbar-right">
             @include('partials.topbar-actions')
             <a href="{{ route('faculty.quizzes.edit', $quiz->id) }}" class="btn btn-outline"><i class="fas fa-pen"></i> Edit quiz</a>
-            <a href="{{ route('faculty.quizzes') }}" class="btn btn-ghost"><i class="fas fa-arrow-left"></i> Back</a>
+            <a href="{{ $backRoute }}" class="btn btn-ghost"><i class="fas fa-arrow-left"></i> Back</a>
         </div>
     </div>
 
+    @php
+        $inProgress = $stats['started'] - $stats['submitted'];
+        $completionPct = $stats['started'] > 0 ? round($stats['submitted'] / $stats['started'] * 100) : null;
+        $benchmarkGap = $stats['average'] !== null ? round($stats['average'] - 75, 1) : null;
+    @endphp
     <div class="stats-row">
-        <div class="stat"><b>{{ $stats['started'] }}</b><span>Students started</span></div>
-        <div class="stat"><b>{{ $stats['submitted'] }}</b><span>Submitted</span></div>
-        <div class="stat"><b>{{ $stats['average'] !== null ? $stats['average'] . '%' : '—' }}</b><span>Average score</span></div>
-        <div class="stat"><b>{{ $stats['highest'] !== null ? $stats['highest'] . '%' : '—' }}</b><span>Highest</span></div>
-        <div class="stat"><b>{{ $stats['lowest'] !== null ? $stats['lowest'] . '%' : '—' }}</b><span>Lowest</span></div>
+        <div class="stat">
+            <div class="stat-top">
+                <div><span class="stat-lbl">Students started</span><b>{{ $stats['started'] }}</b></div>
+                <span class="stat-icon si-blue"><i class="fas fa-users"></i></span>
+            </div>
+            <div class="stat-context {{ $inProgress > 0 ? 'warn' : '' }}">
+                @if($stats['started'] === 0)
+                    Share the quiz link to get started.
+                @elseif($inProgress > 0)
+                    <strong>{{ $inProgress }}</strong> haven't submitted yet.
+                @else
+                    All students who started have submitted.
+                @endif
+            </div>
+        </div>
+        <div class="stat">
+            <div class="stat-top">
+                <div><span class="stat-lbl">Submitted</span><b>{{ $stats['submitted'] }}</b></div>
+                <span class="stat-icon si-green"><i class="fas fa-inbox"></i></span>
+            </div>
+            <div class="stat-context">
+                @if($completionPct !== null)
+                    <strong>{{ $completionPct }}%</strong> completion rate.
+                @else
+                    No attempts yet.
+                @endif
+            </div>
+        </div>
+        <div class="stat">
+            <div class="stat-top">
+                <div><span class="stat-lbl">Average score</span><b>{{ $stats['average'] !== null ? $stats['average'] . '%' : '—' }}</b></div>
+                <span class="stat-icon si-orange"><i class="fas fa-chart-simple"></i></span>
+            </div>
+            <div class="stat-context {{ $benchmarkGap !== null && $benchmarkGap < 0 ? 'warn' : ($benchmarkGap !== null ? 'good' : '') }}">
+                @if($benchmarkGap === null)
+                    No submissions yet.
+                @elseif($benchmarkGap >= 0)
+                    <strong>+{{ $benchmarkGap }} pts</strong> above the 75% benchmark.
+                @else
+                    <strong>{{ $benchmarkGap }} pts</strong> below the 75% benchmark.
+                @endif
+            </div>
+        </div>
+        <div class="stat">
+            <div class="stat-top">
+                <div><span class="stat-lbl">Highest</span><b>{{ $stats['highest'] !== null ? $stats['highest'] . '%' : '—' }}</b></div>
+                <span class="stat-icon si-green"><i class="fas fa-trophy"></i></span>
+            </div>
+            <div class="stat-context">
+                {{ $stats['highest'] !== null ? 'Top submitted score.' : 'No submissions yet.' }}
+            </div>
+        </div>
+        <div class="stat">
+            <div class="stat-top">
+                <div><span class="stat-lbl">Lowest</span><b>{{ $stats['lowest'] !== null ? $stats['lowest'] . '%' : '—' }}</b></div>
+                <span class="stat-icon si-red"><i class="fas fa-arrow-down"></i></span>
+            </div>
+            <div class="stat-context {{ $stats['lowest'] !== null && $stats['lowest'] < 50 ? 'warn' : '' }}">
+                @if($stats['lowest'] === null)
+                    No submissions yet.
+                @elseif($stats['lowest'] < 50)
+                    <strong>May need extra support.</strong>
+                @else
+                    Lowest submitted score.
+                @endif
+            </div>
+        </div>
     </div>
 
     <div class="charts-row">
@@ -130,6 +249,21 @@
             @endif
         </div>
     </div>
+
+    @if(!empty($insights))
+        <div class="insights-head"><i class="fas fa-lightbulb"></i> What the charts above mean</div>
+        <div class="insights-grid">
+            @foreach($insights as $insight)
+                <div class="insight-card tone-{{ $insight['tone'] }}">
+                    <div class="insight-icon"><i class="fas {{ $insight['icon'] }}"></i></div>
+                    <div>
+                        <div class="insight-title">{{ $insight['title'] }}</div>
+                        <div class="insight-text">{{ $insight['text'] }}</div>
+                    </div>
+                </div>
+            @endforeach
+        </div>
+    @endif
 
     <div class="layout">
         <div class="card">

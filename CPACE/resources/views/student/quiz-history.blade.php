@@ -109,7 +109,7 @@
             gap: 20px;
             flex-wrap: wrap;
         }
-        .header-title { font-size: 28px; font-weight: 600; color: #333; }
+        .header-title { font-size: 28px; font-weight: 600; color: #14283E; }
         .header-subtitle { color: #999; font-size: 14px; }
         .back-link {
             display: inline-flex; align-items: center; gap: 8px;
@@ -246,7 +246,7 @@
                 <div class="header-dropdown-wrap">
                     <button class="profile-avatar" id="profileBtn">@include('partials.avatar-content')</button>
                     <div class="dropdown-menu" id="profileDropdown">
-                        <a href="#"><i class="fas fa-user"></i> Profile Settings</a>
+                        <a href="#" class="js-open-profile-modal"><i class="fas fa-user"></i> Profile Settings</a>
                         <a href="#"><i class="fas fa-chart-line"></i> My Progress</a>
                         <a href="#"><i class="fas fa-question-circle"></i> Help &amp; Support</a>
                         <form method="POST" action="{{ route('logout') }}"

@@ -17,7 +17,7 @@
         .topbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:22px; gap:16px; }
         .topbar-left { display:flex; align-items:center; gap:12px; }
         .topbar-right { display:flex; align-items:center; gap:10px; }
-        .page-title { font-size:26px; font-weight:700; color:#1a1a1a; }
+        .page-title { font-size:26px; font-weight:700; color:#14283E; }
         .page-sub { font-size:12px; color:#999; margin-top:2px; }
         .btn { display:inline-flex; align-items:center; justify-content:center; gap:7px; padding:9px 18px; border-radius:8px; font-size:13px; font-weight:600; font-family:'Poppins',sans-serif; cursor:pointer; border:none; text-decoration:none; transition:all .2s; }
         .btn-primary { background:var(--primary); color:white; }
@@ -26,12 +26,34 @@
         .btn-ghost:hover { background:#f5f5f5; }
         .btn-sm { padding:6px 12px; font-size:12px; }
         .card { background:white; border-radius:14px; padding:22px; border:1px solid #eee; }
+
+        /* ── Card depth — the same two tiers the Program Chair Dashboard uses:
+             the section and chart cards get this lighter lift, and the KPI row
+             further down gets a darker one so it still reads as the headline.
+             The border is dropped on a lifted card because an outline plus a
+             shadow reads as two competing edges.
+             Scoped to .main for the same reason as the KPI rules below —
+             partials/chair-sidebar.blade.php is included after this sheet and
+             defines its own bare .card. ── */
+        .main .card, .main .viz-card {
+            border-color:transparent;
+            box-shadow:0 2px 6px rgba(15,10,10,.08), 0 10px 22px -10px rgba(15,10,10,.22);
+            transition:transform .18s ease, box-shadow .18s ease;
+        }
+        .main .card:hover, .main .viz-card:hover {
+            transform:translateY(-2px);
+            box-shadow:0 4px 10px rgba(15,10,10,.1), 0 16px 30px -10px rgba(15,10,10,.3);
+        }
+        @media (prefers-reduced-motion:reduce) {
+            .main .card, .main .viz-card, .main .stat-card { transition:none; }
+            .main .card:hover, .main .viz-card:hover, .main .stat-card:hover { transform:none; }
+        }
         .card-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; gap:12px; }
         .card-title { font-size:14px; font-weight:600; color:#1a1a1a; }
         .empty { text-align:center; padding:40px 20px; color:#aaa; }
 
         /* Tabs */
-        .tab-bar { display:flex; gap:0; margin-bottom:18px; background:white; border-radius:12px; padding:4px; border:1px solid #eee; width:fit-content; }
+        .tab-bar { display:flex; gap:0; background:white; border-radius:12px; padding:4px; border:1px solid #eee; width:fit-content; flex-shrink:0; }
         .tab-btn { padding:9px 22px; border-radius:9px; font-size:13px; font-weight:600; font-family:'Poppins',sans-serif; cursor:pointer; border:none; background:transparent; color:#888; transition:all .2s; display:flex; align-items:center; gap:7px; }
         .tab-btn:hover { color:#555; background:#f8f8fa; }
         .tab-btn.active { background:var(--primary); color:white; box-shadow:0 2px 8px rgba(123,29,29,0.25); }
@@ -39,16 +61,68 @@
         .tab-panel { display:none; }
         .tab-panel.active { display:block; }
 
-        .filter-card { padding:13px 16px; margin-bottom:18px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
-        .filter-card label { font-size:10.5px; font-weight:600; color:#777; }
-        .filter-card select { min-width:230px; padding:8px 11px; border:1px solid #ddd; border-radius:8px; font:11px Poppins,sans-serif; color:#444; background:#fff; }
-        .stats-row { display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin-bottom:18px; }
-        .stat-card { background:white; border:1px solid #eee; border-radius:12px; padding:15px; }
-        .stat-top { display:flex; justify-content:space-between; align-items:flex-start; }
-        .stat-lbl { font-size:10px; color:#888; font-weight:600; }
-        .stat-num { font-size:24px; font-weight:700; color:#222; margin-top:7px; }
-        .stat-sub { font-size:9.5px; color:#aaa; margin-top:4px; }
-        .stat-icon { width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:18px; }
+        /* ── Tabs + their filter share one row, tabs pinned left and the
+           filter pinned right, so the row reads as one scoped view instead
+           of two stacked, unrelated-looking controls. ── */
+        .tab-filter-row { display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; margin-bottom:18px; }
+
+        /* ── Filter bar — no card wrapper: the controls sit straight on the
+           page so the row is one control tall instead of a padded panel.
+           Labels run inline beside their select rather than stacked above,
+           which is what the base stylesheet's block-level <label> and
+           full-width <select> would otherwise force. ── */
+        .filter-card { margin:0; padding:0; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+        .filter-field { display:flex; align-items:center; gap:7px; }
+        .filter-card label { font-size:10px; font-weight:700; color:#8a8a94; text-transform:uppercase; letter-spacing:.4px; margin:0; white-space:nowrap; }
+        .filter-card select { width:auto; min-width:230px; padding:7px 10px; border:1.5px solid #e2e2e6; border-radius:8px; font:12px Poppins,sans-serif; color:#333; background:#fff; cursor:pointer; transition:border-color .15s; }
+        .filter-card select:hover { border-color:#c7c7cf; }
+        .filter-card select:focus { outline:none; border-color:var(--primary); box-shadow:0 0 0 3px rgba(123,29,29,.08); }
+        /* ── KPI cards — same treatment as the other chair pages, sized down
+           for a 5-up row: a pronounced shadow so the headline row lifts off
+           the page, a bold dark title, an inline unit beside the number, and
+           a dashed-border context line that reads the number rather than
+           just restating its label.
+
+           EVERY rule here is scoped to .main on purpose. partials/chair-
+           sidebar.blade.php is included in <body>, i.e. AFTER this stylesheet,
+           and it defines bare .stats-row / .stat-card / .stat-top / .stat-num /
+           .stat-lbl / .stat-icon of its own. At equal specificity the later
+           sheet wins, so unscoped rules here are silently dead — that is what
+           forced this row back to the sidebar's repeat(4,1fr) (4 cards + 1
+           stranded) and its flex .stat-top. .main lifts these to (0,2,0) so
+           they actually apply. Do not drop the prefix. ── */
+
+        /* All five stay on one row at every desktop width — the type and the
+           icon scale with the viewport instead of the row breaking to a
+           second line, which used to strand two cards underneath. */
+        .main .stats-row { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:10px; margin-bottom:18px; }
+        .main .stat-card {
+            background:white; border:1px solid #eee; border-radius:12px;
+            padding:15px clamp(12px,1.05vw,18px);
+            display:flex; flex-direction:column; height:100%; min-width:0;
+            box-shadow:0 4px 10px rgba(10,5,5,.14), 0 16px 32px -8px rgba(10,5,5,.34);
+            transition:transform .18s ease, box-shadow .18s ease;
+        }
+        .main .stat-card:hover {
+            transform:translateY(-2px);
+            box-shadow:0 6px 14px rgba(10,5,5,.18), 0 22px 40px -8px rgba(10,5,5,.4);
+        }
+        /* The title gets the card's full width instead of competing with the
+           icon for it, so "Curriculum Areas" stays on one line in a narrow
+           card; the number and the icon then share the row below it.
+           display:contents lets the markup's wrapper div drop out of the
+           grid so its two children can be placed directly. */
+        .main .stat-top { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; column-gap:8px; flex:1; }
+        .main .stat-top > div:first-child { display:contents; }
+        .main .stat-lbl { grid-column:1/-1; grid-row:1; font-size:clamp(10.5px,.8vw,12.5px); font-weight:700; color:#1a1a1a; letter-spacing:-.01em; margin-bottom:9px; }
+        .main .stat-num { grid-column:1; grid-row:2; font-size:clamp(20px,1.5vw,26px); font-weight:700; color:#1a1a1a; line-height:1; margin-bottom:0; }
+        .main .stat-unit { font-size:clamp(9.5px,.72vw,11px); font-weight:600; color:#aaa; vertical-align:middle; margin-left:2px; }
+        .main .stat-context {
+            font-size:clamp(9.5px,.7vw,10.5px); color:#999; margin-top:12px;
+            padding-top:9px; border-top:1px dashed #eee; line-height:1.45;
+        }
+        .main .stat-context strong { color:#1a1a1a; font-weight:700; }
+        .main .stat-icon { grid-column:2; grid-row:2; width:clamp(34px,2.6vw,46px); height:clamp(34px,2.6vw,46px); border-radius:11px; display:flex; align-items:center; justify-content:center; font-size:clamp(14px,1.2vw,20px); flex-shrink:0; }
         .si-red { background:#fde8e8; color:var(--accent); }
         .si-green { background:#d1fae5; color:var(--green); }
         .si-blue { background:#dbeafe; color:var(--blue); }
@@ -71,8 +145,25 @@
         .status.critical { background:#fee2e2; color:#b91c1c; }
         .legend { margin-top:13px; padding:11px 13px; border-radius:9px; background:#f8f8fa; font-size:10px; color:#888; line-height:1.6; }
 
-        @media(max-width:1250px) { .stats-row{grid-template-columns:repeat(3,1fr)} }
-        @media(max-width:640px) { .stats-row{grid-template-columns:1fr}.filter-card select{min-width:0;width:100%} }
+        /* Below ~1100px five readable cards no longer fit side by side, so the
+           row becomes a swipeable strip rather than breaking apart — it stays
+           one row either way. The doubled class and !important are needed
+           because partials/chair-sidebar.blade.php is included after this
+           stylesheet and forces .stats-row to 1 / 2 / 1 columns at 900px,
+           768px and 480px; without out-ranking those this strip never
+           applies. The lifted shadow is toned down because a scroll
+           container clips it vertically. */
+        @media(max-width:1100px) {
+            .main .stats-row {
+                grid-template-columns:none !important; grid-auto-flow:column !important;
+                grid-auto-columns:minmax(158px,1fr);
+                overflow-x:auto; overscroll-behavior-x:contain;
+                padding-bottom:6px; scroll-snap-type:x proximity;
+            }
+            .main .stat-card { scroll-snap-align:start; box-shadow:0 2px 6px rgba(10,5,5,.12), 0 8px 18px -6px rgba(10,5,5,.22); }
+            .main .stat-card:hover { transform:none; box-shadow:0 2px 6px rgba(10,5,5,.12), 0 8px 18px -6px rgba(10,5,5,.22); }
+        }
+        @media(max-width:640px) { .tab-filter-row{flex-direction:column;align-items:stretch}.tab-bar{width:100%}.filter-card{width:100%}.filter-field{width:100%}.filter-card select{flex:1;width:auto;min-width:0} }
     </style>
 </head>
 <body>
@@ -83,34 +174,72 @@
         <div class="topbar-right">@include('partials.topbar-actions')</div>
     </div>
 
-    {{-- One filter row, above everything it scopes. --}}
-    <form class="card filter-card" method="GET">
-        <label for="subject">Subject</label>
-        <select name="subject" id="subject"><option value="">All CPALE subjects</option>@foreach($subjects as $subject)<option value="{{ $subject->id }}" @selected($selectedSubject === $subject->id)>{{ $subject->code }} — {{ $subject->name }}</option>@endforeach</select>
-        <button class="btn btn-primary btn-sm" type="submit"><i class="fas fa-filter"></i> Apply</button>
-        @if($selectedSubject)<a class="btn btn-ghost btn-sm" href="{{ route('chair.analytics.test-bank-coverage') }}">Clear</a>@endif
-    </form>
+    {{-- Tabs on the left, the filter that scopes both of them on the right —
+         same row, so the row reads as one scoped view instead of two
+         stacked, unrelated-looking controls. --}}
+    <div class="tab-filter-row">
+        <div class="tab-bar" role="tablist">
+            <button class="tab-btn active" role="tab" aria-selected="true" onclick="switchTab('overview', this)"><i class="fas fa-table-columns"></i> Overview</button>
+            <button class="tab-btn" role="tab" aria-selected="false" onclick="switchTab('visualization', this)"><i class="fas fa-chart-line"></i> Visualization</button>
+        </div>
 
-    <div class="tab-bar" role="tablist">
-        <button class="tab-btn active" role="tab" aria-selected="true" onclick="switchTab('overview', this)"><i class="fas fa-table-columns"></i> Overview</button>
-        <button class="tab-btn" role="tab" aria-selected="false" onclick="switchTab('visualization', this)"><i class="fas fa-chart-line"></i> Visualization</button>
+        <form class="filter-card" method="GET">
+            <div class="filter-field">
+                <label for="subject">Subject</label>
+                <select name="subject" id="subject"><option value="">All CPALE subjects</option>@foreach($subjects as $subject)<option value="{{ $subject->id }}" @selected($selectedSubject === $subject->id)>{{ $subject->code }} — {{ $subject->name }}</option>@endforeach</select>
+            </div>
+            <button class="btn btn-primary btn-sm" type="submit"><i class="fas fa-filter"></i> Apply</button>
+            @if($selectedSubject)<a class="btn btn-ghost btn-sm" href="{{ route('chair.analytics.test-bank-coverage') }}">Clear</a>@endif
+        </form>
     </div>
 
     @php
+        // Context figures for the KPI cards — each number gets a line that
+        // reads it (what it means, or what it asks the chair to do) rather
+        // than a static caption that only restates the label.
+        $avgPerArea = $stats['areas'] > 0 ? round($stats['active'] / $stats['areas'], 1) : 0;
+        $thinPct = $stats['areas'] > 0 ? (int) round($stats['thin'] / $stats['areas'] * 100) : 0;
+        $criticalPct = $stats['areas'] > 0 ? (int) round($stats['critical'] / $stats['areas'] * 100) : 0;
+
         $statCards = [
-            ['Curriculum Areas', number_format($stats['areas']), $stats['subtopics'].' nested subtopics', 'si-blue', 'fa-sitemap'],
-            ['Active Questions', number_format($stats['active']), $stats['inactive'].' inactive / draft', 'si-green', 'fa-circle-question'],
-            ['Overall Coverage', $stats['coverage'].'%', 'Of the '.number_format($stats['areas'] * $target).'-question target', 'si-grey', 'fa-gauge'],
-            ['Thin Areas', number_format($stats['thin']), '1–'.($target - 1).' active questions', 'si-orange', 'fa-battery-quarter'],
-            ['Critical Areas', number_format($stats['critical']), 'No active questions at all', 'si-red', 'fa-triangle-exclamation'],
+            [
+                'Curriculum Areas', number_format($stats['areas']), 'Areas', 'si-blue', 'fa-sitemap',
+                $stats['subtopics'] > 0
+                    ? '<strong>'.number_format($stats['subtopics']).' nested subtopics</strong> sit inside them.'
+                    : '<strong>Flat structure</strong> — no nested subtopics mapped yet.',
+            ],
+            [
+                'Active Questions', number_format($stats['active']), 'Live', 'si-green', 'fa-circle-question',
+                $stats['inactive'] > 0
+                    ? '<strong>'.$avgPerArea.' per area</strong> live · <strong>'.number_format($stats['inactive']).'</strong> still draft.'
+                    : '<strong>'.$avgPerArea.' per area</strong> against a '.$target.'-question target.',
+            ],
+            [
+                'Overall Coverage', $stats['coverage'].'%', 'of target', 'si-grey', 'fa-gauge',
+                $stats['gap'] > 0
+                    ? '<strong style="color:var(--accent);">'.number_format($stats['gap']).' more questions</strong> to reach '.$target.' per area.'
+                    : '<strong style="color:#047857;">Target met</strong> across every curriculum area.',
+            ],
+            [
+                'Thin Areas', number_format($stats['thin']), 'Areas', 'si-orange', 'fa-battery-quarter',
+                $stats['thin'] > 0
+                    ? '<strong>'.$thinPct.'% of areas</strong> hold only 1–'.($target - 1).' questions.'
+                    : '<strong style="color:#047857;">None thin</strong> — every area is at target.',
+            ],
+            [
+                'Critical Areas', number_format($stats['critical']), 'Areas', 'si-red', 'fa-triangle-exclamation',
+                $stats['critical'] > 0
+                    ? '<strong style="color:var(--accent);">'.$criticalPct.'% of areas</strong> cannot be quizzed at all yet.'
+                    : '<strong style="color:#047857;">Every area</strong> has at least one live question.',
+            ],
         ];
     @endphp
 
     {{-- ═══ OVERVIEW TAB ═══ --}}
     <div id="tab-overview" class="tab-panel active">
         <div class="stats-row">
-            @foreach($statCards as [$label, $value, $sub, $tone, $icon])
-                <div class="stat-card"><div class="stat-top"><div><div class="stat-lbl">{{ $label }}</div><div class="stat-num">{{ $value }}</div><div class="stat-sub">{{ $sub }}</div></div><div class="stat-icon {{ $tone }}"><i class="fas {{ $icon }}"></i></div></div></div>
+            @foreach($statCards as [$label, $value, $unit, $tone, $icon, $context])
+                <div class="stat-card"><div class="stat-top"><div><div class="stat-lbl">{{ $label }}</div><div class="stat-num">{{ $value }} <span class="stat-unit">{{ $unit }}</span></div></div><div class="stat-icon {{ $tone }}"><i class="fas {{ $icon }}"></i></div></div><div class="stat-context">{!! $context !!}</div></div>
             @endforeach
         </div>
 
@@ -161,8 +290,8 @@
     {{-- ═══ VISUALIZATION TAB ═══ --}}
     <div id="tab-visualization" class="tab-panel">
         <div class="stats-row">
-            @foreach($statCards as [$label, $value, $sub, $tone, $icon])
-                <div class="stat-card"><div class="stat-top"><div><div class="stat-lbl">{{ $label }}</div><div class="stat-num">{{ $value }}</div><div class="stat-sub">{{ $sub }}</div></div><div class="stat-icon {{ $tone }}"><i class="fas {{ $icon }}"></i></div></div></div>
+            @foreach($statCards as [$label, $value, $unit, $tone, $icon, $context])
+                <div class="stat-card"><div class="stat-top"><div><div class="stat-lbl">{{ $label }}</div><div class="stat-num">{{ $value }} <span class="stat-unit">{{ $unit }}</span></div></div><div class="stat-icon {{ $tone }}"><i class="fas {{ $icon }}"></i></div></div><div class="stat-context">{!! $context !!}</div></div>
             @endforeach
         </div>
 
@@ -191,11 +320,14 @@
                 <div class="chart-canvas-wrap h-md"><canvas id="vizActiveStack"></canvas></div>
             </div>
 
-            <div class="viz-card full">
-                <h4><i class="fas fa-arrow-down-wide-short"></i> Largest Coverage Gaps</h4>
-                <div class="viz-sub">The {{ $gaps->count() }} curriculum areas furthest from the {{ $target }}-question target — the authoring backlog, in order.</div>
-                <div class="chart-canvas-wrap h-xl"><canvas id="vizGapBar"></canvas></div>
-            </div>
+            {{-- "Largest Coverage Gaps" was removed here. It ranked the 12
+                 areas furthest from target, but an empty area's gap is always
+                 the full target, so once most areas are empty the ranking is a
+                 mass tie (71 of 96 areas sat at 25) and the chart drew 12
+                 identical bars picked arbitrarily out of that tie — while the
+                 areas that actually varied, gap 9–15, never appeared at all.
+                 The same information is carried honestly by the Critical Areas
+                 KPI, the status donut, and the full area table on Overview. --}}
 
             <div class="viz-card full">
                 <h4><i class="fas fa-chart-line"></i> Test Bank Growth</h4>
@@ -213,7 +345,6 @@
     const P = Viz.palette;
 
     const rollup = @json($rollup);
-    const gaps   = @json($gaps);
     const growth = @json($growth->values());
     const status = { adequate: {{ $stats['adequate'] }}, thin: {{ $stats['thin'] }}, critical: {{ $stats['critical'] }} };
 
@@ -293,37 +424,6 @@
             plugins: { legend: { position: 'bottom' }, tooltip: { mode: 'index' } },
         },
     });
-
-    /* ── Largest coverage gaps ──────────────────────────────────────────── */
-    if (gaps.length) {
-        Viz.chart('vizGapBar', {
-            type: 'bar',
-            data: {
-                labels: gaps.map((area) => area.subject_code + ' · ' + area.name),
-                datasets: [Viz.bar({ label: 'Questions needed', data: pluck(gaps, 'gap'), backgroundColor: P.s1, maxBarThickness: 18 })],
-            },
-            options: {
-                indexAxis: 'y',
-                layout: { padding: { right: 40 } },
-                scales: {
-                    x: Viz.countAxis({ title: { display: true, text: 'Questions still needed', color: P.muted } }),
-                    y: Viz.catAxis({ ticks: { color: P.ink, padding: 6, font: { size: 10 } } }),
-                },
-                plugins: {
-                    legend: { display: false },
-                    tooltip: { callbacks: { label: (c) => {
-                        const area = gaps[c.dataIndex];
-                        return area.gap === 0
-                            ? 'Fully covered'
-                            : area.gap + ' more needed (' + area.active + ' of {{ $target }} written)';
-                    } } },
-                },
-            },
-            plugins: [Viz.endLabels()],
-        });
-    } else {
-        document.getElementById('vizGapBar').outerHTML = '<div class="viz-empty">Every curriculum area has met the target.</div>';
-    }
 
     /* ── Bank growth ────────────────────────────────────────────────────── */
     Viz.chart('vizGrowth', {

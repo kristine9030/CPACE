@@ -22,7 +22,7 @@
         /* TOPBAR */
         .topbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:22px; gap:16px; position:relative; z-index:100; }
         .topbar-left { display:flex; align-items:center; gap:12px; }
-        .page-title { font-size:26px; font-weight:700; color:#1a1a1a; }
+        .page-title { font-size:26px; font-weight:700; color:#14283E; }
         .page-sub { font-size:12px; color:#999; margin-top:2px; }
         .topbar-right { display:flex; align-items:center; gap:10px; }
         .btn { display:inline-flex; align-items:center; gap:7px; padding:9px 18px; border-radius:8px; font-size:13px; font-weight:600; font-family:'Poppins',sans-serif; cursor:pointer; border:none; text-decoration:none; transition:all .2s; }
@@ -40,12 +40,28 @@
         .export-menu a { display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:7px; font-size:13px; color:#444; text-decoration:none; transition:background .15s; }
         .export-menu a:hover { background:#f5f5f5; }
 
-        /* STATS */
-        .stats-row { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:20px; }
-        .stat-chip { background:white; border-radius:12px; padding:16px 18px; display:flex; align-items:center; gap:14px; }
-        .chip-icon { width:38px; height:38px; border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:17px; flex-shrink:0; }
-        .chip-num { font-size:22px; font-weight:700; color:#1a1a1a; line-height:1; }
-        .chip-lbl { font-size:11px; color:#999; margin-top:2px; }
+        /* STATS — same KPI card vibe as the faculty dashboard */
+        .stats-row { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:22px; }
+        .stat-card {
+            background:white; border-radius:14px; padding:20px 22px;
+            display:flex; flex-direction:column; height:100%;
+            box-shadow:0 2px 6px rgba(15,10,10,.08), 0 10px 22px -10px rgba(15,10,10,.22);
+            transition:transform .18s ease, box-shadow .18s ease;
+        }
+        .stat-card:hover { transform:translateY(-3px); box-shadow:0 4px 10px rgba(15,10,10,.1), 0 16px 30px -10px rgba(15,10,10,.3); }
+        .stat-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px; }
+        .stat-icon { width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
+        .si-red    { background:#fde8e8; color:var(--accent); }
+        .si-green  { background:#d1fae5; color:var(--green); }
+        .si-blue   { background:#dbeafe; color:var(--blue); }
+        .si-orange { background:#fef3c7; color:var(--orange); }
+        .si-gray   { background:#f3f4f6; color:#9ca3af; }
+        .stat-lbl  { font-family:'Montserrat',sans-serif; font-size:16px; font-weight:700; color:#1a1a1a; margin-bottom:12px; display:block; }
+        .stat-num  { font-size:28px; font-weight:700; color:#1a1a1a; line-height:1; margin-bottom:0; }
+        .stat-chg  { font-size:11px; color:var(--green); margin-top:2px; }
+        .stat-chg.neutral { color:#999; }
+        .stat-context { font-size:10.5px; color:#aaa; margin-top:0; padding-top:6px; border-top:1px dashed #eee; line-height:1.4; }
+        .stat-context strong { color:#1a1a1a; font-weight:700; }
 
         /* FILTERS */
         .filter-bar { background:white; border-radius:12px; padding:16px 20px; margin-bottom:18px; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
@@ -58,22 +74,34 @@
         .search-wrap-tb i { position:absolute; left:10px; top:50%; transform:translateY(-50%); color:#aaa; font-size:13px; }
         .search-wrap-tb .search-inp { padding-left:32px; }
         .filter-divider { width:1px; height:28px; background:#e8e8e8; }
+        .filter-clear { margin-left:auto; background:none; border:none; font-family:'Poppins',sans-serif; font-size:13px; font-weight:600; color:var(--accent); cursor:pointer; padding:6px 4px; white-space:nowrap; }
+        .filter-clear:hover { text-decoration:underline; }
 
         /* TABLE CARD */
         .table-card { background:white; border-radius:14px; overflow:hidden; }
-        .table-head-bar { padding:16px 20px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #f5f5f5; }
+        .table-head-bar { padding:16px 20px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #f5f5f5; flex-wrap:wrap; gap:10px; }
         .table-head-bar .count { font-size:13px; color:#888; }
+        .select-all-wrap { display:flex; align-items:center; gap:9px; font-size:13px; color:#444; font-weight:600; cursor:pointer; user-select:none; }
         .bulk-actions { display:flex; gap:8px; }
         .bulk-btn { display:inline-flex; align-items:center; gap:6px; padding:7px 14px; border-radius:7px; font-size:12px; font-weight:600; cursor:pointer; border:none; font-family:'Poppins',sans-serif; transition:all .2s; }
         .bulk-del { background:#fde8e8; color:var(--accent); }
         .bulk-exp { background:#dbeafe; color:var(--blue); }
 
+        /* CHECKBOXES */
+        input.row-checkbox { appearance:none; -webkit-appearance:none; width:17px; height:17px; border:1.5px solid #d5d5d5; border-radius:5px; cursor:pointer; position:relative; flex-shrink:0; transition:all .15s; background:white; }
+        input.row-checkbox:hover { border-color:var(--primary); }
+        input.row-checkbox:checked { background:var(--primary); border-color:var(--primary); }
+        input.row-checkbox:checked::after { content:'\f00c'; font-family:'Font Awesome 6 Free'; font-weight:900; color:white; font-size:10px; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); }
+        input.row-checkbox:indeterminate { background:var(--primary); border-color:var(--primary); }
+        input.row-checkbox:indeterminate::after { content:''; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:8px; height:2px; background:white; border-radius:1px; }
+
         table { width:100%; border-collapse:collapse; }
         thead th { text-align:left; font-size:11px; color:#aaa; font-weight:600; padding:12px 16px; text-transform:uppercase; letter-spacing:.4px; border-bottom:1px solid #f5f5f5; background:#fafafa; }
-        thead th:first-child { padding-left:20px; }
+        thead th:first-child { padding-left:20px; width:40px; }
         tbody tr { border-bottom:1px solid #f8f8f8; transition:background .15s; }
         tbody tr:last-child { border-bottom:none; }
         tbody tr:hover { background:#fafafa; }
+        tbody tr.row-selected { background:var(--primary-light); }
         tbody td { padding:14px 16px; font-size:13px; vertical-align:middle; }
         tbody td:first-child { padding-left:20px; }
 
@@ -131,6 +159,7 @@
             .filter-divider { display: none; }
             .search-inp { width: 100%; }
             .search-wrap-tb { width: 100%; }
+            .filter-clear { margin-left: 0; align-self: flex-end; }
             /* table: horizontal scroll */
             .table-card { overflow-x: auto; }
             table { min-width: 640px; }
@@ -144,7 +173,7 @@
 
         @media (max-width: 480px) {
             .stats-row { grid-template-columns: 1fr !important; }
-            .chip-num { font-size: 18px; }
+            .stat-num { font-size: 22px; }
             .btn { padding: 8px 12px; font-size: 12px; }
         }
     </style>
@@ -168,7 +197,7 @@
                     <i class="fas fa-file-export"></i> Export <i class="fas fa-chevron-down" style="font-size:10px;"></i>
                 </button>
                 <div class="export-menu" id="exportMenu">
-                    <a href="#" data-format="csv"><i class="fas fa-file-csv" style="color:#059669;"></i> Export as CSV (Excel)</a>
+                    <a href="#" data-format="excel"><i class="fas fa-file-excel" style="color:#059669;"></i> Export as Excel</a>
                     <a href="#" data-format="json"><i class="fas fa-file-code" style="color:#2563eb;"></i> Export as JSON</a>
                     <a href="#" data-format="pdf" target="_blank"><i class="fas fa-file-pdf" style="color:#c0392b;"></i> Export as PDF</a>
                 </div>
@@ -181,22 +210,58 @@
     {{-- Status and validation messages surface as SweetAlert popups via partials.alerts --}}
 
     <!-- STATS -->
+    @php
+        $activePct = $stats['total'] > 0 ? round($stats['active'] / $stats['total'] * 100) : 0;
+        $draftPct  = $stats['total'] > 0 ? round($stats['draft'] / $stats['total'] * 100) : 0;
+    @endphp
     <div class="stats-row a1">
-        <div class="stat-chip">
-            <div class="chip-icon" style="background:#dbeafe;color:#2563eb;"><i class="fas fa-database"></i></div>
-            <div><div class="chip-num">{{ number_format($stats['total']) }}</div><div class="chip-lbl">Total Questions</div></div>
+        <div class="stat-card">
+            <div class="stat-top">
+                <div>
+                    <div class="stat-lbl">Total Questions</div>
+                    <div class="stat-num">{{ number_format($stats['total']) }}</div>
+                    <div class="stat-chg neutral">Across all subjects</div>
+                </div>
+                <div class="stat-icon si-blue"><i class="fas fa-database"></i></div>
+            </div>
+            <div class="stat-context">Question bank shared across your assigned subjects.</div>
         </div>
-        <div class="stat-chip">
-            <div class="chip-icon" style="background:#d1fae5;color:#059669;"><i class="fas fa-check-circle"></i></div>
-            <div><div class="chip-num">{{ number_format($stats['active']) }}</div><div class="chip-lbl">Active</div></div>
+        <div class="stat-card">
+            <div class="stat-top">
+                <div>
+                    <div class="stat-lbl">Active</div>
+                    <div class="stat-num">{{ number_format($stats['active']) }}</div>
+                    <div class="stat-chg">{{ $activePct }}% of total</div>
+                </div>
+                <div class="stat-icon si-green"><i class="fas fa-check-circle"></i></div>
+            </div>
+            <div class="stat-context">Live and eligible to appear in quizzes.</div>
         </div>
-        <div class="stat-chip">
-            <div class="chip-icon" style="background:#f3f4f6;color:#9ca3af;"><i class="fas fa-file-alt"></i></div>
-            <div><div class="chip-num">{{ number_format($stats['draft']) }}</div><div class="chip-lbl">Drafts</div></div>
+        <div class="stat-card">
+            <div class="stat-top">
+                <div>
+                    <div class="stat-lbl">Drafts</div>
+                    <div class="stat-num">{{ number_format($stats['draft']) }}</div>
+                    <div class="stat-chg neutral">{{ $draftPct }}% of total</div>
+                </div>
+                <div class="stat-icon si-gray"><i class="fas fa-file-alt"></i></div>
+            </div>
+            <div class="stat-context">Not yet published — hidden from student quizzes.</div>
         </div>
-        <div class="stat-chip">
-            <div class="chip-icon" style="background:#fef3c7;color:#d97706;"><i class="fas fa-clock"></i></div>
-            <div><div class="chip-num">{{ number_format($stats['this_week']) }}</div><div class="chip-lbl">Added this week</div></div>
+        <div class="stat-card">
+            <div class="stat-top">
+                <div>
+                    <div class="stat-lbl">Added This Week</div>
+                    <div class="stat-num">{{ number_format($stats['this_week']) }}</div>
+                    @if($stats['this_week'] > 0)
+                        <div class="stat-chg"><i class="fas fa-arrow-up"></i> New activity</div>
+                    @else
+                        <div class="stat-chg neutral">No new questions</div>
+                    @endif
+                </div>
+                <div class="stat-icon si-orange"><i class="fas fa-clock"></i></div>
+            </div>
+            <div class="stat-context">Questions created in the last 7 days.</div>
         </div>
     </div>
 
@@ -241,6 +306,7 @@
                 <option value="draft" {{ ($filters['status'] ?? '') === 'draft' ? 'selected' : '' }}>Draft</option>
             </select>
         </div>
+        <button type="button" id="clearFiltersBtn" class="filter-clear">Clear</button>
     </form>
 
     <!-- TABLE -->
@@ -302,10 +368,49 @@ document.addEventListener('DOMContentLoaded', () => {
     // Don't full-reload when the search box's Enter key submits the form.
     form.addEventListener('submit', (e) => { e.preventDefault(); loadTable(filterUrl()); });
 
+    // "Clear" — reset the search box and every dropdown, then reload the table.
+    const clearBtn = document.getElementById('clearFiltersBtn');
+    if (clearBtn) {
+        clearBtn.addEventListener('click', () => {
+            search.value = '';
+            form.querySelectorAll('select').forEach(sel => { sel.selectedIndex = 0; });
+            loadTable(form.action);
+        });
+    }
+
     // Pagination links inside the swapped-in table — intercept and AJAX them.
     card.addEventListener('click', (e) => {
         const link = e.target.closest('a.pag-btn');
         if (link && link.getAttribute('href')) { e.preventDefault(); loadTable(link.href); }
+    });
+
+    // ── ROW SELECTION ──
+    // Delegated on the (persistent) table card so it keeps working after
+    // AJAX swaps replace the table's innerHTML on search/filter/pagination.
+    function syncSelectAll() {
+        const boxes = Array.from(card.querySelectorAll('.q-checkbox'));
+        const checkedCount = boxes.filter(cb => cb.checked).length;
+        const allChecked = boxes.length > 0 && checkedCount === boxes.length;
+        const someChecked = checkedCount > 0 && !allChecked;
+        ['selectAllCb', 'headCheckbox'].forEach(id => {
+            const el = card.querySelector('#' + id);
+            if (el) { el.checked = allChecked; el.indeterminate = someChecked; }
+        });
+    }
+
+    card.addEventListener('change', (e) => {
+        const target = e.target;
+        if (target.id === 'selectAllCb' || target.id === 'headCheckbox') {
+            const checked = target.checked;
+            card.querySelectorAll('.q-checkbox').forEach(cb => {
+                cb.checked = checked;
+                cb.closest('tr').classList.toggle('row-selected', checked);
+            });
+            syncSelectAll();
+        } else if (target.classList.contains('q-checkbox')) {
+            target.closest('tr').classList.toggle('row-selected', target.checked);
+            syncSelectAll();
+        }
     });
 
     // ── EXPORT DROPDOWN ──

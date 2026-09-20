@@ -39,6 +39,7 @@ class User extends Authenticatable
         'email',
         'password',
         'profile_photo',
+        'avatar_color',
         'is_active',
         'email_verified',
         'last_login_at',

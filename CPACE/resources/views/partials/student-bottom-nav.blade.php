@@ -227,7 +227,7 @@
         <li class="bottom-nav-item">
             <a href="{{ route('subjects') }}" class="{{ $bnActive === 'subjects' ? 'active' : '' }}">
                 <i class="fas fa-book-open"></i>
-                <span>Subjects</span>
+                <span>Resources</span>
             </a>
         </li>
         <li class="bottom-nav-item">

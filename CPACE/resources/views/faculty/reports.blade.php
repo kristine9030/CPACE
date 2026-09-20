@@ -18,7 +18,7 @@
         .topbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:22px; gap:16px; position:relative; z-index:100; }
         .topbar-left { display:flex; align-items:center; gap:12px; }
         .topbar-right { display:flex; align-items:center; gap:10px; }
-        .page-title { font-size:26px; font-weight:700; color:#1a1a1a; }
+        .page-title { font-size:26px; font-weight:700; color:#14283E; }
         .page-sub { font-size:12px; color:#999; margin-top:2px; }
         .btn { display:inline-flex; align-items:center; justify-content:center; gap:7px; padding:9px 18px; border-radius:8px; font-size:13px; font-weight:600; font-family:'Poppins',sans-serif; cursor:pointer; border:none; text-decoration:none; transition:all .2s; }
         .btn-primary { background:var(--primary); color:white; }
@@ -158,12 +158,12 @@
         <div class="topbar-left">
             <div>
                 <div class="page-title">Reports</div>
-                <div class="page-sub">Build paper-ready student performance reports for PDF, print, and CSV export.</div>
+                <div class="page-sub">Build paper-ready student performance reports for PDF, print, and Excel export.</div>
             </div>
         </div>
         <div class="topbar-right">
             <button type="button" class="btn btn-ghost" onclick="document.getElementById('reportPaper').scrollIntoView({behavior:'smooth'})"><i class="fas fa-eye"></i> Preview</button>
-            <a class="btn btn-ghost" href="{{ route('faculty.reports.export', $activeQuery) }}"><i class="fas fa-file-csv"></i> CSV</a>
+            <a class="btn btn-ghost" href="{{ route('faculty.reports.export', $activeQuery) }}"><i class="fas fa-file-excel"></i> Excel</a>
             <button type="button" class="btn btn-primary" onclick="window.print()"><i class="fas fa-file-pdf"></i> PDF</button>
             @include('partials.topbar-actions')
         </div>
@@ -499,7 +499,7 @@
                             </tbody>
                         </table>
                         @if($questions->count() > 40)
-                            <p class="chart-caption">Showing the 40 questions most in need of review. Download the CSV for the full list.</p>
+                            <p class="chart-caption">Showing the 40 questions most in need of review. Download the Excel report for the full list.</p>
                         @endif
                     </section>
                 @endif
@@ -521,7 +521,7 @@
             <div class="export-actions">
                 <button type="button" class="btn btn-primary" onclick="window.print()"><i class="fas fa-file-pdf"></i> Export PDF</button>
                 <button type="button" class="btn btn-ghost" onclick="window.print()"><i class="fas fa-print"></i> Print Preview</button>
-                <a class="btn btn-ghost" href="{{ route('faculty.reports.export', $activeQuery) }}"><i class="fas fa-file-csv"></i> Download CSV</a>
+                <a class="btn btn-ghost" href="{{ route('faculty.reports.export', $activeQuery) }}"><i class="fas fa-file-excel"></i> Download Excel</a>
             </div>
             <div class="mini-stat"><span>Report Type</span><strong>{{ $reportLabel }}</strong></div>
             <div class="mini-stat"><span>Paper Size</span><strong>A4 Portrait</strong></div>
@@ -554,7 +554,7 @@
                 @endif
             </div>
 
-            <div class="panel-title" style="margin-top:18px;"><i class="fas fa-table"></i> CSV Preview</div>
+            <div class="panel-title" style="margin-top:18px;"><i class="fas fa-table"></i> Excel Preview</div>
             <div class="csv-preview">
                 @if($f['report'] === 'question_quality')
                     <div class="csv-row head"><span>Topic</span><span>Answered</span><span>Correct</span><span>Flag</span></div>

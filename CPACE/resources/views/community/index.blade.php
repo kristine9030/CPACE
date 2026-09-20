@@ -7,7 +7,7 @@
     <title>Alumni Community - CPACE</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         /* Active states used to be Facebook blue (#1877f2), which fought the
@@ -19,7 +19,7 @@
             --line:#e4e6eb; --ink-2:#65676b; --ink-3:#8a8d91;
         }
         * { margin:0; padding:0; box-sizing:border-box; }
-        body { font-family:'Poppins',sans-serif; background:#f0f2f5; color:#333; }
+        body { font-family:'Poppins',sans-serif; background:#f4f5f7; color:#333; }
 
         /* All three columns travel together as one centered group so the
            feed grows into whatever room is left — no dead gaps between them. */
@@ -30,35 +30,37 @@
            student pages, so every screen opens the same way. ── */
         /* Matches .fb-page's width so the header lines up with the columns. */
         .header { display:flex; justify-content:space-between; align-items:center; gap:20px; max-width:1400px; margin:0 auto 22px; }
-        .header-title { font-size:28px; font-weight:600; color:#222; }
-        .header-subtitle { color:#9a9aa0; font-size:13.5px; margin-top:2px; }
+        .header-title { font-family:'Montserrat',sans-serif; font-size:30px; font-weight:700; color:#14283E; margin-bottom:6px; }
+        .header-subtitle { color:#999; font-size:14px; }
         .header-right { display:flex; align-items:center; gap:14px; }
 
-        .search-box { position:relative; width:340px; }
-        .search-box i { position:absolute; left:16px; top:50%; transform:translateY(-50%); color:#b0b0b6; font-size:14px; }
+        .search-box { position:relative; width:280px; }
+        .search-box i { position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#aaa; font-size:14px; }
         .search-box input {
-            width:100%; padding:12px 16px 12px 42px;
-            border:1px solid #ebebed; border-radius:24px;
+            width:100%; padding:10px 14px 10px 36px;
+            border:1px solid #e0e0e0; border-radius:24px;
             font-size:13px; font-family:'Poppins',sans-serif; background:#fff; color:#555; outline:none;
         }
-        .search-box input::placeholder { color:#b3b3b8; }
-        .search-box input:focus { border-color:#ddd; }
+        .search-box input::placeholder { color:#bbb; }
+        .search-box input:focus { border-color:#7B1D1D; }
 
         /* Scoped to the header — the post overflow menu further down defines
            its own smaller .icon-btn, and an unscoped rule here loses to it. */
         .header-right .icon-btn {
-            width:40px; height:40px; border:none; background:transparent; border-radius:12px;
-            cursor:pointer; font-size:17px; color:#4c4c52; text-decoration:none;
+            width:40px; height:40px; border:none; background:#fff; border-radius:50%;
+            cursor:pointer; font-size:17px; color:#555; text-decoration:none;
             display:flex; align-items:center; justify-content:center;
-            transition:background .2s, transform .2s;
+            transition:background .2s;
+            box-shadow:0 1px 4px rgba(0,0,0,.08);
         }
-        .header-right .icon-btn:hover { background:#f7ecec; transform:translateY(-2px); }
+        .header-right .icon-btn:hover { background:#f0f0f0; }
 
         .profile-avatar {
-            width:42px; height:42px; background:var(--primary);
-            border:none; border-radius:50%; color:#fff;
-            font-weight:600; cursor:pointer; font-size:14px; font-family:'Poppins',sans-serif;
+            width:40px; height:40px; background:var(--primary);
+            border:none; border-radius:10px; color:#fff;
+            font-weight:700; cursor:pointer; font-size:14px; font-family:'Poppins',sans-serif;
             display:flex; align-items:center; justify-content:center; overflow:hidden;
+            transition:background .2s;
         }
         .profile-avatar:hover { background:var(--primary-hover); }
         .profile-avatar img { width:100%; height:100%; object-fit:cover; }
@@ -82,9 +84,9 @@
         .dropdown-menu .logout-btn, .dropdown-menu .logout-btn i { color:#c0392b; }
 
         .badge-dot {
-            position:absolute; top:-4px; right:-4px;
-            min-width:16px; height:16px; padding:0 4px;
-            background:#c0392b; color:#fff; border-radius:8px;
+            position:absolute; top:-3px; right:-3px;
+            width:18px; height:18px; padding:0;
+            background:#c0392b; color:#fff; border-radius:50%;
             font-size:10px; font-weight:700;
             display:flex; align-items:center; justify-content:center;
         }

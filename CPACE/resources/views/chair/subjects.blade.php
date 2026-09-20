@@ -8,12 +8,29 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        .summary-row { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:22px; }
-        .sum-card { background:#fff; border-radius:12px; padding:16px 18px; display:flex; align-items:center; gap:12px; border:1px solid #ebebeb; }
-        .sum-icon { width:38px; height:38px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0; }
-        .sum-icon.total { background:#f3f4f6;color:#6b7280; } .sum-icon.covered { background:#d1fae5;color:#059669; }
-        .sum-icon.topics { background:#dbeafe;color:#2563eb; } .sum-icon.inactive { background:#fef3c7;color:#d97706; }
-        .sum-num { font-size:22px;font-weight:700;color:#1a1a1a;line-height:1; } .sum-lbl { font-size:10.5px;color:#9ca3af;margin-top:3px; }
+        /* ── KPI cards — same treatment as the Program Chair Dashboard and
+           Student Management: a darker, more pronounced shadow than the rest
+           of the page's cards, a bold dark title (was a faint 10.5px gray
+           label), an inline unit next to the number, and a dashed-border
+           context line underneath explaining what the number means. ── */
+        .stats-row .stat-card {
+            display:flex; flex-direction:column; height:100%;
+            box-shadow:0 4px 10px rgba(10,5,5,.14), 0 16px 32px -8px rgba(10,5,5,.34);
+            transition:transform .18s ease, box-shadow .18s ease;
+        }
+        .stats-row .stat-card:hover {
+            transform:translateY(-2px);
+            box-shadow:0 6px 14px rgba(10,5,5,.18), 0 22px 40px -8px rgba(10,5,5,.4);
+        }
+        .stats-row .stat-top { flex:1; }
+        .stats-row .stat-icon { width:52px; height:52px; border-radius:13px; font-size:24px; flex-shrink:0; }
+        .stats-row .stat-lbl { font-size:13.5px; font-weight:700; color:#1a1a1a; margin-bottom:6px; letter-spacing:-.01em; }
+        .stat-unit { font-size:12px; font-weight:600; color:#aaa; vertical-align:middle; margin-left:2px; }
+        .stat-context {
+            font-size:10.5px; color:#999; margin-top:12px;
+            padding-top:10px; border-top:1px dashed #eee; line-height:1.4;
+        }
+        .stat-context strong { color:#1a1a1a; font-weight:700; }
         .subj-grid { display:grid;grid-template-columns:repeat(2,1fr);gap:16px; }
         .subj-card { background:#fff;border-radius:14px;border:1px solid #e8e8e8;overflow:hidden; }
         .subj-card.inactive { opacity:.72; }
@@ -31,6 +48,28 @@
         .add-mini { border:0;background:var(--primary-light);color:var(--primary);border-radius:7px;padding:5px 9px;font:600 10px 'Poppins',sans-serif;cursor:pointer; }
         .fac-chip { display:inline-flex;align-items:center;gap:7px;padding:6px 10px;border-radius:8px;font-size:11px;font-weight:500;color:#374151;background:#f9fafb;border:1px solid #e5e7eb;margin:3px 4px 3px 0; }
         .fac-av { width:19px;height:19px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:#fff;background:var(--subject-color); }
+        /* ── Collapsible topics panel ── */
+        .topics-tab { cursor:pointer;user-select:none;margin-bottom:0;padding:2px 0;border-radius:6px; }
+        .topics-tab:hover .section-label { color:var(--primary); }
+        .topics-tab:focus-visible { outline:2px solid var(--primary);outline-offset:3px; }
+        .topics-tab .section-label { display:inline-flex;align-items:center;gap:7px;transition:color .15s; }
+        .topics-caret { font-size:9px;color:#bbb;transition:transform .2s ease; }
+        .topics-tab[aria-expanded="true"] .topics-caret { transform:rotate(90deg);color:var(--primary); }
+        .topics-count { display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:#f3f4f6;color:#6b7280;font-size:9.5px;font-weight:700;letter-spacing:0; }
+        .topics-tab[aria-expanded="true"] .topics-count { background:var(--primary-light);color:var(--primary); }
+        /* 0fr → 1fr animates to the content's natural height without hardcoding one. */
+        .topics-panel { display:grid;grid-template-rows:0fr;transition:grid-template-rows .26s ease; }
+        .topics-panel > .topics-panel-inner { overflow:hidden;min-height:0; }
+        .topics-tab[aria-expanded="true"] + .topics-panel { grid-template-rows:1fr; }
+        .topics-panel-inner > *:first-child { padding-top:9px; }
+        /* Progressive reveal: root topics fade in one after another as the panel opens. */
+        .topics-panel.revealing .topic-list > .topic-node { opacity:0;transform:translateY(-4px);animation:topicIn .22s ease forwards; }
+        @keyframes topicIn { to { opacity:1;transform:none; } }
+        @media (prefers-reduced-motion:reduce) {
+            .topics-panel { transition:none; }
+            .topics-panel.revealing .topic-list > .topic-node { animation:none;opacity:1;transform:none; }
+            .topics-caret { transition:none; }
+        }
         .topic-list { display:flex;flex-direction:column;gap:6px; }
         .topic-node + .topic-node { margin-top:6px; }
         .topic-row { display:flex;align-items:center;gap:9px;padding:8px 9px;border-radius:8px;background:#fafafa;border:1px solid #f0f0f0; }
@@ -69,9 +108,9 @@
         .del-warn i { margin-top:1px;flex-shrink:0; }
         .info-note { margin:14px 0;padding:12px;background:#eff6ff;border-radius:8px;font-size:11.5px;color:#1e40af;display:flex;align-items:flex-start;gap:8px; }
         .info-note i { margin-top:1px;flex-shrink:0; }
-        @media(max-width:1050px) { .summary-row { grid-template-columns:repeat(2,1fr); } }
+        @media(max-width:1050px) { .stats-row { grid-template-columns:repeat(2,1fr); } }
         @media(max-width:900px) { .subj-grid { grid-template-columns:1fr; } }
-        @media(max-width:620px) { .summary-row { grid-template-columns:1fr; }.modal-grid { grid-template-columns:1fr; }.full { grid-column:auto; }.sc-top,.sc-section { padding-left:14px;padding-right:14px; } }
+        @media(max-width:620px) { .modal-grid { grid-template-columns:1fr; }.full { grid-column:auto; }.sc-top,.sc-section { padding-left:14px;padding-right:14px; } }
     </style>
 </head>
 <body>
@@ -79,9 +118,17 @@
 
 @php
     $subjectsColl = collect($subjects);
+    $totalSubjects = $subjectsColl->count();
     $assigned = $subjectsColl->filter(fn($subject) => $subject->faculty->isNotEmpty())->count();
     $topicCount = $subjectsColl->sum(fn($subject) => $subject->topics->count());
     $inactiveCount = $subjectsColl->where('is_active', false)->count();
+
+    // Context figures for the KPI cards — each number gets a line underneath
+    // saying what it means, so a bare count is never left to interpretation.
+    $activeCount = $totalSubjects - $inactiveCount;
+    $unassigned = $totalSubjects - $assigned;
+    $emptySubjects = $subjectsColl->filter(fn($subject) => $subject->topics->isEmpty())->count();
+    $avgTopics = $totalSubjects > 0 ? round($topicCount / $totalSubjects, 1) : 0;
 @endphp
 
 <main class="main">
@@ -95,11 +142,53 @@
 
     {{-- Status and validation messages surface as SweetAlert popups via partials.alerts --}}
 
-    <div class="summary-row">
-        <div class="sum-card"><div class="sum-icon total"><i class="fas fa-layer-group"></i></div><div><div class="sum-num">{{ $subjectsColl->count() }}</div><div class="sum-lbl">Total Subjects</div></div></div>
-        <div class="sum-card"><div class="sum-icon covered"><i class="fas fa-chalkboard-user"></i></div><div><div class="sum-num">{{ $assigned }}</div><div class="sum-lbl">With Assigned Faculty</div></div></div>
-        <div class="sum-card"><div class="sum-icon topics"><i class="fas fa-list-check"></i></div><div><div class="sum-num">{{ $topicCount }}</div><div class="sum-lbl">Curriculum Topics</div></div></div>
-        <div class="sum-card"><div class="sum-icon inactive"><i class="fas fa-eye-slash"></i></div><div><div class="sum-num">{{ $inactiveCount }}</div><div class="sum-lbl">Inactive Subjects</div></div></div>
+    @php
+        $summaryCards = [
+            [
+                'value' => $totalSubjects, 'unit' => 'Subjects', 'label' => 'CPALE Subjects',
+                'tone' => 'si-blue', 'icon' => 'fa-layer-group',
+                'context' => $totalSubjects > 0
+                    ? '<strong>' . $activeCount . ' active</strong> in the curriculum right now.'
+                    : 'No subjects defined yet — add one to begin.',
+            ],
+            [
+                'value' => $assigned, 'unit' => 'Covered', 'label' => 'Faculty Coverage',
+                'tone' => 'si-green', 'icon' => 'fa-chalkboard-user',
+                'context' => $unassigned > 0
+                    ? '<strong style="color:var(--accent);">' . $unassigned . ' ' . ($unassigned === 1 ? 'subject' : 'subjects') . '</strong> still need a faculty assignment.'
+                    : '<strong style="color:#059669;">Every subject</strong> has an assigned faculty.',
+            ],
+            [
+                'value' => $topicCount, 'unit' => 'Topics', 'label' => 'Curriculum Topics',
+                'tone' => 'si-orange', 'icon' => 'fa-list-check',
+                'context' => $emptySubjects > 0
+                    ? '<strong style="color:var(--accent);">' . $emptySubjects . ' ' . ($emptySubjects === 1 ? 'subject has' : 'subjects have') . '</strong> no topics mapped yet.'
+                    : '<strong>' . $avgTopics . ' topics</strong> per subject on average.',
+            ],
+            [
+                'value' => $inactiveCount, 'unit' => 'Hidden', 'label' => 'Inactive Subjects',
+                'tone' => 'si-red', 'icon' => 'fa-eye-slash',
+                'context' => $inactiveCount > 0
+                    ? '<strong style="color:var(--accent);">' . $inactiveCount . ' ' . ($inactiveCount === 1 ? 'subject is' : 'subjects are') . '</strong> hidden from students.'
+                    : '<strong style="color:#059669;">All subjects</strong> are visible to students.',
+            ],
+        ];
+    @endphp
+    <div class="stats-row">
+        @foreach ($summaryCards as $card)
+            <div class="stat-card">
+                <div class="stat-top">
+                    <div>
+                        <div class="stat-lbl">{{ $card['label'] }}</div>
+                        <div class="stat-num">{{ $card['value'] }} <span class="stat-unit">{{ $card['unit'] }}</span></div>
+                    </div>
+                    <div class="stat-icon {{ $card['tone'] }}">
+                        <i class="fas {{ $card['icon'] }}"></i>
+                    </div>
+                </div>
+                <div class="stat-context">{!! $card['context'] !!}</div>
+            </div>
+        @endforeach
     </div>
 
     <div class="subj-grid">
@@ -128,20 +217,38 @@
                     @endforelse
                 </div>
 
-                <div class="sc-section">
-                    <div class="section-head"><span class="section-label">Topics ({{ $subject->topics->count() }})</span><button type="button" class="add-mini" onclick="openTopic({{ $subject->id }}, '{{ addslashes($subject->code) }}')"><i class="fas fa-plus"></i> Add Topic</button></div>
-                    @if($subject->topicTree->isNotEmpty())
-                        <div class="topic-search">
-                            <i class="fas fa-magnifying-glass"></i>
-                            <input type="text" placeholder="Search topics..." oninput="searchChairTopics(this, this.value)">
+                {{-- Topics collapse: the curriculum tree is the tallest part of
+                     a subject card, so it stays folded behind its own header and
+                     opens on click. The header doubles as the toggle; "Add Topic"
+                     sits inside it but stops the click from reaching it. --}}
+                <div class="sc-section topics-section">
+                    <div class="section-head topics-tab" role="button" tabindex="0"
+                         aria-expanded="false" aria-controls="topics-panel-{{ $subject->id }}"
+                         onclick="toggleTopicsPanel(this)" onkeydown="topicsTabKey(event, this)">
+                        <span class="section-label">
+                            <i class="fas fa-chevron-right topics-caret"></i>
+                            Topics
+                            <span class="topics-count">{{ $subject->topics->count() }}</span>
+                        </span>
+                        <button type="button" class="add-mini" onclick="event.stopPropagation(); openTopic({{ $subject->id }}, '{{ addslashes($subject->code) }}')"><i class="fas fa-plus"></i> Add Topic</button>
+                    </div>
+
+                    <div class="topics-panel" id="topics-panel-{{ $subject->id }}" data-subject="{{ $subject->id }}">
+                        <div class="topics-panel-inner">
+                            @if($subject->topicTree->isNotEmpty())
+                                <div class="topic-search">
+                                    <i class="fas fa-magnifying-glass"></i>
+                                    <input type="text" placeholder="Search topics..." oninput="searchChairTopics(this, this.value)">
+                                </div>
+                            @endif
+                            <div class="topic-list" id="topics-data-{{ $subject->id }}" data-topics="{{ json_encode($subject->topics->map(fn($t) => ['id' => $t->id, 'name' => $t->name, 'parent_id' => $t->parent_id])) }}">
+                                @if($subject->topicTree->isNotEmpty())
+                                    @include('chair.partials.topic-node', ['subject' => $subject, 'topics' => $subject->topicTree, 'depth' => 0])
+                                @else
+                                    <div class="empty-msg"><i class="fas fa-list"></i>No topics added yet.</div>
+                                @endif
+                            </div>
                         </div>
-                    @endif
-                    <div class="topic-list" id="topics-data-{{ $subject->id }}" data-topics="{{ json_encode($subject->topics->map(fn($t) => ['id' => $t->id, 'name' => $t->name, 'parent_id' => $t->parent_id])) }}">
-                        @if($subject->topicTree->isNotEmpty())
-                            @include('chair.partials.topic-node', ['subject' => $subject, 'topics' => $subject->topicTree, 'depth' => 0])
-                        @else
-                            <div class="empty-msg"><i class="fas fa-list"></i>No topics added yet.</div>
-                        @endif
                     </div>
                 </div>
             </div>
@@ -308,6 +415,64 @@ function searchChairTopics(input, rawQuery) {
 
     topLevelNodes.forEach(node => applyChairTopicSearch(node, query));
 }
+
+/* Opens/closes a subject's topics panel. Root topics are staggered in on open
+   so a long curriculum unfolds rather than appearing all at once. The open/closed
+   state is remembered per subject, since a chair usually works one subject at a
+   time and reloads after every topic edit. */
+const TOPICS_OPEN_KEY = 'cpace.chair.subjects.openTopics';
+
+function readOpenTopics() {
+    try { return JSON.parse(localStorage.getItem(TOPICS_OPEN_KEY) || '[]') || []; }
+    catch (e) { return []; }
+}
+
+function rememberTopicsPanel(subjectId, isOpen) {
+    try {
+        const open = new Set(readOpenTopics().map(String));
+        isOpen ? open.add(String(subjectId)) : open.delete(String(subjectId));
+        localStorage.setItem(TOPICS_OPEN_KEY, JSON.stringify([...open]));
+    } catch (e) { /* private mode or blocked storage — the toggle still works */ }
+}
+
+function setTopicsPanel(tab, isOpen, animate = true) {
+    const panel = tab.nextElementSibling;
+    if (!panel) return;
+
+    tab.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+
+    const roots = panel.querySelectorAll('.topic-list > .topic-node');
+    if (isOpen && animate && roots.length) {
+        panel.classList.add('revealing');
+        roots.forEach((node, i) => { node.style.animationDelay = (i * 40) + 'ms'; });
+    } else if (!isOpen) {
+        panel.classList.remove('revealing');
+        roots.forEach(node => { node.style.animationDelay = ''; });
+    }
+
+    rememberTopicsPanel(panel.dataset.subject, isOpen);
+}
+
+function toggleTopicsPanel(tab) {
+    setTopicsPanel(tab, tab.getAttribute('aria-expanded') !== 'true');
+}
+
+function topicsTabKey(event, tab) {
+    if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        toggleTopicsPanel(tab);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const open = new Set(readOpenTopics().map(String));
+    document.querySelectorAll('.topics-tab').forEach(tab => {
+        const panel = tab.nextElementSibling;
+        if (panel && open.has(String(panel.dataset.subject))) {
+            setTopicsPanel(tab, true, false);
+        }
+    });
+});
 
 function toggleTopicChildren(button) {
     button.classList.toggle('open');

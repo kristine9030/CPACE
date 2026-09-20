@@ -1,9 +1,14 @@
 <div class="table-head-bar">
+    <label class="select-all-wrap">
+        <input type="checkbox" class="row-checkbox" id="selectAllCb">
+        <span>Select all (<span id="selectAllCount">{{ number_format($questions->total()) }}</span>)</span>
+    </label>
     <span class="count">Showing {{ $questions->firstItem() ?? 0 }}–{{ $questions->lastItem() ?? 0 }} of <strong>{{ number_format($questions->total()) }}</strong> questions</span>
 </div>
-<table>
+<table id="testBankTable">
     <thead>
         <tr>
+            <th><input type="checkbox" class="row-checkbox" id="headCheckbox"></th>
             <th>#</th>
             <th>Question</th>
             <th>Subject</th>
@@ -24,6 +29,7 @@
 
         @forelse($questions as $q)
         <tr>
+            <td><input type="checkbox" class="row-checkbox q-checkbox" value="{{ $q->id }}"></td>
             <td style="color:#aaa;font-size:12px;">{{ $q->id }}</td>
             <td>
                 <div class="q-text">{{ \Illuminate\Support\Str::limit($q->question_text, 70) }}</div>
@@ -58,7 +64,7 @@
         </tr>
         @empty
         <tr>
-            <td colspan="8" style="text-align:center;color:#aaa;padding:40px;">
+            <td colspan="9" style="text-align:center;color:#aaa;padding:40px;">
                 No questions found. <a href="{{ route('faculty.question.create') }}" style="color:var(--accent);font-weight:600;">Add a question</a>.
             </td>
         </tr>

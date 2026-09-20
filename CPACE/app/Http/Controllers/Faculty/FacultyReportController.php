@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 
 use App\Models\Role;
 use App\Models\Subject;
+use App\Services\BrandedXlsxReport;
 use App\Services\WeaknessDetector;
 use App\Support\FacultySectionScope;
 use Illuminate\Http\Request;
@@ -53,64 +54,79 @@ class FacultyReportController extends Controller
     }
 
     /**
-     * Stream the current report as a CSV (respecting every active filter). The
-     * columns depend on the selected report type.
+     * Download the current report as a designed .xlsx (respecting every
+     * active filter) — a maroon CPACE title banner, a summary strip of the
+     * headline numbers, and a styled, bordered table, so this opens in
+     * Excel looking like an actual report rather than a bare CSV dump.
+     * The table columns depend on the selected report type.
      */
     public function export(Request $request)
     {
         $data = $this->build($request);
-
         $type = $data['filters']['report'];
         $slug = str_replace('_', '-', $type);
-        $filename = "cpace-{$slug}-report-" . now()->format('Y-m-d_His') . '.csv';
+        $filename = "cpace-{$slug}-report-" . now()->format('Y-m-d_His') . '.xlsx';
 
-        $headers = [
-            'Content-Type'        => 'text/csv; charset=UTF-8',
-            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
-        ];
+        // Banner width matches this report type's own table so the title
+        // block doesn't overhang (or undershoot) the data beneath it.
+        $colSpan = match ($type) {
+            'subject_mastery' => 6,
+            'question_quality' => 8,
+            default => 9,
+        };
 
-        return response()->stream(function () use ($data, $type) {
-            $out = fopen('php://output', 'w');
-            fwrite($out, "\xEF\xBB\xBF"); // UTF-8 BOM so Excel reads accents
+        $report = new BrandedXlsxReport(self::REPORT_TYPES[$type]);
+        $sheet = $report->sheet(self::REPORT_TYPES[$type]);
 
-            switch ($type) {
-                case 'subject_mastery':
-                    fputcsv($out, ['Subject', 'Topic', 'Students', 'Attempts', 'Accuracy (%)', 'Mastery']);
-                    foreach ($data['mastery'] as $subject) {
-                        foreach ($subject['topics'] as $t) {
-                            fputcsv($out, [
-                                $subject['name'], $t['topic'], $t['students'],
-                                $t['attempts'], $t['accuracy'], $t['level'],
-                            ]);
-                        }
+        $row = $report->writeBanner($sheet, self::REPORT_TYPES[$type], [
+            'Generated ' . $data['generatedAt']->format('F j, Y \a\t g:i A') . ' by ' . Auth::user()->name,
+            'Scope: ' . $data['scopeLabel'] . ' · ' . $data['rangeLabel'],
+        ], $colSpan);
+
+        $row = $report->writeSummaryStrip($sheet, $row, [
+            'Students' => $data['stats']['students'],
+            'Avg. Accuracy' => $data['stats']['accuracy'] . '%',
+            'At Risk' => $data['stats']['at_risk'],
+            'Weak Topics' => $data['stats']['weak_topics'],
+        ]);
+
+        switch ($type) {
+            case 'subject_mastery':
+                $rows = [];
+                foreach ($data['mastery'] as $subject) {
+                    foreach ($subject['topics'] as $t) {
+                        $rows[] = [$subject['name'], $t['topic'], $t['students'], $t['attempts'], $t['accuracy'] . '%', $t['level']];
                     }
-                    break;
+                }
+                $report->writeTable($sheet, $row, ['Subject', 'Topic', 'Students', 'Attempts', 'Accuracy', 'Mastery'], $rows, [1 => 22, 2 => 32, 3 => 12, 4 => 12, 5 => 12, 6 => 16]);
+                break;
 
-                case 'question_quality':
-                    fputcsv($out, ['#', 'Subject', 'Topic', 'Difficulty', 'Question', 'Times Answered', 'Correct (%)', 'Flag']);
-                    foreach ($data['questions'] as $i => $q) {
-                        fputcsv($out, [
-                            $i + 1, $q['subject'], $q['topic'], ucfirst($q['difficulty']),
-                            $q['text'], $q['answered'], $q['answered'] ? $q['accuracy'] : 'n/a', $q['flag'],
-                        ]);
-                    }
-                    break;
+            case 'question_quality':
+                $rows = [];
+                foreach ($data['questions'] as $i => $q) {
+                    $rows[] = [
+                        $i + 1, $q['subject'], $q['topic'], ucfirst($q['difficulty']),
+                        $q['text'], $q['answered'], $q['answered'] ? $q['accuracy'] . '%' : 'n/a', $q['flag'],
+                    ];
+                }
+                $report->writeTable($sheet, $row, ['#', 'Subject', 'Topic', 'Difficulty', 'Question', 'Times Answered', 'Correct', 'Flag'], $rows, [1 => 5, 2 => 12, 3 => 24, 4 => 12, 5 => 50, 6 => 14, 7 => 10, 8 => 16]);
+                break;
 
-                default: // class_summary + at_risk share the student roster
-                    fputcsv($out, ['Student', 'Email', 'Section', 'Avg Score (%)', 'Questions Attempted', 'Quizzes', 'Weak Areas', 'Last Active', 'Status']);
-                    $roster = $type === 'at_risk' ? $data['atRisk'] : $data['students'];
-                    foreach ($roster as $r) {
-                        fputcsv($out, [
-                            $r['name'], $r['email'], $r['section'] ?: '-', $r['score'],
-                            $r['attempted'], $r['quizzes'], implode(' / ', $r['weak_areas']),
-                            $r['last_active'] ? Carbon::parse($r['last_active'])->format('Y-m-d H:i') : '',
-                            $r['status_label'],
-                        ]);
-                    }
-            }
+            default: // class_summary + at_risk share the student roster
+                $roster = $type === 'at_risk' ? $data['atRisk'] : $data['students'];
+                $rows = [];
+                foreach ($roster as $r) {
+                    $rows[] = [
+                        $r['name'], $r['email'], $r['section'] ?: '-', $r['score'] . '%',
+                        $r['attempted'], $r['quizzes'], implode(' / ', $r['weak_areas']),
+                        $r['last_active'] ? Carbon::parse($r['last_active'])->format('Y-m-d H:i') : '—',
+                        $r['status_label'],
+                    ];
+                }
+                $report->writeTable($sheet, $row, ['Student', 'Email', 'Section', 'Avg Score', 'Questions Attempted', 'Quizzes', 'Weak Areas', 'Last Active', 'Status'], $rows, [1 => 22, 2 => 28, 3 => 12, 4 => 11, 5 => 14, 6 => 10, 7 => 28, 8 => 18, 9 => 14]);
+        }
 
-            fclose($out);
-        }, 200, $headers);
+        return $report->download($filename);
     }
 
     // ─────────────────────────────────────────────────────────────────────────

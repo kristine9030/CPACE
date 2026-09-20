@@ -7,63 +7,154 @@
     <title>Messages - CPACE</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        :root { --primary:#7B1D1D; --primary-hover:#6a1818; --primary-light:#f5e8e8; --accent:#c0392b; --green:#10b981; --blue:#3b82f6; --fb-blue:#0866ff; --fb-blue-light:#e7f3ff; }
+        :root {
+            --primary:#7B1D1D; --primary-hover:#6a1818; --primary-light:#f5e8e8; --accent:#c0392b; --green:#10b981; --blue:#3b82f6;
+            /* CPACE's own accent for "my message" bubbles, active items and
+               chat action icons — kept as its own variable (rather than
+               hard-coding var(--primary) at each use) so the chat's accent
+               can still be told apart from other maroon UI at a glance. */
+            --fb-blue:#7B1D1D; --fb-blue-light:#f5e8e8;
+        }
         * { margin:0; padding:0; box-sizing:border-box; }
         body { font-family:'Poppins',sans-serif; background:#f4f5f7; color:#333; }
 
-        .chat-shell { display:flex; height:100vh; overflow:hidden; }
+        /* Chair and alumni already get their sidebar offset for free (it's
+           built into their own shared sidebar partial), and the student
+           sidebar handles .main-content the same way — but the faculty
+           sidebar partial expects every faculty page to set this itself,
+           and this page never did. Scoped to .is-faculty (set on <body>
+           below) so it can't collide with the student/chair/alumni rules
+           that already apply to this same element via their own classes. */
+        body.is-faculty .messages-page { margin-left:230px; transition:margin-left .3s; }
+        body.is-faculty .sidebar.collapsed ~ .messages-page { margin-left:70px; }
+        .messages-page { display:flex; flex-direction:column; height:100vh; }
+
+        /* ── Global page topbar (title + search + notif + profile) ── */
+        .messages-topbar {
+            flex-shrink:0; display:flex; justify-content:space-between; align-items:center;
+            gap:20px; padding:20px 28px 16px; flex-wrap:wrap;
+        }
+        .messages-topbar .page-title {
+            font-family:'Montserrat',sans-serif; font-size:28px; font-weight:700; color:#14283E;
+            margin-bottom:6px; padding-bottom:8px; position:relative;
+        }
+        .messages-topbar .page-title::after {
+            content:''; position:absolute; left:0; bottom:0;
+            width:40px; height:4px; border-radius:2px;
+            background:linear-gradient(90deg, #c0392b, #7B1D1D);
+        }
+        .messages-topbar .page-subtitle { font-size:14px; color:#999; }
+        .messages-topbar-right { display:flex; align-items:center; gap:14px; }
+
+        .search-wrap { position:relative; }
+        .search-wrap i { position:absolute; left:14px; top:50%; transform:translateY(-50%); color:#aaa; font-size:15px; }
+        .search-wrap input {
+            width:280px; padding:11px 16px 11px 40px;
+            border:1px solid #e0e0e0; border-radius:24px;
+            font-size:14px; font-family:'Poppins',sans-serif;
+            background:#fff; color:#555; outline:none;
+        }
+        .search-wrap input:focus { border-color:var(--primary); }
+        .search-wrap input::placeholder { color:#bbb; }
+
+        .notif-btn {
+            position:relative; width:44px; height:44px;
+            border:none; background:#fff; border-radius:50%;
+            display:flex; align-items:center; justify-content:center;
+            font-size:18px; color:#555; cursor:pointer; text-decoration:none;
+            box-shadow:0 1px 4px rgba(0,0,0,0.08); flex-shrink:0;
+        }
+        .notif-btn:hover { background:#f0f0f0; }
+        .badge {
+            position:absolute; top:-3px; right:-3px;
+            width:19px; height:19px; background:var(--accent);
+            color:#fff; border-radius:50%; font-size:10.5px; font-weight:700;
+            display:flex; align-items:center; justify-content:center;
+        }
+        .profile-avatar {
+            width:44px; height:44px; background:var(--primary);
+            border-radius:11px; border:none; color:#fff;
+            font-weight:700; font-size:15px; cursor:pointer;
+            font-family:'Poppins',sans-serif; transition:background 0.2s;
+        }
+        .profile-avatar:hover { background:var(--primary-hover); }
+
+        .header-dropdown-wrap { position:relative; }
+        .dropdown-menu {
+            position:absolute; top:calc(100% + 8px); right:0;
+            background:#fff; border:1px solid #e5e7eb; border-radius:10px;
+            min-width:190px; box-shadow:0 6px 20px rgba(0,0,0,0.12);
+            display:none; z-index:2000;
+        }
+        .dropdown-menu.active { display:block; }
+        .dropdown-menu a, .dropdown-menu button {
+            display:flex; align-items:center; gap:10px;
+            padding:12px 16px; font-size:13.5px; font-family:'Poppins',sans-serif;
+            text-decoration:none; color:#333; background:none; border:none;
+            width:100%; text-align:left; cursor:pointer; transition:background 0.2s;
+            border-bottom:1px solid #f5f5f5;
+        }
+        .dropdown-menu a:last-child, .dropdown-menu form:last-child button { border-bottom:none; }
+        .dropdown-menu a:hover, .dropdown-menu button:hover { background:#f9f9f9; }
+        .dropdown-menu a i, .dropdown-menu button i { color:var(--primary); width:16px; text-align:center; }
+        .dropdown-menu .logout-btn { color:#e53e3e; }
+        .dropdown-menu .logout-btn i { color:#e53e3e; }
+
+        .chat-shell { display:flex; flex:1; min-height:0; overflow:hidden; }
 
         /* ── Conversation list pane ── */
-        .chat-list-pane { width:340px; flex-shrink:0; background:#fff; border-right:1px solid #ececec; display:flex; flex-direction:column; }
-        .cl-head { padding:16px 16px 10px; border-bottom:1px solid #f2f2f2; }
-        .cl-head-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
-        .cl-title { font-size:20px; font-weight:800; color:#050505; }
+        .chat-list-pane { width:360px; flex-shrink:0; background:#fff; border-right:1px solid #ececec; display:flex; flex-direction:column; }
+        .cl-head { padding:18px 18px 12px; border-bottom:1px solid #f2f2f2; }
+        .cl-head-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+        .cl-title { font-size:22px; font-weight:800; color:#050505; }
         .cl-actions { display:flex; gap:6px; }
-        .cl-icon-btn { width:34px; height:34px; border-radius:50%; border:none; background:#f0f2f5; color:var(--fb-blue); font-size:14px; cursor:pointer; transition:background .15s; }
+        .cl-icon-btn { width:38px; height:38px; border-radius:50%; border:none; background:#f0f2f5; color:var(--fb-blue); font-size:15px; cursor:pointer; transition:background .15s; }
         .cl-icon-btn:hover { background:#e4e6eb; }
         .cl-search { position:relative; }
-        .cl-search input { width:100%; border:none; background:#f0f2f5; border-radius:20px; padding:9px 14px 9px 34px; font-size:13px; font-family:'Poppins',sans-serif; outline:none; }
+        .cl-search input { width:100%; border:none; background:#f0f2f5; border-radius:20px; padding:11px 16px 11px 38px; font-size:14px; font-family:'Poppins',sans-serif; outline:none; }
         .cl-search input:focus { background:#e8eaed; }
-        .cl-search i { position:absolute; left:13px; top:50%; transform:translateY(-50%); color:#65676b; font-size:12px; }
+        .cl-search i { position:absolute; left:14px; top:50%; transform:translateY(-50%); color:#65676b; font-size:13px; }
 
-        .cl-items { flex:1; overflow-y:auto; padding:6px; }
-        .cl-item { display:flex; align-items:center; gap:11px; padding:9px 10px; text-decoration:none; color:inherit; border-radius:10px; transition:background .15s; position:relative; }
+        .cl-items { flex:1; overflow-y:auto; padding:8px; }
+        .cl-item { display:flex; align-items:center; gap:12px; padding:11px 12px; text-decoration:none; color:inherit; border-radius:10px; transition:background .15s; position:relative; }
         .cl-item:hover { background:#f2f2f2; }
         .cl-item.active { background:var(--fb-blue-light); }
-        .cl-avatar { width:48px; height:48px; border-radius:50%; background:var(--primary); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:15px; flex-shrink:0; position:relative; }
+        .cl-avatar { width:54px; height:54px; border-radius:50%; background:var(--primary); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:17px; flex-shrink:0; position:relative; overflow:hidden; }
         .cl-avatar.group { background:#5a7fb0; }
-        .cl-avatar::after { content:''; position:absolute; bottom:-1px; right:-1px; width:11px; height:11px; border-radius:50%; background:#31a24c; border:2.5px solid #fff; }
-        .cl-avatar.group::after { display:none; }
+        .cl-avatar img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+        .cl-avatar::after { content:''; position:absolute; bottom:-1px; right:-1px; width:12px; height:12px; border-radius:50%; background:#ccc; border:2.5px solid #fff; }
+        .cl-avatar.group::after, .cl-avatar.offline::after { display:none; }
+        .cl-avatar.online::after { background:#31a24c; }
         .cl-info { flex:1; min-width:0; }
-        .cl-name { font-size:14px; font-weight:600; color:#050505; display:flex; align-items:center; gap:6px; }
-        .cl-preview { font-size:12.5px; color:#65676b; margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .cl-name { font-size:15px; font-weight:600; color:#050505; display:flex; align-items:center; gap:6px; }
+        .cl-preview { font-size:13.5px; color:#65676b; margin-top:3px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
         .cl-item.has-unread .cl-preview, .cl-item.has-unread .cl-name { color:#050505; font-weight:700; }
         .cl-meta { display:flex; flex-direction:column; align-items:flex-end; gap:5px; flex-shrink:0; }
-        .cl-time { font-size:10.5px; color:#999; }
-        .cl-unread-dot { width:10px; height:10px; border-radius:50%; background:var(--fb-blue); }
-        .cl-empty { padding:40px 20px; text-align:center; color:#bbb; font-size:12.5px; }
+        .cl-time { font-size:11px; color:#999; }
+        .cl-unread-dot { width:11px; height:11px; border-radius:50%; background:var(--fb-blue); }
+        .cl-empty { padding:40px 20px; text-align:center; color:#bbb; font-size:13px; }
 
         /* ── Thread pane ── */
         .chat-thread-pane { flex:1; display:flex; flex-direction:column; min-width:0; background:#fff; }
         .thread-empty { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#ccc; }
         .thread-empty i { font-size:48px; margin-bottom:14px; color:#e5d8d8; }
 
-        .thread-head { padding:12px 20px; background:#fff; border-bottom:1px solid #ececec; display:flex; align-items:center; gap:12px; }
-        .thread-title { font-size:15px; font-weight:700; color:#050505; }
-        .thread-sub { font-size:12px; color:#31a24c; margin-top:1px; }
+        .thread-head { padding:14px 22px; background:#fff; border-bottom:1px solid #ececec; display:flex; align-items:center; gap:12px; }
+        .thread-title { font-size:16.5px; font-weight:700; color:#050505; }
+        .thread-sub { font-size:13px; color:#31a24c; margin-top:1px; }
 
-        .thread-body { flex:1; overflow-y:auto; padding:16px 20px; display:flex; flex-direction:column; gap:4px; background:#fff; }
-        .msg-row { display:flex; flex-direction:column; max-width:60%; margin-bottom:6px; }
+        .thread-body { flex:1; overflow-y:auto; padding:18px 24px; display:flex; flex-direction:column; gap:5px; background:#fff; }
+        .msg-row { display:flex; flex-direction:column; max-width:62%; margin-bottom:7px; }
         .msg-row.mine { align-self:flex-end; align-items:flex-end; }
         .msg-row.theirs { align-self:flex-start; align-items:flex-start; }
-        .msg-sender { font-size:10.5px; color:#aaa; margin-bottom:2px; padding:0 4px; }
-        .msg-bubble { padding:9px 14px; border-radius:18px; font-size:14px; line-height:1.45; word-wrap:break-word; }
+        .msg-sender { font-size:11.5px; color:#aaa; margin-bottom:2px; padding:0 4px; }
+        .msg-bubble { padding:11px 16px; border-radius:18px; font-size:15px; line-height:1.45; word-wrap:break-word; }
         .msg-row.mine .msg-bubble { background:var(--fb-blue); color:#fff; }
         .msg-row.theirs .msg-bubble { background:#e4e6eb; color:#050505; }
-        .msg-time { font-size:10px; color:#ccc; margin-top:3px; padding:0 4px; }
+        .msg-time { font-size:10.5px; color:#ccc; margin-top:3px; padding:0 4px; }
 
         .msg-attach-img { max-width:260px; max-height:260px; border-radius:14px; display:block; margin-bottom:4px; }
         .msg-attach-file { display:flex; align-items:center; gap:10px; padding:10px 13px; border-radius:14px; background:#f0f2f5; text-decoration:none; color:inherit; max-width:240px; margin-bottom:4px; }
@@ -73,13 +164,59 @@
         .msg-attach-file .msg-af-size { font-size:10.5px; color:#999; }
         .msg-uploading { font-size:11px; color:#aaa; padding:0 4px; }
 
-        .thread-form { display:flex; align-items:center; gap:8px; padding:12px 16px; background:#fff; border-top:1px solid #ececec; }
-        .thread-form-icon { width:36px; height:36px; border-radius:50%; border:none; background:transparent; color:var(--fb-blue); font-size:15px; cursor:pointer; flex-shrink:0; }
+        .thread-form { display:flex; align-items:center; gap:9px; padding:14px 20px; background:#fff; border-top:1px solid #ececec; }
+        .thread-form-icon { width:40px; height:40px; border-radius:50%; border:none; background:transparent; color:var(--fb-blue); font-size:16px; cursor:pointer; flex-shrink:0; }
         .thread-form-icon:hover { background:#f0f2f5; }
-        .thread-form input { flex:1; border:none; background:#f0f2f5; border-radius:22px; padding:10px 16px; font-size:13.5px; font-family:'Poppins',sans-serif; outline:none; }
+        .thread-form input { flex:1; border:none; background:#f0f2f5; border-radius:22px; padding:12px 18px; font-size:14.5px; font-family:'Poppins',sans-serif; outline:none; }
         .thread-form input:focus { background:#e8eaed; }
-        .thread-form button.send-btn { width:38px; height:38px; border-radius:50%; border:none; background:transparent; color:var(--fb-blue); cursor:pointer; flex-shrink:0; font-size:17px; }
+        .thread-form button.send-btn { width:42px; height:42px; border-radius:50%; border:none; background:transparent; color:var(--fb-blue); cursor:pointer; flex-shrink:0; font-size:18px; }
         .thread-form button.send-btn:hover { background:#f0f2f5; }
+
+        /* ── Profile / conversation-info pane ── */
+        .chat-profile-pane { width:300px; flex-shrink:0; background:#fff; border-left:1px solid #ececec; overflow-y:auto; padding:0 18px 24px; }
+        .pp-close-wrap { display:none; padding:10px 0 0; }
+        .pp-identity { text-align:center; padding:24px 0 18px; border-bottom:1px solid #f2f2f2; }
+        .pp-avatar { width:84px; height:84px; margin:0 auto 12px; border-radius:50%; background:var(--primary); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:28px; position:relative; overflow:hidden; }
+        .pp-avatar img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+        .pp-avatar.group { background:#5a7fb0; }
+        .pp-name { font-size:16px; font-weight:700; color:#050505; }
+        .pp-sub { font-size:12.5px; color:#65676b; margin-top:4px; display:flex; align-items:center; justify-content:center; gap:5px; }
+        .pp-action-btn { margin-top:12px; display:inline-flex; align-items:center; gap:7px; background:#f0f2f5; border:none; border-radius:8px; padding:8px 14px; font-size:12.5px; font-weight:600; color:#050505; cursor:pointer; font-family:'Poppins',sans-serif; }
+        .pp-action-btn:hover { background:#e4e6eb; }
+
+        .pp-section { padding:16px 0; border-bottom:1px solid #f2f2f2; }
+        .pp-section:last-child { border-bottom:none; }
+        .pp-section-title { font-size:12px; font-weight:700; color:#050505; margin-bottom:10px; }
+        .pp-empty { font-size:12px; color:#bbb; }
+
+        .pp-members { display:flex; flex-wrap:wrap; gap:8px; }
+        .pp-member-av { width:36px; height:36px; border-radius:50%; background:var(--primary-light); color:var(--primary); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:12px; overflow:hidden; position:relative; }
+        .pp-member-av img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+        .pp-member-more { background:#f0f2f5; color:#65676b; }
+
+        .pp-media-grid { display:grid; grid-template-columns:repeat(3, 1fr); gap:6px; }
+        .pp-media-thumb { display:block; aspect-ratio:1; border-radius:8px; overflow:hidden; }
+        .pp-media-thumb img { width:100%; height:100%; object-fit:cover; }
+
+        .pp-file-list, .pp-link-list { display:flex; flex-direction:column; gap:4px; }
+        .pp-file-row, .pp-link-row { display:flex; align-items:center; gap:10px; padding:7px 8px; border-radius:9px; text-decoration:none; color:inherit; transition:background .15s; }
+        .pp-file-row:hover, .pp-link-row:hover { background:#f2f2f2; }
+        .pp-file-icon { width:32px; height:32px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:13px; color:#fff; flex-shrink:0; }
+        .pp-file-info, .pp-link-info { min-width:0; }
+        .pp-file-name { font-size:12px; font-weight:600; color:#050505; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .pp-file-meta { font-size:10.5px; color:#999; }
+        .pp-link-icon { width:32px; height:32px; border-radius:50%; background:var(--fb-blue-light); color:var(--fb-blue); display:flex; align-items:center; justify-content:center; font-size:12px; flex-shrink:0; }
+        .pp-link-host { font-size:12px; font-weight:600; color:#050505; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .pp-link-url { font-size:10.5px; color:#999; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+        body.info-hidden .chat-profile-pane { display:none; }
+
+        @media (max-width:1300px) {
+            .chat-profile-pane { display:none; position:fixed; right:0; top:0; bottom:0; z-index:1500; box-shadow:-6px 0 20px rgba(0,0,0,.15); }
+            .chat-profile-pane.open { display:block; }
+            body.info-hidden .chat-profile-pane.open { display:block; }
+            .pp-close-wrap { display:flex; justify-content:flex-end; }
+        }
 
         /* ── Modals ── */
         .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:2000; align-items:center; justify-content:center; padding:20px; }
@@ -104,10 +241,18 @@
             .chat-thread-pane { display:none; }
             body.thread-open .chat-list-pane { display:none; }
             body.thread-open .chat-thread-pane { display:flex; }
+            .chat-profile-pane { display:none !important; }
+            /* The in-thread "back to conversations" arrow only makes sense
+               once the list pane is hidden and the thread takes over the
+               whole screen — it was stuck at display:none with no rule to
+               reveal it, leaving mobile users with no way back but the
+               browser's own back button. */
+            .mobile-back { display:flex !important; align-items:center; justify-content:center; width:34px; height:34px; border-radius:50%; color:#65676b; text-decoration:none; flex-shrink:0; }
+            .mobile-back:hover { background:#f0f2f5; }
         }
     </style>
 </head>
-<body class="{{ $active ? 'thread-open' : '' }}">
+<body class="{{ $active ? 'thread-open' : '' }} {{ Auth::user()->isFaculty() ? 'is-faculty' : '' }}">
 
 @if(Auth::user()->isAlumni())
     @include('partials.alumni-sidebar', ['active' => 'messages'])
@@ -120,7 +265,44 @@
 @endif
 
 {{-- .main is used by the faculty/chair/alumni sidebars, .main-content by the student sidebar --}}
-<div class="main main-content" style="padding:0;">
+<div class="main main-content messages-page" style="padding:0;">
+    <div class="messages-topbar">
+        <div>
+            <div class="page-title">Messages</div>
+            <div class="page-subtitle">Chat with faculty, classmates, and the community.</div>
+        </div>
+        <div class="messages-topbar-right">
+            <div class="search-wrap gs-wrap">
+                <i class="fas fa-search"></i>
+                <input type="text" data-gs="true" placeholder="Search topics, questions...">
+            </div>
+            <a class="notif-btn" href="{{ route('notifications.index') }}" title="Notifications" aria-label="Notifications">
+                <i class="fas fa-bell"></i>
+                @if($unreadNotifications > 0)<span class="badge">{{ $unreadNotifications > 9 ? '9+' : $unreadNotifications }}</span>@endif
+            </a>
+            <div class="header-dropdown-wrap">
+                <button class="profile-avatar" id="topbarProfileBtn">@include('partials.avatar-content')</button>
+                <div class="dropdown-menu" id="topbarProfileDropdown">
+                    @if(Auth::user()->isFaculty())
+                        <a href="{{ route('faculty.settings') }}"><i class="fas fa-user"></i> Profile Settings</a>
+                    @elseif(Auth::user()->isAlumni())
+                        <a href="{{ route('alumni.profile') }}"><i class="fas fa-user"></i> Profile Settings</a>
+                    @elseif(!Auth::user()->isChair())
+                        <a href="#" class="js-open-profile-modal"><i class="fas fa-user"></i> Profile Settings</a>
+                    @endif
+                    <a href="#"><i class="fas fa-question-circle"></i> Help &amp; Support</a>
+                    <form method="POST" action="{{ route('logout') }}"
+                          data-confirm="You will be signed out of CPACE and returned to the login page."
+                          data-confirm-title="Log out of CPACE?"
+                          data-confirm-ok="Yes, log me out"
+                          data-confirm-icon="question" style="margin:0;padding:0;">
+                        @csrf
+                        <button type="submit" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 <div class="chat-shell">
     <div class="chat-list-pane">
         <div class="cl-head">
@@ -143,13 +325,14 @@
                 @php
                     $isGroup = $c->type === 'group';
                     $name = $c->displayNameFor(Auth::user());
-                    $initials = $isGroup ? strtoupper(substr($name,0,2)) : strtoupper(substr($name,0,1));
+                    $rowOther = $isGroup ? null : $c->participants->firstWhere('id', '!=', Auth::id());
+                    $rowOnline = $rowOther?->last_login_at && $rowOther->last_login_at->diffInMinutes(now()) <= 5;
                     $unread = $c->unreadCountFor(Auth::user());
                     $preview = $c->latestMessage ? ($c->latestMessage->sender_id === Auth::id() ? 'You: ' : '') . \Illuminate\Support\Str::limit($c->latestMessage->body, 38) : 'No messages yet';
                 @endphp
                 <a href="{{ route('messages.show', $c->id) }}" class="cl-item {{ $active && $active->id === $c->id ? 'active' : '' }} {{ $unread > 0 ? 'has-unread' : '' }}" data-name="{{ strtolower($name) }}">
-                    <div class="cl-avatar {{ $isGroup ? 'group' : '' }}">
-                        @if($isGroup)<i class="fas fa-users"></i>@else{{ $initials }}@endif
+                    <div class="cl-avatar {{ $isGroup ? 'group' : ($rowOnline ? 'online' : 'offline') }}">
+                        @if($isGroup)<i class="fas fa-users"></i>@elseif($rowOther)@include('partials.user-avatar', ['user' => $rowOther])@else{{ strtoupper(substr($name,0,1)) }}@endif
                     </div>
                     <div class="cl-info">
                         <div class="cl-name">{{ $name }} @if($c->is_default_group)<i class="fas fa-house-chimney" style="font-size:10px;color:#bbb;" title="Default community chat"></i>@endif</div>
@@ -176,18 +359,19 @@
             <div class="thread-head">
                 <a href="{{ route('messages.index') }}" style="display:none;" class="mobile-back"><i class="fas fa-arrow-left"></i></a>
                 <div @if($isGroup) role="button" tabindex="0" onclick="document.getElementById('groupInfoModal').classList.add('open')" style="cursor:pointer;display:flex;align-items:center;gap:12px;" @else style="display:flex;align-items:center;gap:12px;" @endif>
-                    <div class="cl-avatar {{ $isGroup ? 'group' : '' }}" style="width:38px;height:38px;font-size:12px;">
-                        @if($isGroup)<i class="fas fa-users"></i>@else{{ strtoupper(substr($threadName,0,1)) }}@endif
+                    <div class="cl-avatar {{ $isGroup ? 'group' : (($presence === 'Active now') ? 'online' : 'offline') }}" style="width:38px;height:38px;font-size:12px;">
+                        @if($isGroup)<i class="fas fa-users"></i>@elseif($otherUser)@include('partials.user-avatar', ['user' => $otherUser])@else{{ strtoupper(substr($threadName,0,1)) }}@endif
                     </div>
                     <div>
                         <div class="thread-title">{{ $threadName }}</div>
                         @if($isGroup)
                             <div class="thread-sub" style="color:#999;">{{ $active->participants->count() }} members @if($active->is_default_group)· Default community chat @endif <i class="fas fa-chevron-right" style="font-size:9px;margin-left:3px;"></i></div>
                         @else
-                            <div class="thread-sub"><i class="fas fa-circle" style="font-size:7px;"></i> Active now</div>
+                            <div class="thread-sub"><i class="fas fa-circle" style="font-size:7px;color:{{ $presence === 'Active now' ? '#31a24c' : '#bbb' }};"></i> {{ $presence }}</div>
                         @endif
                     </div>
                 </div>
+                <button type="button" class="thread-form-icon" id="toggleInfoBtn" title="Conversation info" style="margin-left:auto;"><i class="fas fa-circle-info"></i></button>
             </div>
 
             <div class="thread-body" id="threadBody" data-conversation="{{ $active->id }}" data-poll-url="{{ route('messages.poll', $active->id) }}" data-send-url="{{ route('messages.send', $active->id) }}">
@@ -231,6 +415,93 @@
             </div>
         @endif
     </div>
+
+    @if($active)
+        <div class="chat-profile-pane" id="chatProfilePane">
+            <div class="pp-close-wrap"><button type="button" class="thread-form-icon" id="closeInfoBtn" title="Close"><i class="fas fa-xmark"></i></button></div>
+
+            <div class="pp-identity">
+                <div class="pp-avatar {{ $isGroup ? 'group' : '' }}">
+                    @if($isGroup)<i class="fas fa-users"></i>@elseif($otherUser)@include('partials.user-avatar', ['user' => $otherUser])@else{{ strtoupper(substr($threadName,0,1)) }}@endif
+                </div>
+                <div class="pp-name">{{ $threadName }}</div>
+                @if($isGroup)
+                    <div class="pp-sub">{{ $active->participants->count() }} members</div>
+                    <button type="button" class="pp-action-btn" onclick="document.getElementById('groupInfoModal').classList.add('open')"><i class="fas fa-users"></i> See group info</button>
+                @else
+                    <div class="pp-sub"><i class="fas fa-circle" style="font-size:6px;color:{{ $presence === 'Active now' ? '#31a24c' : '#bbb' }};"></i> {{ $presence }}</div>
+                @endif
+            </div>
+
+            @if($isGroup)
+                <div class="pp-section">
+                    <div class="pp-section-title">Members</div>
+                    <div class="pp-members">
+                        @foreach($active->participants->take(8) as $member)
+                            <div class="pp-member-av" title="{{ $member->name }}">@include('partials.user-avatar', ['user' => $member])</div>
+                        @endforeach
+                        @if($active->participants->count() > 8)
+                            <div class="pp-member-av pp-member-more">+{{ $active->participants->count() - 8 }}</div>
+                        @endif
+                    </div>
+                </div>
+            @endif
+
+            <div class="pp-section">
+                <div class="pp-section-title">Shared Media</div>
+                @if($sharedMedia->isEmpty())
+                    <div class="pp-empty">No photos shared yet.</div>
+                @else
+                    <div class="pp-media-grid">
+                        @foreach($sharedMedia->take(9) as $m)
+                            <a href="{{ $m->url() }}" target="_blank" rel="noopener" class="pp-media-thumb">
+                                <img src="{{ $m->url() }}" alt="">
+                            </a>
+                        @endforeach
+                    </div>
+                @endif
+            </div>
+
+            <div class="pp-section">
+                <div class="pp-section-title">Files</div>
+                @if($sharedFiles->isEmpty())
+                    <div class="pp-empty">No files shared yet.</div>
+                @else
+                    <div class="pp-file-list">
+                        @foreach($sharedFiles->take(12) as $f)
+                            @php $meta = $f->iconMeta(); @endphp
+                            <a class="pp-file-row" href="{{ route('messages.attachments.download', $f->id) }}" target="_blank" rel="noopener">
+                                <div class="pp-file-icon" style="background:{{ $meta['color'] }};"><i class="fas {{ $meta['icon'] }}"></i></div>
+                                <div class="pp-file-info">
+                                    <div class="pp-file-name">{{ $f->original_name }}</div>
+                                    <div class="pp-file-meta">{{ $f->humanSize() }} · {{ $f->created_at->format('M j') }}</div>
+                                </div>
+                            </a>
+                        @endforeach
+                    </div>
+                @endif
+            </div>
+
+            <div class="pp-section">
+                <div class="pp-section-title">Shared Links</div>
+                @if($sharedLinks->isEmpty())
+                    <div class="pp-empty">No links shared yet.</div>
+                @else
+                    <div class="pp-link-list">
+                        @foreach($sharedLinks as $link)
+                            <a class="pp-link-row" href="{{ $link['url'] }}" target="_blank" rel="noopener">
+                                <div class="pp-link-icon"><i class="fas fa-link"></i></div>
+                                <div class="pp-link-info">
+                                    <div class="pp-link-host">{{ $link['host'] }}</div>
+                                    <div class="pp-link-url">{{ \Illuminate\Support\Str::limit($link['url'], 42) }}</div>
+                                </div>
+                            </a>
+                        @endforeach
+                    </div>
+                @endif
+            </div>
+        </div>
+    @endif
 </div>
 </div>
 
@@ -377,6 +648,44 @@ document.querySelectorAll('.modal-overlay').forEach(function (ov) {
 });
 
 (function () {
+    const btn = document.getElementById('topbarProfileBtn');
+    const drop = document.getElementById('topbarProfileDropdown');
+    if (btn && drop) {
+        btn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            drop.classList.toggle('active');
+        });
+        document.addEventListener('click', function () { drop.classList.remove('active'); });
+        drop.addEventListener('click', function (e) { e.stopPropagation(); });
+    }
+})();
+
+(function () {
+    const pane = document.getElementById('chatProfilePane');
+    const toggleBtn = document.getElementById('toggleInfoBtn');
+    const closeBtn = document.getElementById('closeInfoBtn');
+    if (!pane) return;
+
+    function isNarrow() { return window.matchMedia('(max-width:1300px)').matches; }
+
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', function () {
+            if (isNarrow()) {
+                pane.classList.toggle('open');
+            } else {
+                document.body.classList.toggle('info-hidden');
+            }
+        });
+    }
+    if (closeBtn) {
+        closeBtn.addEventListener('click', function () {
+            pane.classList.remove('open');
+            document.body.classList.add('info-hidden');
+        });
+    }
+})();
+
+(function () {
     const body = document.getElementById('threadBody');
     const form = document.getElementById('threadForm');
     if (!body) return;
@@ -515,6 +824,7 @@ document.querySelectorAll('.modal-overlay').forEach(function (ov) {
 })();
 </script>
 
+    @include('partials.global-search')
     @include('partials.alerts')
 </body>
 </html>

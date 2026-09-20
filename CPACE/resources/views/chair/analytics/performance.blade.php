@@ -17,7 +17,7 @@
         .topbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:22px; gap:16px; }
         .topbar-left { display:flex; align-items:center; gap:12px; }
         .topbar-right { display:flex; align-items:center; gap:10px; }
-        .page-title { font-size:26px; font-weight:700; color:#1a1a1a; }
+        .page-title { font-size:26px; font-weight:700; color:#14283E; }
         .page-sub { font-size:12px; color:#999; margin-top:2px; }
         .btn { display:inline-flex; align-items:center; justify-content:center; gap:7px; padding:9px 18px; border-radius:8px; font-size:13px; font-weight:600; font-family:'Poppins',sans-serif; cursor:pointer; border:none; text-decoration:none; transition:all .2s; }
         .btn-primary { background:var(--primary); color:white; }
@@ -31,7 +31,7 @@
         .empty { text-align:center; padding:40px 20px; color:#aaa; }
 
         /* Tabs */
-        .tab-bar { display:flex; gap:0; margin-bottom:18px; background:white; border-radius:12px; padding:4px; border:1px solid #eee; width:fit-content; }
+        .tab-bar { display:flex; gap:0; background:white; border-radius:12px; padding:4px; border:1px solid #eee; width:fit-content; flex-shrink:0; }
         .tab-btn { padding:9px 22px; border-radius:9px; font-size:13px; font-weight:600; font-family:'Poppins',sans-serif; cursor:pointer; border:none; background:transparent; color:#888; transition:all .2s; display:flex; align-items:center; gap:7px; }
         .tab-btn:hover { color:#555; background:#f8f8fa; }
         .tab-btn.active { background:var(--primary); color:white; box-shadow:0 2px 8px rgba(123,29,29,0.25); }
@@ -39,15 +39,46 @@
         .tab-panel { display:none; }
         .tab-panel.active { display:block; }
 
-        .filter-card { padding:13px 16px; margin-bottom:18px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
-        .filter-card label { font-size:10.5px; font-weight:600; color:#777; }
-        .filter-card select { min-width:190px; padding:8px 11px; border:1px solid #ddd; border-radius:8px; font:11px Poppins,sans-serif; color:#444; background:#fff; }
+        /* ── Tabs + their filter share one row, tabs pinned left and the
+           filter pinned right, so the row reads as one scoped view instead
+           of two stacked, unrelated-looking controls. ── */
+        .tab-filter-row { display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; margin-bottom:18px; }
+
+        /* ── Filter bar — no card wrapper: the controls sit straight on the
+           page so the row is one control tall instead of a padded panel.
+           Labels run inline beside their select rather than stacked above,
+           which is what the base stylesheet's block-level <label> and
+           full-width <select> would otherwise force. ── */
+        .filter-card { margin:0; padding:0; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+        .filter-field { display:flex; align-items:center; gap:7px; }
+        .filter-card label { font-size:10px; font-weight:700; color:#8a8a94; text-transform:uppercase; letter-spacing:.4px; margin:0; white-space:nowrap; }
+        .filter-card select { width:auto; min-width:175px; padding:7px 10px; border:1.5px solid #e2e2e6; border-radius:8px; font:12px Poppins,sans-serif; color:#333; background:#fff; cursor:pointer; transition:border-color .15s; }
+        .filter-card select:hover { border-color:#c7c7cf; }
+        .filter-card select:focus { outline:none; border-color:var(--primary); box-shadow:0 0 0 3px rgba(123,29,29,.08); }
         .analytics-layout { display:grid; grid-template-columns:minmax(0,1.3fr) minmax(310px,.7fr); gap:18px; }
+        /* ── KPI cards — same treatment as the other chair pages: a
+           pronounced shadow so the headline row lifts off the page, a bold
+           dark title, and a dashed-border context line that reads the number
+           (against the pass mark, the cohort, or the sample it rests on)
+           rather than just restating its label. ── */
         .metric-row { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin-bottom:18px; }
-        .metric { background:#fff; border:1px solid #eee; border-radius:12px; padding:15px; }
-        .metric-label { font-size:10px; color:#888; font-weight:600; }
-        .metric-value { font-size:24px; font-weight:700; color:#222; margin-top:7px; }
-        .metric-note { font-size:9.5px; color:#aaa; margin-top:4px; }
+        .metric {
+            background:#fff; border:1px solid #eee; border-radius:12px; padding:17px 18px;
+            display:flex; flex-direction:column; height:100%;
+            box-shadow:0 4px 10px rgba(10,5,5,.14), 0 16px 32px -8px rgba(10,5,5,.34);
+            transition:transform .18s ease, box-shadow .18s ease;
+        }
+        .metric:hover {
+            transform:translateY(-2px);
+            box-shadow:0 6px 14px rgba(10,5,5,.18), 0 22px 40px -8px rgba(10,5,5,.4);
+        }
+        .metric-label { font-size:12.5px; font-weight:700; color:#1a1a1a; letter-spacing:-.01em; }
+        .metric-value { font-size:27px; font-weight:700; color:#1a1a1a; line-height:1; margin-top:8px; flex:1; }
+        .metric-note {
+            font-size:10px; color:#999; margin-top:13px;
+            padding-top:10px; border-top:1px dashed #eee; line-height:1.45;
+        }
+        .metric-note strong { color:#1a1a1a; font-weight:700; }
         .subject-row { display:grid; grid-template-columns:minmax(185px,1fr) minmax(160px,1.3fr) 72px 78px 90px; gap:13px; align-items:center; padding:13px 0; border-top:1px solid #f3f3f3; }
         .subject-row.head { border:0; padding-top:0; font-size:9.5px; color:#aaa; text-transform:uppercase; letter-spacing:.3px; }
         .subject-name { font-size:11px; color:#555; margin-left:7px; }
@@ -75,7 +106,7 @@
         .cohort-lbl { font-size:9.5px; color:#999; font-weight:600; margin-top:3px; }
 
         @media(max-width:1050px) { .analytics-layout{grid-template-columns:1fr}.metric-row{grid-template-columns:repeat(2,1fr)}.cohort-strip{grid-template-columns:repeat(2,1fr)} }
-        @media(max-width:640px) { .metric-row{grid-template-columns:1fr}.cohort-strip{grid-template-columns:1fr}.subject-row{grid-template-columns:1fr 65px}.subject-row .bar,.subject-row .small-meta,.subject-row .delta,.subject-row.head{display:none}.filter-card select{min-width:0;width:100%} }
+        @media(max-width:640px) { .metric-row{grid-template-columns:1fr}.cohort-strip{grid-template-columns:1fr}.subject-row{grid-template-columns:1fr 65px}.subject-row .bar,.subject-row .small-meta,.subject-row .delta,.subject-row.head{display:none}.tab-filter-row{flex-direction:column;align-items:stretch}.tab-bar{width:100%}.filter-card{width:100%}.filter-field{width:100%}.filter-card select{flex:1;width:auto;min-width:0} }
     </style>
 </head>
 <body>
@@ -86,41 +117,95 @@
         <div class="topbar-right">@include('partials.topbar-actions')</div>
     </div>
 
-    {{-- One filter row, above everything it scopes: both tabs read the same slice. --}}
-    <form class="card filter-card" method="GET">
-        <label for="subject">Subject</label>
-        <select name="subject" id="subject">
-            <option value="">All CPALE subjects</option>
-            @foreach($subjects as $subject)<option value="{{ $subject->id }}" @selected($selectedSubject === $subject->id)>{{ $subject->code }} — {{ $subject->name }}</option>@endforeach
-        </select>
-        <label for="section">Section</label>
-        <select name="section" id="section">
-            <option value="">All sections</option>
-            @foreach($sections as $sec)<option value="{{ $sec->name }}" @selected($selectedSection === $sec->name)>{{ $sec->name }}{{ $sec->year_level ? ' — '.(\App\Models\Section::YEAR_LABELS[$sec->year_level] ?? '') : '' }}</option>@endforeach
-        </select>
-        <button class="btn btn-primary btn-sm" type="submit"><i class="fas fa-filter"></i> Apply</button>
-        @if($selectedSubject || $selectedSection)<a class="btn btn-ghost btn-sm" href="{{ route('chair.analytics.performance') }}">Clear</a>@endif
-    </form>
+    {{-- Tabs on the left, the filter that scopes both of them on the right —
+         same row, so the row reads as "view: [tabs] scoped by: [filter]"
+         instead of two stacked, unrelated-looking controls. --}}
+    <div class="tab-filter-row">
+        <div class="tab-bar" role="tablist">
+            <button class="tab-btn active" role="tab" aria-selected="true" onclick="switchTab('overview', this)"><i class="fas fa-table-columns"></i> Overview</button>
+            <button class="tab-btn" role="tab" aria-selected="false" onclick="switchTab('visualization', this)"><i class="fas fa-chart-line"></i> Visualization</button>
+        </div>
 
-    <div class="tab-bar" role="tablist">
-        <button class="tab-btn active" role="tab" aria-selected="true" onclick="switchTab('overview', this)"><i class="fas fa-table-columns"></i> Overview</button>
-        <button class="tab-btn" role="tab" aria-selected="false" onclick="switchTab('visualization', this)"><i class="fas fa-chart-line"></i> Visualization</button>
+        <form class="filter-card" method="GET">
+            <div class="filter-field">
+                <label for="subject">Subject</label>
+                <select name="subject" id="subject">
+                    <option value="">All CPALE subjects</option>
+                    @foreach($subjects as $subject)<option value="{{ $subject->id }}" @selected($selectedSubject === $subject->id)>{{ $subject->code }} — {{ $subject->name }}</option>@endforeach
+                </select>
+            </div>
+            <div class="filter-field">
+                <label for="section">Section</label>
+                <select name="section" id="section">
+                    <option value="">All sections</option>
+                    @foreach($sections as $sec)<option value="{{ $sec->name }}" @selected($selectedSection === $sec->name)>{{ $sec->name }}{{ $sec->year_level ? ' — '.(\App\Models\Section::YEAR_LABELS[$sec->year_level] ?? '') : '' }}</option>@endforeach
+                </select>
+            </div>
+            <button class="btn btn-primary btn-sm" type="submit"><i class="fas fa-filter"></i> Apply</button>
+            @if($selectedSubject || $selectedSection)<a class="btn btn-ghost btn-sm" href="{{ route('chair.analytics.performance') }}">Clear</a>@endif
+        </form>
     </div>
 
     @php
-        $metrics = [
-            ['Class-Level Accuracy', $report['overall_accuracy'] === null ? '—' : $report['overall_accuracy'].'%', 'Weighted across all student attempts'],
-            ['Participating Students', $report['participating_students'], 'With at least one recorded attempt'],
-            ['Total Attempts', number_format($report['total_attempts']), 'Across the selected scope'],
-            ['Board Ready', $report['readiness']['readiness_rate'] === null ? '—' : $report['readiness']['readiness_rate'].'%', $report['readiness']['ready'].' of '.$report['readiness']['eligible'].' measured'],
-        ];
         $cohort = $report['cohort'];
+        $readiness = $report['readiness'];
+
+        // Context figures for the KPI cards — each number gets a line that
+        // reads it (against the pass mark, the cohort, or the sample it rests
+        // on) instead of a static caption that only restates the label.
+        $accuracy = $report['overall_accuracy'];
+        $accuracyGap = $accuracy === null ? null : $accuracy - 75;
+        $participation = $cohort['enrolled'] > 0
+            ? (int) round($report['participating_students'] / $cohort['enrolled'] * 100)
+            : 0;
+        $attemptsPerStudent = $report['participating_students'] > 0
+            ? (int) round($report['total_attempts'] / $report['participating_students'])
+            : 0;
+        $minAttempts = \App\Services\ChairAnalyticsService::DEVELOPING_ATTEMPTS;
+        $confidenceColour = match ($readiness['confidence']) {
+            'high' => '#047857',
+            'medium' => '#b45309',
+            default => 'var(--accent)',
+        };
+
+        $metrics = [
+            [
+                'Class-Level Accuracy',
+                $accuracy === null ? '—' : $accuracy.'%',
+                $accuracy === null
+                    ? 'No attempts recorded in this scope yet.'
+                    : ($accuracyGap >= 0
+                        ? '<strong style="color:#047857;">'.$accuracyGap.' pts</strong> above the 75% pass mark.'
+                        : '<strong style="color:var(--accent);">'.abs($accuracyGap).' pts</strong> below the 75% pass mark.'),
+            ],
+            [
+                'Participating Students',
+                $report['participating_students'],
+                $cohort['enrolled'] > 0
+                    ? '<strong>'.$participation.'%</strong> of '.$cohort['enrolled'].' enrolled have practised.'
+                    : 'No enrolled students in this scope.',
+            ],
+            [
+                'Total Attempts',
+                number_format($report['total_attempts']),
+                $attemptsPerStudent > 0
+                    ? '<strong>'.number_format($attemptsPerStudent).' attempts</strong> per practising student.'
+                    : 'No attempts recorded in this scope yet.',
+            ],
+            [
+                'Board Ready',
+                $readiness['readiness_rate'] === null ? '—' : $readiness['readiness_rate'].'%',
+                $readiness['eligible'] > 0
+                    ? '<strong>'.$readiness['ready'].' of '.$readiness['eligible'].'</strong> measured · <strong style="color:'.$confidenceColour.';">'.$readiness['confidence'].'</strong> confidence.'
+                    : '<strong>No read yet</strong> — needs '.$minAttempts.'+ attempts per student.',
+            ],
+        ];
     @endphp
 
     <div id="tab-overview" class="tab-panel active">
     <div class="metric-row">
         @foreach($metrics as [$label, $value, $note])
-            <div class="metric"><div class="metric-label">{{ $label }}</div><div class="metric-value">{{ $value }}</div><div class="metric-note">{{ $note }}</div></div>
+            <div class="metric"><div class="metric-label">{{ $label }}</div><div class="metric-value">{{ $value }}</div><div class="metric-note">{!! $note !!}</div></div>
         @endforeach
     </div>
 
@@ -269,7 +354,7 @@
     <div id="tab-visualization" class="tab-panel">
         <div class="metric-row">
             @foreach($metrics as [$label, $value, $note])
-                <div class="metric"><div class="metric-label">{{ $label }}</div><div class="metric-value">{{ $value }}</div><div class="metric-note">{{ $note }}</div></div>
+                <div class="metric"><div class="metric-label">{{ $label }}</div><div class="metric-value">{{ $value }}</div><div class="metric-note">{!! $note !!}</div></div>
             @endforeach
         </div>
 
@@ -354,7 +439,10 @@
             labels: pluck(subjects, 'code'),
             datasets: [Viz.bar({
                 label: 'Class accuracy',
-                data: subjects.map((s) => s.accuracy === null ? 0 : s.accuracy),
+                // null, not 0 — a subject nobody has attempted must leave a gap.
+                // Drawn as 0 it was indistinguishable from a subject the class
+                // genuinely scored 0% on, and the difference only showed on hover.
+                data: subjects.map((s) => s.accuracy),
                 backgroundColor: P.s1,
                 maxBarThickness: 22,
             })],
@@ -426,7 +514,12 @@
             labels: pluck(trend, 'label'),
             datasets: [
                 Viz.line({ label: 'Board readiness', data: pluck(trend, 'rate'), borderColor: P.s1, backgroundColor: 'rgba(163,43,43,.08)', pointBackgroundColor: P.s1, fill: true }),
-                Viz.line({ label: 'Class accuracy', data: pluck(trend, 'accuracy'), borderColor: P.s2, backgroundColor: 'transparent', pointBackgroundColor: P.s2 }),
+                // Dashed, with a distinct point shape: the two series can sit on
+                // identical values for weeks at a time (both read 33% across the
+                // whole window right now), and as two solid lines the second was
+                // drawn exactly under the first — the chart looked like it had
+                // one series. The dash stays visible through the overlap.
+                Viz.line({ label: 'Class accuracy', data: pluck(trend, 'accuracy'), borderColor: P.s2, backgroundColor: 'transparent', pointBackgroundColor: P.s2, borderDash: [6, 4], pointStyle: 'rectRot', pointRadius: 5 }),
             ],
         },
         options: {
@@ -442,16 +535,22 @@
         },
     });
 
-    /* ── Weekly active students ─────────────────────────────────────────── */
+    /* ── Weekly active students ─────────────────────────────────────────────
+       Bars, not a filled line. These are discrete headcounts per week and the
+       series is sparse (weeks with nobody practising sit at 0). A line
+       interpolates straight through those zeros, implying a gradual fall and
+       recovery that never happened, and the fill shaded area over weeks with
+       no activity at all. Bars also match Practice Volume beside it, which
+       buckets by the same weeks. ── */
     Viz.chart('vizActiveStudents', {
-        type: 'line',
+        type: 'bar',
         data: {
             labels: pluck(engagement, 'label'),
-            datasets: [Viz.line({ label: 'Active students', data: pluck(engagement, 'active_students'), borderColor: P.s2, backgroundColor: 'rgba(42,120,214,.08)', pointBackgroundColor: P.s2, fill: true })],
+            datasets: [Viz.bar({ label: 'Active students', data: pluck(engagement, 'active_students'), backgroundColor: P.s2 })],
         },
         options: {
             interaction: { mode: 'index', intersect: false },
-            scales: { y: Viz.countAxis(), x: Viz.catAxis() },
+            scales: { y: Viz.countAxis({ title: { display: true, text: 'Students', color: P.muted } }), x: Viz.catAxis() },
             plugins: {
                 legend: { display: false },
                 tooltip: { callbacks: { afterBody: (items) => {
@@ -485,7 +584,9 @@
             labels: pluck(difficulty, 'label'),
             datasets: [Viz.bar({
                 label: 'Accuracy',
-                data: difficulty.map((d) => d.accuracy === null ? 0 : d.accuracy),
+                // null, not 0 — an unanswered band leaves a gap instead of
+                // posing as a band the class scored 0% on.
+                data: difficulty.map((d) => d.accuracy),
                 backgroundColor: P.ordinal,
             })],
         },

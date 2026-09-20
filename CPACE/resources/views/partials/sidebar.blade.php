@@ -272,6 +272,101 @@
         .sidebar { display: none !important; }
         .main-content { margin-left: 0 !important; padding: 80px 16px 90px !important; }
     }
+
+    /* ── Shared profile-edit modal (Profile Settings, everywhere) ── */
+    .sp-modal-overlay {
+        display: none; position: fixed; inset: 0;
+        background: rgba(15, 5, 5, 0.55);
+        z-index: 3000; align-items: center; justify-content: center;
+        padding: 20px;
+    }
+    .sp-modal-overlay.open { display: flex; }
+    .sp-modal {
+        background: #fff; border-radius: 16px;
+        width: 100%; max-width: 420px;
+        max-height: 90vh; overflow-y: auto;
+        box-shadow: 0 20px 60px rgba(0,0,0,.3);
+        font-family: 'Poppins', sans-serif;
+    }
+    .sp-modal-head {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 18px 22px; border-bottom: 1px solid #f0f0f0;
+    }
+    .sp-modal-head h3 { font-size: 16px; font-weight: 600; color: #1a1a1a; margin: 0; }
+    .sp-modal-close {
+        width: 30px; height: 30px; border: none; background: #f4f5f7;
+        border-radius: 8px; color: #666; cursor: pointer; font-size: 13px;
+    }
+    .sp-modal-close:hover { background: #e9eaed; }
+    .sp-modal-body { padding: 22px; }
+    .sp-avatar-row { display: flex; align-items: center; gap: 16px; margin-bottom: 18px; }
+    .sp-avatar-preview {
+        width: 64px; height: 64px; border-radius: 14px;
+        background: #7B1D1D; color: #fff;
+        display: flex; align-items: center; justify-content: center;
+        font-weight: 700; font-size: 20px; overflow: hidden; position: relative; flex-shrink: 0;
+    }
+    .sp-avatar-preview img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+    .sp-upload-btn {
+        display: inline-flex; align-items: center; gap: 7px;
+        padding: 8px 14px; border-radius: 8px; border: 1.5px solid #7B1D1D;
+        background: #fff; color: #7B1D1D; font-size: 12.5px; font-weight: 600;
+        cursor: pointer; font-family: 'Poppins', sans-serif;
+    }
+    .sp-upload-btn:hover { background: #f5e8e8; }
+    .sp-avatar-remove {
+        display: inline-flex; align-items: center; gap: 6px;
+        margin-top: 6px; padding: 0; border: none; background: none;
+        color: #999; font-size: 11.5px; font-family: 'Poppins', sans-serif;
+        cursor: pointer;
+    }
+    .sp-avatar-remove:hover { color: #c0392b; }
+    .sp-swatch-label {
+        font-size: 12.5px; font-weight: 500; color: #555; margin-bottom: 8px; display: block;
+    }
+    .sp-swatches { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 18px; }
+    .sp-swatch {
+        width: 30px; height: 30px; border-radius: 9px;
+        border: none; cursor: pointer; position: relative;
+        box-shadow: inset 0 0 0 1px rgba(0,0,0,0.08);
+        transition: transform 0.15s;
+    }
+    .sp-swatch:hover { transform: scale(1.08); }
+    .sp-swatch.selected::after {
+        content: '\f00c';
+        font-family: 'Font Awesome 6 Free'; font-weight: 900;
+        position: absolute; inset: 0;
+        display: flex; align-items: center; justify-content: center;
+        color: #fff; font-size: 12px;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.35);
+    }
+    .sp-field { margin-bottom: 14px; }
+    .sp-field label { display: block; font-size: 12.5px; font-weight: 500; color: #555; margin-bottom: 6px; }
+    .sp-field input {
+        width: 100%; padding: 10px 12px; border: 1px solid #e0e0e0; border-radius: 8px;
+        font-size: 13.5px; font-family: 'Poppins', sans-serif; color: #1a1a1a; outline: none;
+    }
+    .sp-field input:focus { border-color: #7B1D1D; }
+    .sp-row-2 { display: flex; gap: 12px; }
+    .sp-row-2 .sp-field { flex: 1; }
+    .sp-modal-footer { display: flex; justify-content: flex-end; gap: 10px; padding-top: 6px; }
+    .sp-btn {
+        padding: 10px 20px; border-radius: 8px; border: none;
+        font-size: 13px; font-weight: 600; font-family: 'Poppins', sans-serif; cursor: pointer;
+    }
+    .sp-btn-cancel { background: #f4f5f7; color: #555; }
+    .sp-btn-cancel:hover { background: #e9eaed; }
+    .sp-btn-save { background: #7B1D1D; color: #fff; }
+    .sp-btn-save:hover { background: #6a1818; }
+    .sp-status {
+        margin-bottom: 14px; padding: 10px 14px; border-radius: 8px;
+        font-size: 12.5px; background: #ecfdf5; color: #047857; display: none;
+    }
+    .sp-status.show { display: block; }
+    .sp-errors {
+        margin-bottom: 14px; padding: 10px 14px; border-radius: 8px;
+        font-size: 12.5px; background: #fef2f2; color: #b91c1c;
+    }
 </style>
 
 <aside class="sidebar" id="sidebar">
@@ -289,7 +384,7 @@
     <ul class="sidebar-nav">
         <li class="nav-label">Main</li>
         <li><a href="{{ route('dashboard') }}" class="{{ $active === 'dashboard' ? 'active' : '' }}"><i class="fas fa-home"></i><span>Home</span></a></li>
-        <li><a href="{{ route('subjects') }}" class="{{ $active === 'subjects' ? 'active' : '' }}"><i class="fas fa-book-open"></i><span>Subjects</span></a></li>
+        <li><a href="{{ route('subjects') }}" class="{{ $active === 'subjects' ? 'active' : '' }}"><i class="fas fa-book-open"></i><span>Resources</span></a></li>
 
         <li class="nav-label">Study</li>
         <li><a href="{{ route('adaptive-quizzes') }}" class="{{ $active === 'quizzes' ? 'active' : '' }}"><i class="fas fa-pen-fancy"></i><span>Practice Quizzes</span></a></li>
@@ -332,6 +427,7 @@
                 <i class="fas fa-chevron-down chevron-icon"></i>
             </div>
             <div class="user-dropdown" id="userDropdown">
+                <button type="button" class="js-open-profile-modal"><i class="fas fa-user"></i><span>Profile Settings</span></button>
                 <form method="POST" action="{{ route('logout') }}"
                           data-confirm="You will be signed out of CPACE and returned to the login page."
                           data-confirm-title="Log out of CPACE?"
@@ -345,22 +441,182 @@
     </div>
 </aside>
 
+{{-- Shared profile-edit modal — any "Profile Settings" link/button with the
+     class js-open-profile-modal (topbar dropdowns, sidebar footer menu, the
+     Settings page itself) opens this instead of navigating away. --}}
+<div class="sp-modal-overlay" id="spModalOverlay">
+    <div class="sp-modal">
+        <div class="sp-modal-head">
+            <h3>Profile</h3>
+            <button type="button" class="sp-modal-close" id="spModalClose"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="sp-modal-body">
+            <div class="sp-status" id="spStatus"></div>
+            @if ($errors->any())
+                <div class="sp-errors">
+                    @foreach ($errors->all() as $error)
+                        <div>{{ $error }}</div>
+                    @endforeach
+                </div>
+            @endif
+            <form method="POST" action="{{ route('settings.profile') }}" enctype="multipart/form-data" id="spForm">
+                @csrf
+                <div class="sp-avatar-row">
+                    <div class="sp-avatar-preview" id="spAvatarPreview">
+                        @include('partials.avatar-content')
+                    </div>
+                    <div>
+                        <label class="sp-upload-btn" for="spPhotoInput"><i class="fas fa-camera"></i> Change photo</label>
+                        <input type="file" name="photo" id="spPhotoInput" accept="image/*" style="display:none;">
+                        @if(Auth::user()->profile_photo)
+                            <button type="button" class="sp-avatar-remove" id="spRemovePhoto"><i class="fas fa-xmark"></i> Remove photo, use color avatar</button>
+                        @endif
+                    </div>
+                </div>
+
+                <label class="sp-swatch-label">Avatar color <span style="color:#aaa;font-weight:400;">(used when there's no photo)</span></label>
+                <div class="sp-swatches" id="spSwatches">
+                    @php
+                        $avatarColors = [
+                            'maroon' => '#7B1D1D', 'crimson' => '#c0392b', 'blue' => '#2563eb',
+                            'teal' => '#0d9488', 'green' => '#059669', 'purple' => '#7c3aed',
+                            'pink' => '#db2777', 'orange' => '#d97706', 'navy' => '#1e3a5f', 'slate' => '#475569',
+                        ];
+                        $currentColor = Auth::user()->avatar_color ?? 'maroon';
+                    @endphp
+                    @foreach($avatarColors as $key => $hex)
+                        <button type="button" class="sp-swatch {{ $currentColor === $key ? 'selected' : '' }}" data-color="{{ $key }}" data-hex="{{ $hex }}" style="background: {{ $hex }};" title="{{ ucfirst($key) }}"></button>
+                    @endforeach
+                    <input type="hidden" name="avatar_color" id="spAvatarColorInput" value="{{ old('avatar_color', $currentColor) }}">
+                    <input type="hidden" name="remove_photo" id="spRemovePhotoInput" value="0">
+                </div>
+
+                <div class="sp-row-2">
+                    <div class="sp-field">
+                        <label>First name</label>
+                        <input type="text" name="first_name" value="{{ old('first_name', Auth::user()->first_name) }}" required>
+                    </div>
+                    <div class="sp-field">
+                        <label>Last name</label>
+                        <input type="text" name="last_name" value="{{ old('last_name', Auth::user()->last_name) }}" required>
+                    </div>
+                </div>
+                <div class="sp-field">
+                    <label>Email</label>
+                    <input type="email" name="email" value="{{ old('email', Auth::user()->email) }}" required>
+                </div>
+                <div class="sp-modal-footer">
+                    <button type="button" class="sp-btn sp-btn-cancel" id="spCancelBtn">Cancel</button>
+                    <button type="submit" class="sp-btn sp-btn-save">Save changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <script>
 (function () {
     const sidebar = document.getElementById('sidebar');
     const btn     = document.getElementById('sidebarCollapseBtn');
-    if (!sidebar) return;
-
-    if (localStorage.getItem('sidebarCollapsed') === 'true') {
-        sidebar.classList.add('collapsed');
+    if (sidebar) {
+        if (localStorage.getItem('sidebarCollapsed') === 'true') {
+            sidebar.classList.add('collapsed');
+        }
+        if (btn) {
+            btn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                sidebar.classList.toggle('collapsed');
+                localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
+            });
+        }
     }
 
-    if (btn) {
-        btn.addEventListener('click', function (e) {
-            e.stopPropagation();
-            sidebar.classList.toggle('collapsed');
-            localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
+    document.addEventListener('DOMContentLoaded', function () {
+        const overlay      = document.getElementById('spModalOverlay');
+        const closeBtn      = document.getElementById('spModalClose');
+        const cancelBtn      = document.getElementById('spCancelBtn');
+        const photoInput    = document.getElementById('spPhotoInput');
+        const avatarPreview = document.getElementById('spAvatarPreview');
+        const form           = document.getElementById('spForm');
+        const statusEl       = document.getElementById('spStatus');
+
+        function openModal() { if (overlay) overlay.classList.add('open'); }
+        function closeModal() { if (overlay) overlay.classList.remove('open'); }
+
+        document.addEventListener('click', function (e) {
+            if (e.target.closest('.js-open-profile-modal')) {
+                e.preventDefault();
+                e.stopPropagation();
+                openModal();
+            }
         });
-    }
+        if (closeBtn) closeBtn.addEventListener('click', closeModal);
+        if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
+        if (overlay) overlay.addEventListener('click', function (e) { if (e.target === overlay) closeModal(); });
+
+        const colorInput   = document.getElementById('spAvatarColorInput');
+        const removeInput  = document.getElementById('spRemovePhotoInput');
+        const removeBtn    = document.getElementById('spRemovePhoto');
+        const swatches     = document.querySelectorAll('#spSwatches .sp-swatch');
+
+        function showsPhoto() {
+            return avatarPreview && avatarPreview.querySelector('img');
+        }
+
+        if (photoInput && avatarPreview) {
+            photoInput.addEventListener('change', function () {
+                const file = photoInput.files[0];
+                if (!file) return;
+                if (removeInput) removeInput.value = '0';
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    avatarPreview.innerHTML = '<img src="' + e.target.result + '" alt="Preview">';
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        if (removeBtn) {
+            removeBtn.addEventListener('click', function () {
+                if (photoInput) photoInput.value = '';
+                if (removeInput) removeInput.value = '1';
+                if (avatarPreview) {
+                    const hex = colorInput ? colorInput.value : 'maroon';
+                    const selected = document.querySelector('#spSwatches .sp-swatch[data-color="' + hex + '"]');
+                    const bg = selected ? selected.dataset.hex : '#7B1D1D';
+                    const initials = '{{ strtoupper(substr(Auth::user()->first_name,0,1)) }}{{ strtoupper(substr(Auth::user()->last_name,0,1)) }}';
+                    avatarPreview.innerHTML = '<span class="avatar-default" style="background:' + bg + ';">' + initials + '</span>';
+                }
+                removeBtn.style.display = 'none';
+            });
+        }
+
+        swatches.forEach(function (sw) {
+            sw.addEventListener('click', function () {
+                swatches.forEach(function (s) { s.classList.remove('selected'); });
+                sw.classList.add('selected');
+                if (colorInput) colorInput.value = sw.dataset.color;
+                if (!showsPhoto() && avatarPreview) {
+                    const span = avatarPreview.querySelector('.avatar-default');
+                    if (span) span.style.background = sw.dataset.hex;
+                }
+            });
+        });
+
+        if (form) {
+            form.addEventListener('submit', function () {
+                sessionStorage.setItem('spModalReopen', '1');
+            });
+        }
+
+        if (sessionStorage.getItem('spModalReopen') === '1') {
+            sessionStorage.removeItem('spModalReopen');
+            @if (session('status'))
+                statusEl.textContent = @json(session('status'));
+                statusEl.classList.add('show');
+            @endif
+            openModal();
+        }
+    });
 })();
 </script>

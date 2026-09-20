@@ -23,7 +23,7 @@
         .topbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:22px; gap:16px; position:relative; z-index:100; }
         .breadcrumb { display:flex; align-items:center; gap:6px; font-size:12px; color:#aaa; margin-bottom:4px; }
         .breadcrumb a { color:var(--accent); text-decoration:none; }
-        .page-title { font-size:26px; font-weight:700; color:#1a1a1a; }
+        .page-title { font-size:26px; font-weight:700; color:#14283E; }
         .page-sub { font-size:12px; color:#999; margin-top:2px; }
         .topbar-right { display:flex; align-items:center; gap:10px; }
         .btn { display:inline-flex; align-items:center; justify-content:center; gap:7px; padding:10px 18px; border-radius:8px; font-size:13px; font-weight:600; font-family:'Poppins',sans-serif; cursor:pointer; border:none; text-decoration:none; transition:all .2s; }
@@ -146,16 +146,31 @@
 
 @include('partials.faculty-sidebar', ['active' => 'quizzes'])
 
+@php
+    // Land back on the subject's own quiz list when this quiz belongs to
+    // one (or was opened from one), not all the way back at the subject grid.
+    $backRoute = $quiz->subject_id
+        ? route('faculty.quizzes.subject', $quiz->subject_id)
+        : route('faculty.quizzes');
+@endphp
+
 <main class="main">
     <div class="topbar">
         <div>
-            <div class="breadcrumb"><a href="{{ route('faculty.quizzes') }}">Class Quizzes</a> <i class="fas fa-chevron-right" style="font-size:9px;"></i> {{ $editMode ? 'Edit' : 'New' }}</div>
+            <div class="breadcrumb">
+                <a href="{{ route('faculty.quizzes') }}">Class Quizzes</a>
+                @if($quiz->subject_id)
+                    <i class="fas fa-chevron-right" style="font-size:9px;"></i>
+                    <a href="{{ $backRoute }}">{{ $quiz->subject?->code ?? $subjects->firstWhere('id', $quiz->subject_id)?->code }}</a>
+                @endif
+                <i class="fas fa-chevron-right" style="font-size:9px;"></i> {{ $editMode ? 'Edit' : 'New' }}
+            </div>
             <div class="page-title">{{ $editMode ? 'Edit Quiz' : 'New Quiz' }}</div>
             <div class="page-sub">Write questions or pull them from your Test Bank, set the deadline, then save a draft or publish.</div>
         </div>
         <div class="topbar-right">
             @include('partials.topbar-actions')
-            <a href="{{ route('faculty.quizzes') }}" class="btn btn-ghost"><i class="fas fa-arrow-left"></i> Back</a>
+            <a href="{{ $backRoute }}" class="btn btn-ghost"><i class="fas fa-arrow-left"></i> Back</a>
         </div>
     </div>
 

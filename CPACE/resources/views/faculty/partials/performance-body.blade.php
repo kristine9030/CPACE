@@ -5,7 +5,8 @@
 
 <!-- DYNAMIC BODY (swapped in place via AJAX) -->
 <div class="perf-layout a2" id="perfBody">
-    <!-- TABLE -->
+    <!-- LEFT COLUMN: student table, with Class Weak Topics right below it -->
+    <div class="left-col">
     <div class="table-card">
         <div class="table-head-bar">
             <span class="count">Showing <strong>{{ $pagination['total'] }}</strong> student{{ $pagination['total'] === 1 ? '' : 's' }}</span>
@@ -86,6 +87,33 @@
         @endif
     </div>
 
+    <!-- WEAKEST TOPICS — moved right under the student list -->
+    <div class="side-card">
+        <div class="side-title"><i class="fas fa-chart-bar" style="margin-right:6px;color:var(--accent);"></i>Class Weak Topics</div>
+        @if($weakTopics->isNotEmpty())
+        <div class="chart-box-sm" id="classWeakChartBox"><div class="chart-inner" id="classWeakChartInner"><canvas id="chartClassWeak"></canvas></div></div>
+        @endif
+        <div class="weak-list-scroll">
+            @forelse($weakTopics as $t)
+            <div class="weak-item" style="align-items:flex-start;">
+                <div class="weak-icon" style="background:{{ ($subjColors[$t->subject_code] ?? '#888') }}20;color:{{ $subjColors[$t->subject_code] ?? '#888' }};">
+                    <i class="fas {{ $subjIcons[$t->subject_code] ?? 'fa-book' }}"></i>
+                </div>
+                <span class="weak-name">
+                    {{ $t->topic }}<br><span class="weak-sub">{{ $t->subject_code }}</span>
+                    <div class="weak-why">{{ $t->why }}</div>
+                    @if($t->miss)<div class="weak-why weak-miss">{{ $t->miss }}</div>@endif
+                </span>
+                <span class="weak-rate">{{ $t->accuracy }}%</span>
+            </div>
+            @empty
+                <div class="muted-empty">Not enough attempts yet to rank topics.</div>
+            @endforelse
+        </div>
+        <a href="{{ route('faculty.test-bank') }}" style="display:flex;align-items:center;justify-content:center;gap:6px;font-size:12px;color:var(--accent);text-decoration:none;margin-top:14px;font-weight:600;">Add Questions for These Topics <i class="fas fa-arrow-right"></i></a>
+    </div>
+    </div>
+
     <!-- RIGHT PANEL -->
     <div class="right-panel">
         <!-- AT RISK -->
@@ -116,32 +144,6 @@
                 <button type="submit" class="btn btn-ghost" style="width:100%;justify-content:center;margin-top:12px;font-size:12px;"><i class="fas fa-envelope"></i> Send Reminder to All</button>
             </form>
             @endif
-        </div>
-
-        <!-- WEAKEST TOPICS -->
-        <div class="side-card">
-            <div class="side-title"><i class="fas fa-chart-bar" style="margin-right:6px;color:var(--accent);"></i>Class Weak Topics</div>
-            @if($weakTopics->isNotEmpty())
-            <div class="chart-box-sm" id="classWeakChartBox"><div class="chart-inner" id="classWeakChartInner"><canvas id="chartClassWeak"></canvas></div></div>
-            @endif
-            <div class="weak-list-scroll">
-                @forelse($weakTopics as $t)
-                <div class="weak-item" style="align-items:flex-start;">
-                    <div class="weak-icon" style="background:{{ ($subjColors[$t->subject_code] ?? '#888') }}20;color:{{ $subjColors[$t->subject_code] ?? '#888' }};">
-                        <i class="fas {{ $subjIcons[$t->subject_code] ?? 'fa-book' }}"></i>
-                    </div>
-                    <span class="weak-name">
-                        {{ $t->topic }}<br><span class="weak-sub">{{ $t->subject_code }}</span>
-                        <div class="weak-why">{{ $t->why }}</div>
-                        @if($t->miss)<div class="weak-why weak-miss">{{ $t->miss }}</div>@endif
-                    </span>
-                    <span class="weak-rate">{{ $t->accuracy }}%</span>
-                </div>
-                @empty
-                    <div class="muted-empty">Not enough attempts yet to rank topics.</div>
-                @endforelse
-            </div>
-            <a href="{{ route('faculty.test-bank') }}" style="display:flex;align-items:center;justify-content:center;gap:6px;font-size:12px;color:var(--accent);text-decoration:none;margin-top:14px;font-weight:600;">Add Questions for These Topics <i class="fas fa-arrow-right"></i></a>
         </div>
 
         <!-- SCORE DISTRIBUTION -->

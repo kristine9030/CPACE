@@ -28,6 +28,7 @@ use App\Http\Controllers\Faculty\MaterialController;
 use App\Http\Controllers\Faculty\FacultyQuizController;
 use App\Http\Controllers\Student\ClassQuizController;
 use App\Http\Controllers\Student\SubjectController;
+use App\Http\Controllers\Student\StudentSettingsController;
 use App\Http\Controllers\Chair\CommunicationController;
 use App\Http\Controllers\Chair\AnalyticsController;
 use App\Http\Controllers\NotificationController;
@@ -144,6 +145,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/account-setup', [FacultyAccountSetupController::class, 'store'])->name('account-setup.store');
 
         Route::get('/dashboard', [FacultyDashboardController::class, 'index'])->name('dashboard');
+        Route::get('/dashboard/insights', [FacultyDashboardController::class, 'insights'])->name('dashboard.insights');
         Route::get('/test-bank', [TestBankController::class, 'index'])->name('test-bank');
         Route::get('/test-bank/export', [TestBankController::class, 'export'])->name('test-bank.export');
         Route::get('/test-bank/create', [TestBankController::class, 'create'])->name('question.create');
@@ -178,6 +180,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/quizzes', [FacultyQuizController::class, 'index'])->name('quizzes');
         Route::get('/quizzes/create', [FacultyQuizController::class, 'create'])->name('quizzes.create');
         Route::get('/quizzes/bank-questions', [FacultyQuizController::class, 'bankQuestions'])->name('quizzes.bank-questions');
+        Route::get('/quizzes/subject/{subject}', [FacultyQuizController::class, 'subject'])->name('quizzes.subject');
         Route::post('/quizzes', [FacultyQuizController::class, 'store'])->name('quizzes.store');
         Route::get('/quizzes/{quiz}/edit', [FacultyQuizController::class, 'edit'])->name('quizzes.edit');
         Route::put('/quizzes/{quiz}', [FacultyQuizController::class, 'update'])->name('quizzes.update');
@@ -250,6 +253,7 @@ Route::middleware('auth')->group(function () {
     // Class quizzes assigned by faculty. /q/{token} is the link a faculty
     // member shares when announcing a quiz; guests are sent to login first.
     Route::get('/class-quizzes', [ClassQuizController::class, 'index'])->name('class-quizzes');
+    Route::get('/class-quizzes/{subject}', [ClassQuizController::class, 'subject'])->name('class-quizzes.subject');
     Route::get('/q/{token}', [ClassQuizController::class, 'show'])->name('class-quiz.show');
     Route::post('/q/{token}/start', [ClassQuizController::class, 'start'])->name('class-quiz.start');
     Route::get('/q/{token}/take', [ClassQuizController::class, 'take'])->name('class-quiz.take');
@@ -277,7 +281,10 @@ Route::middleware('auth')->group(function () {
     Route::post('/calendar/plan', [CalendarController::class, 'storePlan'])->name('calendar.plan.store');
     Route::delete('/calendar/plan/{id}', [CalendarController::class, 'destroyPlan'])->name('calendar.plan.destroy');
     Route::get('/achievements', [AchievementController::class, 'index'])->name('achievements');
-    Route::get('/settings', function () {
-        return view('student.settings');
-    })->name('settings');
+
+    // Settings & profile
+    Route::get('/settings', [StudentSettingsController::class, 'edit'])->name('settings');
+    Route::post('/settings/profile', [StudentSettingsController::class, 'update'])->name('settings.profile');
+    Route::post('/settings/details', [StudentSettingsController::class, 'updateDetails'])->name('settings.details');
+    Route::post('/settings/password', [StudentSettingsController::class, 'updatePassword'])->name('settings.password');
 });

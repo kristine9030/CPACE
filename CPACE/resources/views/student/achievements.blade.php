@@ -8,7 +8,7 @@
     <!-- Google Fonts - Poppins -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
 
     <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -22,7 +22,7 @@
 
         body {
             font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #f8f9fa;
+            background: #f4f5f7;
             color: #333;
         }
 
@@ -282,10 +282,10 @@
         }
 
         .header-title {
-            font-size: 28px;
+            font-size: 30px;
             font-weight: 700;
-            color: #222;
-            font-family: 'Poppins', sans-serif;
+            color: #14283E;
+            font-family: 'Montserrat', sans-serif;
             display: flex;
             align-items: center;
             gap: 12px;
@@ -309,33 +309,35 @@
         }
 
         .search-box {
-            flex: 0 1 320px;
             position: relative;
         }
 
         .search-box i {
             position: absolute;
-            left: 15px;
+            left: 12px;
             top: 50%;
             transform: translateY(-50%);
-            color: #c0392b;
+            color: #aaa;
             font-size: 14px;
         }
 
         .search-box input {
-            width: 100%;
-            padding: 10px 15px 10px 40px;
-            border: 1px solid #eee;
-            border-radius: 22px;
+            width: 280px;
+            padding: 10px 14px 10px 36px;
+            border: 1px solid #e0e0e0;
+            border-radius: 24px;
             font-size: 13px;
             background: white;
-            color: #666;
+            color: #555;
             font-family: 'Poppins', sans-serif;
+            outline: none;
         }
+        .search-box input:focus { border-color: #7B1D1D; }
+        .search-box input::placeholder { color: #bbb; }
 
         .header-icons {
             display: flex;
-            gap: 15px;
+            gap: 14px;
             align-items: center;
         }
 
@@ -346,13 +348,14 @@
             background: white;
             border-radius: 50%;
             cursor: pointer;
-            font-size: 18px;
+            font-size: 17px;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.3s;
+            transition: background 0.2s;
             position: relative;
             color: #555;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
         }
 
         .icon-btn:hover {
@@ -372,20 +375,21 @@
             align-items: center;
             justify-content: center;
             font-size: 10px;
-            font-weight: 600;
+            font-weight: 700;
         }
 
         .profile-avatar {
-            width: 42px;
-            height: 42px;
+            width: 40px;
+            height: 40px;
             background: #7B1D1D;
             border: none;
-            border-radius: 50%;
+            border-radius: 10px;
             color: white;
-            font-weight: 600;
+            font-weight: 700;
             cursor: pointer;
             font-size: 14px;
             font-family: 'Poppins', sans-serif;
+            transition: background 0.2s;
         }
 
         .profile-avatar:hover {
@@ -1817,7 +1821,7 @@
                         <div class="header-dropdown-wrap">
                             <button class="profile-avatar" id="profileBtn">@include('partials.avatar-content')</button>
                             <div class="dropdown-menu" id="profileDropdown">
-                                <a href="#"><i class="fas fa-user"></i> Profile Settings</a>
+                                <a href="#" class="js-open-profile-modal"><i class="fas fa-user"></i> Profile Settings</a>
                                 <a href="#"><i class="fas fa-chart-line"></i> My Progress</a>
                                 <a href="#"><i class="fas fa-question-circle"></i> Help &amp; Support</a>
                                 <form method="POST" action="{{ route('logout') }}"

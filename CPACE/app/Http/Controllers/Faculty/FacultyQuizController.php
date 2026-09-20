@@ -23,33 +23,114 @@ class FacultyQuizController extends Controller
 {
     private const MAX_ITEMS = 100;
 
-    /** Quiz list with status filter and quick counts. */
-    public function index(Request $request)
+    /**
+     * Class list — one card per subject the faculty member is assigned to,
+     * whether or not they've posted a quiz there yet. Mirrors the student
+     * side's Classroom-style Class Quizzes index, so "class quizzes" reads
+     * as the same feature on both sides of the fence.
+     */
+    public function index()
     {
         $faculty = Auth::user();
-        $status = $request->input('status');
 
         $quizzes = FacultyQuiz::with('subject')
             ->withCount(['items', 'attempts as submitted_count' => fn ($q) => $q->whereNotNull('submitted_at')])
             ->where('faculty_id', $faculty->id)
+            ->get();
+
+        $bySubject = $quizzes->groupBy(fn (FacultyQuiz $quiz) => $quiz->subject_id ?? 'general');
+
+        $classes = $this->subjectsFor($faculty)
+            ->map(fn (Subject $subject) => $this->classCard($subject, $bySubject->get($subject->id, collect())));
+
+        // A quiz saved with no subject still needs a home on the index.
+        if ($general = $bySubject->get('general')) {
+            $classes->push($this->classCard(null, $general));
+        }
+
+        // Subjects with quizzes posted float to the top (drafts needing
+        // publishing first), empty subjects trail at the end.
+        $classes = $classes->sortBy([
+            ['total', 'desc'],
+            ['draft', 'desc'],
+            ['code', 'asc'],
+        ])->values();
+
+        return view('faculty.quizzes', compact('classes'));
+    }
+
+    /** One class-list card's worth of data for a subject (or "general"). */
+    private function classCard(?Subject $subject, $group): array
+    {
+        return [
+            'key' => $subject?->id ?? 'general',
+            'code' => $subject?->code ?? 'General',
+            'name' => $subject?->name ?? 'Quizzes without a subject',
+            'icon' => self::SUBJECT_ICONS[strtoupper((string) $subject?->code)] ?? 'fa-layer-group',
+            'icon2' => self::SUBJECT_ICONS_2[strtoupper((string) $subject?->code)] ?? 'fa-shapes',
+            'theme' => self::theme($subject?->code),
+            'total' => $group->count(),
+            'draft' => $group->where('status', FacultyQuiz::STATUS_DRAFT)->count(),
+            'published' => $group->where('status', FacultyQuiz::STATUS_PUBLISHED)->count(),
+            'closed' => $group->where('status', FacultyQuiz::STATUS_CLOSED)->count(),
+            'submissions' => $group->sum('submitted_count'),
+        ];
+    }
+
+    /** One class: every quiz the faculty posted in a single subject. */
+    public function subject(Request $request, string $subject)
+    {
+        $faculty = Auth::user();
+        $isGeneral = $subject === 'general';
+        $subjectModel = $isGeneral ? null : Subject::find((int) $subject);
+        abort_if(! $isGeneral && ! $subjectModel, 404);
+        if (! $isGeneral) {
+            abort_unless($this->subjectsFor($faculty)->contains('id', $subjectModel->id), 403, 'You are not assigned to that subject.');
+        }
+
+        $status = $request->input('status');
+
+        $base = FacultyQuiz::with('subject')
+            ->withCount(['items', 'attempts as submitted_count' => fn ($q) => $q->whereNotNull('submitted_at')])
+            ->where('faculty_id', $faculty->id)
+            ->when($isGeneral, fn ($q) => $q->whereNull('subject_id'), fn ($q) => $q->where('subject_id', $subjectModel->id));
+
+        $quizzes = (clone $base)
             ->when(in_array($status, ['draft', 'published', 'closed'], true), fn ($q) => $q->where('status', $status))
             ->orderByDesc('updated_at')
             ->get();
 
         $counts = [
-            'all' => FacultyQuiz::where('faculty_id', $faculty->id)->count(),
-            'draft' => FacultyQuiz::where('faculty_id', $faculty->id)->where('status', 'draft')->count(),
-            'published' => FacultyQuiz::where('faculty_id', $faculty->id)->where('status', 'published')->count(),
-            'closed' => FacultyQuiz::where('faculty_id', $faculty->id)->where('status', 'closed')->count(),
+            'all' => (clone $base)->count(),
+            'draft' => (clone $base)->where('status', 'draft')->count(),
+            'published' => (clone $base)->where('status', 'published')->count(),
+            'closed' => (clone $base)->where('status', 'closed')->count(),
         ];
 
-        return view('faculty.quizzes', compact('quizzes', 'counts', 'status'));
+        return view('faculty.quiz-subject', [
+            'subject' => $subjectModel,
+            'subjectKey' => $isGeneral ? 'general' : $subjectModel->id,
+            'code' => $subjectModel?->code ?? 'General',
+            'name' => $subjectModel?->name ?? 'Quizzes without a subject',
+            'icon' => self::SUBJECT_ICONS[strtoupper((string) $subjectModel?->code)] ?? 'fa-layer-group',
+            'theme' => self::theme($subjectModel?->code),
+            'quizzes' => $quizzes,
+            'counts' => $counts,
+            'status' => $status,
+        ]);
     }
 
-    public function create()
+    public function create(Request $request)
     {
+        // "New Quiz" from inside a subject's page arrives with ?subject=<id>
+        // so the form opens with that subject already selected.
+        $subjectId = $request->integer('subject') ?: null;
+        if ($subjectId !== null && ! $this->subjectsFor(Auth::user())->contains('id', $subjectId)) {
+            $subjectId = null;
+        }
+
         return view('faculty.quiz-form', [
-            'quiz' => new FacultyQuiz(['show_results' => true, 'shuffle_questions' => false]),
+            'quiz' => new FacultyQuiz(['show_results' => true, 'shuffle_questions' => false, 'subject_id' => $subjectId]),
             'items' => [],
             'subjects' => $this->subjectsFor(Auth::user()),
             'locked' => false,
@@ -228,7 +309,99 @@ class FacultyQuizController extends Controller
         // Pass/fail split, using the same 75% threshold the table uses to color scores.
         $passRate = $submitted->filter(fn ($a) => (float) $a->percent >= 75)->count();
 
-        return view('faculty.quiz-results', compact('quiz', 'attempts', 'stats', 'itemStats', 'buckets', 'passRate'));
+        $insights = $this->buildResultInsights($stats, $itemStats, $buckets, $passRate, $quiz->items);
+
+        return view('faculty.quiz-results', compact('quiz', 'attempts', 'stats', 'itemStats', 'buckets', 'passRate', 'insights'));
+    }
+
+    /**
+     * Turn the raw numbers behind the results charts into short, decision-
+     * oriented takeaways — the same tone/icon/title/text shape the faculty
+     * dashboard's insight cards use, so this reads as the same feature.
+     */
+    private function buildResultInsights(array $stats, array $itemStats, array $buckets, int $passRate, $items): array
+    {
+        $insights = [];
+        $submitted = $stats['submitted'];
+
+        if ($submitted === 0) {
+            return $insights;
+        }
+
+        // Pass rate against the 75% threshold used everywhere else on this page.
+        $passPct = (int) round($passRate / $submitted * 100);
+        if ($passPct >= 80) {
+            $insights[] = [
+                'tone' => 'good', 'icon' => 'fa-circle-check',
+                'title' => 'Strong pass rate',
+                'text' => "{$passPct}% of submissions scored 75% or higher — most of the class is ready for this material.",
+            ];
+        } elseif ($passPct < 50) {
+            $insights[] = [
+                'tone' => 'crit', 'icon' => 'fa-triangle-exclamation',
+                'title' => 'Most of the class is below passing',
+                'text' => "Only {$passPct}% scored 75% or higher. Consider a review session before moving on, or revisiting how this topic was taught.",
+            ];
+        } else {
+            $insights[] = [
+                'tone' => 'warn', 'icon' => 'fa-scale-unbalanced',
+                'title' => 'Mixed results',
+                'text' => "{$passPct}% passed at 75% or higher — the class is split between students who've got it and those who need more support.",
+            ];
+        }
+
+        // Weakest and strongest question, from the per-question accuracy chart.
+        $rated = collect($items)->filter(fn ($item) => $itemStats[$item->id]['rate'] !== null);
+        if ($rated->isNotEmpty()) {
+            $ordered = $items->values();
+            $weakest = $rated->sortBy(fn ($item) => $itemStats[$item->id]['rate'])->first();
+            $weakRate = $itemStats[$weakest->id]['rate'];
+            $weakNum = $ordered->search(fn ($item) => $item->id === $weakest->id) + 1;
+
+            if ($weakRate < 50) {
+                $insights[] = [
+                    'tone' => 'crit', 'icon' => 'fa-magnifying-glass-chart',
+                    'title' => "Question {$weakNum} needs attention",
+                    'text' => "Only {$weakRate}% answered Question {$weakNum} correctly — the lowest of any item. Worth re-explaining before the next quiz.",
+                ];
+            } elseif ($weakRate < 75) {
+                $insights[] = [
+                    'tone' => 'warn', 'icon' => 'fa-magnifying-glass-chart',
+                    'title' => "Question {$weakNum} is the weakest",
+                    'text' => "{$weakRate}% correct — below the 75% benchmark, but not alarming on its own.",
+                ];
+            } elseif ($rated->every(fn ($item) => $itemStats[$item->id]['rate'] >= 75)) {
+                $insights[] = [
+                    'tone' => 'good', 'icon' => 'fa-check-double',
+                    'title' => 'Every question is above benchmark',
+                    'text' => 'No item fell below 75% accuracy — this quiz is a solid reflection of the class\'s grasp of the material.',
+                ];
+            }
+        }
+
+        // Score spread, from the distribution histogram.
+        if ($stats['highest'] !== null && $stats['lowest'] !== null) {
+            $spread = round($stats['highest'] - $stats['lowest'], 1);
+            if ($spread >= 50) {
+                $insights[] = [
+                    'tone' => 'info', 'icon' => 'fa-arrows-left-right',
+                    'title' => 'Wide score spread',
+                    'text' => "Scores range from {$stats['lowest']}% to {$stats['highest']}% ({$spread}-pt spread) — readiness varies a lot across this class, so a one-size review may not reach everyone.",
+                ];
+            }
+        }
+
+        // Started but never submitted — a completion gap the numbers alone don't show.
+        $inProgress = $stats['started'] - $submitted;
+        if ($inProgress > 0) {
+            $insights[] = [
+                'tone' => 'info', 'icon' => 'fa-hourglass-half',
+                'title' => $inProgress . ' student' . ($inProgress === 1 ? '' : 's') . ' started but didn\'t finish',
+                'text' => 'They won\'t count toward the average until they submit — check in if the deadline has passed.',
+            ];
+        }
+
+        return $insights;
     }
 
     /**
@@ -278,6 +451,52 @@ class FacultyQuizController extends Controller
     private function subjectsFor(User $faculty)
     {
         return $faculty->assignedSubjects()->where('subjects.is_active', true)->orderBy('subjects.id')->get();
+    }
+
+    /**
+     * Same subject colour/icon identity used on the student side's Class
+     * Quizzes cards (Student\ClassQuizController), so a subject reads as
+     * the same colour and icon on both sides of the fence.
+     */
+    private const SUBJECT_COLORS = [
+        'FAR' => '#4A90E2', 'AFAR' => '#17A2B8', 'MS' => '#F39C12',
+        'TAX' => '#27AE60', 'AUD' => '#c0392b', 'RFBT' => '#9B59B6',
+    ];
+
+    private const SUBJECT_ICONS = [
+        'FAR' => 'fa-chart-line', 'AFAR' => 'fa-coins', 'MS' => 'fa-gears',
+        'TAX' => 'fa-file-invoice-dollar', 'AUD' => 'fa-magnifying-glass', 'RFBT' => 'fa-scale-balanced',
+    ];
+
+    private const SUBJECT_ICONS_2 = [
+        'FAR' => 'fa-calculator', 'AFAR' => 'fa-file-invoice', 'MS' => 'fa-chart-pie',
+        'TAX' => 'fa-percent', 'AUD' => 'fa-clipboard-list', 'RFBT' => 'fa-book',
+    ];
+
+    private static function theme(?string $code): array
+    {
+        $base = self::SUBJECT_COLORS[strtoupper((string) $code)] ?? '#7B1D1D';
+
+        return [
+            'base' => $base,
+            'dark' => self::darken($base, 0.32),
+            'pastel' => self::tint($base, 0.88),
+            'soft' => self::tint($base, 0.72),
+        ];
+    }
+
+    private static function darken(string $hex, float $amount): string
+    {
+        [$r, $g, $b] = sscanf($hex, '#%02x%02x%02x');
+
+        return sprintf('#%02x%02x%02x', $r * (1 - $amount), $g * (1 - $amount), $b * (1 - $amount));
+    }
+
+    private static function tint(string $hex, float $amount): string
+    {
+        [$r, $g, $b] = sscanf($hex, '#%02x%02x%02x');
+
+        return sprintf('#%02x%02x%02x', $r + (255 - $r) * $amount, $g + (255 - $g) * $amount, $b + (255 - $b) * $amount);
     }
 
     private function authorizeQuiz(FacultyQuiz $quiz): void

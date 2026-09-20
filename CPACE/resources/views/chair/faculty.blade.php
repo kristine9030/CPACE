@@ -15,15 +15,47 @@
         .modal h3 { font-size:16px; color:#1a1a1a; margin-bottom:4px; }
         .modal p.sub { font-size:12px; color:#999; margin-bottom:18px; }
         .modal-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:20px; }
-        .action-btn { width:30px; height:30px; border:none; border-radius:7px; cursor:pointer; font-size:12px; display:inline-flex; align-items:center; justify-content:center; transition:all .2s; }
-        .ab-edit { background:#dbeafe; color:var(--blue); }
-        .ab-edit:hover { background:#bfdbfe; }
-        .ab-assign { background:#ede9fe; color:#7c3aed; }
-        .ab-assign:hover { background:#ddd6fe; }
-        .ab-toggle { background:#fef3c7; color:#d97706; }
-        .ab-toggle:hover { background:#fde68a; }
-        .ab-activity { background:#d1fae5; color:#059669; }
-        .ab-activity:hover { background:#a7f3d0; }
+        .action-btn { width:32px; height:32px; border:none; border-radius:50%; cursor:pointer; font-size:12px; display:inline-flex; align-items:center; justify-content:center; transition:all .2s; }
+        .ab-edit { background:#f3f4f6; color:#555; }
+        .ab-edit:hover { background:#e5e7eb; }
+        .ab-assign { background:#f3f4f6; color:#555; }
+        .ab-assign:hover { background:#e5e7eb; }
+        .ab-toggle { background:#fde8e8; color:var(--accent); }
+        .ab-toggle:hover { background:#fbd0d0; }
+        .ab-activity { background:#f3f4f6; color:#555; }
+        .ab-activity:hover { background:#e5e7eb; }
+
+        /* ── Faculty count pill + search/filter toolbar, matching the
+           reference design: a soft pill instead of plain text, a live
+           search box, and a status filter — all client-side over the
+           already-rendered rows (the roster is small; no need for a
+           server round-trip). ── */
+        .faculty-toolbar { display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; margin-bottom:18px; }
+        .faculty-count-pill { display:inline-flex; align-items:center; gap:8px; background:var(--primary-light); color:var(--primary); font-weight:700; font-size:13px; padding:9px 16px; border-radius:20px; }
+        .faculty-toolbar-right { display:flex; align-items:center; gap:10px; }
+        .faculty-search { position:relative; }
+        .faculty-search i { position:absolute; left:13px; top:50%; transform:translateY(-50%); color:#bbb; font-size:12px; }
+        .faculty-search input { width:230px; font-family:'Poppins',sans-serif; font-size:13px; border:1px solid #ececec; border-radius:20px; padding:9px 14px 9px 34px; outline:none; background:#fff; color:#444; transition:border-color .15s; }
+        .faculty-search input:focus { border-color:var(--primary); }
+        .faculty-filter-btn { width:38px; height:38px; border-radius:50%; border:1px solid #ececec; background:#fff; color:#666; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; font-size:13px; position:relative; flex-shrink:0; }
+        .faculty-filter-btn:hover { border-color:#ddd; }
+        .faculty-filter-btn.active-filter { background:var(--primary); border-color:var(--primary); color:#fff; }
+        .faculty-filter-menu { display:none; position:absolute; top:calc(100% + 8px); right:0; background:#fff; border:1px solid #ececec; border-radius:10px; box-shadow:0 8px 24px rgba(0,0,0,.12); padding:6px; min-width:170px; z-index:60; }
+        .faculty-filter-menu.open { display:block; }
+        .faculty-filter-menu button { display:flex; align-items:center; gap:9px; width:100%; padding:9px 12px; border-radius:7px; border:none; background:none; font-size:12.5px; color:#444; text-align:left; cursor:pointer; font-family:'Poppins',sans-serif; }
+        .faculty-filter-menu button:hover { background:#f5f5f5; }
+        .faculty-filter-menu button.selected { color:var(--primary); font-weight:700; }
+        .faculty-filter-wrap { position:relative; }
+
+        /* ── Pagination footer (client-side; rows are already all rendered) ── */
+        .faculty-pagination { display:flex; justify-content:space-between; align-items:center; padding:14px 4px 2px; border-top:1px solid #f5f5f5; margin-top:6px; }
+        .faculty-pag-info { font-size:11.5px; color:#999; }
+        .faculty-pag-btns { display:flex; gap:5px; }
+        .faculty-pag-btn { min-width:28px; height:28px; padding:0 7px; border:1px solid #e5e5e5; background:#fff; border-radius:7px; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:12px; color:#555; transition:all .15s; font-family:'Poppins',sans-serif; }
+        .faculty-pag-btn.active { background:var(--primary); color:#fff; border-color:var(--primary); }
+        .faculty-pag-btn:hover:not(.active):not(:disabled) { background:#f5f5f5; }
+        .faculty-pag-btn:disabled { opacity:.4; cursor:not-allowed; }
+        @media (max-width:620px) { .faculty-pagination { flex-direction:column; gap:8px; align-items:flex-start; } .faculty-search input { width:160px; } }
         .otp-cell { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
         .temp-pass { font-family: 'Courier New', monospace; font-weight: 700; color: #7B1D1D; background: #f8eaea; padding: 2px 8px; border-radius: 6px; font-size: 11px; letter-spacing: .5px; }
         .otp-reveal, .copy-mini { background: none; border: none; color: #bbb; cursor: pointer; font-size: 11px; }
@@ -64,18 +96,38 @@
     {{-- Flash messages surface as SweetAlert popups via partials.alerts --}}
 
     <div class="card">
-        <div class="card-head"><span class="card-title">All Faculty ({{ $faculty->count() }})</span></div>
+        <div class="faculty-toolbar">
+            <span class="faculty-count-pill"><i class="fas fa-chalkboard-user"></i> All Faculty ({{ $faculty->count() }})</span>
+            <div class="faculty-toolbar-right">
+                <div class="faculty-search">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="facultySearchInput" placeholder="Search faculty..." autocomplete="off">
+                </div>
+                <div class="faculty-filter-wrap">
+                    <button type="button" class="faculty-filter-btn" id="facultyFilterBtn" title="Filter by status"><i class="fas fa-sliders"></i></button>
+                    <div class="faculty-filter-menu" id="facultyFilterMenu">
+                        <button type="button" class="selected" data-status="">All statuses</button>
+                        <button type="button" data-status="active">Active</button>
+                        <button type="button" data-status="pending">Setup Pending</button>
+                        <button type="button" data-status="inactive">Inactive</button>
+                    </div>
+                </div>
+            </div>
+        </div>
         <div class="faculty-table-wrap">
         <table>
             <thead>
                 <tr><th>Name</th><th>Email</th><th>Assigned Subjects</th><th>Status</th><th style="text-align:right;">Actions</th></tr>
             </thead>
-            <tbody>
+            <tbody id="facultyTableBody">
             @forelse ($faculty as $f)
-                <tr>
+                @php
+                    $rowStatus = ! $f->is_active ? 'inactive' : ($f->setup_completed_at === null ? 'pending' : 'active');
+                @endphp
+                <tr class="faculty-row" data-name="{{ strtolower($f->name) }}" data-email="{{ strtolower($f->email) }}" data-status="{{ $rowStatus }}">
                     <td>
                         <div style="display:flex; align-items:center; gap:10px;">
-                            <div class="user-av" style="background:var(--primary); width:32px; height:32px; font-size:11px;">{{ strtoupper(substr($f->first_name,0,1)).strtoupper(substr($f->last_name,0,1)) }}</div>
+                            <div class="user-av">{{ strtoupper(substr($f->first_name,0,1)).strtoupper(substr($f->last_name,0,1)) }}</div>
                             <span style="font-weight:600; color:#1a1a1a;">{{ $f->name }}</span>
                         </div>
                     </td>
@@ -141,7 +193,14 @@
             @endforelse
             </tbody>
         </table>
+        <div class="empty" id="facultyNoResults" style="display:none;"><i class="fas fa-user-slash"></i><div>No faculty match your search or filter.</div></div>
         </div>{{-- /.faculty-table-wrap --}}
+        @if($faculty->isNotEmpty())
+            <div class="faculty-pagination" id="facultyPagination">
+                <span class="faculty-pag-info" id="facultyPagInfo"></span>
+                <div class="faculty-pag-btns" id="facultyPagBtns"></div>
+            </div>
+        @endif
     </div>
 </main>
 
@@ -191,6 +250,92 @@
     function closeAssign() { assignModal.classList.remove('open'); }
     assignModal.addEventListener('click', e => { if (e.target === assignModal) closeAssign(); });
 
+    /* ── Search + status filter + pagination over the faculty table.
+       Every row is already rendered server-side; this just narrows which
+       ones are visible and slices the result into pages, so a growing
+       faculty roster doesn't turn into one endless table. ── */
+    (function () {
+        const searchInput = document.getElementById('facultySearchInput');
+        const filterBtn = document.getElementById('facultyFilterBtn');
+        const filterMenu = document.getElementById('facultyFilterMenu');
+        const tbody = document.getElementById('facultyTableBody');
+        const pagination = document.getElementById('facultyPagination');
+        const noResults = document.getElementById('facultyNoResults');
+        if (!tbody) return;
+
+        const allRows = Array.from(tbody.querySelectorAll('.faculty-row'));
+        const pageSize = 10;
+        let statusFilter = '';
+        let currentPage = 1;
+
+        function matches(row) {
+            const q = (searchInput?.value || '').trim().toLowerCase();
+            const searchOk = !q || row.dataset.name.includes(q) || row.dataset.email.includes(q);
+            const statusOk = !statusFilter || row.dataset.status === statusFilter;
+            return searchOk && statusOk;
+        }
+
+        function render() {
+            const visible = allRows.filter(matches);
+            const totalPages = Math.max(1, Math.ceil(visible.length / pageSize));
+            currentPage = Math.min(currentPage, totalPages);
+
+            allRows.forEach(row => { row.style.display = 'none'; });
+            const start = (currentPage - 1) * pageSize;
+            visible.slice(start, start + pageSize).forEach(row => { row.style.display = ''; });
+
+            if (noResults) noResults.style.display = visible.length === 0 ? '' : 'none';
+
+            if (pagination) {
+                pagination.style.display = visible.length === 0 ? 'none' : '';
+                const from = visible.length ? start + 1 : 0;
+                const to = Math.min(start + pageSize, visible.length);
+                document.getElementById('facultyPagInfo').textContent = `Showing ${from}–${to} of ${visible.length} faculty`;
+
+                let html = `<button type="button" class="faculty-pag-btn" data-go="prev" ${currentPage <= 1 ? 'disabled' : ''}><i class="fas fa-chevron-left"></i></button>`;
+                for (let p = 1; p <= totalPages; p++) {
+                    html += `<button type="button" class="faculty-pag-btn ${p === currentPage ? 'active' : ''}" data-go="${p}">${p}</button>`;
+                }
+                html += `<button type="button" class="faculty-pag-btn" data-go="next" ${currentPage >= totalPages ? 'disabled' : ''}><i class="fas fa-chevron-right"></i></button>`;
+                document.getElementById('facultyPagBtns').innerHTML = html;
+            }
+        }
+
+        document.getElementById('facultyPagBtns')?.addEventListener('click', e => {
+            const btn = e.target.closest('[data-go]');
+            if (!btn || btn.disabled) return;
+            const go = btn.dataset.go;
+            if (go === 'prev') currentPage = Math.max(1, currentPage - 1);
+            else if (go === 'next') currentPage += 1;
+            else currentPage = parseInt(go, 10);
+            render();
+        });
+
+        if (searchInput) {
+            searchInput.addEventListener('input', () => { currentPage = 1; render(); });
+        }
+
+        if (filterBtn && filterMenu) {
+            filterBtn.addEventListener('click', e => {
+                e.stopPropagation();
+                filterMenu.classList.toggle('open');
+            });
+            filterMenu.querySelectorAll('button[data-status]').forEach(opt => {
+                opt.addEventListener('click', () => {
+                    statusFilter = opt.dataset.status;
+                    filterMenu.querySelectorAll('button').forEach(b => b.classList.remove('selected'));
+                    opt.classList.add('selected');
+                    filterBtn.classList.toggle('active-filter', statusFilter !== '');
+                    filterMenu.classList.remove('open');
+                    currentPage = 1;
+                    render();
+                });
+            });
+            document.addEventListener('click', () => filterMenu.classList.remove('open'));
+        }
+
+        render();
+    })();
 </script>
 @include('chair.partials.subject-section-script')
 

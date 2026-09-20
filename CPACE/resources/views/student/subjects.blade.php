@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Subjects - CPACE CPA Reviewer</title>
+    <title>Resources - CPACE CPA Reviewer</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
@@ -239,7 +239,8 @@
         }
 
         .page-title {
-            font-size: 30px; font-weight: 700; color: #1a1a1a;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 30px; font-weight: 700; color: #14283E;
             margin-bottom: 6px; padding-bottom: 10px;
             position: relative;
         }
@@ -521,7 +522,7 @@
     <div class="top-bar anim" style="animation-delay:0s">
         <div class="top-bar-left">
             <div>
-                <div class="page-title">Subjects</div>
+                <div class="page-title">Resources</div>
                 <div class="page-subtitle">Review by subject area and strengthen your knowledge.</div>
             </div>
         </div>
@@ -541,7 +542,7 @@
             <div class="header-dropdown-wrap">
                 <button class="profile-avatar" id="profileBtn">@include('partials.avatar-content')</button>
                 <div class="dropdown-menu" id="profileDropdown">
-                    <a href="#"><i class="fas fa-user"></i> Profile Settings</a>
+                    <a href="#" class="js-open-profile-modal"><i class="fas fa-user"></i> Profile Settings</a>
                     <a href="#"><i class="fas fa-chart-line"></i> My Progress</a>
                     <a href="#"><i class="fas fa-question-circle"></i> Help &amp; Support</a>
                     <form method="POST" action="{{ route('logout') }}"

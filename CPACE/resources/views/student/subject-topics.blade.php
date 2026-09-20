@@ -282,7 +282,7 @@
         <div class="top-bar-left">
             <div>
                 <div class="breadcrumb">
-                    <a href="{{ route('subjects') }}"><i class="fas fa-arrow-left"></i> Subjects</a>
+                    <a href="{{ route('subjects') }}"><i class="fas fa-arrow-left"></i> Resources</a>
                     <span>/</span>
                     <span>{{ $subject->code }}</span>
                 </div>
@@ -304,7 +304,7 @@
             <div class="header-dropdown-wrap">
                 <button class="profile-avatar" id="profileBtn">@include('partials.avatar-content')</button>
                 <div class="dropdown-menu" id="profileDropdown">
-                    <a href="#"><i class="fas fa-user"></i> Profile Settings</a>
+                    <a href="#" class="js-open-profile-modal"><i class="fas fa-user"></i> Profile Settings</a>
                     <a href="#"><i class="fas fa-chart-line"></i> My Progress</a>
                     <a href="#"><i class="fas fa-question-circle"></i> Help &amp; Support</a>
                     <form method="POST" action="{{ route('logout') }}"

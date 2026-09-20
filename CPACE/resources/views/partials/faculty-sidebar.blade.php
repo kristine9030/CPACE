@@ -293,6 +293,32 @@
         cursor: pointer; font-family: 'Poppins', sans-serif;
     }
     .fp-upload-btn:hover { background: var(--primary-light, #f5e8e8); }
+    .fp-avatar-remove {
+        display: inline-flex; align-items: center; gap: 6px;
+        margin-top: 6px; padding: 0; border: none; background: none;
+        color: #999; font-size: 11.5px; font-family: 'Poppins', sans-serif;
+        cursor: pointer;
+    }
+    .fp-avatar-remove:hover { color: #c0392b; }
+    .fp-swatch-label {
+        font-size: 12.5px; font-weight: 500; color: #555; margin-bottom: 8px; display: block;
+    }
+    .fp-swatches { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 18px; }
+    .fp-swatch {
+        width: 30px; height: 30px; border-radius: 9px;
+        border: none; cursor: pointer; position: relative;
+        box-shadow: inset 0 0 0 1px rgba(0,0,0,0.08);
+        transition: transform 0.15s;
+    }
+    .fp-swatch:hover { transform: scale(1.08); }
+    .fp-swatch.selected::after {
+        content: '\f00c';
+        font-family: 'Font Awesome 6 Free'; font-weight: 900;
+        position: absolute; inset: 0;
+        display: flex; align-items: center; justify-content: center;
+        color: #fff; font-size: 12px;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.35);
+    }
     .fp-field { margin-bottom: 14px; }
     .fp-field label { display: block; font-size: 12.5px; font-weight: 500; color: #555; margin-bottom: 6px; }
     .fp-field input {
@@ -402,8 +428,29 @@
                     <div>
                         <label class="fp-upload-btn" for="fpPhotoInput"><i class="fas fa-camera"></i> Change photo</label>
                         <input type="file" name="photo" id="fpPhotoInput" accept="image/*" style="display:none;">
+                        @if(Auth::user()->profile_photo)
+                            <button type="button" class="fp-avatar-remove" id="fpRemovePhoto"><i class="fas fa-xmark"></i> Remove photo, use color avatar</button>
+                        @endif
                     </div>
                 </div>
+
+                <label class="fp-swatch-label">Avatar color <span style="color:#aaa;font-weight:400;">(used when there's no photo)</span></label>
+                <div class="fp-swatches" id="fpSwatches">
+                    @php
+                        $facultyAvatarColors = [
+                            'maroon' => '#7B1D1D', 'crimson' => '#c0392b', 'blue' => '#2563eb',
+                            'teal' => '#0d9488', 'green' => '#059669', 'purple' => '#7c3aed',
+                            'pink' => '#db2777', 'orange' => '#d97706', 'navy' => '#1e3a5f', 'slate' => '#475569',
+                        ];
+                        $fpCurrentColor = Auth::user()->avatar_color ?? 'maroon';
+                    @endphp
+                    @foreach($facultyAvatarColors as $key => $hex)
+                        <button type="button" class="fp-swatch {{ $fpCurrentColor === $key ? 'selected' : '' }}" data-color="{{ $key }}" data-hex="{{ $hex }}" style="background: {{ $hex }};" title="{{ ucfirst($key) }}"></button>
+                    @endforeach
+                    <input type="hidden" name="avatar_color" id="fpAvatarColorInput" value="{{ old('avatar_color', $fpCurrentColor) }}">
+                    <input type="hidden" name="remove_photo" id="fpRemovePhotoInput" value="0">
+                </div>
+
                 <div class="fp-row-2">
                     <div class="fp-field">
                         <label>First name</label>
@@ -485,10 +532,20 @@
         if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
         if (overlay) overlay.addEventListener('click', function(e) { if (e.target === overlay) closeModal(); });
 
+        const colorInput  = document.getElementById('fpAvatarColorInput');
+        const removeInput = document.getElementById('fpRemovePhotoInput');
+        const removeBtn   = document.getElementById('fpRemovePhoto');
+        const swatches    = document.querySelectorAll('#fpSwatches .fp-swatch');
+
+        function showsPhoto() {
+            return avatarPreview && avatarPreview.querySelector('img');
+        }
+
         if (photoInput && avatarPreview) {
             photoInput.addEventListener('change', function() {
                 const file = photoInput.files[0];
                 if (!file) return;
+                if (removeInput) removeInput.value = '0';
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     avatarPreview.innerHTML = '<img src="' + e.target.result + '" alt="Preview">';
@@ -496,6 +553,33 @@
                 reader.readAsDataURL(file);
             });
         }
+
+        if (removeBtn) {
+            removeBtn.addEventListener('click', function () {
+                if (photoInput) photoInput.value = '';
+                if (removeInput) removeInput.value = '1';
+                if (avatarPreview) {
+                    const hex = colorInput ? colorInput.value : 'maroon';
+                    const selected = document.querySelector('#fpSwatches .fp-swatch[data-color="' + hex + '"]');
+                    const bg = selected ? selected.dataset.hex : '#7B1D1D';
+                    const initials = '{{ strtoupper(substr(Auth::user()->first_name,0,1)) }}{{ strtoupper(substr(Auth::user()->last_name,0,1)) }}';
+                    avatarPreview.innerHTML = '<span class="avatar-default" style="background:' + bg + ';">' + initials + '</span>';
+                }
+                removeBtn.style.display = 'none';
+            });
+        }
+
+        swatches.forEach(function (sw) {
+            sw.addEventListener('click', function () {
+                swatches.forEach(function (s) { s.classList.remove('selected'); });
+                sw.classList.add('selected');
+                if (colorInput) colorInput.value = sw.dataset.color;
+                if (!showsPhoto() && avatarPreview) {
+                    const span = avatarPreview.querySelector('.avatar-default');
+                    if (span) span.style.background = sw.dataset.hex;
+                }
+            });
+        });
 
         if (form) {
             form.addEventListener('submit', function() {

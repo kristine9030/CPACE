@@ -22,7 +22,7 @@
         .topbar { display:flex; justify-content:space-between; align-items:center; gap:16px; margin-bottom:22px; position:relative; z-index:100; }
         .topbar-left { display:flex; align-items:center; gap:12px; }
         .topbar-right { display:flex; align-items:center; gap:10px; }
-        .page-title { font-size:26px; font-weight:700; color:#1a1a1a; }
+        .page-title { font-size:26px; font-weight:700; color:#14283E; }
         .page-sub { font-size:12px; color:#999; margin-top:2px; }
         .btn { display:inline-flex; align-items:center; gap:7px; padding:9px 18px; border-radius:8px; font-size:13px; font-weight:600; font-family:'Poppins',sans-serif; cursor:pointer; border:none; text-decoration:none; transition:all .2s; }
         .btn-primary { background:var(--primary); color:white; }
@@ -30,12 +30,55 @@
         .btn-ghost { background:white; color:#555; border:1px solid #e0e0e0; }
         .btn-ghost:hover { background:#f5f5f5; }
 
-        /* STATS */
-        .stats-row { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:20px; }
-        .stat-chip { background:white; border-radius:12px; padding:16px 18px; display:flex; align-items:center; gap:14px; }
-        .chip-icon { width:38px; height:38px; border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:17px; flex-shrink:0; }
-        .chip-num { font-size:22px; font-weight:700; color:#1a1a1a; line-height:1; }
-        .chip-lbl { font-size:11px; color:#999; margin-top:2px; }
+        /* STATS — same KPI card vibe as the faculty dashboard */
+        .stats-row { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:22px; }
+        .stat-card {
+            background:white; border-radius:14px; padding:20px 22px;
+            display:flex; flex-direction:column; height:100%;
+            box-shadow:0 2px 6px rgba(15,10,10,.08), 0 10px 22px -10px rgba(15,10,10,.22);
+            transition:transform .18s ease, box-shadow .18s ease;
+        }
+        .stat-card:hover { transform:translateY(-3px); box-shadow:0 4px 10px rgba(15,10,10,.1), 0 16px 30px -10px rgba(15,10,10,.3); }
+        .stat-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px; }
+        .stat-icon { width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
+        .si-red    { background:#fde8e8; color:var(--accent); }
+        .si-green  { background:#d1fae5; color:var(--green); }
+        .si-blue   { background:#dbeafe; color:var(--blue); }
+        .si-orange { background:#fef3c7; color:var(--orange); }
+        .si-gray   { background:#f3f4f6; color:#9ca3af; }
+        .stat-lbl  { font-family:'Poppins',sans-serif; font-size:15px; font-weight:700; color:#1a1a1a; margin-bottom:12px; display:block; }
+        .stat-num  { font-size:28px; font-weight:700; color:#1a1a1a; line-height:1; margin-bottom:0; }
+        .stat-chg  { font-size:11px; color:var(--green); margin-top:2px; }
+        .stat-chg.neutral { color:#999; }
+
+        /* INSIGHTS */
+        .insights-head { font-size:13px; font-weight:700; color:#333; margin:4px 0 12px; display:flex; align-items:center; gap:8px; }
+        .insights-head i { color:var(--primary); }
+        .insights-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:14px; margin-bottom:20px; align-items:stretch; }
+        .insight-card { background:#fff; border-radius:12px; padding:16px 18px; display:flex; gap:13px; align-items:flex-start; border-left:4px solid #ccc; box-shadow:0 2px 8px rgba(0,0,0,.04); }
+        .insight-card.tone-good { border-left-color:var(--green); }
+        .insight-card.tone-warn { border-left-color:var(--orange); }
+        .insight-card.tone-crit { border-left-color:var(--accent); }
+        .insight-card.tone-info { border-left-color:var(--blue); }
+        .insight-icon { width:34px; height:34px; border-radius:9px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:14px; }
+        .insight-card.tone-good .insight-icon { background:#d1fae5; color:var(--green); }
+        .insight-card.tone-warn .insight-icon { background:#fef3c7; color:var(--orange); }
+        .insight-card.tone-crit .insight-icon { background:#fde8e8; color:var(--accent); }
+        .insight-card.tone-info .insight-icon { background:#dbeafe; color:var(--blue); }
+        .insight-title { font-size:12.5px; font-weight:700; color:#1a1a1a; margin-bottom:3px; }
+        .insight-text { font-size:11.5px; color:#777; line-height:1.5; }
+        .insights-empty { background:#fff; border-radius:12px; padding:20px; text-align:center; color:#aaa; font-size:13px; margin-bottom:20px; }
+
+        /* ANALYTICS CHARTS */
+        .analytics-row { display:grid; grid-template-columns:1fr 320px; gap:20px; margin-bottom:20px; align-items:stretch; }
+        .chart-card { background:#fff; border-radius:14px; padding:18px 20px; }
+        .chart-card h4 { font-size:13px; font-weight:700; color:#222; margin-bottom:4px; }
+        .chart-card .chart-sub { font-size:11px; color:#aaa; margin-bottom:14px; }
+        .chart-card .chart-wrap { position:relative; height:230px; }
+        .chart-empty { height:230px; display:flex; align-items:center; justify-content:center; color:#bbb; font-size:12.5px; text-align:center; }
+        .donut-legend { display:flex; justify-content:center; gap:18px; margin-top:12px; font-size:11.5px; color:#666; }
+        .donut-legend span { display:inline-flex; align-items:center; gap:6px; }
+        .donut-legend i { width:9px; height:9px; border-radius:3px; display:inline-block; }
 
         /* FILTER BAR */
         .filter-bar { background:white; border-radius:12px; padding:16px 20px; margin-bottom:18px; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
@@ -55,10 +98,17 @@
         #perfBody.loading { opacity:.45; pointer-events:none; }
 
         /* MAIN LAYOUT */
-        .perf-layout { display:grid; grid-template-columns:1fr 300px; gap:18px; align-items:start; }
+        /* Left/right columns stretch to equal height so a short student list
+           (e.g. one row) doesn't leave a big empty gap of bare page
+           background hanging below the table while the side panels run on. */
+        .perf-layout { display:grid; grid-template-columns:1fr 300px; gap:18px; align-items:stretch; }
+
+        /* Left column: student table, with Class Weak Topics stacked below it. */
+        .left-col { display:flex; flex-direction:column; gap:18px; }
 
         /* TABLE CARD */
-        .table-card { background:white; border-radius:14px; overflow:hidden; }
+        .table-card { background:white; border-radius:14px; overflow:hidden; display:flex; flex-direction:column; flex:1; }
+        .table-card table { flex-shrink:0; }
         .table-head-bar { padding:16px 20px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #f5f5f5; }
         .count { font-size:13px; color:#888; }
 
@@ -97,7 +147,7 @@
         .empty-row td { text-align:center; color:#aaa; padding:40px 16px; font-size:13px; }
 
         /* PAGINATION */
-        .pagination { padding:14px 20px; display:flex; justify-content:space-between; align-items:center; border-top:1px solid #f5f5f5; }
+        .pagination { padding:14px 20px; display:flex; justify-content:space-between; align-items:center; border-top:1px solid #f5f5f5; margin-top:auto; }
         .pag-info { font-size:12px; color:#999; }
         .pag-btns { display:flex; gap:5px; }
         .pag-btn { min-width:30px; height:30px; padding:0 8px; border:1px solid #e0e0e0; background:white; border-radius:7px; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:12px; color:#555; transition:all .2s; text-decoration:none; }
@@ -177,6 +227,7 @@
         @media (max-width: 768px) {
             .stats-row { grid-template-columns: repeat(2, 1fr) !important; }
             .perf-layout { grid-template-columns: 1fr !important; }
+            .analytics-row { grid-template-columns: 1fr !important; }
             .table-card { overflow-x: auto; }
             table { min-width: 620px; }
             .filter-bar { flex-direction: column; align-items: stretch; gap: 10px; }
@@ -188,7 +239,7 @@
 
         @media (max-width: 480px) {
             .stats-row { grid-template-columns: 1fr !important; }
-            .chip-num { font-size: 18px; }
+            .stat-num { font-size: 22px; }
             .score-bar-bg { display: none; }
         }
     </style>
@@ -206,7 +257,7 @@
             </div>
         </div>
         <div class="topbar-right">
-            <a href="{{ route('faculty.performance.export', $activeQuery) }}" id="exportBtn" class="btn btn-ghost"><i class="fas fa-file-export"></i> Export</a>
+            <a href="{{ route('faculty.performance.export', $activeQuery) }}" id="exportBtn" class="btn btn-ghost"><i class="fas fa-file-excel"></i> Export Excel</a>
             <form method="POST" action="{{ route('faculty.performance.remind') }}" id="sendReportForm" style="display:inline;"
                   data-confirm="Every student in the current view will receive a performance check-in email. This cannot be unsent."
                   data-confirm-title="Send performance report?"
@@ -256,6 +307,9 @@
             <option value="name"       @selected($filters['sort']==='name')>Name A-Z</option>
         </select>
     </form>
+
+    <!-- ANALYTICS (insights + charts, swapped in place via AJAX) -->
+    @include('faculty.partials.performance-analytics')
 
     <!-- DYNAMIC BODY (table + side panels, swapped in place via AJAX) -->
     @include('faculty.partials.performance-body')
@@ -331,15 +385,112 @@
 
     function hydratePerf() {
         const el = document.getElementById('perfData');
-        if (!el) return;
-        let weakTopics = [];
-        try {
-            const data = JSON.parse(el.textContent);
-            STUDENTS   = data.students   || {};
-            DETAILS    = data.details    || {};
-            weakTopics = data.weakTopics || [];
-        } catch (e) { STUDENTS = {}; DETAILS = {}; }
-        renderClassWeakChart(weakTopics);
+        if (el) {
+            let weakTopics = [];
+            try {
+                const data = JSON.parse(el.textContent);
+                STUDENTS   = data.students   || {};
+                DETAILS    = data.details    || {};
+                weakTopics = data.weakTopics || [];
+            } catch (e) { STUDENTS = {}; DETAILS = {}; }
+            renderClassWeakChart(weakTopics);
+        }
+
+        const analyticsEl = document.getElementById('perfAnalyticsData');
+        if (analyticsEl) {
+            try {
+                const data = JSON.parse(analyticsEl.textContent);
+                renderTrendChart(data.trend || []);
+                renderReadyChart(data.passRate);
+            } catch (e) {}
+        }
+    }
+
+    // ── Weekly accuracy trend (line) ──
+    let trendChart = null;
+    function renderTrendChart(trend) {
+        if (trendChart) { trendChart.destroy(); trendChart = null; }
+        const canvas = document.getElementById('trendChart');
+        if (!canvas || !trend.length) return;
+
+        trendChart = new Chart(canvas, {
+            type: 'line',
+            data: {
+                labels: trend.map(w => w.label),
+                datasets: [{
+                    label: 'Accuracy',
+                    data: trend.map(w => w.accuracy),
+                    borderColor: '#7B1D1D',
+                    backgroundColor: 'rgba(123,29,29,.08)',
+                    borderWidth: 2.5,
+                    fill: true,
+                    tension: 0.35,
+                    spanGaps: true,
+                    pointRadius: 3,
+                    pointBackgroundColor: '#7B1D1D',
+                }],
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: (c) => c.parsed.y === null ? 'No activity' : c.parsed.y + '% accuracy',
+                            afterLabel: (c) => trend[c.dataIndex].active_students + ' active student' + (trend[c.dataIndex].active_students === 1 ? '' : 's'),
+                        },
+                    },
+                },
+                scales: {
+                    y: { beginAtZero: true, max: 100, grid: { color: '#f2f2f2' }, ticks: { callback: v => v + '%' } },
+                    x: { grid: { display: false } },
+                },
+            },
+        });
+    }
+
+    // ── Board-readiness donut, with the % drawn in the center ──
+    let readyChart = null;
+    const centerTextPlugin = {
+        id: 'centerText',
+        afterDraw(chart) {
+            if (chart.canvas.id !== 'readyChart') return;
+            const { ctx, chartArea } = chart;
+            const cx = (chartArea.left + chartArea.right) / 2;
+            const cy = (chartArea.top + chartArea.bottom) / 2;
+            ctx.save();
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.font = "700 22px 'Poppins', sans-serif";
+            ctx.fillStyle = '#1a1a1a';
+            ctx.fillText(chart.data.datasets[0].data[0] + '%', cx, cy - 6);
+            ctx.font = "600 10px 'Poppins', sans-serif";
+            ctx.fillStyle = '#aaa';
+            ctx.fillText('ready', cx, cy + 12);
+            ctx.restore();
+        },
+    };
+    function renderReadyChart(passRate) {
+        if (readyChart) { readyChart.destroy(); readyChart = null; }
+        const canvas = document.getElementById('readyChart');
+        if (!canvas || passRate === null || passRate === undefined) return;
+
+        readyChart = new Chart(canvas, {
+            type: 'doughnut',
+            data: {
+                labels: ['Ready', 'Not yet'],
+                datasets: [{
+                    data: [passRate, 100 - passRate],
+                    backgroundColor: ['#10b981', '#e5484d'],
+                    borderWidth: 0,
+                }],
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false, cutout: '72%',
+                plugins: { legend: { display: false } },
+            },
+            plugins: [centerTextPlugin],
+        });
     }
 
     // Rebuilt after every AJAX swap (subject/period filter change), since the
@@ -507,16 +658,19 @@
         fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
             .then(r => r.text())
             .then(html => {
-                // Parse the response and swap the stats + body regions in place,
-                // leaving the filter bar (and the focused search box) untouched.
+                // Parse the response and swap the stats + analytics + body
+                // regions in place, leaving the filter bar (and the focused
+                // search box) untouched.
                 const tmp = document.createElement('div');
                 tmp.innerHTML = html;
-                const newStats = tmp.querySelector('#perfStats');
-                const newBody  = tmp.querySelector('#perfBody');
+                const newStats     = tmp.querySelector('#perfStats');
+                const newAnalytics = tmp.querySelector('#perfAnalytics');
+                const newBody      = tmp.querySelector('#perfBody');
                 // Strip the entry-animation classes so the swap doesn't replay
                 // the fade/slide (that was the flicker) - animate first load only.
-                if (newStats) { newStats.classList.remove('a1'); document.getElementById('perfStats').replaceWith(newStats); }
-                if (newBody)  { newBody.classList.remove('a2');  document.getElementById('perfBody').replaceWith(newBody); }
+                if (newStats)     { newStats.classList.remove('a1'); document.getElementById('perfStats').replaceWith(newStats); }
+                if (newAnalytics) { document.getElementById('perfAnalytics').replaceWith(newAnalytics); }
+                if (newBody)      { newBody.classList.remove('a2');  document.getElementById('perfBody').replaceWith(newBody); }
                 hydratePerf();
                 syncTopbar(url);
                 if (push) history.pushState({ url }, '', url);

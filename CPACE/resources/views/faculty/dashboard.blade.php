@@ -6,8 +6,9 @@
     <title>Faculty Dashboard - CPACE</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    @include('partials.chart-kit')
     <style>
         :root {
             --primary: #7B1D1D;
@@ -33,7 +34,7 @@
             position:relative; z-index:50;
         }
         .topbar-left { display:flex; align-items:center; gap:12px; }
-        .page-title { font-size:26px; font-weight:700; color:#1a1a1a; }
+        .page-title { font-size:26px; font-weight:700; color:#14283E; }
         .page-sub { font-size:12px; color:#999; margin-top:2px; }
         .topbar-right { display:flex; align-items:center; gap:12px; }
         .btn {
@@ -54,7 +55,90 @@
         }
         .stat-card {
             background:white; border-radius:14px; padding:20px 22px;
+            display:flex; flex-direction:column; height:100%;
+            text-decoration:none; color:inherit;
+            box-shadow:0 2px 6px rgba(15,10,10,.08), 0 10px 22px -10px rgba(15,10,10,.22);
+            transition:transform .18s ease, box-shadow .18s ease;
         }
+        a.stat-card:hover {
+            transform:translateY(-3px);
+            box-shadow:0 4px 10px rgba(15,10,10,.1), 0 16px 30px -10px rgba(15,10,10,.3);
+        }
+
+        /* ANALYTICS SECTION */
+        .section-label { font-size:12.5px; font-weight:700; color:#999; text-transform:uppercase; letter-spacing:.5px; margin:0 0 12px; }
+        .doughnut-legend { display:flex; flex-direction:column; gap:10px; }
+        .dl-row { display:flex; align-items:center; gap:9px; font-size:12.5px; color:#555; }
+        .dl-row .dl-swatch { width:10px; height:10px; border-radius:3px; flex-shrink:0; }
+        .dl-row .dl-val { margin-left:auto; font-weight:700; color:#1a1a1a; }
+
+        /* Donut card: chart pinned to a sane size on the left, legend fills
+           the rest of the (now much wider, 2-column) card instead of leaving
+           empty space beside a chart that used to stretch full width. */
+        .donut-row { display:flex; align-items:center; gap:28px; }
+        .donut-row .chart-canvas-wrap { flex:0 0 190px; width:190px; height:190px!important; }
+        .donut-row .doughnut-legend { flex:1; min-width:0; }
+        .donut-insight {
+            display:flex; gap:10px; align-items:flex-start;
+            margin-top:18px; padding-top:16px; border-top:1px solid #f2f2f2;
+            font-size:12px; color:#666; line-height:1.55;
+        }
+        .donut-insight i { color:var(--primary); font-size:13px; margin-top:2px; flex-shrink:0; }
+
+        @media (max-width:560px) {
+            .donut-row { flex-direction:column; align-items:stretch; }
+            .donut-row .chart-canvas-wrap { width:100%; margin:0 auto; }
+        }
+
+        /* Comparison / benchmark line under each KPI number — pinned to the
+           card's bottom edge so the dashed rule lines up across all 4 cards
+           no matter how long each card's own comparison text runs. */
+        .stat-top { flex:1; }
+        .stat-context {
+            font-size:10.5px; color:#aaa; margin-top:0;
+            padding-top:6px; border-top:1px dashed #eee;
+            line-height:1.4;
+        }
+        .stat-context strong { color:#1a1a1a; font-weight:700; }
+
+        /* INSIGHTS */
+        .insights-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+        .insights-refresh-btn {
+            display:inline-flex; align-items:center; gap:7px;
+            padding:7px 14px; border-radius:8px; border:1.5px solid var(--primary);
+            background:white; color:var(--primary);
+            font-size:11.5px; font-weight:600; font-family:'Poppins',sans-serif;
+            cursor:pointer; transition:background .15s;
+        }
+        .insights-refresh-btn:hover { background:var(--primary-light); }
+        .insights-refresh-btn:disabled { opacity:.6; cursor:default; }
+        .insights-refresh-btn i.fa-spin { animation:spin .7s linear infinite; }
+        @keyframes spin { to { transform:rotate(360deg); } }
+        .insights-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(270px, 1fr)); gap:14px; margin-bottom:18px; align-items:stretch; }
+        .insight-card {
+            background:white; border-radius:12px; padding:16px 18px;
+            display:flex; gap:13px; align-items:flex-start;
+            border-left:4px solid #ccc;
+        }
+        .insight-card.tone-good { border-left-color:#059669; }
+        .insight-card.tone-warn { border-left-color:#d97706; }
+        .insight-card.tone-crit { border-left-color:var(--accent); }
+        .insight-card.tone-info { border-left-color:#2563eb; }
+        .insight-icon {
+            width:34px; height:34px; border-radius:9px; flex-shrink:0;
+            display:flex; align-items:center; justify-content:center; font-size:14px;
+        }
+        .insight-card.tone-good .insight-icon { background:#d1fae5; color:#059669; }
+        .insight-card.tone-warn .insight-icon { background:#fef3c7; color:#d97706; }
+        .insight-card.tone-crit .insight-icon { background:#fde8e8; color:var(--accent); }
+        .insight-card.tone-info .insight-icon { background:#dbeafe; color:#2563eb; }
+        .insight-title { font-size:12.5px; font-weight:700; color:#1a1a1a; margin-bottom:3px; }
+        .insight-text { font-size:11.5px; color:#777; line-height:1.5; }
+        .insights-empty { background:white; border-radius:12px; padding:20px; text-align:center; color:#aaa; font-size:13px; margin-bottom:18px; }
+
+        .viz-grid-3 { grid-template-columns:repeat(3, 1fr) !important; }
+        @media (max-width:1200px) { .viz-grid-3 { grid-template-columns:1fr 1fr !important; } }
+        @media (max-width:768px)  { .viz-grid-3 { grid-template-columns:1fr !important; } }
         .stat-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px; }
         .stat-icon {
             width:40px; height:40px; border-radius:10px;
@@ -65,9 +149,9 @@
         .si-blue   { background:#dbeafe; color:var(--blue); }
         .si-orange { background:#fef3c7; color:var(--orange); }
         .si-purple { background:#ede9fe; color:var(--purple); }
-        .stat-num  { font-size:28px; font-weight:700; color:#1a1a1a; line-height:1; margin-bottom:4px; }
-        .stat-lbl  { font-size:11px; color:#999; }
-        .stat-chg  { font-size:11px; color:var(--green); margin-top:4px; }
+        .stat-lbl  { font-family:'Montserrat',sans-serif; font-size:16px; font-weight:700; color:#1a1a1a; margin-bottom:12px; display:block; }
+        .stat-num  { font-size:28px; font-weight:700; color:#1a1a1a; line-height:1; margin-bottom:0; }
+        .stat-chg  { font-size:11px; color:var(--green); margin-top:2px; }
         .stat-chg.neutral { color:#999; }
 
         /* MAIN GRID */
@@ -76,9 +160,21 @@
             gap:18px; margin-bottom:18px;
         }
 
-        /* CARDS */
-        .card { background:white; border-radius:14px; padding:22px; }
+        /* CARDS — a real shadow (not just a hairline border) so every card
+           reads as a raised surface no matter what colour sits behind it. */
+        .card {
+            background:white; border-radius:14px; padding:22px;
+            box-shadow:0 2px 6px rgba(15,10,10,.08), 0 10px 22px -10px rgba(15,10,10,.22);
+        }
         .card + .card { margin-top:18px; }
+
+        .viz-card, .insights-empty {
+            box-shadow:0 2px 6px rgba(15,10,10,.08), 0 10px 22px -10px rgba(15,10,10,.22);
+            border-color:transparent;
+        }
+        .insight-card {
+            box-shadow:0 2px 6px rgba(15,10,10,.07), 0 8px 18px -10px rgba(15,10,10,.18);
+        }
         .card-head {
             display:flex; justify-content:space-between; align-items:center;
             margin-bottom:18px;
@@ -189,9 +285,14 @@
 
         /* BOTTOM ROW */
         .bottom-row {
-            display:grid; grid-template-columns:repeat(3,1fr);
-            gap:18px;
+            display:grid; grid-template-columns:repeat(2,1fr);
+            gap:18px; align-items:stretch;
         }
+        /* Both cards stretch to the same row height; pin the insight strip to
+           the bottom of each so their divider lines stay level with each
+           other no matter how long either card's caption text runs. */
+        .bottom-row .card { display:flex; flex-direction:column; }
+        .bottom-row .donut-insight { margin-top:auto; }
 
         .mini-stat {
             display:flex; align-items:center; gap:12px;
@@ -225,11 +326,11 @@
             /* right column stacks under left */
             .right-col { flex-direction: column; }
             /* stat numbers */
-            .stat-num { font-size: 22px; }
+            .kpi-num { font-size: 22px; }
         }
 
         @media (max-width: 480px) {
-            .stat-num { font-size: 20px; }
+            .kpi-num { font-size: 20px; }
             .card-title { font-size: 13px; }
             .qa-btn { padding: 10px 12px; }
         }
@@ -252,15 +353,13 @@
             </div>
         </div>
         <div class="topbar-right">
-            <a href="{{ route('faculty.question.create') }}" class="btn btn-primary"><i class="fas fa-plus"></i> Add Question</a>
-            <a href="{{ route('faculty.test-bank') }}" class="btn btn-outline"><i class="fas fa-database"></i> Test Bank</a>
             @include('partials.topbar-actions')
         </div>
     </div>
 
     <!-- STATS -->
     <div class="stats-row a1">
-        <div class="stat-card">
+        <a href="{{ route('faculty.test-bank') }}" class="stat-card" title="View test bank">
             <div class="stat-top">
                 <div>
                     <div class="stat-lbl">Total Questions</div>
@@ -273,8 +372,9 @@
                 </div>
                 <div class="stat-icon si-red"><i class="fas fa-database"></i></div>
             </div>
-        </div>
-        <div class="stat-card">
+            <div class="stat-context">Averaging <strong>{{ $stats['questions_per_subject'] }}</strong> questions per assigned subject.</div>
+        </a>
+        <a href="{{ route('faculty.performance') }}" class="stat-card" title="View student performance">
             <div class="stat-top">
                 <div>
                     <div class="stat-lbl">Active Students</div>
@@ -287,8 +387,19 @@
                 </div>
                 <div class="stat-icon si-green"><i class="fas fa-users"></i></div>
             </div>
-        </div>
-        <div class="stat-card">
+            <div class="stat-context">
+                @if($stats['engagement_delta'] === null)
+                    Not enough history yet to compare to last week.
+                @elseif($stats['engagement_delta'] > 0)
+                    <strong style="color:var(--green);">&uarr; {{ $stats['engagement_delta'] }}</strong> more than last week{{ $stats['engagement_delta_pct'] !== null ? ' ('.$stats['engagement_delta_pct'].'%)' : '' }}.
+                @elseif($stats['engagement_delta'] < 0)
+                    <strong style="color:var(--accent);">&darr; {{ abs($stats['engagement_delta']) }}</strong> fewer than last week{{ $stats['engagement_delta_pct'] !== null ? ' ('.$stats['engagement_delta_pct'].'%)' : '' }}.
+                @else
+                    Unchanged from last week.
+                @endif
+            </div>
+        </a>
+        <a href="{{ route('faculty.performance') }}" class="stat-card" title="View student performance">
             <div class="stat-top">
                 <div>
                     <div class="stat-lbl">Avg. Student Score</div>
@@ -303,8 +414,15 @@
                 </div>
                 <div class="stat-icon si-blue"><i class="fas fa-chart-bar"></i></div>
             </div>
-        </div>
-        <div class="stat-card">
+            <div class="stat-context">
+                @if($stats['benchmark_gap'] >= 0)
+                    <strong style="color:var(--green);">{{ $stats['benchmark_gap'] }} pts above</strong> the {{ $benchmark }}% readiness benchmark.
+                @else
+                    <strong style="color:var(--accent);">{{ abs($stats['benchmark_gap']) }} pts below</strong> the {{ $benchmark }}% readiness benchmark.
+                @endif
+            </div>
+        </a>
+        <a href="{{ route('faculty.test-bank') }}" class="stat-card" title="View test bank">
             <div class="stat-top">
                 <div>
                     <div class="stat-lbl">Questions Added</div>
@@ -313,8 +431,60 @@
                 </div>
                 <div class="stat-icon si-orange"><i class="fas fa-pen"></i></div>
             </div>
-        </div>
+            <div class="stat-context">
+                @if($stats['weekly_pace_avg'] == 0)
+                    No recent baseline to compare against yet.
+                @elseif($stats['added_this_week'] >= $stats['weekly_pace_avg'])
+                    On pace — your 8-week average is <strong>{{ $stats['weekly_pace_avg'] }}</strong>/week.
+                @else
+                    Below your usual pace of <strong>~{{ $stats['weekly_pace_avg'] }}</strong>/week.
+                @endif
+            </div>
+        </a>
     </div>
+
+    <!-- INSIGHTS -->
+    <div class="insights-head a1">
+        <div class="section-label" style="margin-bottom:0;">Insights</div>
+        <button type="button" class="insights-refresh-btn" id="insightsRefreshBtn"><i class="fas fa-rotate"></i> Regenerate</button>
+    </div>
+    <div id="insightsContainer" class="a1">
+        @if(empty($insights))
+            <div class="insights-empty"><i class="fas fa-circle-check" style="font-size:20px;color:#ccc;display:block;margin-bottom:8px;"></i>Nothing stands out right now — figures are within normal range.</div>
+        @else
+            <div class="insights-grid">
+                @foreach($insights as $insight)
+                    <div class="insight-card tone-{{ $insight['tone'] }}">
+                        <div class="insight-icon"><i class="fas {{ $insight['icon'] }}"></i></div>
+                        <div>
+                            <div class="insight-title">{{ $insight['title'] }}</div>
+                            <div class="insight-text">{{ $insight['text'] }}</div>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        @endif
+    </div>
+
+    <!-- ANALYTICS -->
+    <div class="section-label a1">Analytics</div>
+    <section class="viz-grid-layout viz-grid-3 a1" aria-labelledby="analytics-title" style="margin-bottom:18px;">
+        <div class="viz-card">
+            <h4 id="analytics-title"><i class="fas fa-users"></i> Student Engagement</h4>
+            <div class="viz-sub">Distinct students completing a graded quiz each week, last 8 weeks.</div>
+            <div class="chart-canvas-wrap h-sm"><canvas id="engagementChart"></canvas></div>
+        </div>
+        <div class="viz-card">
+            <h4><i class="fas fa-chart-line"></i> Accuracy Trend</h4>
+            <div class="viz-sub">Average correct-answer rate vs. the {{ $benchmark }}% readiness benchmark (dashed line), last 8 weeks.</div>
+            <div class="chart-canvas-wrap h-sm"><canvas id="accuracyChart"></canvas></div>
+        </div>
+        <div class="viz-card">
+            <h4><i class="fas fa-user-graduate"></i> Student Readiness</h4>
+            <div class="viz-sub">{{ $studentBand['measured'] }} measured student{{ $studentBand['measured'] === 1 ? '' : 's' }} · {{ $stats['active_students'] - $studentBand['measured'] > 0 ? ($stats['active_students'] - $studentBand['measured']) . ' not yet measurable' : 'all active students measured' }}.</div>
+            <div class="chart-canvas-wrap h-sm"><canvas id="readinessChart"></canvas></div>
+        </div>
+    </section>
 
     <!-- MAIN GRID -->
     <div class="main-grid a2">
@@ -434,13 +604,27 @@
             <!-- QUESTION DISTRIBUTION -->
             <div class="card">
                 <div class="card-head"><span class="card-title">Questions by Subject</span></div>
-                @forelse($bySubject as $s)
-                <div class="subj-dist-item">
-                    <div class="subj-dist-top"><span>{{ $s['code'] }}</span><span class="val">{{ number_format($s['total']) }}</span></div>
-                    <div class="bar-bg"><div class="bar-fill" style="width:{{ $s['width'] }}%;background:{{ $s['color'] }};"></div></div>
+                @if($bySubject->isEmpty())
+                    <div style="text-align:center;color:#aaa;padding:16px;font-size:13px;">No subjects assigned.</div>
+                @else
+                    <div class="chart-canvas-wrap" style="height:{{ max(140, count($bySubject) * 42) }}px;"><canvas id="subjectChart"></canvas></div>
+                @endif
+            </div>
+
+            <!-- TOP PERFORMING STUDENTS -->
+            <div class="card">
+                <div class="card-head"><span class="card-title">Top Performing Students</span></div>
+                @php $rankStyles = [['#fde8e8','var(--accent)'],['#dbeafe','#2563eb'],['#d1fae5','#059669']]; @endphp
+                @forelse($topStudents as $i => $st)
+                <div class="mini-stat">
+                    <div class="mini-icon" style="background:{{ $rankStyles[$i][0] ?? '#f1f5f9' }};color:{{ $rankStyles[$i][1] ?? '#64748b' }};font-weight:700;font-size:14px;">{{ $i + 1 }}</div>
+                    <div style="flex:1">
+                        <div class="mini-label">{{ $st['name'] }}</div>
+                        <div class="mini-val" style="font-size:13px;">{{ $st['score'] }}% avg</div>
+                    </div>
                 </div>
                 @empty
-                <div style="text-align:center;color:#aaa;padding:16px;font-size:13px;">No subjects assigned.</div>
+                <div style="text-align:center;color:#aaa;padding:24px;font-size:13px;">Not enough graded activity yet.</div>
                 @endforelse
             </div>
         </div>
@@ -450,76 +634,227 @@
     <div class="bottom-row a3">
         <div class="card">
             <div class="card-head"><span class="card-title">Question Type Breakdown</span></div>
-            <div class="mini-stat">
-                <div class="mini-icon" style="background:#dbeafe;color:#2563eb;"><i class="fas fa-list-ul"></i></div>
-                <div>
-                    <div class="mini-label">Multiple Choice</div>
-                    <div class="mini-val">{{ number_format($byType['mcq']['count']) }} <span style="font-size:11px;color:#aaa;font-weight:400;">({{ $byType['mcq']['pct'] }}%)</span></div>
+            @if($byType['total'] === 0)
+                <div style="text-align:center;color:#aaa;padding:16px;font-size:13px;">No questions yet.</div>
+            @else
+                <div class="donut-row">
+                    <div class="chart-canvas-wrap"><canvas id="typeChart"></canvas></div>
+                    <div class="doughnut-legend">
+                        <div class="dl-row"><span class="dl-swatch" style="background:#2563eb;"></span> Multiple Choice <span class="dl-val">{{ number_format($byType['mcq']['count']) }} ({{ $byType['mcq']['pct'] }}%)</span></div>
+                        <div class="dl-row"><span class="dl-swatch" style="background:#059669;"></span> True / False <span class="dl-val">{{ number_format($byType['tf']['count']) }} ({{ $byType['tf']['pct'] }}%)</span></div>
+                    </div>
                 </div>
-            </div>
-            <div class="mini-stat">
-                <div class="mini-icon" style="background:#d1fae5;color:#059669;"><i class="fas fa-check-square"></i></div>
-                <div>
-                    <div class="mini-label">True / False</div>
-                    <div class="mini-val">{{ number_format($byType['tf']['count']) }} <span style="font-size:11px;color:#aaa;font-weight:400;">({{ $byType['tf']['pct'] }}%)</span></div>
-                </div>
-            </div>
-            <div class="mini-stat">
-                <div class="mini-icon" style="background:#ede9fe;color:#7c3aed;"><i class="fas fa-layer-group"></i></div>
-                <div>
-                    <div class="mini-label">Total Questions</div>
-                    <div class="mini-val">{{ number_format($byType['total']) }}</div>
-                </div>
-            </div>
+                <div class="donut-insight"><i class="fas fa-lightbulb"></i> {{ $typeInsight }}</div>
+            @endif
         </div>
 
         <div class="card">
             <div class="card-head"><span class="card-title">Difficulty Distribution</span></div>
-            <div class="mini-stat">
-                <div class="mini-icon" style="background:#d1fae5;color:#059669;"><i class="fas fa-smile"></i></div>
-                <div>
-                    <div class="mini-label">Easy</div>
-                    <div class="mini-val">{{ number_format($byDifficulty['easy']['count']) }} <span style="font-size:11px;color:#aaa;font-weight:400;">({{ $byDifficulty['easy']['pct'] }}%)</span></div>
+            @if(($byDifficulty['easy']['count'] + $byDifficulty['medium']['count'] + $byDifficulty['hard']['count']) === 0)
+                <div style="text-align:center;color:#aaa;padding:16px;font-size:13px;">No questions yet.</div>
+            @else
+                <div class="donut-row">
+                    <div class="chart-canvas-wrap"><canvas id="difficultyChart"></canvas></div>
+                    <div class="doughnut-legend">
+                        <div class="dl-row"><span class="dl-swatch" style="background:#059669;"></span> Easy <span class="dl-val">{{ number_format($byDifficulty['easy']['count']) }} ({{ $byDifficulty['easy']['pct'] }}%)</span></div>
+                        <div class="dl-row"><span class="dl-swatch" style="background:#d97706;"></span> Medium <span class="dl-val">{{ number_format($byDifficulty['medium']['count']) }} ({{ $byDifficulty['medium']['pct'] }}%)</span></div>
+                        <div class="dl-row"><span class="dl-swatch" style="background:var(--accent);"></span> Hard <span class="dl-val">{{ number_format($byDifficulty['hard']['count']) }} ({{ $byDifficulty['hard']['pct'] }}%)</span></div>
+                    </div>
                 </div>
-            </div>
-            <div class="mini-stat">
-                <div class="mini-icon" style="background:#fef3c7;color:#d97706;"><i class="fas fa-meh"></i></div>
-                <div>
-                    <div class="mini-label">Medium</div>
-                    <div class="mini-val">{{ number_format($byDifficulty['medium']['count']) }} <span style="font-size:11px;color:#aaa;font-weight:400;">({{ $byDifficulty['medium']['pct'] }}%)</span></div>
-                </div>
-            </div>
-            <div class="mini-stat">
-                <div class="mini-icon" style="background:#fde8e8;color:var(--accent);"><i class="fas fa-frown"></i></div>
-                <div>
-                    <div class="mini-label">Hard</div>
-                    <div class="mini-val">{{ number_format($byDifficulty['hard']['count']) }} <span style="font-size:11px;color:#aaa;font-weight:400;">({{ $byDifficulty['hard']['pct'] }}%)</span></div>
-                </div>
-            </div>
-        </div>
-
-        <div class="card">
-            <div class="card-head"><span class="card-title">Top Performing Students</span></div>
-            @php $rankStyles = [['#fde8e8','var(--accent)'],['#dbeafe','#2563eb'],['#d1fae5','#059669']]; @endphp
-            @forelse($topStudents as $i => $st)
-            <div class="mini-stat">
-                <div class="mini-icon" style="background:{{ $rankStyles[$i][0] ?? '#f1f5f9' }};color:{{ $rankStyles[$i][1] ?? '#64748b' }};font-weight:700;font-size:14px;">{{ $i + 1 }}</div>
-                <div style="flex:1">
-                    <div class="mini-label">{{ $st['name'] }}</div>
-                    <div class="mini-val" style="font-size:13px;">{{ $st['score'] }}% avg</div>
-                </div>
-            </div>
-            @empty
-            <div style="text-align:center;color:#aaa;padding:24px;font-size:13px;">Not enough graded activity yet.</div>
-            @endforelse
+                <div class="donut-insight"><i class="fas fa-lightbulb"></i> {{ $difficultyInsight }}</div>
+            @endif
         </div>
     </div>
 
 </main>
 
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-});
+(function () {
+    const btn = document.getElementById('insightsRefreshBtn');
+    const container = document.getElementById('insightsContainer');
+    if (!btn || !container) return;
+
+    function escapeHtml(s) {
+        const d = document.createElement('div');
+        d.textContent = s;
+        return d.innerHTML;
+    }
+
+    function render(insights) {
+        if (!insights.length) {
+            container.innerHTML = '<div class="insights-empty"><i class="fas fa-circle-check" style="font-size:20px;color:#ccc;display:block;margin-bottom:8px;"></i>Nothing stands out right now — figures are within normal range.</div>';
+            return;
+        }
+        container.innerHTML = '<div class="insights-grid">' + insights.map((i) => (
+            '<div class="insight-card tone-' + escapeHtml(i.tone) + '">' +
+                '<div class="insight-icon"><i class="fas ' + escapeHtml(i.icon) + '"></i></div>' +
+                '<div>' +
+                    '<div class="insight-title">' + escapeHtml(i.title) + '</div>' +
+                    '<div class="insight-text">' + escapeHtml(i.text) + '</div>' +
+                '</div>' +
+            '</div>'
+        )).join('') + '</div>';
+    }
+
+    btn.addEventListener('click', function () {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-rotate fa-spin"></i> Regenerating…';
+
+        fetch(@json(route('faculty.dashboard.insights')), { headers: { 'Accept': 'application/json' } })
+            .then((r) => r.json())
+            .then((data) => { render(data.insights || []); })
+            .catch(() => {})
+            .finally(() => {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-rotate"></i> Regenerate';
+            });
+    });
+})();
+
+(function () {
+    const P = Viz.palette;
+    const trend = @json($weeklyTrend);
+    const bySubject = @json($bySubject);
+    const byType = @json($byType);
+    const byDifficulty = @json($byDifficulty);
+    const studentBand = @json($studentBand);
+    const benchmark = @json($benchmark);
+    const pluck = (rows, key) => rows.map((row) => row[key]);
+
+    // Dashed horizontal rule at a fixed y-value — used to mark the board-readiness
+    // benchmark on the accuracy trend so "on target" is a visual read, not a lookup.
+    const benchmarkLine = (value, label) => ({
+        id: 'benchmarkLine',
+        afterDatasetsDraw(chart) {
+            const { ctx, chartArea, scales } = chart;
+            if (!chartArea || !scales.y) return;
+            const y = scales.y.getPixelForValue(value);
+            ctx.save();
+            ctx.strokeStyle = P.crit;
+            ctx.setLineDash([5, 4]);
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(chartArea.left, y);
+            ctx.lineTo(chartArea.right, y);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.font = "600 9.5px 'Poppins', sans-serif";
+            ctx.fillStyle = P.crit;
+            ctx.textBaseline = 'bottom';
+            ctx.fillText(label, chartArea.right - ctx.measureText(label).width - 4, y - 3);
+            ctx.restore();
+        },
+    });
+
+    Viz.chart('engagementChart', {
+        type: 'bar',
+        data: {
+            labels: pluck(trend, 'label'),
+            datasets: [Viz.bar({ label: 'Active students', data: pluck(trend, 'active_students'), backgroundColor: P.s1 })],
+        },
+        options: {
+            scales: { y: Viz.countAxis(), x: Viz.catAxis() },
+            plugins: {
+                legend: { display: false },
+                tooltip: { callbacks: { label: (c) => {
+                    const week = trend[c.dataIndex];
+                    return week.active_students + ' student' + (week.active_students === 1 ? '' : 's') + ' · ' + week.quizzes + ' quiz' + (week.quizzes === 1 ? '' : 'zes');
+                } } },
+            },
+        },
+    });
+
+    Viz.chart('accuracyChart', {
+        type: 'line',
+        data: {
+            labels: pluck(trend, 'label'),
+            datasets: [Viz.line({ label: 'Accuracy', data: pluck(trend, 'accuracy'), borderColor: P.s2, backgroundColor: 'rgba(42,120,214,.08)', pointBackgroundColor: P.s2, fill: true })],
+        },
+        options: {
+            spanGaps: true,
+            scales: { y: Viz.percentAxis(), x: Viz.catAxis() },
+            plugins: {
+                legend: { display: false },
+                tooltip: { callbacks: { label: (c) => c.raw === null ? 'No quizzes that week' : c.raw + '% accuracy (benchmark ' + benchmark + '%)' } },
+            },
+        },
+        plugins: [benchmarkLine(benchmark, benchmark + '% benchmark')],
+    });
+
+    if (bySubject.length) {
+        const subjectTotals = pluck(bySubject, 'total');
+        const subjectAvg = subjectTotals.reduce((a, b) => a + b, 0) / subjectTotals.length;
+        Viz.chart('subjectChart', {
+            type: 'bar',
+            data: {
+                labels: pluck(bySubject, 'code'),
+                datasets: [Viz.bar({ data: subjectTotals, backgroundColor: pluck(bySubject, 'color') })],
+            },
+            options: {
+                indexAxis: 'y',
+                scales: { x: Viz.countAxis(), y: Viz.catAxis() },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { callbacks: { label: (c) => c.raw + ' question' + (c.raw === 1 ? '' : 's') + ' (avg ' + Math.round(subjectAvg) + ')' } },
+                },
+            },
+            plugins: [Viz.referenceMarks(subjectTotals.map(() => subjectAvg), '#1a1a1a')],
+        });
+    }
+
+    if (byType.total > 0) {
+        Viz.chart('typeChart', {
+            type: 'doughnut',
+            data: {
+                labels: ['Multiple Choice', 'True / False'],
+                datasets: [{ data: [byType.mcq.count, byType.tf.count], backgroundColor: ['#2563eb', '#059669'], borderWidth: 2, borderColor: P.surface }],
+            },
+            options: {
+                cutout: '62%',
+                plugins: { legend: { display: false } },
+            },
+        });
+    }
+
+    const diffTotal = byDifficulty.easy.count + byDifficulty.medium.count + byDifficulty.hard.count;
+    if (diffTotal > 0) {
+        Viz.chart('difficultyChart', {
+            type: 'doughnut',
+            data: {
+                labels: ['Easy', 'Medium', 'Hard'],
+                datasets: [{ data: [byDifficulty.easy.count, byDifficulty.medium.count, byDifficulty.hard.count], backgroundColor: ['#059669', '#d97706', P.crit], borderWidth: 2, borderColor: P.surface }],
+            },
+            options: {
+                cutout: '62%',
+                plugins: { legend: { display: false } },
+            },
+        });
+    }
+
+    if (studentBand.measured > 0) {
+        Viz.chart('readinessChart', {
+            type: 'doughnut',
+            data: {
+                labels: ['Ready (≥' + benchmark + '%)', 'Developing', 'At risk (<50%)'],
+                datasets: [{
+                    data: [studentBand.ready, studentBand.developing, studentBand.at_risk],
+                    backgroundColor: [P.good, P.warn, P.crit],
+                    borderWidth: 2, borderColor: P.surface,
+                }],
+            },
+            options: {
+                cutout: '58%',
+                plugins: {
+                    legend: { position: 'bottom' },
+                    tooltip: { callbacks: { label: (c) => c.label + ': ' + c.raw + ' (' + Math.round(c.raw / studentBand.measured * 100) + '%)' } },
+                },
+            },
+        });
+    } else {
+        const el = document.getElementById('readinessChart');
+        if (el && el.parentElement) el.parentElement.innerHTML = '<div class="viz-empty">Not enough graded attempts yet to measure readiness.</div>';
+    }
+})();
 </script>
 
     @include('partials.alerts')

@@ -37,7 +37,37 @@ class FacultyDashboardController extends Controller
         'RFBT' => '#f59e0b',
     ];
 
+    /** Board-readiness accuracy benchmark, same threshold used across CPALE analytics. */
+    private const READINESS_BENCHMARK = 75;
+
+    /** Below this average score (with a minimum sample), a student is flagged at-risk. */
+    private const AT_RISK_THRESHOLD = 50;
+
     public function index(Request $request)
+    {
+        $data = $this->computeDashboardData();
+
+        return view('faculty.dashboard', $data);
+    }
+
+    /**
+     * Re-run just the insights computation against the live database and
+     * return it as JSON — backs the "Regenerate" button on the dashboard so
+     * a faculty member can pull fresh insights after adding questions or
+     * grading activity without reloading the whole page.
+     */
+    public function insights(Request $request)
+    {
+        $data = $this->computeDashboardData();
+
+        return response()->json(['insights' => $data['insights']]);
+    }
+
+    /**
+     * Every figure the dashboard (and its insights) needs, computed fresh
+     * from the database and scoped to the faculty member's assigned subjects.
+     */
+    private function computeDashboardData(): array
     {
         // Subjects assigned to this faculty; fall back to all subjects so a
         // freshly-created account still sees the whole picture.
@@ -52,16 +82,140 @@ class FacultyDashboardController extends Controller
         $monthAgo    = $now->copy()->subDays(30);
         $twoMonthAgo = $now->copy()->subDays(60);
 
-        return view('faculty.dashboard', [
+        $weeklyTrend          = $this->weeklyTrend($subjectIds, $now);
+        $questionsWeeklyTrend = $this->questionsWeeklyTrend($subjectIds, $now);
+        $bySubject    = $this->questionsBySubject($assigned);
+        $byType       = $this->questionsByType($subjectIds);
+        $byDifficulty = $this->questionsByDifficulty($subjectIds);
+        $studentBand  = $this->studentBandCounts($subjectIds);
+        $stats        = $this->headlineStats($subjectIds, $weekAgo, $monthAgo, $twoMonthAgo, $assigned, $weeklyTrend);
+
+        return [
             'assigned'        => $assigned,
-            'stats'           => $this->headlineStats($subjectIds, $weekAgo, $monthAgo, $twoMonthAgo),
+            'stats'           => $stats,
             'recentQuestions' => $this->recentQuestions($subjectIds),
             'recentActivity'  => $this->recentActivity($subjectIds),
-            'bySubject'       => $this->questionsBySubject($assigned),
-            'byType'          => $this->questionsByType($subjectIds),
-            'byDifficulty'    => $this->questionsByDifficulty($subjectIds),
+            'bySubject'       => $bySubject,
+            'byType'          => $byType,
+            'byDifficulty'    => $byDifficulty,
             'topStudents'     => $this->topStudents($subjectIds),
-        ]);
+            'weeklyTrend'          => $weeklyTrend,
+            'questionsWeeklyTrend' => $questionsWeeklyTrend,
+            'studentBand'     => $studentBand,
+            'benchmark'       => self::READINESS_BENCHMARK,
+            'insights'        => $this->buildInsights($bySubject, $byType, $byDifficulty, $weeklyTrend, $stats, $studentBand, $assigned),
+            'typeInsight'       => $this->typeInsight($byType),
+            'difficultyInsight' => $this->difficultyInsight($byDifficulty),
+        ];
+    }
+
+    /**
+     * One-line read on the MCQ vs. True/False mix — the actual CPALE is almost
+     * entirely multiple choice, so a bank that drifts too far from that format
+     * doesn't prepare students for the exam they'll actually sit.
+     */
+    private function typeInsight(array $byType): string
+    {
+        if ($byType['total'] === 0) {
+            return 'Add questions to see how your item formats compare to the real exam mix.';
+        }
+
+        $mcqPct = $byType['mcq']['pct'];
+
+        if ($mcqPct >= 85) {
+            return "Multiple Choice makes up {$mcqPct}% of the bank — closely mirrors the CPALE's actual format.";
+        }
+        if ($mcqPct >= 60) {
+            return "Multiple Choice makes up {$mcqPct}% of the bank — a reasonable mix, though the real exam leans more heavily MCQ.";
+        }
+
+        return "True/False makes up {$byType['tf']['pct']}% of the bank — consider shifting toward Multiple Choice to better match exam-day format.";
+    }
+
+    /**
+     * One-line read on the Easy/Medium/Hard mix — the lever a faculty member
+     * would actually pull (add more of X) rather than just the raw split.
+     */
+    private function difficultyInsight(array $byDifficulty): string
+    {
+        $total = $byDifficulty['easy']['count'] + $byDifficulty['medium']['count'] + $byDifficulty['hard']['count'];
+        if ($total === 0) {
+            return 'Add questions to see the difficulty mix.';
+        }
+
+        if ($byDifficulty['hard']['pct'] < 15) {
+            return "Only {$byDifficulty['hard']['pct']}% is Hard difficulty — add more challenging items to stretch students who are already passing.";
+        }
+        if ($byDifficulty['easy']['pct'] < 15) {
+            return "Only {$byDifficulty['easy']['pct']}% is Easy difficulty — students still building fundamentals may not have enough of a foothold.";
+        }
+        if ($byDifficulty['medium']['pct'] >= 60) {
+            return "Medium items dominate the bank ({$byDifficulty['medium']['pct']}%) — a fairly conservative curve overall.";
+        }
+
+        return "A healthy spread across difficulty levels — {$byDifficulty['easy']['pct']}% Easy, {$byDifficulty['medium']['pct']}% Medium, {$byDifficulty['hard']['pct']}% Hard.";
+    }
+
+    /**
+     * Last 8 calendar weeks in scope: distinct active students, quizzes taken,
+     * and average accuracy — feeds the Engagement / Accuracy trend charts.
+     */
+    private function weeklyTrend(array $subjectIds, Carbon $now)
+    {
+        return collect(range(7, 0))->map(function (int $i) use ($subjectIds, $now) {
+            $start = $now->copy()->subWeeks($i)->startOfWeek();
+            $end   = $start->copy()->endOfWeek();
+
+            $row = $this->scopedSessions($subjectIds)
+                ->whereBetween('quiz_sessions.completed_at', [$start, $end])
+                ->select(
+                    DB::raw('COUNT(DISTINCT quiz_sessions.student_id) as active_students'),
+                    DB::raw('COUNT(*) as quizzes'),
+                    DB::raw('COALESCE(SUM(total_items),0) as attempted'),
+                    DB::raw('COALESCE(SUM(correct_answers),0) as correct')
+                )
+                ->first();
+
+            $attempted = (int) ($row->attempted ?? 0);
+
+            return [
+                'label'           => $start->format('M j'),
+                'active_students' => (int) ($row->active_students ?? 0),
+                'quizzes'         => (int) ($row->quizzes ?? 0),
+                'accuracy'        => $attempted > 0 ? (int) round(((int) $row->correct) / $attempted * 100) : null,
+            ];
+        })->values();
+    }
+
+    /**
+     * Last 8 calendar weeks of test-bank growth in scope: how many questions
+     * were added that week, and the running total as of that week's end —
+     * feeds the KPI sparklines for Total Questions / Questions Added.
+     */
+    private function questionsWeeklyTrend(array $subjectIds, Carbon $now)
+    {
+        $baseTotal = (clone $this->scopedQuestions($subjectIds))
+            ->where('questions.created_at', '<', $now->copy()->subWeeks(7)->startOfWeek())
+            ->count();
+
+        $running = $baseTotal;
+
+        return collect(range(7, 0))->map(function (int $i) use ($subjectIds, $now, &$running) {
+            $start = $now->copy()->subWeeks($i)->startOfWeek();
+            $end   = $start->copy()->endOfWeek();
+
+            $added = (clone $this->scopedQuestions($subjectIds))
+                ->whereBetween('questions.created_at', [$start, $end])
+                ->count();
+
+            $running += $added;
+
+            return [
+                'label'      => $start->format('M j'),
+                'added'      => $added,
+                'cumulative' => $running,
+            ];
+        })->values();
     }
 
     /**
@@ -89,9 +243,11 @@ class FacultyDashboardController extends Controller
     }
 
     /**
-     * The four headline cards, each with a real delta.
+     * The four headline cards. Each figure carries not just a delta but the
+     * context a program head actually needs to decide something: a benchmark
+     * distance, a per-subject average, or a week-over-week pace comparison.
      */
-    private function headlineStats(array $subjectIds, Carbon $weekAgo, Carbon $monthAgo, Carbon $twoMonthAgo): array
+    private function headlineStats(array $subjectIds, Carbon $weekAgo, Carbon $monthAgo, Carbon $twoMonthAgo, $assigned, $weeklyTrend): array
     {
         $totalQuestions = (clone $this->scopedQuestions($subjectIds))->count();
         $addedThisWeek  = (clone $this->scopedQuestions($subjectIds))
@@ -117,15 +273,165 @@ class FacultyDashboardController extends Controller
         $avgPrev = $this->avgScore($subjectIds, $twoMonthAgo, $monthAgo);
         $avgAll  = $this->avgScore($subjectIds, null, null);
         $avgDelta = ($avgNow !== null && $avgPrev !== null) ? $avgNow - $avgPrev : null;
+        $avgScore = $avgAll ?? 0;
+
+        // Week-over-week engagement, straight from the trend series so the
+        // number on the card and the chart never disagree.
+        $thisWeekTrend = $weeklyTrend->last();
+        $lastWeekTrend = $weeklyTrend->count() > 1 ? $weeklyTrend[$weeklyTrend->count() - 2] : null;
+        $engagementDelta = $lastWeekTrend ? $thisWeekTrend['active_students'] - $lastWeekTrend['active_students'] : null;
+        $engagementDeltaPct = ($engagementDelta !== null && $lastWeekTrend['active_students'] > 0)
+            ? (int) round($engagementDelta / $lastWeekTrend['active_students'] * 100)
+            : null;
+
+        // Weekly content pace over the trailing 8 weeks, to judge whether
+        // this week's additions are keeping up with the usual cadence.
+        $eightWeeksAgo = $weekAgo->copy()->subWeeks(7);
+        $addedLast8Weeks = (clone $this->scopedQuestions($subjectIds))
+            ->where('questions.created_at', '>=', $eightWeeksAgo)->count();
+        $weeklyPaceAvg = (int) round($addedLast8Weeks / 8);
+
+        $subjectCount = max(1, $assigned->count());
 
         return [
-            'total_questions'  => $totalQuestions,
-            'added_this_week'  => $addedThisWeek,
-            'active_students'  => $activeStudents,
-            'new_this_month'   => $newThisMonth,
-            'avg_score'        => $avgAll ?? 0,
-            'avg_delta'        => $avgDelta,
+            'total_questions'      => $totalQuestions,
+            'questions_per_subject'=> (int) round($totalQuestions / $subjectCount),
+            'added_this_week'      => $addedThisWeek,
+            'weekly_pace_avg'      => $weeklyPaceAvg,
+            'active_students'      => $activeStudents,
+            'new_this_month'       => $newThisMonth,
+            'engagement_delta'     => $engagementDelta,
+            'engagement_delta_pct' => $engagementDeltaPct,
+            'avg_score'            => $avgScore,
+            'avg_delta'            => $avgDelta,
+            'benchmark_gap'        => $avgScore - self::READINESS_BENCHMARK,
         ];
+    }
+
+    /**
+     * Students bucketed by average completed-session score in scope (min.
+     * sample so a single lucky/unlucky quiz can't misclassify anyone) —
+     * feeds the "students needing attention" insight and readiness split.
+     */
+    private function studentBandCounts(array $subjectIds): array
+    {
+        $agg = $this->scopedSessions($subjectIds)
+            ->join('users', 'users.id', '=', 'quiz_sessions.student_id')
+            ->where('users.role_id', Role::STUDENT)
+            ->groupBy('users.id')
+            ->havingRaw('SUM(total_items) >= ?', [WeaknessDetector::MIN_ATTEMPTS])
+            ->select(
+                DB::raw('COALESCE(SUM(total_items),0) as attempted'),
+                DB::raw('COALESCE(SUM(correct_answers),0) as correct')
+            )
+            ->get()
+            ->map(fn ($r) => (int) $r->attempted > 0 ? (int) round($r->correct / $r->attempted * 100) : 0);
+
+        return [
+            'measured'  => $agg->count(),
+            'ready'     => $agg->filter(fn ($s) => $s >= self::READINESS_BENCHMARK)->count(),
+            'at_risk'   => $agg->filter(fn ($s) => $s < self::AT_RISK_THRESHOLD)->count(),
+            'developing'=> $agg->filter(fn ($s) => $s >= self::AT_RISK_THRESHOLD && $s < self::READINESS_BENCHMARK)->count(),
+        ];
+    }
+
+    /**
+     * Short, data-driven narrative cards — the "so what" a program head would
+     * otherwise have to work out themselves by staring at the charts.
+     */
+    private function buildInsights($bySubject, array $byType, array $byDifficulty, $weeklyTrend, array $stats, array $studentBand, $assigned): array
+    {
+        $insights = [];
+
+        // Engagement momentum.
+        if ($stats['engagement_delta'] !== null) {
+            if ($stats['engagement_delta'] > 0) {
+                $insights[] = [
+                    'tone' => 'good', 'icon' => 'fa-arrow-trend-up',
+                    'title' => 'Engagement is climbing',
+                    'text' => "Active students are up {$stats['engagement_delta']}" . ($stats['engagement_delta_pct'] !== null ? " ({$stats['engagement_delta_pct']}%)" : '') . ' week-over-week — momentum is on your side.',
+                ];
+            } elseif ($stats['engagement_delta'] < 0) {
+                $insights[] = [
+                    'tone' => 'warn', 'icon' => 'fa-arrow-trend-down',
+                    'title' => 'Engagement is slipping',
+                    'text' => 'Active students fell by ' . abs($stats['engagement_delta']) . ' week-over-week. Consider assigning a class quiz to re-engage the section.',
+                ];
+            } else {
+                $insights[] = [
+                    'tone' => 'info', 'icon' => 'fa-minus',
+                    'title' => 'Engagement is flat',
+                    'text' => 'Active student count is unchanged from last week.',
+                ];
+            }
+        }
+
+        // Accuracy vs. the board-readiness benchmark.
+        if ($stats['avg_score'] > 0) {
+            if ($stats['benchmark_gap'] >= 0) {
+                $insights[] = [
+                    'tone' => 'good', 'icon' => 'fa-check-circle',
+                    'title' => 'Above the readiness benchmark',
+                    'text' => "Average accuracy ({$stats['avg_score']}%) is {$stats['benchmark_gap']} pts above the " . self::READINESS_BENCHMARK . "% board-readiness benchmark.",
+                ];
+            } else {
+                $insights[] = [
+                    'tone' => 'crit', 'icon' => 'fa-triangle-exclamation',
+                    'title' => 'Below the readiness benchmark',
+                    'text' => "Average accuracy ({$stats['avg_score']}%) is " . abs($stats['benchmark_gap']) . ' pts below the ' . self::READINESS_BENCHMARK . '% benchmark — review the weakest topics before the next mock exam.',
+                ];
+            }
+        }
+
+        // Students needing intervention.
+        if ($studentBand['at_risk'] > 0) {
+            $insights[] = [
+                'tone' => 'crit', 'icon' => 'fa-user-clock',
+                'title' => $studentBand['at_risk'] . ' student' . ($studentBand['at_risk'] === 1 ? '' : 's') . ' at risk',
+                'text' => 'Averaging below ' . self::AT_RISK_THRESHOLD . '% with enough attempts to be measured — worth a direct check-in or remedial material.',
+            ];
+        }
+
+        // Difficulty mix — is the bank challenging enough?
+        if ($byDifficulty['hard']['count'] + $byDifficulty['medium']['count'] + $byDifficulty['easy']['count'] > 0) {
+            if ($byDifficulty['hard']['pct'] < 15) {
+                $insights[] = [
+                    'tone' => 'warn', 'icon' => 'fa-layer-group',
+                    'title' => 'Test bank is Easy-heavy',
+                    'text' => "Only {$byDifficulty['hard']['pct']}% of questions are Hard difficulty — top students may not be getting stretched. Consider adding harder items.",
+                ];
+            } elseif ($byDifficulty['easy']['pct'] < 15) {
+                $insights[] = [
+                    'tone' => 'info', 'icon' => 'fa-layer-group',
+                    'title' => 'Test bank skews Hard',
+                    'text' => "Only {$byDifficulty['easy']['pct']}% of questions are Easy — students still building fundamentals may struggle to find a foothold.",
+                ];
+            }
+        }
+
+        // Weakest subject by content coverage.
+        if ($bySubject->count() > 1) {
+            $thin = $bySubject->sortBy('total')->first();
+            $avgPerSubject = (int) round($bySubject->sum('total') / max(1, $bySubject->count()));
+            if ($thin['total'] < $avgPerSubject * 0.6) {
+                $insights[] = [
+                    'tone' => 'warn', 'icon' => 'fa-database',
+                    'title' => "{$thin['code']} needs more questions",
+                    'text' => "{$thin['code']} has only {$thin['total']} question" . ($thin['total'] === 1 ? '' : 's') . ", well below your {$avgPerSubject}-question average per subject.",
+                ];
+            }
+        }
+
+        // Content pace.
+        if ($stats['weekly_pace_avg'] > 0 && $stats['added_this_week'] < $stats['weekly_pace_avg'] * 0.5) {
+            $insights[] = [
+                'tone' => 'info', 'icon' => 'fa-gauge',
+                'title' => 'Slower content pace this week',
+                'text' => "{$stats['added_this_week']} question" . ($stats['added_this_week'] === 1 ? '' : 's') . ' added vs. your usual ~' . $stats['weekly_pace_avg'] . '/week average.',
+            ];
+        }
+
+        return $insights;
     }
 
     /**

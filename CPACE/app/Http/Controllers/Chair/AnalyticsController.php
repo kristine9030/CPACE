@@ -65,8 +65,6 @@ class AnalyticsController extends Controller
             'coverage' => $coverage,
             'rollup' => $rollup,
             'growth' => $this->analytics->bankGrowth(6, $subjectId),
-            // The worst-covered areas are the actionable list; the full table stays below.
-            'gaps' => $coverage->sortByDesc('gap')->take(12)->values(),
             'subjects' => Subject::orderBy('id')->get(),
             'selectedSubject' => $subjectId,
             'stats' => [
