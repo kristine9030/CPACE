@@ -89,9 +89,23 @@ class QuestionImportController extends Controller
             }
 
             DB::transaction(function () use ($batch, $items, $source) {
+                // Parsing may have picked up a "Topic:" hint per row; resolve
+                // it against this subject's real topics (exact match, case
+                // insensitive) so the review screen can pre-select it. No
+                // match just leaves it blank for the faculty to pick, same
+                // as before this existed.
+                $topics = Topic::where('subject_id', $batch->subject_id)->where('is_active', true)->get(['id', 'name']);
+
                 foreach ($items as $i => $item) {
+                    $topicId = null;
+                    if (! empty($item['topic_name'])) {
+                        $needle = strtolower(trim($item['topic_name']));
+                        $topicId = $topics->first(fn ($t) => strtolower(trim($t->name)) === $needle)?->id;
+                    }
+
                     QuestionImportItem::create([
                         'batch_id'       => $batch->id,
+                        'topic_id'      => $topicId,
                         'question_text' => $item['question_text'],
                         'question_type' => $item['question_type'],
                         'choices'       => $item['choices'],

@@ -313,8 +313,60 @@ class QuestionImportTest extends TestCase
             $this->assertNotNull($items, "Template type [{$type}] did not parse back into any questions.");
             $this->assertCount(3, $items, "Template type [{$type}] should round-trip into exactly 3 sample questions.");
 
+            // The template's 3rd sample is a True/False question written with
+            // explicit "A. True / B. False" choice lines (or columns) — it
+            // must round-trip as true_false, not get misread as a 2-choice MCQ.
+            $tf = $items[2];
+            $this->assertSame('true_false', $tf['question_type'], "Template type [{$type}]'s True/False sample was misclassified as {$tf['question_type']}.");
+            $this->assertTrue(collect($tf['choices'])->firstWhere('label', 'A')['is_correct']);
+            $this->assertSame('Cash and Cash Equivalents', $tf['topic_name'] ?? null, "Template type [{$type}] should carry the Topic hint through.");
+
             unlink($path);
         }
+    }
+
+    public function test_uploading_a_csv_with_true_false_choice_columns_classifies_it_correctly_and_resolves_the_topic(): void
+    {
+        $faculty = $this->faculty();
+        $subjectId = $this->subjectFor($faculty);
+        DB::table('topics')->insert(['subject_id' => $subjectId, 'name' => 'Cash and Cash Equivalents', 'is_active' => true]);
+
+        $csv = "Question,Choice A,Choice B,Answer,Difficulty,Topic\n"
+            . "\"Cash is classified as a current asset.\",True,False,A,Easy,Cash and Cash Equivalents\n";
+
+        $file = UploadedFile::fake()->createWithContent('questions.csv', $csv);
+
+        $this->actingAs($faculty)->post(route('faculty.test-bank.import.store'), [
+            'subject_id' => $subjectId,
+            'file' => $file,
+        ])->assertSessionDoesntHaveErrors();
+
+        $item = DB::table('question_import_items')->first();
+        $this->assertNotNull($item);
+        $this->assertSame('true_false', $item->question_type);
+        $this->assertTrue(collect(json_decode($item->choices, true))->firstWhere('label', 'A')['is_correct']);
+
+        $topicId = DB::table('topics')->where('name', 'Cash and Cash Equivalents')->value('id');
+        $this->assertSame($topicId, $item->topic_id, 'The Topic column should have been resolved to the matching topic automatically.');
+    }
+
+    /** Unit-level: an explicit "A. True / B. False" choice pair in free text is True/False, not a 2-choice MCQ. */
+    public function test_rule_based_parser_treats_explicit_true_false_choice_lines_as_true_false(): void
+    {
+        $parser = new QuestionImportParser();
+        $text = "1. Cash is classified as a current asset.\n"
+            . "A. True\n"
+            . "B. False\n"
+            . "Answer: A\n"
+            . "Topic: Cash and Cash Equivalents\n";
+
+        $items = $parser->parseFreeText($text);
+
+        $this->assertNotNull($items);
+        $this->assertCount(1, $items);
+        $this->assertSame('true_false', $items[0]['question_type']);
+        $this->assertTrue(collect($items[0]['choices'])->firstWhere('label', 'A')['is_correct']);
+        $this->assertSame('Cash and Cash Equivalents', $items[0]['topic_name']);
     }
 
     public function test_faculty_can_download_a_sample_template_for_every_supported_format(): void
