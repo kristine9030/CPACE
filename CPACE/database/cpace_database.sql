@@ -390,7 +390,158 @@ CREATE TABLE study_plan_items (
 );
 
 -- =============================================================
--- 8. MOCK EXAM RESULTS (tied back to quiz_sessions for full data)
+-- 8. MOCK EXAMS
+-- Faculty assembles a per-subject exam -> Program Chair reviews and
+-- publishes it -> students redeem the day's code and sit it, proctored.
+--
+-- Two shapes worth noting:
+--  * The redeem code lives on mock_exam_events (one row per exam DAY), so
+--    every subject sitting that day shares one code. Registration is
+--    therefore per-event too, which is what lets a subject published later
+--    the same day appear for already-registered students with no backfill.
+--  * mock_exam_items COPIES question text and choices out of the Test Bank,
+--    so editing a question months later cannot retroactively change an exam
+--    students have already sat.
+-- =============================================================
+
+CREATE TABLE mock_exam_events (
+    id              BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    exam_date       DATE NOT NULL UNIQUE,
+    access_code     VARCHAR(32) NOT NULL UNIQUE,       -- MOCK-YYYYMMDD-XXXX
+    created_by      INT UNSIGNED NULL,
+    created_at      DATETIME NULL,
+    updated_at      DATETIME NULL,
+    CONSTRAINT fk_mee_creator FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
+);
+
+CREATE TABLE mock_exams (
+    id                      BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    event_id                BIGINT UNSIGNED NULL,      -- set when the Chair publishes
+    subject_id              TINYINT UNSIGNED NOT NULL, -- one subject only, never combined
+    created_by              INT UNSIGNED NOT NULL,
+    title                   VARCHAR(150) NOT NULL,
+    status                  VARCHAR(20) NOT NULL DEFAULT 'draft',  -- draft|for_review|published|closed
+    scheduled_at            DATETIME NULL,             -- null while still on the early wizard steps
+    duration_minutes        SMALLINT UNSIGNED NOT NULL DEFAULT 180, -- real CPALE allots 3 hours
+    total_items             SMALLINT UNSIGNED NOT NULL DEFAULT 0,   -- max 100
+    topic_mode              VARCHAR(10) NOT NULL DEFAULT 'manual',  -- manual|auto|all
+    question_mode           VARCHAR(10) NOT NULL DEFAULT 'manual',
+    review_note             TEXT NULL,                 -- why the Chair sent it back
+    submitted_for_review_at DATETIME NULL,
+    reviewed_by             INT UNSIGNED NULL,
+    published_by            INT UNSIGNED NULL,
+    published_at            DATETIME NULL,
+    closed_at               DATETIME NULL,
+    version                 INT UNSIGNED NOT NULL DEFAULT 1,  -- optimistic lock for collaborators
+    created_at              DATETIME NULL,
+    updated_at              DATETIME NULL,
+    INDEX idx_me_subject_sched (subject_id, scheduled_at),
+    INDEX idx_me_status_sched (status, scheduled_at),
+    CONSTRAINT fk_me_event   FOREIGN KEY (event_id)   REFERENCES mock_exam_events(id) ON DELETE SET NULL,
+    CONSTRAINT fk_me_subject FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE,
+    CONSTRAINT fk_me_creator FOREIGN KEY (created_by) REFERENCES users(id)    ON DELETE CASCADE
+);
+
+CREATE TABLE mock_exam_topics (
+    id          BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    exam_id     BIGINT UNSIGNED NOT NULL,
+    topic_id    SMALLINT UNSIGNED NOT NULL,
+    UNIQUE KEY uq_met (exam_id, topic_id),
+    CONSTRAINT fk_met_exam  FOREIGN KEY (exam_id)  REFERENCES mock_exams(id) ON DELETE CASCADE,
+    CONSTRAINT fk_met_topic FOREIGN KEY (topic_id) REFERENCES topics(id)     ON DELETE CASCADE
+);
+
+CREATE TABLE mock_exam_items (
+    id                  BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    exam_id             BIGINT UNSIGNED NOT NULL,
+    source_question_id  INT UNSIGNED NULL,             -- provenance only; the snapshot below is authoritative
+    topic_id            SMALLINT UNSIGNED NULL,
+    question_text       TEXT NOT NULL,
+    question_type       VARCHAR(20) NOT NULL DEFAULT 'mcq',
+    difficulty          VARCHAR(20) NULL,
+    choices             JSON NOT NULL,                 -- [{"label":"A","text":"...","is_correct":true}]
+    explanation         TEXT NULL,
+    points              SMALLINT UNSIGNED NOT NULL DEFAULT 1,
+    sort_order          SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+    created_at          DATETIME NULL,
+    updated_at          DATETIME NULL,
+    INDEX idx_mei_exam_order (exam_id, sort_order),
+    CONSTRAINT fk_mei_exam FOREIGN KEY (exam_id) REFERENCES mock_exams(id) ON DELETE CASCADE
+);
+
+-- Who changed what: faculty collaborate on one exam and the Chair edits it
+-- during review, so every mutation has to stay attributable afterwards.
+CREATE TABLE mock_exam_audits (
+    id          BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    exam_id     BIGINT UNSIGNED NOT NULL,
+    user_id     INT UNSIGNED NULL,
+    action      VARCHAR(40) NOT NULL,                  -- created|settings_changed|topics_changed|items_changed|submitted_for_review|returned|published|closed
+    details     TEXT NULL,
+    created_at  DATETIME NULL,
+    INDEX idx_mea_exam (exam_id, created_at),
+    CONSTRAINT fk_mea_exam FOREIGN KEY (exam_id) REFERENCES mock_exams(id) ON DELETE CASCADE,
+    CONSTRAINT fk_mea_user FOREIGN KEY (user_id) REFERENCES users(id)      ON DELETE SET NULL
+);
+
+CREATE TABLE mock_exam_registrations (
+    id          BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    event_id    BIGINT UNSIGNED NOT NULL,
+    student_id  INT UNSIGNED NOT NULL,
+    redeemed_at DATETIME NOT NULL,
+    UNIQUE KEY uq_mer (event_id, student_id),
+    CONSTRAINT fk_mer_event   FOREIGN KEY (event_id)   REFERENCES mock_exam_events(id) ON DELETE CASCADE,
+    CONSTRAINT fk_mer_student FOREIGN KEY (student_id) REFERENCES users(id)            ON DELETE CASCADE
+);
+
+CREATE TABLE mock_exam_attempts (
+    id            BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    exam_id       BIGINT UNSIGNED NOT NULL,
+    student_id    INT UNSIGNED NOT NULL,
+    started_at    DATETIME NOT NULL,
+    submitted_at  DATETIME NULL,
+    answers       JSON NULL,                           -- {"<item_id>": "B"} - autosaved during the sitting
+    score         SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+    total_points  SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+    percent       DECIMAL(5,2) NULL,
+    is_late       TINYINT(1) NOT NULL DEFAULT 0,       -- derived server-side from started_at, never from the client
+    flag_count    SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+    status        VARCHAR(20) NOT NULL DEFAULT 'in_progress',
+    created_at    DATETIME NULL,
+    updated_at    DATETIME NULL,
+    UNIQUE KEY uq_mea_exam_student (exam_id, student_id),
+    CONSTRAINT fk_mat_exam    FOREIGN KEY (exam_id)    REFERENCES mock_exams(id) ON DELETE CASCADE,
+    CONSTRAINT fk_mat_student FOREIGN KEY (student_id) REFERENCES users(id)      ON DELETE CASCADE
+);
+
+-- Behavioural flags. Tiny, and the durable evidence - never purged.
+CREATE TABLE mock_exam_proctor_events (
+    id          BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    attempt_id  BIGINT UNSIGNED NOT NULL,
+    type        VARCHAR(30) NOT NULL,                  -- blur|visibility_hidden|fullscreen_exit|paste_blocked|camera_lost|screen_lost
+    occurred_at DATETIME NOT NULL,
+    meta        VARCHAR(255) NULL,
+    INDEX idx_mpe_attempt (attempt_id, occurred_at),
+    CONSTRAINT fk_mpe_attempt FOREIGN KEY (attempt_id) REFERENCES mock_exam_attempts(id) ON DELETE CASCADE
+);
+
+-- Camera/screen frames. Written to the PRIVATE disk and served only through
+-- an authorised route - these are photographs of students' faces and screens.
+-- Swept by `php artisan mock-exam:purge-captures`.
+CREATE TABLE mock_exam_proctor_captures (
+    id          BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    attempt_id  BIGINT UNSIGNED NOT NULL,
+    kind        VARCHAR(10) NOT NULL,                  -- camera|screen
+    path        VARCHAR(255) NOT NULL,                 -- relative to the private disk root
+    captured_at DATETIME NOT NULL,
+    reason      VARCHAR(30) NOT NULL DEFAULT 'interval',
+    INDEX idx_mpc_attempt (attempt_id, captured_at),
+    CONSTRAINT fk_mpc_attempt FOREIGN KEY (attempt_id) REFERENCES mock_exam_attempts(id) ON DELETE CASCADE
+);
+
+-- =============================================================
+-- 8b. LEGACY MOCK EXAM RESULTS
+-- Predates the workflow above and is not written by the app; kept so the
+-- dump still loads against existing databases.
 -- =============================================================
 
 CREATE TABLE mock_exam_results (

@@ -1,7 +1,7 @@
 {{--
     Faculty portal sidebar + shared sidebar CSS for all faculty pages.
     Usage: @include('partials.faculty-sidebar', ['active' => 'dashboard'])
-    Valid $active keys: dashboard, test-bank, materials, quizzes, performance, reports, settings
+    Valid $active keys: dashboard, test-bank, materials, quizzes, mock-exams, performance, reports, settings
     (Add Question has its own page but no sidebar link — it's reached via the button on Test Bank.)
 --}}
 @php $active = $active ?? ''; @endphp
@@ -368,6 +368,7 @@
         <li><a href="{{ route('faculty.test-bank') }}" class="{{ $active === 'test-bank' ? 'active' : '' }}"><i class="fas fa-database"></i><span>Test Bank</span></a></li>
         <li><a href="{{ route('faculty.materials') }}" class="{{ $active === 'materials' ? 'active' : '' }}"><i class="fas fa-folder-open"></i><span>Learning Materials</span></a></li>
         <li><a href="{{ route('faculty.quizzes') }}" class="{{ $active === 'quizzes' ? 'active' : '' }}"><i class="fas fa-clipboard-list"></i><span>Class Quizzes</span></a></li>
+        <li><a href="{{ route('faculty.mock-exams') }}" class="{{ $active === 'mock-exams' ? 'active' : '' }}"><i class="fas fa-file-pen"></i><span>Mock Exams</span></a></li>
 
         <li class="nav-label">Analytics</li>
         <li><a href="{{ route('faculty.performance') }}" class="{{ $active === 'performance' ? 'active' : '' }}"><i class="fas fa-users"></i><span>Student Performance</span></a></li>

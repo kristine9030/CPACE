@@ -8,6 +8,7 @@ use App\Models\Question;
 use App\Models\QuizAnswer;
 use App\Models\QuizSession;
 use App\Models\Subject;
+use App\Services\PerformanceRecorder;
 use App\Services\QuestionParaphraser;
 use App\Services\RivalTierService;
 use App\Services\SpacedRepetitionScheduler;
@@ -632,58 +633,10 @@ class QuizController extends Controller
         // over >= 5 attempts, or 3 wrong in a row). Keeping is_weak_area in
         // step with the detector means Adaptive mode targets exactly the topics
         // the rest of the app calls weak.
-        $weakness = app(WeaknessDetector::class);
-
-        foreach ($topicTally as $topicId => $tally) {
-            $record = DB::table('performance_records')
-                ->where('student_id', $studentId)
-                ->where('topic_id', $topicId)
-                ->first();
-
-            $wrong = $tally['attempts'] - $tally['correct'];
-
-            if ($record) {
-                $totalAttempts = $record->total_attempts + $tally['attempts'];
-                $correctCount  = $record->correct_count + $tally['correct'];
-                // Reset the wrong-streak on a clean session, otherwise extend it.
-                $consecutiveWrong = $wrong === 0 ? 0 : $record->consecutive_wrong + $wrong;
-
-                [$isWeak] = $weakness->evaluate((object) [
-                    'total_attempts'    => $totalAttempts,
-                    'correct_count'     => $correctCount,
-                    'consecutive_wrong' => $consecutiveWrong,
-                ]);
-
-                // accuracy_rate is a STORED generated column in the database
-                // (computed from correct_count / total_attempts), so it is
-                // never written here - the DB keeps it in sync automatically.
-                DB::table('performance_records')
-                    ->where('id', $record->id)
-                    ->update([
-                        'total_attempts'    => $totalAttempts,
-                        'correct_count'     => $correctCount,
-                        'consecutive_wrong' => $consecutiveWrong,
-                        'is_weak_area'      => $isWeak,
-                        'last_attempted'    => now(),
-                    ]);
-            } else {
-                [$isWeak] = $weakness->evaluate((object) [
-                    'total_attempts'    => $tally['attempts'],
-                    'correct_count'     => $tally['correct'],
-                    'consecutive_wrong' => $wrong,
-                ]);
-
-                DB::table('performance_records')->insert([
-                    'student_id'        => $studentId,
-                    'topic_id'          => $topicId,
-                    'total_attempts'    => $tally['attempts'],
-                    'correct_count'     => $tally['correct'],
-                    'consecutive_wrong' => $wrong,
-                    'is_weak_area'      => $isWeak,
-                    'last_attempted'    => now(),
-                ]);
-            }
-        }
+        //
+        // The arithmetic lives in PerformanceRecorder so the mock exam can
+        // score through the identical path rather than keeping its own copy.
+        app(PerformanceRecorder::class)->record($studentId, $topicTally);
     }
 
     /**

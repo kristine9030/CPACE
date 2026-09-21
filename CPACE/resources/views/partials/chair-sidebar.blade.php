@@ -1,7 +1,7 @@
 {{--
     Program Chair (Admin) portal sidebar + shared CSS for all chair pages.
     Usage: @include('partials.chair-sidebar', ['active' => 'dashboard'])
-    Valid $active keys: dashboard, students, faculty, faculty-performance, subjects, sections, communications
+    Valid $active keys: dashboard, students, faculty, faculty-performance, subjects, sections, mock-exams, communications
 --}}
 @php $active = $active ?? ''; @endphp
 
@@ -384,6 +384,7 @@
         <li><a href="{{ route('chair.faculty.performance') }}" class="{{ $active === 'faculty-performance' ? 'active' : '' }}"><i class="fas fa-chart-column"></i><span>Faculty Performance</span></a></li>
         <li><a href="{{ route('chair.subjects') }}" class="{{ $active === 'subjects' ? 'active' : '' }}"><i class="fas fa-layer-group"></i><span>Subject Assignments</span></a></li>
         <li><a href="{{ route('chair.sections') }}" class="{{ $active === 'sections' ? 'active' : '' }}"><i class="fas fa-people-group"></i><span>Sections</span></a></li>
+        <li><a href="{{ route('chair.mock-exams') }}" class="{{ $active === 'mock-exams' ? 'active' : '' }}"><i class="fas fa-file-pen"></i><span>Mock Exams</span></a></li>
         <li><a href="{{ route('chair.communications') }}" class="{{ $active === 'communications' ? 'active' : '' }}"><i class="fas fa-bullhorn"></i><span>Communications</span></a></li>
 
         <li class="nav-label">Analytics</li>

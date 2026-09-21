@@ -26,6 +26,9 @@ use App\Http\Controllers\Faculty\TestBankController;
 use App\Http\Controllers\Faculty\QuestionImportController;
 use App\Http\Controllers\Faculty\MaterialController;
 use App\Http\Controllers\Faculty\FacultyQuizController;
+use App\Http\Controllers\Faculty\MockExamController as FacultyMockExamController;
+use App\Http\Controllers\Chair\MockExamReviewController;
+use App\Http\Controllers\MockExamProctorController;
 use App\Http\Controllers\Student\ClassQuizController;
 use App\Http\Controllers\Student\SubjectController;
 use App\Http\Controllers\Student\StudentSettingsController;
@@ -133,6 +136,18 @@ Route::middleware('auth')->group(function () {
         Route::delete('/subjects/{subject}/topics/{topic}', [SubjectManagementController::class, 'destroyTopic'])->name('subjects.topics.destroy');
         Route::patch('/subjects/{subject}/topics/{topic}/toggle', [SubjectManagementController::class, 'toggleTopic'])->name('subjects.topics.toggle');
 
+        // Mock exam review: subject folders -> review/edit -> publish -> monitor.
+        Route::get('/mock-exams', [MockExamReviewController::class, 'index'])->name('mock-exams');
+        Route::get('/mock-exams/subject/{subject}', [MockExamReviewController::class, 'subject'])->name('mock-exams.subject');
+        Route::get('/mock-exams/{mockExam}/review', [MockExamReviewController::class, 'review'])->name('mock-exams.review');
+        Route::put('/mock-exams/{mockExam}', [MockExamReviewController::class, 'update'])->name('mock-exams.update');
+        Route::post('/mock-exams/{mockExam}/return', [MockExamReviewController::class, 'returnForRevision'])->name('mock-exams.return');
+        Route::post('/mock-exams/{mockExam}/publish', [MockExamReviewController::class, 'publish'])->name('mock-exams.publish');
+        Route::post('/mock-exams/{mockExam}/close', [MockExamReviewController::class, 'close'])->name('mock-exams.close');
+        Route::get('/mock-exams/{mockExam}/monitor', [MockExamReviewController::class, 'monitor'])->name('mock-exams.monitor');
+        Route::get('/mock-exams/{mockExam}/monitor/feed', [MockExamReviewController::class, 'monitorFeed'])->name('mock-exams.monitor.feed');
+        Route::get('/mock-exams/attempts/{attempt}', [MockExamReviewController::class, 'attempt'])->name('mock-exams.attempt');
+
         // Announcements and internal messages
         Route::get('/communications', [CommunicationController::class, 'index'])->name('communications');
         Route::post('/communications', [CommunicationController::class, 'store'])->name('communications.store');
@@ -190,6 +205,21 @@ Route::middleware('auth')->group(function () {
         Route::post('/quizzes/{quiz}/reopen', [FacultyQuizController::class, 'reopen'])->name('quizzes.reopen');
         Route::delete('/quizzes/{quiz}', [FacultyQuizController::class, 'destroy'])->name('quizzes.destroy');
         Route::get('/quizzes/{quiz}/results', [FacultyQuizController::class, 'results'])->name('quizzes.results');
+
+        // Mock exams: faculty assembles a per-subject exam, the Program Chair
+        // reviews and publishes it. Editing stops the moment it is published.
+        Route::get('/mock-exams', [FacultyMockExamController::class, 'index'])->name('mock-exams');
+        Route::get('/mock-exams/bank-questions', [FacultyMockExamController::class, 'bankQuestions'])->name('mock-exams.bank-questions');
+        Route::post('/mock-exams/auto-pick', [FacultyMockExamController::class, 'autoPick'])->name('mock-exams.auto-pick');
+        Route::get('/mock-exams/subject/{subject}', [FacultyMockExamController::class, 'subject'])->name('mock-exams.subject');
+        Route::post('/mock-exams', [FacultyMockExamController::class, 'store'])->name('mock-exams.store');
+        Route::get('/mock-exams/{mockExam}/build', [FacultyMockExamController::class, 'build'])->name('mock-exams.build');
+        Route::put('/mock-exams/{mockExam}', [FacultyMockExamController::class, 'update'])->name('mock-exams.update');
+        Route::post('/mock-exams/{mockExam}/submit', [FacultyMockExamController::class, 'submitForReview'])->name('mock-exams.submit');
+        Route::delete('/mock-exams/{mockExam}', [FacultyMockExamController::class, 'destroy'])->name('mock-exams.destroy');
+        // Faculty monitor their own subject's sitting, using the shared views.
+        Route::get('/mock-exams/{mockExam}/monitor', [MockExamReviewController::class, 'monitor'])->name('mock-exams.monitor');
+        Route::get('/mock-exams/{mockExam}/monitor/feed', [MockExamReviewController::class, 'monitorFeed'])->name('mock-exams.monitor.feed');
 
         Route::get('/performance', [FacultyPerformanceController::class, 'index'])->name('performance');
         Route::get('/performance/export', [FacultyPerformanceController::class, 'export'])->name('performance.export');
@@ -260,10 +290,26 @@ Route::middleware('auth')->group(function () {
     Route::get('/q/{token}/take', [ClassQuizController::class, 'take'])->name('class-quiz.take');
     Route::post('/q/{token}/submit', [ClassQuizController::class, 'submit'])->name('class-quiz.submit');
     Route::get('/q/{token}/result', [ClassQuizController::class, 'result'])->name('class-quiz.result');
-    // Mock exams are locked until faculty hands out the access code.
+    // Mock exams. A student redeems the day's code once, which registers them
+    // for every subject exam published for that date; each sitting then opens
+    // only inside its own scheduled window.
     Route::get('/mock-exams', [MockExamController::class, 'index'])->name('mock-exams');
-    Route::post('/mock-exams/unlock', [MockExamController::class, 'unlock'])->name('mock-exams.unlock');
-    Route::get('/mock-exams/simulation', [MockExamController::class, 'simulation'])->name('mock-exams.simulation');
+    Route::post('/mock-exams/redeem', [MockExamController::class, 'redeem'])->name('mock-exams.redeem');
+    Route::get('/mock-exams/subject/{subject}', [MockExamController::class, 'subject'])->name('mock-exams.subject');
+    Route::get('/mock-exams/{mockExam}', [MockExamController::class, 'show'])->name('mock-exams.show');
+    Route::post('/mock-exams/{mockExam}/start', [MockExamController::class, 'start'])->name('mock-exams.start');
+    Route::get('/mock-exams/{mockExam}/take', [MockExamController::class, 'take'])->name('mock-exams.take');
+    Route::post('/mock-exams/{mockExam}/autosave', [MockExamController::class, 'autosave'])->name('mock-exams.autosave');
+    Route::post('/mock-exams/{mockExam}/submit', [MockExamController::class, 'submit'])->name('mock-exams.submit');
+    Route::get('/mock-exams/{mockExam}/result', [MockExamController::class, 'result'])->name('mock-exams.result');
+
+    // Proctoring ingest (student posts its own evidence) and playback (faculty
+    // and chair read it). Both re-check authorisation inside the controller,
+    // because captures are photographs of students and must never be reachable
+    // by anyone else.
+    Route::post('/mock-exams/proctor/{attempt}/event', [MockExamProctorController::class, 'event'])->name('mock-exams.proctor.event');
+    Route::post('/mock-exams/proctor/{attempt}/capture', [MockExamProctorController::class, 'capture'])->name('mock-exams.proctor.capture');
+    Route::get('/mock-exams/captures/{capture}', [MockExamProctorController::class, 'show'])->name('mock-exams.capture');
     Route::get('/performance', [PerformanceController::class, 'index'])->name('performance');
     // Review Notes (personal study notes, real CRUD backed by the database)
     Route::get('/review-notes', [ReviewNoteController::class, 'index'])->name('review-notes');
