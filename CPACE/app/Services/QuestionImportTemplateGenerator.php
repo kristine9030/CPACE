@@ -43,6 +43,8 @@ class QuestionImportTemplateGenerator
                 'answer' => 'C',
                 'explanation' => "The Balance Sheet reports assets, liabilities, and equity as of a specific date.",
                 'difficulty' => 'Easy',
+                'type' => 'Multiple Choice',
+                'topic' => 'Financial Statements',
             ],
             [
                 'text' => "Using FIFO during a period of rising prices, which statement is TRUE?",
@@ -50,6 +52,8 @@ class QuestionImportTemplateGenerator
                 'answer' => 'C',
                 'explanation' => "FIFO leaves the most recently purchased (higher-cost) units in ending inventory, which also makes reported net income higher than under LIFO.",
                 'difficulty' => 'Medium',
+                'type' => 'Multiple Choice',
+                'topic' => 'Inventory',
             ],
             [
                 'text' => 'Cash is classified as a current asset.',
@@ -58,13 +62,17 @@ class QuestionImportTemplateGenerator
                 'explanation' => 'Cash is always current since it is already in its most liquid form.',
                 'difficulty' => 'Easy',
                 'type' => 'True / False',
+                'topic' => 'Cash and Cash Equivalents',
             ],
         ];
     }
 
     private function txt(): string
     {
-        $lines = ["Replace these 3 sample questions with your own — keep the same numbering, choice letters, and \"Answer:\" style.\n"];
+        $lines = [
+            "Replace these 3 sample questions with your own — keep the same numbering, choice letters, and \"Answer:\" style.",
+            "The \"Topic:\" line is optional — if it exactly matches one of this subject's Topic names, CPACE will pick it for you; otherwise leave it out and choose the topic on the review screen.\n",
+        ];
 
         foreach ($this->sampleQuestions() as $i => $q) {
             $n = $i + 1;
@@ -73,6 +81,7 @@ class QuestionImportTemplateGenerator
                 $lines[] = "{$label}. {$text}";
             }
             $lines[] = "Answer: {$q['answer']}";
+            $lines[] = "Topic: {$q['topic']}";
             $lines[] = "Explanation: {$q['explanation']}";
             $lines[] = '';
         }
@@ -83,13 +92,13 @@ class QuestionImportTemplateGenerator
     private function csv(): string
     {
         $handle = fopen('php://temp', 'r+');
-        fputcsv($handle, ['Question', 'Choice A', 'Choice B', 'Choice C', 'Choice D', 'Answer', 'Explanation', 'Difficulty']);
+        fputcsv($handle, ['Question', 'Type', 'Choice A', 'Choice B', 'Choice C', 'Choice D', 'Answer', 'Explanation', 'Difficulty', 'Topic']);
 
         foreach ($this->sampleQuestions() as $q) {
             $c = $q['choices'];
             fputcsv($handle, [
-                $q['text'], $c['A'] ?? '', $c['B'] ?? '', $c['C'] ?? '', $c['D'] ?? '',
-                $q['answer'], $q['explanation'], $q['difficulty'],
+                $q['text'], $q['type'], $c['A'] ?? '', $c['B'] ?? '', $c['C'] ?? '', $c['D'] ?? '',
+                $q['answer'], $q['explanation'], $q['difficulty'], $q['topic'],
             ]);
         }
 
@@ -106,21 +115,21 @@ class QuestionImportTemplateGenerator
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle('Questions');
 
-        $headers = ['Question', 'Choice A', 'Choice B', 'Choice C', 'Choice D', 'Answer', 'Explanation', 'Difficulty'];
+        $headers = ['Question', 'Type', 'Choice A', 'Choice B', 'Choice C', 'Choice D', 'Answer', 'Explanation', 'Difficulty', 'Topic'];
         $sheet->fromArray($headers, null, 'A1');
-        $sheet->getStyle('A1:H1')->getFont()->setBold(true);
+        $sheet->getStyle('A1:J1')->getFont()->setBold(true);
 
         $row = 2;
         foreach ($this->sampleQuestions() as $q) {
             $c = $q['choices'];
             $sheet->fromArray([
-                $q['text'], $c['A'] ?? '', $c['B'] ?? '', $c['C'] ?? '', $c['D'] ?? '',
-                $q['answer'], $q['explanation'], $q['difficulty'],
+                $q['text'], $q['type'], $c['A'] ?? '', $c['B'] ?? '', $c['C'] ?? '', $c['D'] ?? '',
+                $q['answer'], $q['explanation'], $q['difficulty'], $q['topic'],
             ], null, "A{$row}");
             $row++;
         }
 
-        foreach (range('A', 'H') as $col) {
+        foreach (range('A', 'J') as $col) {
             $sheet->getColumnDimension($col)->setWidth(24);
         }
 
@@ -140,6 +149,10 @@ class QuestionImportTemplateGenerator
             'Replace these 3 sample questions with your own — keep the same numbering, choice letters, and "Answer:" style.',
             ['italic' => true, 'color' => '888888', 'size' => 10]
         );
+        $section->addText(
+            'The "Topic:" line is optional — if it exactly matches one of this subject\'s Topic names, CPACE will pick it for you; otherwise leave it out and choose the topic on the review screen.',
+            ['italic' => true, 'color' => '888888', 'size' => 10]
+        );
         $section->addTextBreak();
 
         foreach ($this->sampleQuestions() as $i => $q) {
@@ -149,6 +162,7 @@ class QuestionImportTemplateGenerator
                 $section->addText("{$label}. {$text}", ['size' => 11]);
             }
             $section->addText("Answer: {$q['answer']}", ['bold' => true, 'color' => '059669', 'size' => 11]);
+            $section->addText("Topic: {$q['topic']}", ['size' => 10, 'color' => '555555']);
             $section->addText("Explanation: {$q['explanation']}", ['italic' => true, 'size' => 10, 'color' => '555555']);
             $section->addTextBreak();
         }
@@ -174,6 +188,7 @@ class QuestionImportTemplateGenerator
                 <div class='stem'>{$n}. " . e($q['text']) . "</div>
                 {$choiceLines}
                 <div class='answer'>Answer: {$q['answer']}</div>
+                <div class='topic'>Topic: " . e($q['topic']) . "</div>
                 <div class='expl'>Explanation: " . e($q['explanation']) . "</div>
             </div>";
         }
@@ -189,12 +204,13 @@ class QuestionImportTemplateGenerator
             .stem { font-weight:bold; margin-bottom:6px; }
             .choice { padding:2px 0 2px 12px; }
             .answer { color:#059669; font-weight:bold; margin-top:6px; }
+            .topic { color:#888; margin-top:2px; }
             .expl { color:#666; font-style:italic; margin-top:4px; }
         </style>
         </head>
         <body>
             <h1>CPACE Question Import Template</h1>
-            <div class="note">Replace these 3 sample questions with your own — keep the same numbering, choice letters, and "Answer:" style.</div>
+            <div class="note">Replace these 3 sample questions with your own — keep the same numbering, choice letters, and "Answer:" style. The "Topic:" line is optional — if it exactly matches one of this subject's Topic names, CPACE will pick it for you.</div>
             {$rows}
         </body>
         </html>

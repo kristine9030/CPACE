@@ -150,6 +150,7 @@ class QuestionImportParser
         $expCol = $col(['explanation', 'rationale']);
         $typeCol = $col(['type', 'question type', 'question_type']);
         $diffCol = $col(['difficulty']);
+        $topicCol = $col(['topic', 'topic name', 'topic_name']);
 
         if ($qCol === null || $ansCol === null) {
             return null; // Not a recognisable question table.
@@ -164,11 +165,49 @@ class QuestionImportParser
             }
 
             $answerRaw = trim((string) ($row[$ansCol] ?? ''));
-            $isTrueFalse = $typeCol !== null && stripos((string) ($row[$typeCol] ?? ''), 'true') !== false
-                || ($aCol === null && preg_match('/^(true|false|t|f)$/i', $answerRaw));
+            $topicName = $topicCol !== null ? trim((string) ($row[$topicCol] ?? '')) : '';
+            $topicName = $topicName !== '' ? $topicName : null;
 
-            if ($isTrueFalse || $aCol === null) {
-                $isTrue = preg_match('/^(true|t)$/i', $answerRaw) === 1;
+            // Gather whichever lettered choice columns actually have content.
+            $choiceCols = ['A' => $aCol, 'B' => $bCol, 'C' => $cCol, 'D' => $dCol];
+            $rawChoices = [];
+            foreach ($choiceCols as $label => $colIndex) {
+                if ($colIndex === null) {
+                    continue;
+                }
+                $text = trim((string) ($row[$colIndex] ?? ''));
+                if ($text !== '') {
+                    $rawChoices[$label] = $text;
+                }
+            }
+
+            // A question is True/False if the Type column says so, OR the
+            // choices themselves are literally the pair "True"/"False" (a
+            // faculty-filled template row commonly looks like an MCQ with
+            // exactly those two choices), OR there are no choice columns at
+            // all and the answer itself is the word true/false.
+            $normalizedPair = count($rawChoices) === 2
+                ? array_map(fn ($t) => strtolower(trim($t)), $rawChoices)
+                : null;
+            $looksLikeTrueFalse = $normalizedPair !== null
+                && in_array('true', $normalizedPair, true)
+                && in_array('false', $normalizedPair, true);
+            $isTrueFalse = ($typeCol !== null && stripos((string) ($row[$typeCol] ?? ''), 'true') !== false)
+                || $looksLikeTrueFalse
+                || (empty($rawChoices) && preg_match('/^(true|false|t|f)$/i', $answerRaw));
+
+            if ($isTrueFalse) {
+                if ($looksLikeTrueFalse) {
+                    $trueLabel = array_search('true', $normalizedPair, true);
+                    $correctLetter = strtoupper(preg_replace('/[^A-Da-d]/', '', $answerRaw));
+                    $correctLetter = $correctLetter !== '' ? $correctLetter[0] : null;
+                    $isTrue = $correctLetter !== null
+                        ? $correctLetter === $trueLabel
+                        : preg_match('/^(true|t)$/i', $answerRaw) === 1;
+                } else {
+                    $isTrue = preg_match('/^(true|t)$/i', $answerRaw) === 1;
+                }
+
                 $items[] = [
                     'question_text'  => $questionText,
                     'question_type'  => 'true_false',
@@ -177,25 +216,18 @@ class QuestionImportParser
                         ['label' => 'B', 'text' => 'False', 'is_correct' => ! $isTrue],
                     ],
                     'explanation'    => $expCol !== null ? trim((string) ($row[$expCol] ?? '')) : null,
+                    'topic_name'     => $topicName,
                     'difficulty'     => $this->normalizeDifficulty($diffCol !== null ? (string) ($row[$diffCol] ?? '') : ''),
                     'confidence'     => 90,
                 ];
                 continue;
             }
 
-            $choiceCols = ['A' => $aCol, 'B' => $bCol, 'C' => $cCol, 'D' => $dCol];
             $choices = [];
             $correctLetter = strtoupper(preg_replace('/[^A-Da-d]/', '', $answerRaw));
             $correctLetter = $correctLetter !== '' ? $correctLetter[0] : null;
 
-            foreach ($choiceCols as $label => $colIndex) {
-                if ($colIndex === null) {
-                    continue;
-                }
-                $text = trim((string) ($row[$colIndex] ?? ''));
-                if ($text === '') {
-                    continue;
-                }
+            foreach ($rawChoices as $label => $text) {
                 $choices[] = [
                     'label'      => $label,
                     'text'       => $text,
@@ -214,6 +246,7 @@ class QuestionImportParser
                 'question_type' => 'mcq',
                 'choices'       => $choices,
                 'explanation'   => $expCol !== null ? trim((string) ($row[$expCol] ?? '')) : null,
+                'topic_name'    => $topicName,
                 'difficulty'    => $this->normalizeDifficulty($diffCol !== null ? (string) ($row[$diffCol] ?? '') : ''),
                 'confidence'    => $hasCorrect ? 90 : 40,
             ];
@@ -306,6 +339,7 @@ class QuestionImportParser
         $answerLetter = null;
         $tfAnswer = null;
         $explanation = null;
+        $topicName = null;
 
         foreach (array_slice($lines, 1) as $line) {
             if (preg_match('/^([A-D])[\.\)]\s*(.+)$/i', $line, $m)) {
@@ -324,6 +358,17 @@ class QuestionImportParser
             }
             if (preg_match('/^(?:explanation|rationale)\s*[:\-]\s*(.+)$/i', $line, $m)) {
                 $explanation = trim($m[1]);
+                continue;
+            }
+            if (preg_match('/^(?:topic)\s*[:\-]\s*(.+)$/i', $line, $m)) {
+                $topicName = trim($m[1]);
+                continue;
+            }
+            if (preg_match('/^(?:type)\s*[:\-]\s*(.+)$/i', $line, $m)) {
+                // Recognised so it doesn't get glued onto the question stem
+                // or a choice as a continuation line; the actual type is
+                // decided below from the choices/answer, which is more
+                // reliable than trusting free-form text here.
                 continue;
             }
             // A continuation line (question stem or choice wrapped to a new
@@ -351,9 +396,34 @@ class QuestionImportParser
                     ['label' => 'B', 'text' => 'False', 'is_correct' => $tfAnswer === false],
                 ],
                 'explanation'   => $explanation,
+                'topic_name'    => $topicName,
                 'difficulty'    => 'moderate',
                 'confidence'    => 80,
             ];
+        }
+
+        // Explicit "A./B." choice lines whose text is literally the pair
+        // True/False (how a filled-in template naturally reads) are a
+        // True/False question, not a 2-choice MCQ.
+        if (count($choices) === 2) {
+            $normalized = array_map(fn ($t) => strtolower(trim((string) $t)), $choices);
+            if (in_array('true', $normalized, true) && in_array('false', $normalized, true)) {
+                $trueLabel = array_search('true', $normalized, true);
+                $isTrue = $answerLetter !== null ? $answerLetter === $trueLabel : $tfAnswer === true;
+
+                return [
+                    'question_text' => $questionText,
+                    'question_type' => 'true_false',
+                    'choices'       => [
+                        ['label' => 'A', 'text' => 'True', 'is_correct' => $isTrue],
+                        ['label' => 'B', 'text' => 'False', 'is_correct' => ! $isTrue],
+                    ],
+                    'explanation'   => $explanation,
+                    'topic_name'    => $topicName,
+                    'difficulty'    => 'moderate',
+                    'confidence'    => 90,
+                ];
+            }
         }
 
         if (count($choices) < 2) {
@@ -371,6 +441,7 @@ class QuestionImportParser
             'question_type' => 'mcq',
             'choices'       => $builtChoices,
             'explanation'   => $explanation,
+            'topic_name'    => $topicName,
             'difficulty'    => 'moderate',
             'confidence'    => $hasCorrect ? 85 : 35,
         ];
