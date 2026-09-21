@@ -5,7 +5,11 @@ namespace App\Http\Controllers\Student;
 use App\Http\Controllers\Controller;
 use App\Models\FacultyQuiz;
 use App\Models\FacultyQuizAttempt;
+use App\Models\Question;
 use App\Models\Subject;
+use App\Services\PerformanceRecorder;
+use App\Services\SpacedRepetitionScheduler;
+use App\Services\WeaknessDetector;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -296,9 +300,16 @@ class ClassQuizController extends Controller
         $quiz->load('items');
         $submitted = (array) $request->input('answers', []);
 
+        // Items copied from the Test Bank carry source_question_id; look up
+        // their topic/difficulty in one query so grading stays a single pass.
+        $sourceIds = $quiz->items->pluck('source_question_id')->filter()->unique();
+        $sourceQuestions = Question::whereIn('id', $sourceIds)->get(['id', 'topic_id', 'difficulty'])->keyBy('id');
+
         $answers = [];
         $score = 0;
         $total = 0;
+        $topicTally = [];
+        $answerResults = [];
         foreach ($quiz->items as $item) {
             $total += $item->points;
             $picked = isset($submitted[$item->id]) ? strtoupper(trim((string) $submitted[$item->id])) : null;
@@ -307,8 +318,21 @@ class ClassQuizController extends Controller
                 continue;
             }
             $answers[$item->id] = $picked;
-            if ($picked === strtoupper((string) $item->correctLabel())) {
+            $isCorrect = $picked === strtoupper((string) $item->correctLabel());
+            if ($isCorrect) {
                 $score += $item->points;
+            }
+
+            $source = $item->source_question_id ? $sourceQuestions->get($item->source_question_id) : null;
+            if ($source) {
+                $topicTally[$source->topic_id] ??= ['attempts' => 0, 'correct' => 0];
+                $topicTally[$source->topic_id]['attempts']++;
+                $topicTally[$source->topic_id]['correct'] += $isCorrect ? 1 : 0;
+                $answerResults[] = [
+                    'question_id' => $source->id,
+                    'difficulty' => $source->difficulty,
+                    'correct' => $isCorrect,
+                ];
             }
         }
 
@@ -319,6 +343,18 @@ class ClassQuizController extends Controller
             'percent' => $total > 0 ? round($score / $total * 100, 2) : 0,
             'submitted_at' => now(),
         ]);
+
+        // Analytics run after the grade is committed so a failure here can
+        // never void a finished attempt. Items with no source_question_id
+        // (a manually typed question, not picked from the Test Bank) can't
+        // be attributed to a topic and are simply skipped for this part.
+        try {
+            app(PerformanceRecorder::class)->record(Auth::id(), $topicTally);
+            app(SpacedRepetitionScheduler::class)->recordAnswers(Auth::id(), $answerResults);
+            app(WeaknessDetector::class)->syncMany(Auth::id(), array_keys($topicTally));
+        } catch (\Throwable $e) {
+            report($e);
+        }
 
         return redirect()->route('class-quiz.result', $token);
     }

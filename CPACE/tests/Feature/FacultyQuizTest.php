@@ -18,6 +18,7 @@ use Tests\TestCase;
 class FacultyQuizTest extends TestCase
 {
     private const TABLES = [
+        'weakness_reports', 'spaced_repetition_items', 'performance_records',
         'faculty_quiz_attempts', 'faculty_quiz_items', 'faculty_quizzes',
         'question_choices', 'questions', 'topics', 'subjects', 'faculty_subjects',
         'notifications', 'messages', 'conversation_participants', 'conversations', 'student_profiles', 'users',
@@ -152,6 +153,36 @@ class FacultyQuizTest extends TestCase
             $table->timestamps();
             $table->unique(['quiz_id', 'student_id']);
         });
+        Schema::create('performance_records', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('student_id');
+            $table->unsignedBigInteger('topic_id');
+            $table->integer('correct_count')->default(0);
+            $table->integer('total_attempts')->default(0);
+            $table->integer('consecutive_wrong')->default(0);
+            $table->boolean('is_weak_area')->default(false);
+            $table->timestamp('last_attempted')->nullable();
+        });
+        Schema::create('spaced_repetition_items', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('student_id');
+            $table->unsignedBigInteger('question_id');
+            $table->integer('repetition_num')->default(0);
+            $table->decimal('ease_factor', 4, 2)->default(2.50);
+            $table->integer('interval_days')->default(0);
+            $table->integer('quality_score')->nullable();
+            $table->date('last_reviewed')->nullable();
+            $table->date('next_review_at')->nullable();
+        });
+        Schema::create('weakness_reports', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('student_id');
+            $table->unsignedBigInteger('topic_id');
+            $table->timestamp('flagged_at')->nullable();
+            $table->string('trigger_reason')->nullable();
+            $table->decimal('accuracy_at_flag', 5, 2)->nullable();
+            $table->timestamp('resolved_at')->nullable();
+        });
     }
 
     protected function tearDown(): void
@@ -264,6 +295,44 @@ class FacultyQuizTest extends TestCase
 
         // The faculty sees the submission on the results page.
         $this->actingAs($faculty)->get(route('faculty.quizzes.results', $quizId))->assertOk()->assertSee($student->email);
+    }
+
+    public function test_submitting_a_class_quiz_updates_the_students_performance_records(): void
+    {
+        $faculty = $this->faculty();
+        $student = $this->student();
+        $subjectId = $this->subjectFor($faculty);
+        $topicId = DB::table('topics')->insertGetId(['subject_id' => $subjectId, 'name' => 'Topic']);
+        $rightQuestionId = $this->questionInTopic($topicId, 'Right one');
+        $wrongQuestionId = $this->questionInTopic($topicId, 'Wrong one');
+
+        $item = fn (int $sourceId, string $correct) => array_merge(
+            $this->mcqItem('Q', $correct),
+            ['source_question_id' => $sourceId],
+        );
+        $quizId = $this->quiz($faculty, 'published', [
+            $item($rightQuestionId, 'A'),
+            $item($wrongQuestionId, 'A'),
+        ]);
+        $token = DB::table('faculty_quizzes')->where('id', $quizId)->value('share_token');
+        $items = DB::table('faculty_quiz_items')->where('quiz_id', $quizId)->orderBy('sort_order')->pluck('id');
+
+        $this->actingAs($student)->post(route('class-quiz.start', $token));
+        $this->actingAs($student)->post(route('class-quiz.submit', $token), [
+            // Item 1 correct (A), item 2 answered B -> wrong.
+            'answers' => [$items[0] => 'A', $items[1] => 'B'],
+        ])->assertRedirect(route('class-quiz.result', $token));
+
+        $record = DB::table('performance_records')->where('student_id', $student->id)->where('topic_id', $topicId)->first();
+        $this->assertNotNull($record, 'A class quiz submission should roll into performance_records, same as regular quizzes and mock exams.');
+        $this->assertSame(2, (int) $record->total_attempts);
+        $this->assertSame(1, (int) $record->correct_count);
+
+        $this->assertSame(
+            2,
+            DB::table('spaced_repetition_items')->where('student_id', $student->id)->count(),
+            'Both bank-sourced answers should also feed the spaced repetition scheduler.'
+        );
     }
 
     public function test_students_cannot_see_or_start_a_draft_quiz(): void
@@ -419,6 +488,14 @@ class FacultyQuizTest extends TestCase
         return $questionId;
     }
 
+    private function questionInTopic(int $topicId, string $text): int
+    {
+        return DB::table('questions')->insertGetId([
+            'topic_id' => $topicId, 'question_text' => $text, 'question_type' => 'mcq',
+            'difficulty' => 'easy', 'is_active' => true, 'created_at' => now(), 'updated_at' => now(),
+        ]);
+    }
+
     private function mcqItem(string $text, string $correct, int $points = 1): array
     {
         return [
@@ -449,6 +526,7 @@ class FacultyQuizTest extends TestCase
             DB::table('faculty_quiz_items')->insert([
                 'quiz_id' => $quizId, 'question_text' => $item['question_text'], 'question_type' => $item['question_type'],
                 'choices' => json_encode($item['choices']), 'points' => $item['points'], 'sort_order' => $order,
+                'source_question_id' => $item['source_question_id'] ?? null,
                 'created_at' => now(), 'updated_at' => now(),
             ]);
         }
