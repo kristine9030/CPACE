@@ -13,6 +13,52 @@
         .redeem { display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap; margin-top:14px; }
         .redeem .field { margin:0; flex:1; min-width:240px; }
         .redeem input { font-family:'Montserrat',monospace; letter-spacing:2px; text-transform:uppercase; font-weight:600; }
+
+        /* Alumni lock screen — fills the centre instead of a one-line banner. */
+        .lock-hero {
+            display:flex; flex-direction:column; align-items:center; text-align:center;
+            padding:64px 32px 56px; margin-top:6px; border-radius:20px; position:relative; overflow:hidden;
+            background:radial-gradient(circle at 50% 0%, #fff 0%, #f7f4ee 60%, #f4f5f7 100%);
+            border:1px solid var(--line);
+            box-shadow:0 2px 6px rgba(15,10,10,.08), 0 16px 34px -16px rgba(15,10,10,.22);
+            min-height:calc(100vh - 260px);
+            justify-content:center;
+        }
+        .lock-hero::before, .lock-hero::after {
+            content:''; position:absolute; border-radius:50%; opacity:.5; pointer-events:none;
+        }
+        .lock-hero::before { width:340px; height:340px; background:radial-gradient(circle, var(--primary-light) 0%, transparent 70%); top:-140px; right:-100px; }
+        .lock-hero::after { width:280px; height:280px; background:radial-gradient(circle, #fdf0d8 0%, transparent 70%); bottom:-120px; left:-90px; }
+        .lock-badge {
+            position:relative; width:88px; height:88px; border-radius:26px; margin-bottom:22px;
+            background:linear-gradient(135deg, var(--primary) 0%, #4a1212 100%);
+            display:flex; align-items:center; justify-content:center; font-size:34px; color:#fff;
+            box-shadow:0 14px 30px -10px rgba(123,29,29,.5);
+        }
+        .lock-badge i { filter:drop-shadow(0 2px 3px rgba(0,0,0,.2)); }
+        .lock-hero h2 { position:relative; font-size:23px; font-weight:700; color:var(--ink); margin-bottom:10px; }
+        .lock-hero p { position:relative; font-size:13.5px; color:var(--muted); max-width:460px; line-height:1.6; margin-bottom:6px; }
+        .lock-chip {
+            position:relative; display:inline-flex; align-items:center; gap:7px; margin:14px 0 28px;
+            background:#fdf0d8; color:var(--amber); border:1px solid #f0dfb5;
+            padding:7px 16px; border-radius:999px; font-size:12px; font-weight:700;
+        }
+        .lock-actions { position:relative; display:flex; gap:12px; flex-wrap:wrap; justify-content:center; margin-bottom:34px; }
+        .lock-actions .btn { padding:11px 22px; }
+        .lock-features { position:relative; display:flex; gap:16px; flex-wrap:wrap; justify-content:center; max-width:720px; }
+        .lock-feature {
+            display:flex; align-items:center; gap:11px; background:#fff; border:1px solid var(--line); border-radius:13px;
+            padding:13px 18px; min-width:190px; box-shadow:0 6px 16px -10px rgba(15,10,10,.2);
+            text-decoration:none; color:inherit; transition:transform .18s ease, box-shadow .18s ease;
+        }
+        .lock-feature:hover { transform:translateY(-2px); box-shadow:0 12px 22px -10px rgba(15,10,10,.3); }
+        .lock-feature .lf-icon {
+            width:38px; height:38px; border-radius:10px; flex-shrink:0;
+            display:flex; align-items:center; justify-content:center; font-size:15px;
+        }
+        .lock-feature .lf-text { text-align:left; }
+        .lock-feature .lf-title { font-size:12.5px; font-weight:700; color:var(--ink); }
+        .lock-feature .lf-sub { font-size:11px; color:var(--muted); margin-top:1px; }
     </style>
 </head>
 <body>
@@ -28,9 +74,34 @@
         ])
 
         @if($isAlumniLocked)
-            <div class="banner banner-warn">
-                <i class="fas fa-lock"></i>
-                <div>Mock exams are not available on alumni accounts.</div>
+            <div class="lock-hero">
+                <div class="lock-badge"><i class="fas fa-lock"></i></div>
+                <h2>Mock exams are for enrolled students</h2>
+                <p>
+                    Proctored, full-length simulations are built and scheduled by faculty for the current
+                    class — they close once you graduate to an alumni account.
+                </p>
+                <div class="lock-chip"><i class="fas fa-graduation-cap"></i> Alumni account</div>
+
+                <div class="lock-actions">
+                    <a href="{{ route('adaptive-quizzes') }}" class="btn btn-primary"><i class="fas fa-pen-fancy"></i> Practice Quizzes</a>
+                    <a href="{{ route('community.index') }}" class="btn btn-ghost"><i class="fas fa-people-group"></i> Alumni Community</a>
+                </div>
+
+                <div class="lock-features">
+                    <a href="{{ route('adaptive-quizzes') }}" class="lock-feature">
+                        <div class="lf-icon" style="background:#fde8e8;color:var(--red);"><i class="fas fa-pen-fancy"></i></div>
+                        <div class="lf-text"><div class="lf-title">Practice Quizzes</div><div class="lf-sub">Sharpen weak topics anytime</div></div>
+                    </a>
+                    <a href="{{ route('review-notes') }}" class="lock-feature">
+                        <div class="lf-icon" style="background:#d1fae5;color:var(--green);"><i class="fas fa-sticky-note"></i></div>
+                        <div class="lf-text"><div class="lf-title">Review Notes</div><div class="lf-sub">Your notes, still yours</div></div>
+                    </a>
+                    <a href="{{ route('community.index') }}" class="lock-feature">
+                        <div class="lf-icon" style="background:#dbeafe;color:var(--blue);"><i class="fas fa-people-group"></i></div>
+                        <div class="lf-text"><div class="lf-title">Alumni Community</div><div class="lf-sub">Share tips and reviewers</div></div>
+                    </a>
+                </div>
             </div>
         @else
             <div class="card">

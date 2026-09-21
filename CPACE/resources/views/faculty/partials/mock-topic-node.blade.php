@@ -5,7 +5,10 @@
 
     Expects: $node, $selectedTopics, $depth, $readOnly
 --}}
-<label class="topic-row" style="padding-left:{{ 10 + ($depth * 22) }}px;">
+<label class="topic-row" data-depth="{{ $depth }}" style="padding-left:{{ 14 + ($depth * 22) }}px;">
+    @if($depth > 0)
+        <span class="topic-branch" aria-hidden="true"></span>
+    @endif
     <input type="checkbox" class="topic-check" value="{{ $node->id }}"
            data-bank="{{ $node->bank_count ?? 0 }}"
            @checked(in_array($node->id, $selectedTopics)) @disabled($readOnly)>

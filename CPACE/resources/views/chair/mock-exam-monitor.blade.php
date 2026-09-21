@@ -10,24 +10,43 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     @include('partials.mock-exam-styles')
     <style>
+        .card { box-shadow:0 2px 6px rgba(15,10,10,.08), 0 10px 22px -10px rgba(15,10,10,.22); }
+
+        /* KPI strip — matches the .stat-card tiles on the faculty/chair dashboards
+           (icon badge top-right, big number, uppercase label, dark drop shadow). */
         .kpis { display:grid; grid-template-columns:repeat(4, 1fr); gap:16px; margin-bottom:18px; }
-        .kpi { background:#fff; border:1px solid var(--line); border-radius:13px; padding:16px 18px; }
-        .kpi-n { font-size:27px; font-weight:700; color:var(--ink); font-family:'Montserrat',sans-serif; }
-        .kpi-l { font-size:11.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.4px; margin-top:2px; }
-        .kpi.alert .kpi-n { color:var(--red); }
+        .stat-card { background:#fff; border-radius:14px; padding:18px 20px;
+                     box-shadow:0 2px 6px rgba(15,10,10,.08), 0 10px 22px -10px rgba(15,10,10,.22);
+                     transition:transform .18s ease, box-shadow .18s ease; }
+        .stat-card:hover { transform:translateY(-3px); box-shadow:0 4px 10px rgba(15,10,10,.1), 0 16px 30px -10px rgba(15,10,10,.3); }
+        .stat-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px; }
+        .stat-icon { width:40px; height:40px; border-radius:11px; display:flex; align-items:center; justify-content:center; font-size:17px; flex-shrink:0; }
+        .si-blue   { background:#dbeafe; color:var(--blue); }
+        .si-orange { background:#fef3c7; color:var(--amber); }
+        .si-green  { background:#d1fae5; color:var(--green); }
+        .si-red    { background:#fde8e8; color:var(--red); }
+        .stat-lbl { font-size:11.5px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.4px; }
+        .stat-num { font-size:28px; font-weight:700; color:var(--ink); font-family:'Montserrat',sans-serif; line-height:1; margin-top:6px; }
+        .stat-card.alert .stat-num { color:var(--red); }
 
         .grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(190px, 1fr)); gap:14px; }
-        .tile { background:#fff; border:1px solid var(--line); border-radius:12px; overflow:hidden;
-                text-decoration:none; color:inherit; transition:box-shadow .2s, transform .2s; }
-        .tile:hover { box-shadow:0 10px 22px -10px rgba(0,0,0,.25); transform:translateY(-2px); }
-        .tile.flagged { border-color:var(--red); box-shadow:0 0 0 2px rgba(192,57,43,.12); }
+        .tile { background:#fff; border:1px solid var(--line); border-radius:13px; overflow:hidden;
+                text-decoration:none; color:inherit; transition:box-shadow .2s, transform .2s;
+                box-shadow:0 8px 20px -12px rgba(15,20,35,.28); }
+        .tile:hover { box-shadow:0 14px 30px -12px rgba(15,20,35,.4); transform:translateY(-3px); }
+        .tile.flagged { border-color:var(--red); box-shadow:0 0 0 2px rgba(192,57,43,.15), 0 8px 20px -12px rgba(192,57,43,.35); }
         .tile-cam { width:100%; aspect-ratio:4/3; background:#101828; object-fit:cover; display:block; }
         .tile-none { width:100%; aspect-ratio:4/3; background:#1b2333; color:#5b6377; display:flex;
                      align-items:center; justify-content:center; font-size:26px; }
-        .tile-body { padding:10px 12px; }
+        .tile-body { padding:11px 13px; }
         .tile-name { font-size:12.5px; font-weight:600; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-        .tile-meta { font-size:11px; color:var(--muted); margin-top:3px; display:flex; justify-content:space-between; gap:6px; }
-        .live-dot { width:8px; height:8px; border-radius:50%; background:var(--green); display:inline-block; }
+        .tile-meta { font-size:11px; color:var(--muted); margin-top:4px; display:flex; justify-content:space-between; align-items:center; gap:6px; }
+        .live-dot { width:8px; height:8px; border-radius:50%; background:var(--green); display:inline-block; box-shadow:0 0 0 rgba(30,158,99,.5); animation:live-pulse 2s infinite; }
+        @keyframes live-pulse {
+            0%   { box-shadow:0 0 0 0 rgba(30,158,99,.45); }
+            70%  { box-shadow:0 0 0 6px rgba(30,158,99,0); }
+            100% { box-shadow:0 0 0 0 rgba(30,158,99,0); }
+        }
         @media (max-width: 900px) { .kpis { grid-template-columns:repeat(2, 1fr); } }
     </style>
 </head>
@@ -65,10 +84,42 @@
     </div>
 
     <div class="kpis">
-        <div class="kpi"><div class="kpi-n" id="kpiRegistered">{{ $registered }}</div><div class="kpi-l">Redeemed code</div></div>
-        <div class="kpi"><div class="kpi-n" id="kpiStarted">0</div><div class="kpi-l">Started</div></div>
-        <div class="kpi"><div class="kpi-n" id="kpiSubmitted">0</div><div class="kpi-l">Submitted</div></div>
-        <div class="kpi alert"><div class="kpi-n" id="kpiFlagged">0</div><div class="kpi-l">Flagged</div></div>
+        <div class="stat-card">
+            <div class="stat-top">
+                <div>
+                    <div class="stat-lbl">Redeemed code</div>
+                    <div class="stat-num" id="kpiRegistered">{{ $registered }}</div>
+                </div>
+                <div class="stat-icon si-blue"><i class="fas fa-ticket"></i></div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-top">
+                <div>
+                    <div class="stat-lbl">Started</div>
+                    <div class="stat-num" id="kpiStarted">0</div>
+                </div>
+                <div class="stat-icon si-orange"><i class="fas fa-person-running"></i></div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-top">
+                <div>
+                    <div class="stat-lbl">Submitted</div>
+                    <div class="stat-num" id="kpiSubmitted">0</div>
+                </div>
+                <div class="stat-icon si-green"><i class="fas fa-circle-check"></i></div>
+            </div>
+        </div>
+        <div class="stat-card alert">
+            <div class="stat-top">
+                <div>
+                    <div class="stat-lbl">Flagged</div>
+                    <div class="stat-num" id="kpiFlagged">0</div>
+                </div>
+                <div class="stat-icon si-red"><i class="fas fa-triangle-exclamation"></i></div>
+            </div>
+        </div>
     </div>
 
     <div class="card">
