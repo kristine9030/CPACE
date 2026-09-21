@@ -109,8 +109,17 @@
     </div>
 </div>
 
-<video id="camFeed" autoplay muted playsinline style="display:none;"></video>
-<video id="screenFeed" autoplay muted playsinline style="display:none;"></video>
+{{-- display:none — and, it turns out, parking the element thousands of pixels
+     off-screen — both stop Chrome from actually decoding frames into it (the
+     "pause video when not visible" battery optimization treats anything
+     outside the viewport as invisible, same as display:none). So this stays
+     inside the viewport at (0,0), just under everything else and fully
+     transparent, which keeps it "visible" enough for the browser to keep
+     decoding while the student never sees it. --}}
+<video id="camFeed" autoplay muted playsinline
+       style="position:fixed; left:0; top:0; width:2px; height:2px; opacity:0.01; z-index:-1; pointer-events:none;"></video>
+<video id="screenFeed" autoplay muted playsinline
+       style="position:fixed; left:0; top:0; width:2px; height:2px; opacity:0.01; z-index:-1; pointer-events:none;"></video>
 <canvas id="shot" style="display:none;"></canvas>
 
 <script>
@@ -234,7 +243,9 @@
 
     async function grab(kind, reason) {
         const video = kind === 'camera' ? camFeed : screenFeed;
-        if (!video.videoWidth) return;
+        // readyState < 2 (HAVE_CURRENT_DATA) means no decoded frame exists yet —
+        // drawImage would silently paint a black canvas instead of failing.
+        if (!video.videoWidth || video.readyState < 2) return;
         // Downscaled hard: a 3-hour sitting is thousands of frames, and full
         // resolution would fill the server's disk within a term.
         const w = kind === 'camera' ? 320 : 960;
@@ -258,6 +269,9 @@
         try {
             camStream = await navigator.mediaDevices.getUserMedia({ video: { width: 640 } });
             camFeed.srcObject = camStream;
+            // Autoplay is not reliably honored for a srcObject assigned after load,
+            // so play() is kicked off explicitly — muted, so no gesture is required.
+            camFeed.play().catch(() => {});
             camStream.getVideoTracks()[0].addEventListener('ended', () => {
                 setCam(false);
                 flag('camera_lost');
@@ -271,6 +285,7 @@
         try {
             screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
             screenFeed.srcObject = screenStream;
+            screenFeed.play().catch(() => {});
             screenStream.getVideoTracks()[0].addEventListener('ended', () => {
                 flag('screen_lost');
                 warn('Screen sharing stopped', 'This has been recorded and reported to your faculty.');

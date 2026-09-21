@@ -248,7 +248,9 @@ class MockExamReviewController extends Controller
                 'answered' => is_array($attempt->answers) ? count(array_filter($attempt->answers)) : 0,
                 'camera' => $capture ? route('mock-exams.capture', $capture) : null,
                 'camera_at' => $capture?->captured_at?->toIso8601String(),
-                'detail' => route('chair.mock-exams.attempt', $attempt),
+                'detail' => Auth::user()->isChair()
+                    ? route('chair.mock-exams.attempt', $attempt)
+                    : route('faculty.mock-exams.attempt', $attempt),
             ];
         })->sortByDesc('flags')->values();
 
@@ -279,6 +281,7 @@ class MockExamReviewController extends Controller
             'exam' => $attempt->exam,
             'theme' => self::theme($attempt->exam->subject?->code),
             'items' => $attempt->exam->items()->get(),
+            'isChair' => Auth::user()->isChair(),
         ]);
     }
 

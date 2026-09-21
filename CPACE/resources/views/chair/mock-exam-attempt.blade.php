@@ -27,12 +27,17 @@
     </style>
 </head>
 <body>
-@include('partials.chair-sidebar', ['active' => 'mock-exams'])
+@if($isChair)
+    @include('partials.chair-sidebar', ['active' => 'mock-exams'])
+@else
+    @include('partials.faculty-sidebar', ['active' => 'mock-exams'])
+@endif
 
 <main class="main">
     <div class="topbar">
         <div>
-            <a href="{{ route('chair.mock-exams.monitor', $exam) }}" style="font-size:12px;color:var(--muted);text-decoration:none;">
+            <a href="{{ $isChair ? route('chair.mock-exams.monitor', $exam) : route('faculty.mock-exams.monitor', $exam) }}"
+               style="font-size:12px;color:var(--muted);text-decoration:none;">
                 <i class="fas fa-arrow-left"></i> Back to monitor
             </a>
             <div class="page-title" style="margin-top:4px;">{{ $attempt->student?->first_name }} {{ $attempt->student?->last_name }}</div>

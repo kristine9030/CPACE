@@ -91,6 +91,9 @@ class MockExamViewSmokeTest extends TestCase
         $this->actingAs($this->chair)->get(route('chair.mock-exams.attempt', $attempt))
             ->assertOk()
             ->assertSee('Flag timeline');
+        $this->actingAs($this->faculty)->get(route('faculty.mock-exams.attempt', $attempt))
+            ->assertOk()
+            ->assertSee('Flag timeline');
     }
 
     public function test_every_student_screen_renders(): void
