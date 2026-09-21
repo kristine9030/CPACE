@@ -127,6 +127,7 @@
     .badge { position:absolute; top:3px; right:3px; background:var(--red); color:#fff; font-size:9px;
              padding:1px 4px; border-radius:999px; }
     .profile-avatar { width:38px; height:38px; border-radius:50%; border:none; cursor:pointer; overflow:hidden; padding:0; }
+    .profile-avatar img { width:100%; height:100%; object-fit:cover; }
 
     @media (max-width: 1100px) { .subject-grid { grid-template-columns:repeat(2, 1fr); } }
     @media (max-width: 760px) {

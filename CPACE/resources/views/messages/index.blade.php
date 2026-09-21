@@ -79,8 +79,10 @@
             border-radius:11px; border:none; color:#fff;
             font-weight:700; font-size:15px; cursor:pointer;
             font-family:'Poppins',sans-serif; transition:background 0.2s;
+            overflow:hidden;
         }
         .profile-avatar:hover { background:var(--primary-hover); }
+        .profile-avatar img { width:100%; height:100%; object-fit:cover; }
 
         .header-dropdown-wrap { position:relative; }
         .dropdown-menu {
