@@ -22,12 +22,14 @@ class QuizSession extends Model
         'correct_answers',
         'score_percent',
         'duration_secs',
+        'is_late',
     ];
 
     protected $casts = [
         'started_at'       => 'datetime',
         'completed_at'     => 'datetime',
         'is_practice_room' => 'boolean',
+        'is_late'          => 'boolean',
     ];
 
     public function subject()

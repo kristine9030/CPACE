@@ -127,6 +127,7 @@ class QuizApiSubmissionTest extends TestCase
             $table->integer('correct_answers')->default(0);
             $table->decimal('score_percent', 5, 2)->nullable();
             $table->integer('duration_secs')->default(0);
+            $table->boolean('is_late')->default(false);
             $table->timestamp('started_at')->nullable();
             $table->timestamp('completed_at')->nullable();
         });

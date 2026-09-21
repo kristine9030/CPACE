@@ -355,6 +355,9 @@
                                     <td>
                                         {{ intdiv((int) $quiz->duration_secs, 60) }}m
                                         {{ (int) $quiz->duration_secs % 60 }}s
+                                        @if($quiz->is_late)
+                                            <span class="score-low" style="font-size:10px; font-weight:700; margin-left:4px;">LATE</span>
+                                        @endif
                                     </td>
                                 </tr>
                             @empty

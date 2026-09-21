@@ -196,6 +196,7 @@ CREATE TABLE quiz_sessions (
     correct_answers SMALLINT UNSIGNED NOT NULL DEFAULT 0,
     score_percent   DECIMAL(5,2) NULL,                 -- computed on completion
     duration_secs   INT UNSIGNED NULL,                 -- time taken
+    is_late         TINYINT(1) NOT NULL DEFAULT 0,     -- 1 = timed-mode submit arrived after the computed time limit
     CONSTRAINT fk_qs_student FOREIGN KEY (student_id) REFERENCES users(id),
     CONSTRAINT fk_qs_subject FOREIGN KEY (subject_id) REFERENCES subjects(id),
     CONSTRAINT fk_qs_topic   FOREIGN KEY (topic_id)   REFERENCES topics(id)

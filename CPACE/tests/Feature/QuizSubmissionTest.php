@@ -122,6 +122,7 @@ class QuizSubmissionTest extends TestCase
             $table->integer('correct_answers')->default(0);
             $table->decimal('score_percent', 5, 2)->nullable();
             $table->integer('duration_secs')->default(0);
+            $table->boolean('is_late')->default(false);
             $table->timestamp('started_at')->nullable();
             $table->timestamp('completed_at')->nullable();
         });
@@ -383,6 +384,61 @@ class QuizSubmissionTest extends TestCase
         $this->assertSame(0, DB::table('points_log')->where('student_id', $student->id)->count());
     }
 
+    public function test_a_timed_quiz_submitted_within_the_limit_is_not_flagged_late(): void
+    {
+        $student = $this->student();
+        [$topicId, $questions] = $this->seedTwoQuestionTopic();
+        // 2 questions * 60s/question = 120s allowed; started 30s ago is well within it.
+        $session = $this->beginQuizSession(
+            $student->id, $topicId, $questions,
+            mode: 'timed', startedAt: now()->subSeconds(30)
+        );
+
+        $this->actingAs($student)->post(route('quiz.submit', $session), [
+            'answers' => [$questions[0]['id'] => $questions[0]['correct_choice_id']],
+        ]);
+
+        $this->assertFalse((bool) DB::table('quiz_sessions')->find($session)->is_late);
+    }
+
+    public function test_a_timed_quiz_submitted_after_the_time_limit_is_flagged_late(): void
+    {
+        $student = $this->student();
+        [$topicId, $questions] = $this->seedTwoQuestionTopic();
+        // 2 questions * 60s/question = 120s allowed; started 5 minutes ago blows past it,
+        // simulating a frozen/tampered client-side timer that never auto-submitted.
+        $session = $this->beginQuizSession(
+            $student->id, $topicId, $questions,
+            mode: 'timed', startedAt: now()->subMinutes(5)
+        );
+
+        $this->actingAs($student)->post(route('quiz.submit', $session), [
+            'answers' => [$questions[0]['id'] => $questions[0]['correct_choice_id']],
+        ]);
+
+        $updated = DB::table('quiz_sessions')->find($session);
+        $this->assertTrue((bool) $updated->is_late);
+        // Still graded and saved - a late flag informs the faculty, it doesn't void the attempt.
+        $this->assertNotNull($updated->completed_at);
+    }
+
+    public function test_a_non_timed_quiz_is_never_flagged_late_regardless_of_duration(): void
+    {
+        $student = $this->student();
+        [$topicId, $questions] = $this->seedTwoQuestionTopic();
+        // Adaptive mode has no enforced time limit, so an hour-long sitting is fine.
+        $session = $this->beginQuizSession(
+            $student->id, $topicId, $questions,
+            mode: 'adaptive', startedAt: now()->subHour()
+        );
+
+        $this->actingAs($student)->post(route('quiz.submit', $session), [
+            'answers' => [$questions[0]['id'] => $questions[0]['correct_choice_id']],
+        ]);
+
+        $this->assertFalse((bool) DB::table('quiz_sessions')->find($session)->is_late);
+    }
+
     public function test_a_completed_quiz_cannot_be_resubmitted_to_double_count_progress(): void
     {
         $student = $this->student();
@@ -463,16 +519,16 @@ class QuizSubmissionTest extends TestCase
      * Create a quiz session with placeholder answer rows already served, exactly
      * as QuizController::start() does, so submit() has something to grade.
      */
-    private function beginQuizSession(int $studentId, int $topicId, array $questions, string $sessionType = 'testing', bool $isPracticeRoom = false): int
+    private function beginQuizSession(int $studentId, int $topicId, array $questions, string $sessionType = 'testing', bool $isPracticeRoom = false, string $mode = 'adaptive', ?\Illuminate\Support\Carbon $startedAt = null): int
     {
         $sessionId = DB::table('quiz_sessions')->insertGetId([
             'student_id' => $studentId,
             'topic_id' => $topicId,
             'session_type' => $sessionType,
             'is_practice_room' => $isPracticeRoom,
-            'mode' => 'adaptive',
+            'mode' => $mode,
             'total_items' => count($questions),
-            'started_at' => now(),
+            'started_at' => $startedAt ?? now(),
         ]);
 
         foreach ($questions as $q) {

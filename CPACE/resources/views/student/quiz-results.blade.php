@@ -344,6 +344,9 @@
                     <span class="pill correct"><i class="fas fa-check-circle"></i> {{ $session->correct_answers }} Correct</span>
                     <span class="pill wrong"><i class="fas fa-times-circle"></i> {{ $session->total_items - $session->correct_answers }} Wrong</span>
                     <span class="pill time"><i class="fas fa-clock"></i> {{ $mins }}m {{ $secs }}s</span>
+                    @if($session->is_late)
+                        <span class="pill wrong"><i class="fas fa-hourglass-end"></i> Submitted late</span>
+                    @endif
                 </div>
             </div>
         </div>

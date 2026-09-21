@@ -216,11 +216,16 @@ class QuizApiController extends Controller
             }
 
             $total = $questions->count();
+            $durationSecs = max(0, (int) $session->started_at->diffInSeconds(now()));
+            $isLate = $session->mode === 'timed'
+                && $durationSecs > $total * self::TIMED_SECONDS_PER_QUESTION;
+
             $session->update([
                 'completed_at'    => now(),
                 'correct_answers' => $correctCount,
                 'score_percent'   => $total > 0 ? round($correctCount / $total * 100, 2) : 0,
-                'duration_secs'   => max(0, (int) $session->started_at->diffInSeconds(now())),
+                'duration_secs'   => $durationSecs,
+                'is_late'         => $isLate,
             ]);
 
             if ($countsTowardProgress) {
@@ -295,6 +300,7 @@ class QuizApiController extends Controller
             'correct_answers' => $s->correct_answers,
             'score_percent'   => $s->score_percent,
             'duration_secs'   => $s->duration_secs,
+            'is_late'         => (bool) $s->is_late,
             'started_at'      => $s->started_at,
             'completed_at'    => $s->completed_at,
             'subject_code'    => $s->subject->code ?? null,

@@ -498,11 +498,21 @@ class QuizController extends Controller
             }
 
             $total = $questions->count();
+            $durationSecs = max(0, (int) $session->started_at->diffInSeconds(now()));
+
+            // Timed mode is the only mode with an enforced limit. The client
+            // countdown can be frozen/tampered with, but durationSecs is
+            // always the true server-side elapsed time, so lateness is
+            // derived from that rather than trusted client state.
+            $isLate = $session->mode === 'timed'
+                && $durationSecs > $total * self::TIMED_SECONDS_PER_QUESTION;
+
             $session->update([
                 'completed_at'    => now(),
                 'correct_answers' => $correctCount,
                 'score_percent'   => $total > 0 ? round($correctCount / $total * 100, 2) : 0,
-                'duration_secs'   => max(0, (int) $session->started_at->diffInSeconds(now())),
+                'duration_secs'   => $durationSecs,
+                'is_late'         => $isLate,
             ]);
 
             // Training runs are excluded from all progress analytics & points.
