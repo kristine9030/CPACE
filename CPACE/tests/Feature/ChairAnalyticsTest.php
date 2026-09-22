@@ -198,8 +198,12 @@ class ChairAnalyticsTest extends TestCase
         $coverage = $analytics->coverageReport();
 
         $this->assertSame(70, $report['overall_accuracy']);
-        $this->assertSame(100, $report['readiness']['readiness_rate']);
-        $this->assertSame(100, $report['readiness']['pass_projection']);
+        // The seeded student is at 70% accuracy: below the 75% Ready bar but
+        // at/above the 60% Developing bar, so they land in "developing", not
+        // "ready" - readiness_rate counts only Ready students (0 here), and
+        // pass_projection credits a Developing student at half weight.
+        $this->assertSame(0, $report['readiness']['readiness_rate']);
+        $this->assertSame(50, $report['readiness']['pass_projection']);
         $this->assertSame('thin', $coverage->firstWhere('name', 'Topic 1')['status']);
         $this->assertSame('critical', $coverage->firstWhere('name', 'Topic 2')['status']);
     }
@@ -290,8 +294,9 @@ class ChairAnalyticsTest extends TestCase
         $this->assertSame(2, $year1['sections']);
         $this->assertSame(2, $year1['participating_students']);
         $this->assertSame(61, $year1['class_accuracy']); // round((49+0)/(70+10)*100)
-        $this->assertSame(100, $year1['readiness_rate']);
-        $this->assertSame(100, $year1['pass_projection']);
+        // Same 70%-accuracy student as above -> developing, not ready.
+        $this->assertSame(0, $year1['readiness_rate']);
+        $this->assertSame(50, $year1['pass_projection']);
 
         // The dashboard renders both the per-year and per-section breakdowns.
         $chair = User::where('email', 'chair@example.com')->firstOrFail();
@@ -319,7 +324,7 @@ class ChairAnalyticsTest extends TestCase
         $this->assertCount(1, $sectionA);
         $this->assertSame('BSA-1A', $sectionA->first()['section']);
         $this->assertSame(70, $sectionA->first()['accuracy']);
-        $this->assertSame('ready', $sectionA->first()['band']);
+        $this->assertSame('developing', $sectionA->first()['band']);
 
         // Both sections share year level 1, so the year roster is empty here —
         // section A's only eligible student needs real quiz_sessions attempts,

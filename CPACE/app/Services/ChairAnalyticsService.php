@@ -10,10 +10,15 @@ use Illuminate\Support\Facades\DB;
 
 class ChairAnalyticsService
 {
-    public const READY_ACCURACY = 60;
+    // Ready aligns with the 75% CPALE board-readiness benchmark used
+    // elsewhere (FacultyDashboardController::READINESS_BENCHMARK,
+    // subjects.passing_threshold's default) so "Ready" means the same thing
+    // everywhere in the app. Developing is the 60-74% near-pass band below
+    // that; anything under 60% (or under DEVELOPING_ATTEMPTS) is at-risk.
+    public const READY_ACCURACY = 75;
     public const READY_ATTEMPTS = 50;
     public const READY_SUBJECTS = 3;
-    public const DEVELOPING_ACCURACY = 50;
+    public const DEVELOPING_ACCURACY = 60;
     public const DEVELOPING_ATTEMPTS = 20;
     public const COVERAGE_TARGET = 25;
 

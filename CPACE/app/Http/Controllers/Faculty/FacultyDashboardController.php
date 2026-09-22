@@ -37,7 +37,13 @@ class FacultyDashboardController extends Controller
         'RFBT' => '#f59e0b',
     ];
 
-    /** Board-readiness accuracy benchmark, same threshold used across CPALE analytics. */
+    /**
+     * Board-readiness accuracy benchmark. Kept equal to
+     * ChairAnalyticsService::READY_ACCURACY on purpose, so "ready"/"above
+     * benchmark" means the same 75% everywhere in the app (faculty dashboard,
+     * chair's Readiness Bands, subjects.passing_threshold's default) instead
+     * of each screen quietly defining its own bar.
+     */
     private const READINESS_BENCHMARK = 75;
 
     /** Below this average score (with a minimum sample), a student is flagged at-risk. */
