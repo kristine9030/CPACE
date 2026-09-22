@@ -46,8 +46,13 @@ class FacultyDashboardController extends Controller
      */
     private const READINESS_BENCHMARK = 75;
 
-    /** Below this average score (with a minimum sample), a student is flagged at-risk. */
-    private const AT_RISK_THRESHOLD = 50;
+    /**
+     * Below this average score (with a minimum sample), a student is flagged
+     * at-risk; between this and READINESS_BENCHMARK is "developing". Kept
+     * equal to ChairAnalyticsService::DEVELOPING_ACCURACY so the Ready /
+     * Developing / At-risk split means the same thing on both dashboards.
+     */
+    private const AT_RISK_THRESHOLD = 60;
 
     public function index(Request $request)
     {
