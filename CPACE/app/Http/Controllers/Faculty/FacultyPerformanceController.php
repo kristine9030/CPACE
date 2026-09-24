@@ -30,6 +30,15 @@ class FacultyPerformanceController extends Controller
 
     private const PER_PAGE = 10;
 
+    /**
+     * A topic needs this many recorded attempts before its class-wide
+     * accuracy is reportable as "weak" - kept equal to
+     * ChairAnalyticsService::TOPIC_MIN_ATTEMPTS so a topic doesn't need a
+     * different sample size to be called weak depending on which dashboard
+     * you're looking at.
+     */
+    private const TOPIC_MIN_ATTEMPTS = 10;
+
     /** Subject brand colours reused for the avatars / dots. */
     private const SUBJECT_COLORS = [
         'FAR'  => '#3b82f6',
@@ -290,7 +299,10 @@ class FacultyPerformanceController extends Controller
                     $dir = 'down';
                 }
             } elseif ($last7 !== null && $prev7 === null) {
-                $dir = 'up';
+                // First real data point in the last two weeks - not actually
+                // an improvement over anything, so it shouldn't read as "Up"
+                // (which would overstate momentum for a low-scoring newcomer).
+                $dir = 'new';
             }
 
             $name = trim("{$user->first_name} {$user->last_name}");
@@ -513,13 +525,20 @@ class FacultyPerformanceController extends Controller
     private function classWeakTopics(array $filters)
     {
         $subjectIds = $filters['subject_ids'];
+        $faculty = Auth::user();
 
-        $topics = DB::table('performance_records')
+        $query = DB::table('performance_records')
             ->join('topics', 'topics.id', '=', 'performance_records.topic_id')
             ->join('subjects', 'subjects.id', '=', 'topics.subject_id')
-            ->when($subjectIds !== null, fn ($q) => $q->whereIn('subjects.id', $subjectIds))
+            ->leftJoin('student_profiles', 'student_profiles.user_id', '=', 'performance_records.student_id');
+
+        if ($subjectIds !== null) {
+            $query = FacultySectionScope::apply($query, $faculty, $subjectIds, 'subjects.id', 'student_profiles.section');
+        }
+
+        $topics = $query
             ->groupBy('topics.id', 'topics.name', 'subjects.code')
-            ->havingRaw('SUM(performance_records.total_attempts) >= 5')
+            ->havingRaw('SUM(performance_records.total_attempts) >= ?', [self::TOPIC_MIN_ATTEMPTS])
             ->select(
                 'topics.id as topic_id',
                 'topics.name as topic',
@@ -585,20 +604,27 @@ class FacultyPerformanceController extends Controller
     private function weeklyAccuracyTrend(?array $subjectIds)
     {
         $now = Carbon::now();
+        $faculty = Auth::user();
 
-        return collect(range(7, 0))->map(function (int $i) use ($subjectIds, $now) {
+        return collect(range(7, 0))->map(function (int $i) use ($subjectIds, $now, $faculty) {
             $start = $now->copy()->subWeeks($i)->startOfWeek();
             $end   = $start->copy()->endOfWeek();
 
-            $row = DB::table('quiz_sessions')
-                ->where('session_type', '!=', 'training')->where('is_practice_room', false)
-                ->whereNotNull('completed_at')
-                ->whereBetween('completed_at', [$start, $end])
-                ->when($subjectIds !== null, fn ($q) => $q->whereIn('subject_id', $subjectIds))
+            $query = DB::table('quiz_sessions')
+                ->leftJoin('student_profiles', 'student_profiles.user_id', '=', 'quiz_sessions.student_id')
+                ->where('quiz_sessions.session_type', '!=', 'training')->where('quiz_sessions.is_practice_room', false)
+                ->whereNotNull('quiz_sessions.completed_at')
+                ->whereBetween('quiz_sessions.completed_at', [$start, $end]);
+
+            if ($subjectIds !== null) {
+                $query = FacultySectionScope::apply($query, $faculty, $subjectIds, 'quiz_sessions.subject_id', 'student_profiles.section');
+            }
+
+            $row = $query
                 ->select(
-                    DB::raw('COUNT(DISTINCT student_id) as active_students'),
-                    DB::raw('COALESCE(SUM(total_items),0) as attempted'),
-                    DB::raw('COALESCE(SUM(correct_answers),0) as correct')
+                    DB::raw('COUNT(DISTINCT quiz_sessions.student_id) as active_students'),
+                    DB::raw('COALESCE(SUM(quiz_sessions.total_items),0) as attempted'),
+                    DB::raw('COALESCE(SUM(quiz_sessions.correct_answers),0) as correct')
                 )
                 ->first();
 

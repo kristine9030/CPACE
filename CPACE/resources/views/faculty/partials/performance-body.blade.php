@@ -58,6 +58,8 @@
                             <span class="trend-badge t-up"><i class="fas fa-arrow-up"></i> Up</span>
                         @elseif($st['trend'] === 'down')
                             <span class="trend-badge t-down"><i class="fas fa-arrow-down"></i> Down</span>
+                        @elseif($st['trend'] === 'new')
+                            <span class="trend-badge t-new"><i class="fas fa-star"></i> New</span>
                         @else
                             <span class="trend-badge t-flat"><i class="fas fa-minus"></i> Flat</span>
                         @endif

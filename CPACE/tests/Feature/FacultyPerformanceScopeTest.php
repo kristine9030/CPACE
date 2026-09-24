@@ -234,6 +234,86 @@ class FacultyPerformanceScopeTest extends TestCase
         });
     }
 
+    public function test_the_weekly_trend_chart_excludes_students_outside_the_facultys_section(): void
+    {
+        $faculty = $this->faculty();
+        $farId = DB::table('subjects')->insertGetId(['code' => 'FAR', 'name' => 'Financial Accounting']);
+        DB::table('faculty_subjects')->insert(['faculty_id' => $faculty->id, 'subject_id' => $farId, 'assigned_at' => now()]);
+        $sectionA = DB::table('sections')->insertGetId(['name' => 'BSA-3A', 'is_active' => true, 'created_at' => now(), 'updated_at' => now()]);
+        DB::table('faculty_subject_sections')->insert([
+            'faculty_id' => $faculty->id, 'subject_id' => $farId, 'section_id' => $sectionA,
+            'assigned_at' => now(), 'created_at' => now(), 'updated_at' => now(),
+        ]);
+
+        $inSection = $this->student('in-section@example.com', 'BSA-3A');
+        $outOfSection = $this->student('out-of-section@example.com', 'BSA-3B');
+        // In-section: 8/10 = 80%. Out-of-section: 0/10 = 0% - if it leaked
+        // into the chart it would drag this week's accuracy down to 40%.
+        DB::table('quiz_sessions')->insert([
+            'student_id' => $inSection->id, 'session_type' => 'testing', 'subject_id' => $farId,
+            'started_at' => now(), 'completed_at' => now(), 'total_items' => 10, 'correct_answers' => 8,
+        ]);
+        DB::table('quiz_sessions')->insert([
+            'student_id' => $outOfSection->id, 'session_type' => 'testing', 'subject_id' => $farId,
+            'started_at' => now(), 'completed_at' => now(), 'total_items' => 10, 'correct_answers' => 0,
+        ]);
+
+        $response = $this->actingAs($faculty)->get(route('faculty.performance'));
+
+        $response->assertOk();
+        $response->assertViewHas('weeklyTrend', function ($trend) {
+            $thisWeek = $trend->last();
+            return $thisWeek['accuracy'] === 80 && $thisWeek['active_students'] === 1;
+        });
+    }
+
+    public function test_the_weakest_topics_panel_excludes_students_outside_the_facultys_section(): void
+    {
+        $faculty = $this->faculty();
+        $farId = DB::table('subjects')->insertGetId(['code' => 'FAR', 'name' => 'Financial Accounting']);
+        DB::table('faculty_subjects')->insert(['faculty_id' => $faculty->id, 'subject_id' => $farId, 'assigned_at' => now()]);
+        $sectionA = DB::table('sections')->insertGetId(['name' => 'BSA-3A', 'is_active' => true, 'created_at' => now(), 'updated_at' => now()]);
+        DB::table('faculty_subject_sections')->insert([
+            'faculty_id' => $faculty->id, 'subject_id' => $farId, 'section_id' => $sectionA,
+            'assigned_at' => now(), 'created_at' => now(), 'updated_at' => now(),
+        ]);
+        $topicId = DB::table('topics')->insertGetId(['subject_id' => $farId, 'name' => 'Inventory']);
+
+        $inSection = $this->student('in-section@example.com', 'BSA-3A');
+        $outOfSection = $this->student('out-of-section@example.com', 'BSA-3B');
+        // In-section: 9/10 = 90% (not weak). Out-of-section: 1/10 = 10% -
+        // if it leaked in, this topic would wrongly show as weak.
+        DB::table('performance_records')->insert(['student_id' => $inSection->id, 'topic_id' => $topicId, 'total_attempts' => 10, 'correct_count' => 9]);
+        DB::table('performance_records')->insert(['student_id' => $outOfSection->id, 'topic_id' => $topicId, 'total_attempts' => 10, 'correct_count' => 1]);
+
+        $response = $this->actingAs($faculty)->get(route('faculty.performance'));
+
+        $response->assertOk();
+        $response->assertViewHas('weakTopics', fn ($topics) => $topics->isEmpty()
+            || $topics->firstWhere('topic_id', $topicId)?->accuracy === 90);
+    }
+
+    public function test_a_students_first_week_of_activity_shows_as_new_not_up(): void
+    {
+        $faculty = $this->faculty();
+        $farId = DB::table('subjects')->insertGetId(['code' => 'FAR', 'name' => 'Financial Accounting']);
+        DB::table('faculty_subjects')->insert(['faculty_id' => $faculty->id, 'subject_id' => $farId, 'assigned_at' => now()]);
+
+        $newStudent = $this->student('brand-new@example.com');
+        // Only activity in the last 7 days, nothing in the 7 days before that
+        // - a low score here should not read as "Up" (nothing to improve on).
+        DB::table('quiz_sessions')->insert([
+            'student_id' => $newStudent->id, 'session_type' => 'testing', 'subject_id' => $farId,
+            'started_at' => now()->subDays(2), 'completed_at' => now()->subDays(2),
+            'total_items' => 10, 'correct_answers' => 2,
+        ]);
+
+        $response = $this->actingAs($faculty)->get(route('faculty.performance'));
+
+        $response->assertOk();
+        $response->assertViewHas('students', fn ($students) => $students->first()['trend'] === 'new');
+    }
+
     public function test_faculty_only_sees_the_subject_filter_and_students_from_their_assigned_subjects(): void
     {
         $faculty = $this->faculty();

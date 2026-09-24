@@ -138,6 +138,7 @@
         .t-up   { background:#d1fae5; color:#059669; }
         .t-down { background:#fde8e8; color:var(--accent); }
         .t-flat { background:#f3f4f6; color:#9ca3af; }
+        .t-new  { background:#e4edfb; color:#2f6fd0; }
 
         .last-active { font-size:11px; color:#aaa; }
 
