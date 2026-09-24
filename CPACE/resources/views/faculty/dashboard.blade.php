@@ -481,7 +481,7 @@
         </div>
         <div class="viz-card">
             <h4><i class="fas fa-user-graduate"></i> Student Readiness</h4>
-            <div class="viz-sub">{{ $studentBand['measured'] }} measured student{{ $studentBand['measured'] === 1 ? '' : 's' }} · {{ $stats['active_students'] - $studentBand['measured'] > 0 ? ($stats['active_students'] - $studentBand['measured']) . ' not yet measurable' : 'all active students measured' }}.</div>
+            <div class="viz-sub">{{ $studentBand['measured'] }} measured student{{ $studentBand['measured'] === 1 ? '' : 's' }} · {{ $studentBand['total_active'] - $studentBand['measured'] > 0 ? ($studentBand['total_active'] - $studentBand['measured']) . ' not yet measurable' : 'all active students measured' }}.</div>
             <div class="chart-canvas-wrap h-sm"><canvas id="readinessChart"></canvas></div>
         </div>
     </section>

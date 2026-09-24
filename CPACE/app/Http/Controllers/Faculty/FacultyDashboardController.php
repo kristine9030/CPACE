@@ -320,29 +320,88 @@ class FacultyDashboardController extends Controller
     }
 
     /**
-     * Students bucketed by average completed-session score in scope (min.
-     * sample so a single lucky/unlucky quiz can't misclassify anyone) —
-     * feeds the "students needing attention" insight and readiness split.
+     * Every active student this faculty member has visibility into, per
+     * FacultySectionScope's rules - unrestricted for a subject means every
+     * student counts for it, which (since one assigned subject is enough)
+     * makes the whole active roster count. Used so studentBandCounts() can
+     * report students who haven't attempted anything yet as "not yet
+     * measurable" instead of silently excluding them, the same way
+     * ChairAnalyticsService::studentReadinessRows() starts from every
+     * student account rather than only ones with existing activity.
+     */
+    private function assignedStudentRoster(array $subjectIds): \Illuminate\Support\Collection
+    {
+        $faculty = Auth::user();
+        $allowedSections = [];
+        foreach ($subjectIds as $subjectId) {
+            $names = $faculty->sectionNamesForSubject((int) $subjectId);
+            if ($names === null) {
+                $allowedSections = null; // unrestricted for at least one subject -> whole roster
+                break;
+            }
+            $allowedSections = array_merge($allowedSections ?? [], $names);
+        }
+
+        $query = DB::table('users')
+            ->leftJoin('student_profiles', 'student_profiles.user_id', '=', 'users.id')
+            ->where('users.role_id', Role::STUDENT)
+            ->where('users.is_active', true);
+
+        if ($allowedSections !== null) {
+            $query->whereIn('student_profiles.section', array_unique($allowedSections));
+        }
+
+        return $query->pluck('users.id');
+    }
+
+    /**
+     * Students bucketed by average completed-session score, scored across
+     * every student in the faculty's roster (min. sample so a single lucky/
+     * unlucky quiz can't misclassify anyone) — feeds the "students needing
+     * attention" insight and readiness split. A student with no activity yet
+     * counts toward the roster but not toward any band, same as the chair's
+     * Readiness Bands.
      */
     private function studentBandCounts(array $subjectIds): array
     {
-        $agg = $this->scopedSessions($subjectIds)
+        $activity = $this->scopedSessions($subjectIds)
             ->join('users', 'users.id', '=', 'quiz_sessions.student_id')
             ->where('users.role_id', Role::STUDENT)
             ->groupBy('users.id')
-            ->havingRaw('SUM(total_items) >= ?', [WeaknessDetector::MIN_ATTEMPTS])
             ->select(
+                'users.id',
                 DB::raw('COALESCE(SUM(total_items),0) as attempted'),
                 DB::raw('COALESCE(SUM(correct_answers),0) as correct')
             )
             ->get()
-            ->map(fn ($r) => (int) $r->attempted > 0 ? (int) round($r->correct / $r->attempted * 100) : 0);
+            ->keyBy('id');
+
+        $roster = $this->assignedStudentRoster($subjectIds);
+
+        $measured = $ready = $developing = $atRisk = 0;
+        foreach ($roster as $studentId) {
+            $row = $activity->get($studentId);
+            $attempted = (int) ($row->attempted ?? 0);
+            if ($attempted < WeaknessDetector::MIN_ATTEMPTS) {
+                continue; // not yet measurable
+            }
+            $measured++;
+            $score = (int) round((int) $row->correct / $attempted * 100);
+            if ($score >= self::READINESS_BENCHMARK) {
+                $ready++;
+            } elseif ($score < self::AT_RISK_THRESHOLD) {
+                $atRisk++;
+            } else {
+                $developing++;
+            }
+        }
 
         return [
-            'measured'  => $agg->count(),
-            'ready'     => $agg->filter(fn ($s) => $s >= self::READINESS_BENCHMARK)->count(),
-            'at_risk'   => $agg->filter(fn ($s) => $s < self::AT_RISK_THRESHOLD)->count(),
-            'developing'=> $agg->filter(fn ($s) => $s >= self::AT_RISK_THRESHOLD && $s < self::READINESS_BENCHMARK)->count(),
+            'measured'    => $measured,
+            'total_active'=> $roster->count(),
+            'ready'       => $ready,
+            'at_risk'     => $atRisk,
+            'developing'  => $developing,
         ];
     }
 
