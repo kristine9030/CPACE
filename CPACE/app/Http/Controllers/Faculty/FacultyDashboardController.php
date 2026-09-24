@@ -54,6 +54,27 @@ class FacultyDashboardController extends Controller
      */
     private const AT_RISK_THRESHOLD = 60;
 
+    /**
+     * A student needs this many attempts in scope before they're "measured"
+     * at all (below this: not yet measurable, same as the chair's Readiness
+     * Bands). Kept equal to ChairAnalyticsService::DEVELOPING_ATTEMPTS so
+     * "measured" means the same sample size on both dashboards - this is
+     * deliberately higher than WeaknessDetector::MIN_ATTEMPTS (5), which is
+     * a different, more sensitive floor used to flag a single weak topic
+     * early, not to certify a student's overall readiness.
+     */
+    private const MEASURED_MIN_ATTEMPTS = 20;
+
+    /** "Ready" also needs this many attempts and this many distinct subjects
+     * touched, on top of clearing READINESS_BENCHMARK - matching
+     * ChairAnalyticsService::READY_ATTEMPTS / READY_SUBJECTS, so a student
+     * can't be called Ready off a lucky handful of questions in one subject.
+     * READY_SUBJECTS gracefully caps to however many subjects this faculty
+     * member actually has in scope, so it stays reachable for a faculty
+     * assigned to only 1-2 subjects. */
+    private const READY_ATTEMPTS = 50;
+    private const READY_SUBJECTS = 3;
+
     public function index(Request $request)
     {
         $data = $this->computeDashboardData();
@@ -114,6 +135,7 @@ class FacultyDashboardController extends Controller
             'questionsWeeklyTrend' => $questionsWeeklyTrend,
             'studentBand'     => $studentBand,
             'benchmark'       => self::READINESS_BENCHMARK,
+            'atRiskThreshold' => self::AT_RISK_THRESHOLD,
             'insights'        => $this->buildInsights($bySubject, $byType, $byDifficulty, $weeklyTrend, $stats, $studentBand, $assigned),
             'typeInsight'       => $this->typeInsight($byType),
             'difficultyInsight' => $this->difficultyInsight($byDifficulty),
@@ -371,23 +393,34 @@ class FacultyDashboardController extends Controller
             ->select(
                 'users.id',
                 DB::raw('COALESCE(SUM(total_items),0) as attempted'),
-                DB::raw('COALESCE(SUM(correct_answers),0) as correct')
+                DB::raw('COALESCE(SUM(correct_answers),0) as correct'),
+                DB::raw('COUNT(DISTINCT quiz_sessions.subject_id) as subjects')
             )
             ->get()
             ->keyBy('id');
 
         $roster = $this->assignedStudentRoster($subjectIds);
+        // A faculty scoped to fewer subjects than READY_SUBJECTS could never
+        // produce a Ready student otherwise - cap the requirement to however
+        // many subjects are actually in scope, same reasoning as
+        // ChairAnalyticsService skipping the subject-count check when
+        // already filtered to one subject.
+        $requiredSubjects = min(self::READY_SUBJECTS, count($subjectIds));
 
         $measured = $ready = $developing = $atRisk = 0;
         foreach ($roster as $studentId) {
             $row = $activity->get($studentId);
             $attempted = (int) ($row->attempted ?? 0);
-            if ($attempted < WeaknessDetector::MIN_ATTEMPTS) {
+            if ($attempted < self::MEASURED_MIN_ATTEMPTS) {
                 continue; // not yet measurable
             }
             $measured++;
             $score = (int) round((int) $row->correct / $attempted * 100);
-            if ($score >= self::READINESS_BENCHMARK) {
+            $isReady = $score >= self::READINESS_BENCHMARK
+                && $attempted >= self::READY_ATTEMPTS
+                && (int) $row->subjects >= $requiredSubjects;
+
+            if ($isReady) {
                 $ready++;
             } elseif ($score < self::AT_RISK_THRESHOLD) {
                 $atRisk++;

@@ -719,6 +719,7 @@
     const byDifficulty = @json($byDifficulty);
     const studentBand = @json($studentBand);
     const benchmark = @json($benchmark);
+    const atRiskThreshold = @json($atRiskThreshold);
     const pluck = (rows, key) => rows.map((row) => row[key]);
 
     // Dashed horizontal rule at a fixed y-value — used to mark the board-readiness
@@ -835,7 +836,7 @@
         Viz.chart('readinessChart', {
             type: 'doughnut',
             data: {
-                labels: ['Ready (≥' + benchmark + '%)', 'Developing', 'At risk (<50%)'],
+                labels: ['Ready (≥' + benchmark + '%)', 'Developing', 'At risk (<' + atRiskThreshold + '%)'],
                 datasets: [{
                     data: [studentBand.ready, studentBand.developing, studentBand.at_risk],
                     backgroundColor: [P.good, P.warn, P.crit],
