@@ -18,7 +18,7 @@
     <div class="stat-card">
         <div class="stat-top">
             <div>
-                <div class="stat-lbl">Avg. Score</div>
+                <div class="stat-lbl">Avg. Student Score</div>
                 <div class="stat-num">{{ $stats['avg'] }}%</div>
                 @if($benchmarkGap === null)
                     <div class="stat-chg neutral">No graded activity yet</div>
