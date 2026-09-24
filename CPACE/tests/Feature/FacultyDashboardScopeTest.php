@@ -198,6 +198,31 @@ class FacultyDashboardScopeTest extends TestCase
         $response->assertViewHas('stats', fn ($stats) => $stats['active_students'] === 1);
     }
 
+    public function test_student_readiness_counts_the_whole_roster_not_just_students_with_activity(): void
+    {
+        $faculty = $this->faculty();
+        $farId = DB::table('subjects')->insertGetId(['code' => 'FAR', 'name' => 'Financial Accounting', 'created_at' => now(), 'updated_at' => now()]);
+        DB::table('faculty_subjects')->insert(['faculty_id' => $faculty->id, 'subject_id' => $farId, 'assigned_at' => now()]);
+
+        // Enough real activity to be measured (8/10 = 80% -> ready).
+        $measuredStudent = $this->student('measured@example.com');
+        DB::table('quiz_sessions')->insert([
+            'student_id' => $measuredStudent->id, 'subject_id' => $farId, 'session_type' => 'testing',
+            'total_items' => 10, 'correct_answers' => 8, 'started_at' => now(), 'completed_at' => now(),
+        ]);
+
+        // An active student who has never taken a quiz - must still show up
+        // in the roster as "not yet measurable", not disappear entirely.
+        $this->student('untouched@example.com');
+
+        $response = $this->actingAs($faculty)->get(route('faculty.dashboard'));
+
+        $response->assertOk();
+        $response->assertViewHas('studentBand', fn ($band) => $band['total_active'] === 2
+            && $band['measured'] === 1
+            && $band['ready'] === 1);
+    }
+
     private function faculty(): User
     {
         return User::create([
