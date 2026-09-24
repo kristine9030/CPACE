@@ -204,11 +204,14 @@ class FacultyDashboardScopeTest extends TestCase
         $farId = DB::table('subjects')->insertGetId(['code' => 'FAR', 'name' => 'Financial Accounting', 'created_at' => now(), 'updated_at' => now()]);
         DB::table('faculty_subjects')->insert(['faculty_id' => $faculty->id, 'subject_id' => $farId, 'assigned_at' => now()]);
 
-        // Enough real activity to be measured (8/10 = 80% -> ready).
+        // Enough real activity to be measured AND ready: 40/50 = 80% clears
+        // the 75% benchmark, 50 attempts clears READY_ATTEMPTS, and touching
+        // this faculty's one assigned subject clears READY_SUBJECTS once
+        // capped to the single subject actually in scope.
         $measuredStudent = $this->student('measured@example.com');
         DB::table('quiz_sessions')->insert([
             'student_id' => $measuredStudent->id, 'subject_id' => $farId, 'session_type' => 'testing',
-            'total_items' => 10, 'correct_answers' => 8, 'started_at' => now(), 'completed_at' => now(),
+            'total_items' => 50, 'correct_answers' => 40, 'started_at' => now(), 'completed_at' => now(),
         ]);
 
         // An active student who has never taken a quiz - must still show up
@@ -221,6 +224,35 @@ class FacultyDashboardScopeTest extends TestCase
         $response->assertViewHas('studentBand', fn ($band) => $band['total_active'] === 2
             && $band['measured'] === 1
             && $band['ready'] === 1);
+    }
+
+    public function test_ready_requires_the_same_attempt_floor_as_the_chairs_readiness_bands(): void
+    {
+        $faculty = $this->faculty();
+        $farId = DB::table('subjects')->insertGetId(['code' => 'FAR', 'name' => 'Financial Accounting', 'created_at' => now(), 'updated_at' => now()]);
+        DB::table('faculty_subjects')->insert(['faculty_id' => $faculty->id, 'subject_id' => $farId, 'assigned_at' => now()]);
+
+        // Below the 20-attempt floor entirely -> not measured, regardless of accuracy.
+        $tooFew = $this->student('too-few@example.com');
+        DB::table('quiz_sessions')->insert([
+            'student_id' => $tooFew->id, 'subject_id' => $farId, 'session_type' => 'testing',
+            'total_items' => 15, 'correct_answers' => 15, 'started_at' => now(), 'completed_at' => now(),
+        ]);
+
+        // Measured (>=20) and well above the 75% accuracy benchmark, but
+        // under READY_ATTEMPTS (50) -> counted, but Developing, not Ready.
+        $highAccuracyLowVolume = $this->student('high-acc-low-vol@example.com');
+        DB::table('quiz_sessions')->insert([
+            'student_id' => $highAccuracyLowVolume->id, 'subject_id' => $farId, 'session_type' => 'testing',
+            'total_items' => 30, 'correct_answers' => 27, 'started_at' => now(), 'completed_at' => now(),
+        ]);
+
+        $response = $this->actingAs($faculty)->get(route('faculty.dashboard'));
+
+        $response->assertOk();
+        $response->assertViewHas('studentBand', fn ($band) => $band['measured'] === 1
+            && $band['ready'] === 0
+            && $band['developing'] === 1);
     }
 
     private function faculty(): User
