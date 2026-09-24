@@ -402,10 +402,10 @@
         <a href="{{ route('faculty.performance') }}" class="stat-card" title="View student performance">
             <div class="stat-top">
                 <div>
-                    <div class="stat-lbl">Avg. Student Score</div>
+                    <div class="stat-lbl">Overall Accuracy</div>
                     <div class="stat-num">{{ $stats['avg_score'] }}%</div>
                     @if($stats['avg_delta'] === null)
-                        <div class="stat-chg neutral">Across all quizzes</div>
+                        <div class="stat-chg neutral">Pooled across all attempts, all-time</div>
                     @elseif($stats['avg_delta'] >= 0)
                         <div class="stat-chg"><i class="fas fa-arrow-up"></i> {{ $stats['avg_delta'] }}% from last month</div>
                     @else
