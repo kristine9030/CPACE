@@ -268,7 +268,7 @@
             </section>
 
             <section class="card" style="margin-top:18px;">
-                <div class="card-head"><span class="card-title">Weakest Topics</span><span class="small-meta">Lowest accuracy, {{ \App\Services\ChairAnalyticsService::TOPIC_MIN_ATTEMPTS }}+ attempts</span></div>
+                <div class="card-head"><span class="card-title">Weakest Topics</span><span class="small-meta">Under 60% accuracy, {{ \App\Services\ChairAnalyticsService::TOPIC_MIN_ATTEMPTS }}+ attempts</span></div>
                 <table class="viz-table">
                     <thead><tr><th>Topic</th><th>Subject</th><th class="num">Accuracy</th><th class="num">Attempts</th><th class="num">Students</th></tr></thead>
                     <tbody>
@@ -280,7 +280,25 @@
                             <td class="num">{{ number_format($topic['attempts']) }}</td>
                             <td class="num">{{ $topic['students'] }}</td>
                         </tr>
-                    @empty<tr><td colspan="5"><div class="empty">No topic has reached {{ \App\Services\ChairAnalyticsService::TOPIC_MIN_ATTEMPTS }} recorded attempts yet.</div></td></tr>@endforelse
+                    @empty<tr><td colspan="5"><div class="empty">No topic is below 60% class accuracy (among topics with {{ \App\Services\ChairAnalyticsService::TOPIC_MIN_ATTEMPTS }}+ recorded attempts).</div></td></tr>@endforelse
+                    </tbody>
+                </table>
+            </section>
+
+            <section class="card" style="margin-top:18px;">
+                <div class="card-head"><span class="card-title">Strongest Topics</span><span class="small-meta">75%+ accuracy, {{ \App\Services\ChairAnalyticsService::TOPIC_MIN_ATTEMPTS }}+ attempts</span></div>
+                <table class="viz-table">
+                    <thead><tr><th>Topic</th><th>Subject</th><th class="num">Accuracy</th><th class="num">Attempts</th><th class="num">Students</th></tr></thead>
+                    <tbody>
+                    @forelse($report['strong_topics'] as $topic)
+                        <tr>
+                            <td>{{ $topic['name'] }}</td>
+                            <td>{{ $topic['subject_code'] }}</td>
+                            <td class="num"><strong>{{ $topic['accuracy'] }}%</strong></td>
+                            <td class="num">{{ number_format($topic['attempts']) }}</td>
+                            <td class="num">{{ $topic['students'] }}</td>
+                        </tr>
+                    @empty<tr><td colspan="5"><div class="empty">No topic has reached 75% class accuracy yet.</div></td></tr>@endforelse
                     </tbody>
                 </table>
             </section>
@@ -409,7 +427,7 @@
 
             <div class="viz-card full">
                 <h4><i class="fas fa-triangle-exclamation"></i> Weakest Topics</h4>
-                <div class="viz-sub">Lowest class accuracy among topics with at least {{ \App\Services\ChairAnalyticsService::TOPIC_MIN_ATTEMPTS }} recorded attempts — the remediation shortlist.</div>
+                <div class="viz-sub">Topics under 60% class accuracy with at least {{ \App\Services\ChairAnalyticsService::TOPIC_MIN_ATTEMPTS }} recorded attempts — the remediation shortlist.</div>
                 <div class="chart-canvas-wrap h-xl"><canvas id="vizWeakTopics"></canvas></div>
             </div>
         </div>

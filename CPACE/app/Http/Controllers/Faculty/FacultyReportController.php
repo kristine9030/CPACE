@@ -466,7 +466,9 @@ class FacultyReportController extends Controller
     }
 
     /**
-     * The class's weakest topics across the scoped subjects (>= 5 attempts).
+     * The class's weak topics across the scoped subjects: pooled accuracy under
+     * the shared 60% line with >= 10 attempts (same floor as the Performance
+     * page and the chair analytics, so all three report the same topics).
      */
     private function classWeakTopics(array $subjectIds)
     {
@@ -479,7 +481,7 @@ class FacultyReportController extends Controller
             ->join('subjects', 'subjects.id', '=', 'topics.subject_id')
             ->whereIn('topics.subject_id', $subjectIds)
             ->groupBy('topics.id', 'topics.name', 'subjects.code')
-            ->havingRaw('SUM(performance_records.total_attempts) >= 5')
+            ->havingRaw('SUM(performance_records.total_attempts) >= ?', [\App\Services\ChairAnalyticsService::TOPIC_MIN_ATTEMPTS])
             ->select(
                 'topics.name as topic',
                 'subjects.code as subject_code',
@@ -492,7 +494,7 @@ class FacultyReportController extends Controller
                 $r->accuracy = $r->attempts > 0 ? (int) round($r->correct / $r->attempts * 100) : 0;
                 return $r;
             })
-            ->filter(fn ($r) => $r->accuracy < 60)
+            ->filter(fn ($r) => $r->correct / max(1, $r->attempts) * 100 < \App\Services\WeaknessDetector::ACCURACY_THRESHOLD * 100)
             ->sortBy('accuracy')
             ->values();
     }

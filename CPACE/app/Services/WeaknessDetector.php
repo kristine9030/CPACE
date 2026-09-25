@@ -22,6 +22,7 @@ class WeaknessDetector
     public const ACCURACY_THRESHOLD  = 0.60;
     public const MIN_ATTEMPTS        = 5;
     public const CONSECUTIVE_WRONG   = 3;
+    public const STRENGTH_THRESHOLD  = 0.75;
 
     /**
      * Decide whether a performance_records row currently counts as weak.
@@ -43,6 +44,43 @@ class WeaknessDetector
         }
 
         return [false, null, $accuracy];
+    }
+
+    /**
+     * Decide whether a performance_records row counts as a strength: accuracy
+     * at/above the mastery line (75%) over enough attempts (the same minimum as
+     * the weak rule, so one lucky answer can't label a topic strong), and not
+     * currently flagged weak. Compared unrounded so 74.6% is never "strong" on
+     * one page and not on another.
+     */
+    public function isStrong(object $record): bool
+    {
+        $attempts = (int) $record->total_attempts;
+        if ($attempts < self::MIN_ATTEMPTS) {
+            return false;
+        }
+
+        if ($this->evaluate($record)[0]) {
+            return false;
+        }
+
+        return (int) $record->correct_count * 100 >= self::STRENGTH_THRESHOLD * 100 * $attempts;
+    }
+
+    /**
+     * The "wrong in a row" streak after a sitting. A sitting with no correct
+     * answer extends the running streak; otherwise the streak restarts from the
+     * wrong answers at the very end of the sitting (0 if it ended on a correct
+     * one). $tally['trailing_wrong'] is the run of wrong answers at the end of
+     * the sitting, in the order they were answered.
+     *
+     * @param  array{attempts:int, correct:int, trailing_wrong?:int}  $tally
+     */
+    public static function nextStreak(int $previousStreak, array $tally): int
+    {
+        $trailing = (int) ($tally['trailing_wrong'] ?? ($tally['correct'] === 0 ? $tally['attempts'] : 0));
+
+        return $trailing >= (int) $tally['attempts'] ? $previousStreak + $trailing : $trailing;
     }
 
     /**

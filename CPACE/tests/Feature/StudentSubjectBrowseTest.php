@@ -112,6 +112,7 @@ class StudentSubjectBrowseTest extends TestCase
             $table->unsignedBigInteger('student_id');
             $table->unsignedBigInteger('topic_id');
             $table->integer('correct_count')->default(0);
+            $table->integer('consecutive_wrong')->default(0);
             $table->integer('total_attempts')->default(0);
         });
     }

@@ -1586,6 +1586,20 @@
                     </div>
                     <div class="mini-card">
                         <span class="info-tip" tabindex="0"><i class="fas fa-circle-info"></i>
+                            <span class="info-tip-pop">Your highest-accuracy topic: 75% or higher over 5+ attempts.</span>
+                        </span>
+                        <div class="mini-head"><i class="fas fa-trophy green"></i><span>Strongest Topic</span></div>
+                        @php $strongestTopic = $strengths->first(); @endphp
+                        @if($strongestTopic)
+                            <div class="mini-value" title="{{ $strongestTopic->topic }}">{{ $strongestTopic->topic }}</div>
+                            <div class="mini-sub">{{ $strongestTopic->subject_code }} &middot; Accuracy <span class="d up">{{ $strongestTopic->accuracy }}%</span></div>
+                        @else
+                            <div class="mini-value">None yet</div>
+                            <div class="mini-sub">Reach 75% over 5+ attempts</div>
+                        @endif
+                    </div>
+                    <div class="mini-card" style="grid-column:1 / -1;">
+                        <span class="info-tip" tabindex="0"><i class="fas fa-circle-info"></i>
                             <span class="info-tip-pop">Weekly study-time goal of {{ $goalTarget }} hrs. You've logged {{ $goalHours }} hrs this week.</span>
                         </span>
                         <div class="mini-head"><i class="fas fa-bullseye amber"></i><span>Goal Progress</span></div>

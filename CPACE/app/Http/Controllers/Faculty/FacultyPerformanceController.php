@@ -113,6 +113,7 @@ class FacultyPerformanceController extends Controller
             'pagination'   => $pagination,
             'atRisk'       => $rows->where('at_risk', true)->sortBy('score')->take(5)->values(),
             'weakTopics'   => $weakTopics,
+            'strongTopics' => $this->classStrongTopics($filters),
             'distribution' => $distribution,
             'subjects'     => $this->subjectsFor(Auth::user())->orderBy('id')->get(),
             'filters'      => $filters,
@@ -519,40 +520,16 @@ class FacultyPerformanceController extends Controller
     }
 
     /**
-     * The class's weakest topics: aggregate accuracy across every student in the
-     * current subject/period window, lowest 5 (with a real sample behind them).
+     * The class's weakest topics: pooled accuracy across every student in the
+     * current subject/section window that is genuinely below the shared 60%
+     * line (WeaknessDetector), lowest 5, with a real sample behind them. A
+     * topic the class is doing fine on is never listed as weak.
      */
     private function classWeakTopics(array $filters)
     {
-        $subjectIds = $filters['subject_ids'];
-        $faculty = Auth::user();
-
-        $query = DB::table('performance_records')
-            ->join('topics', 'topics.id', '=', 'performance_records.topic_id')
-            ->join('subjects', 'subjects.id', '=', 'topics.subject_id')
-            ->leftJoin('student_profiles', 'student_profiles.user_id', '=', 'performance_records.student_id');
-
-        if ($subjectIds !== null) {
-            $query = FacultySectionScope::apply($query, $faculty, $subjectIds, 'subjects.id', 'student_profiles.section');
-        }
-
-        $topics = $query
-            ->groupBy('topics.id', 'topics.name', 'subjects.code')
-            ->havingRaw('SUM(performance_records.total_attempts) >= ?', [self::TOPIC_MIN_ATTEMPTS])
-            ->select(
-                'topics.id as topic_id',
-                'topics.name as topic',
-                'subjects.code as subject_code',
-                DB::raw('SUM(performance_records.correct_count) as correct'),
-                DB::raw('SUM(performance_records.total_attempts) as attempts'),
-                DB::raw('COUNT(DISTINCT CASE WHEN performance_records.is_weak_area = 1 THEN performance_records.student_id END) as students_affected')
-            )
-            ->get()
-            ->map(function ($r) {
-                $r->accuracy = $r->attempts > 0 ? (int) round($r->correct / $r->attempts * 100) : 0;
-                return $r;
-            })
-            ->sortBy('accuracy')
+        $topics = $this->classTopicRollup($filters)
+            ->filter(fn ($r) => $r->rate < WeaknessDetector::ACCURACY_THRESHOLD * 100)
+            ->sortBy('rate')
             ->take(5)
             ->values();
 
@@ -568,10 +545,63 @@ class FacultyPerformanceController extends Controller
             $miss = $misses['class:' . $t->topic_id] ?? null;
             $t->why = $t->students_affected > 0
                 ? "{$t->students_affected} student" . ($t->students_affected === 1 ? '' : 's') . " flagged weak"
-                : "Class average below par over {$t->attempts} attempts";
+                : "Class accuracy is {$t->accuracy}% over {$t->attempts} attempts";
             $t->miss = $miss ? "Most often pick \"{$miss['choice']}\" on \"{$miss['question']}\"" : null;
             return $t;
         });
+    }
+
+    /**
+     * The class's strongest topics: pooled accuracy at or above the shared 75%
+     * mastery line (WeaknessDetector::STRENGTH_THRESHOLD), best 5.
+     */
+    private function classStrongTopics(array $filters)
+    {
+        return $this->classTopicRollup($filters)
+            ->filter(fn ($r) => $r->rate >= WeaknessDetector::STRENGTH_THRESHOLD * 100)
+            ->sortByDesc('rate')
+            ->take(5)
+            ->values();
+    }
+
+    /**
+     * Pooled per-topic accuracy for the class in view (TOPIC_MIN_ATTEMPTS+
+     * attempts). `accuracy` is the rounded display value; `rate` is unrounded
+     * so the 60% / 75% lines are applied exactly.
+     */
+    private function classTopicRollup(array $filters)
+    {
+        $subjectIds = $filters['subject_ids'];
+        $faculty = Auth::user();
+
+        $query = DB::table('performance_records')
+            ->join('topics', 'topics.id', '=', 'performance_records.topic_id')
+            ->join('subjects', 'subjects.id', '=', 'topics.subject_id')
+            ->leftJoin('student_profiles', 'student_profiles.user_id', '=', 'performance_records.student_id');
+
+        if ($subjectIds !== null) {
+            $query = FacultySectionScope::apply($query, $faculty, $subjectIds, 'subjects.id', 'student_profiles.section');
+        }
+
+        return $query
+            ->groupBy('topics.id', 'topics.name', 'subjects.code')
+            ->havingRaw('SUM(performance_records.total_attempts) >= ?', [self::TOPIC_MIN_ATTEMPTS])
+            ->select(
+                'topics.id as topic_id',
+                'topics.name as topic',
+                'subjects.code as subject_code',
+                DB::raw('SUM(performance_records.correct_count) as correct'),
+                DB::raw('SUM(performance_records.total_attempts) as attempts'),
+                DB::raw('COUNT(DISTINCT CASE WHEN performance_records.is_weak_area = 1 THEN performance_records.student_id END) as students_affected')
+            )
+            ->get()
+            ->map(function ($r) {
+                $r->attempts = (int) $r->attempts;
+                $r->students_affected = (int) $r->students_affected;
+                $r->rate = $r->attempts > 0 ? $r->correct / $r->attempts * 100 : 0;
+                $r->accuracy = (int) round($r->rate);
+                return $r;
+            });
     }
 
     /**

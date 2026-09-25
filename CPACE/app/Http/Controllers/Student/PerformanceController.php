@@ -149,13 +149,12 @@ class PerformanceController extends Controller
         // Strengths / weaknesses, classified to match the calendar page:
         //   - Weakness: flagged by WeaknessDetector (same as the calendar's
         //     High-priority reviews).
-        //   - Strength: at/above the calendar's mastery line (>= 75%) with
-        //     enough evidence (>= MIN_ATTEMPTS) so one lucky question can't
-        //     label a topic strong.
+        //   - Strength: WeaknessDetector::isStrong() - at/above the mastery line
+        //     (>= 75%, unrounded) over enough attempts, and not currently weak,
+        //     so a topic can never be listed as both.
         // Every qualifying topic is listed - not capped at 3.
         $strengths  = $topicStats
-            ->where('attempts', '>=', WeaknessDetector::MIN_ATTEMPTS)
-            ->where('accuracy', '>=', 75)
+            ->filter(fn ($t) => $this->weakness->isStrong($t))
             ->sortByDesc('accuracy')->values();
         $weaknesses = $topicStats->where('is_weak', true)->sortBy('accuracy')->values();
 

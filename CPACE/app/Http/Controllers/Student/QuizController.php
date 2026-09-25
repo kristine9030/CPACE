@@ -493,9 +493,11 @@ class QuizController extends Controller
                         'answered_at'     => now(),
                     ]);
 
-                $topicTally[$question->topic_id] ??= ['attempts' => 0, 'correct' => 0];
+                $topicTally[$question->topic_id] ??= ['attempts' => 0, 'correct' => 0, 'trailing_wrong' => 0];
                 $topicTally[$question->topic_id]['attempts']++;
                 $topicTally[$question->topic_id]['correct'] += $isCorrect ? 1 : 0;
+                // Trailing run of wrong answers, in the order answered - the "3 in a row" streak.
+                $topicTally[$question->topic_id]['trailing_wrong'] = $isCorrect ? 0 : $topicTally[$question->topic_id]['trailing_wrong'] + 1;
             }
 
             $total = $questions->count();

@@ -114,6 +114,27 @@
         </div>
         <a href="{{ route('faculty.test-bank') }}" style="display:flex;align-items:center;justify-content:center;gap:6px;font-size:12px;color:var(--accent);text-decoration:none;margin-top:14px;font-weight:600;">Add Questions for These Topics <i class="fas fa-arrow-right"></i></a>
     </div>
+
+    <!-- STRONGEST TOPICS — same rule as the weak list: pooled class accuracy at 75%+ -->
+    <div class="side-card">
+        <div class="side-title"><i class="fas fa-trophy" style="margin-right:6px;color:#10b981;"></i>Class Strong Topics</div>
+        <div class="weak-list-scroll">
+            @forelse($strongTopics as $t)
+            <div class="weak-item" style="align-items:flex-start;">
+                <div class="weak-icon" style="background:{{ ($subjColors[$t->subject_code] ?? '#888') }}20;color:{{ $subjColors[$t->subject_code] ?? '#888' }};">
+                    <i class="fas {{ $subjIcons[$t->subject_code] ?? 'fa-book' }}"></i>
+                </div>
+                <span class="weak-name">
+                    {{ $t->topic }}<br><span class="weak-sub">{{ $t->subject_code }}</span>
+                    <div class="weak-why">Class accuracy is {{ $t->accuracy }}% over {{ $t->attempts }} attempts</div>
+                </span>
+                <span class="weak-rate" style="color:#059669;">{{ $t->accuracy }}%</span>
+            </div>
+            @empty
+                <div class="muted-empty">No topic has reached 75% class accuracy yet.</div>
+            @endforelse
+        </div>
+    </div>
     </div>
 
     <!-- RIGHT PANEL -->
