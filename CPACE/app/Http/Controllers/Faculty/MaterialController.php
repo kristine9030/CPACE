@@ -113,7 +113,7 @@ class MaterialController extends Controller
                     'is_active'   => $isActive,
                 ]);
 
-                $material->file_path = $file->store('materials', 'public');
+                $material->file_path = $file->store('materials', 'local');
                 $material->original_name = $file->getClientOriginalName();
                 $material->file_size = $file->getSize();
                 $material->file_category = Material::categoryFor($extension);
@@ -166,7 +166,8 @@ class MaterialController extends Controller
         $this->authorizeTopic($material->topic_id);
 
         if ($material->file_path) {
-            Storage::disk('public')->delete($material->file_path);
+            Storage::disk('local')->delete($material->file_path);
+            Storage::disk('public')->delete($material->file_path); // legacy uploads
         }
 
         $material->delete();

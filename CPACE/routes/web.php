@@ -29,6 +29,7 @@ use App\Http\Controllers\Faculty\FacultyQuizController;
 use App\Http\Controllers\Faculty\MockExamController as FacultyMockExamController;
 use App\Http\Controllers\Chair\MockExamReviewController;
 use App\Http\Controllers\MockExamProctorController;
+use App\Http\Controllers\MaterialFileController;
 use App\Http\Controllers\Student\ClassQuizController;
 use App\Http\Controllers\Student\SubjectController;
 use App\Http\Controllers\Student\StudentSettingsController;
@@ -50,6 +51,10 @@ Route::get('/auth/google', [AuthController::class, 'redirectToGoogle'])->name('a
 Route::get('/auth/google/callback', [AuthController::class, 'handleGoogleCallback']);
 Route::get('/auth/microsoft', [AuthController::class, 'redirectToMicrosoft'])->name('auth.microsoft');
 Route::get('/auth/microsoft/callback', [AuthController::class, 'handleMicrosoftCallback']);
+
+// Learning material files: never reachable by a direct storage URL. The
+// controller requires a signed-in session or a short-lived signed link.
+Route::get('/materials/{material}/file', [MaterialFileController::class, 'show'])->name('materials.file');
 
 // Authentication Routes
 Route::middleware('guest')->group(function () {
@@ -272,7 +277,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/subjects', [SubjectController::class, 'index'])->name('subjects');
     Route::get('/subjects/{subject}', [SubjectController::class, 'show'])->name('subjects.show');
     Route::get('/subjects/{subject}/topics/{topic}', [SubjectController::class, 'topic'])->name('subjects.topic');
-    Route::get('/materials/{material}/download', [SubjectController::class, 'download'])->name('materials.download');
     Route::get('/adaptive-quizzes', [QuizController::class, 'index'])->name('adaptive-quizzes');
 
     // Quiz engine

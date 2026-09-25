@@ -10,7 +10,6 @@ use App\Services\WeaknessDetector;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 
 class SubjectController extends Controller
 {
@@ -132,25 +131,13 @@ class SubjectController extends Controller
                 'uploader_name' => $m->uploader->name ?? 'Faculty',
                 'icon'          => $meta['icon'],
                 'color'         => $meta['color'],
-                'view_url'      => $m->url(),
-                'download_url'  => route('materials.download', $m->id),
+                // Office Online can't log in, so Word/Excel/PowerPoint get a short-lived signed link.
+                'view_url'      => in_array($m->file_category, ['word', 'excel', 'powerpoint'], true)
+                    ? $m->previewUrl()
+                    : $m->url(),
             ];
         })->values();
 
         return view('student.topic-materials', compact('subject', 'topic', 'materials', 'materialsJson'));
-    }
-
-    /**
-     * Stream a material file as a download.
-     */
-    public function download(Material $material)
-    {
-        abort_if($material->kind !== 'file' || ! $material->file_path, 404);
-        abort_unless(Storage::disk('public')->exists($material->file_path), 404);
-
-        return Storage::disk('public')->download(
-            $material->file_path,
-            $material->original_name ?: basename($material->file_path)
-        );
     }
 }

@@ -277,9 +277,6 @@
                             <button type="button" class="m-btn m-open" data-act="view" data-id="{{ $m->id }}">
                                 <i class="fas fa-eye"></i> View
                             </button>
-                            <a class="m-btn m-download" href="{{ route('materials.download', $m->id) }}">
-                                <i class="fas fa-download"></i> Download
-                            </a>
                         @endif
                     </div>
                 </div>
@@ -299,7 +296,6 @@
                 </div>
             </div>
             <div class="mat-modal-actions">
-                <a href="#" id="matModalDownload" class="m-btn m-download" title="Download"><i class="fas fa-download"></i> Download</a>
                 <button class="icon-btn" id="matModalClose" title="Close"><i class="fas fa-xmark"></i></button>
             </div>
         </div>
@@ -329,11 +325,13 @@
                 <div class="mat-preview-fallback">
                     <i class="fas fa-file-circle-exclamation"></i>
                     <p>Preview unavailable</p>
-                    <span>Use the Download button to view this file.</span>
+                    <span>This file can't be previewed right now.</span>
                 </div>`;
         }
         if (m.file_category === 'pdf' || m.file_category === 'text') {
-            return `<iframe src="${esc(m.view_url)}" title="${esc(m.title)}"></iframe>`;
+            // #toolbar=0 hides the PDF viewer's download/print buttons.
+            const src = m.file_category === 'pdf' ? m.view_url + '#toolbar=0&navpanes=0' : m.view_url;
+            return `<iframe src="${esc(src)}" title="${esc(m.title)}"></iframe>`;
         }
         if (m.file_category === 'image') {
             return `<img src="${esc(m.view_url)}" alt="${esc(m.title)}">`;
@@ -347,14 +345,14 @@
                 <div class="mat-preview-fallback">
                     <i class="fas ${m.icon}" style="color:${m.color};"></i>
                     <p>${esc(m.original_name || m.title)}</p>
-                    <span>Preview isn't available on a local/private server — Office Online needs a public URL. Use Download to open it.</span>
+                    <span>Preview isn't available on a local/private server — Office Online needs a public URL.</span>
                 </div>`;
         }
         return `
             <div class="mat-preview-fallback">
                 <i class="fas ${m.icon}" style="color:${m.color};"></i>
                 <p>${esc(m.original_name || m.title)}</p>
-                <span>This file type can't be previewed in-browser. Use Download to open it.</span>
+                <span>This file type can't be previewed in-browser.</span>
             </div>`;
     }
 
@@ -367,7 +365,6 @@
         document.getElementById('matModalTitle').textContent = m.title;
         document.getElementById('matModalSub').textContent =
             `${(m.file_category || '').toUpperCase()} · ${m.file_size || ''} · Uploaded by ${m.uploader_name}`;
-        document.getElementById('matModalDownload').href = m.download_url;
         document.getElementById('matModalBody').innerHTML = materialPreviewBody(m);
         document.getElementById('matModal').classList.add('open');
     }

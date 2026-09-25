@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
 
 class Material extends Model
 {
@@ -46,14 +47,48 @@ class Material extends Model
         return $this->belongsTo(User::class, 'uploaded_by');
     }
 
-    /** Public URL a student uses to open/download the material. */
+    /**
+     * URL a signed-in user opens the material from. Uploaded files are never
+     * exposed by a direct storage URL — they are streamed inline through
+     * MaterialFileController, which checks the session first.
+     */
     public function url(): ?string
     {
         if ($this->kind === 'link') {
             return $this->external_url;
         }
 
-        return $this->file_path ? Storage::disk('public')->url($this->file_path) : null;
+        return $this->file_path ? route('materials.file', $this->id) : null;
+    }
+
+    /**
+     * Short-lived signed URL for viewers that cannot carry our session cookie
+     * (Office Online fetches the file server-side). Expires quickly so a copied
+     * link stops working.
+     */
+    public function previewUrl(int $minutes = 10): ?string
+    {
+        if ($this->kind === 'link' || ! $this->file_path) {
+            return $this->url();
+        }
+
+        return URL::temporarySignedRoute('materials.file', now()->addMinutes($minutes), $this->id);
+    }
+
+    /** Disk holding the file: private storage, or the legacy public disk until it is migrated. */
+    public function storageDisk(): ?string
+    {
+        if (! $this->file_path) {
+            return null;
+        }
+
+        foreach (['local', 'public'] as $disk) {
+            if (Storage::disk($disk)->exists($this->file_path)) {
+                return $disk;
+            }
+        }
+
+        return null;
     }
 
     /** Human-readable file size, e.g. "1.4 MB". */
