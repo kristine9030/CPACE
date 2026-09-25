@@ -89,7 +89,20 @@
 
             <div class="card">
                 <div class="card-title"><i class="fas fa-images"></i> Captures ({{ $attempt->captures->count() }})</div>
-                <div class="card-sub">Red-bordered frames were taken because something was flagged.</div>
+                <div class="card-sub">
+                    Red-bordered frames were taken because something was flagged. Recordings are deleted automatically
+                    {{ \App\Models\MockExamProctorCapture::RETENTION_DAYS }} days after the exam.
+                </div>
+                @if($attempt->isSubmitted() && $attempt->captures->isNotEmpty())
+                    <form method="POST" action="{{ route('mock-exams.captures.destroy', $attempt) }}" style="margin-top:10px;"
+                          onsubmit="return confirm('Delete all recordings for this student? The flag timeline is kept, but the images cannot be recovered.');">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="btn btn-ghost" style="font-size:12px;">
+                            <i class="fas fa-trash"></i> Delete recordings
+                        </button>
+                    </form>
+                @endif
                 <div class="shots" style="margin-top:14px;">
                     @forelse($attempt->captures as $capture)
                         <div class="shot {{ $capture->isEventTriggered() ? 'evt' : '' }}">

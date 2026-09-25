@@ -93,12 +93,16 @@
                 <div class="card-sub">Read this carefully. Starting the exam means you agree to it.</div>
 
                 <ul class="rules">
-                    <li>Your <strong>camera</strong> is photographed periodically (about once a minute) for the whole exam.</li>
-                    <li>Your <strong>shared screen</strong> is captured every few minutes.</li>
-                    <li>Switching tabs, leaving fullscreen, or turning off the camera or screen sharing is
+                    <li>Your <strong>camera</strong> is photographed periodically (about once every two minutes) for the whole exam.</li>
+                    <li>Your <strong>shared screen</strong> is captured every ten minutes or so.</li>
+                    <li>Your browser checks, <strong>on your own device</strong>, that exactly one face is in view and that you are
+                        facing the screen. Nothing is uploaded for this check; only a flagged moment is photographed.</li>
+                    <li>Switching tabs, leaving fullscreen, or an absent, extra or turned-away face is
                         <strong>recorded and flagged</strong> to your faculty and the Program Chair.</li>
+                    <li>If your camera or screen sharing stops, the exam is <strong>locked</strong> until you share again. The timer keeps running.</li>
                     <li>Copy and paste are blocked inside the exam.</li>
-                    <li>Recordings are kept for a limited period and are visible only to your faculty and the Program Chair.</li>
+                    <li>If you finish with no flags, your recordings are <strong>deleted as soon as you submit</strong>. Otherwise only the
+                        flagged frames are kept, for {{ \App\Models\MockExamProctorCapture::RETENTION_DAYS }} days at most, and are visible only to your faculty and the Program Chair.</li>
                     <li>Your browser will ask permission for the camera and for screen sharing — you must allow both to enter.</li>
                 </ul>
 

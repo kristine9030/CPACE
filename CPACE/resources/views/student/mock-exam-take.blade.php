@@ -46,6 +46,7 @@
         .warn-overlay { position:fixed; inset:0; background:rgba(120,15,15,.94); color:#fff; z-index:999;
                         display:none; align-items:center; justify-content:center; text-align:center; padding:30px; }
         .warn-overlay.on { display:flex; }
+        .warn-overlay.lock { z-index:1000; background:rgba(20,24,40,.97); }
         .warn-overlay h2 { font-size:24px; margin-bottom:10px; }
         .warn-overlay p { font-size:14px; opacity:.9; max-width:480px; margin:0 auto 18px; line-height:1.7; }
 
@@ -106,6 +107,21 @@
         <h2 id="warnTitle">Stay on the exam</h2>
         <p id="warnBody">Leaving the exam window has been recorded and reported to your faculty.</p>
         <button class="btn btn-ghost" type="button" id="warnBack">Return to the exam</button>
+    </div>
+</div>
+
+{{-- Blocks the whole exam while the camera or screen share is off. It is not
+     dismissable: the only way out is to share again. The timer keeps running. --}}
+<div class="warn-overlay lock" id="lockOverlay">
+    <div>
+        <i class="fas fa-lock" style="font-size:44px;margin-bottom:14px;"></i>
+        <h2>Exam locked</h2>
+        <p id="lockMsg">Your camera or screen sharing is off. Share it again to continue. Your time is still running.</p>
+        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+            <button class="btn btn-ghost" type="button" id="lockCam"><i class="fas fa-video"></i> Share camera again</button>
+            <button class="btn btn-ghost" type="button" id="lockScreen"><i class="fas fa-display"></i> Share screen again</button>
+        </div>
+        <p id="lockNote" style="margin-top:14px;font-size:12.5px;"></p>
     </div>
 </div>
 
@@ -265,38 +281,182 @@
         } catch (e) { /* ignore */ }
     }
 
+    // ── camera / screen state and the lock ───────────────────────────────
+    // While either stream is off the whole exam is locked (inert + overlay).
+    // The only way out is to share again. The timer keeps running, and the
+    // loss itself was already flagged once, so re-sharing doesn't erase it.
+    let camOk = false, screenOk = false;
+    // Picking a screen opens a native dialog that blurs this window; that must
+    // not be counted as "left the exam".
+    let resharing = false;
+    const lockEl = document.getElementById('lockOverlay');
+    const examWrap = document.querySelector('.wrap');
+
+    function updateLock() {
+        const locked = !(camOk && screenOk) && !submitting;
+        lockEl.classList.toggle('on', locked);
+        examWrap.toggleAttribute('inert', locked);
+        document.getElementById('lockCam').style.display = camOk ? 'none' : '';
+        document.getElementById('lockScreen').style.display = screenOk ? 'none' : '';
+        const what = !camOk && !screenOk ? 'camera and screen sharing are' : (!camOk ? 'camera is' : 'screen sharing is');
+        document.getElementById('lockMsg').textContent =
+            `Your ${what} off. Share again to continue. Your time is still running, and this has been recorded.`;
+    }
+
+    function lockNote(text) { document.getElementById('lockNote').textContent = text || ''; }
+
+    function attachCamera(stream) {
+        camStream = stream;
+        camFeed.srcObject = stream;
+        // Autoplay is not reliably honored for a srcObject assigned after load,
+        // so play() is kicked off explicitly — muted, so no gesture is required.
+        camFeed.play().catch(() => {});
+        camOk = true;
+        setCam(true);
+        stream.getVideoTracks()[0].addEventListener('ended', () => {
+            if (submitting || camStream !== stream) return;
+            camOk = false;
+            setCam(false);
+            flag('camera_lost');
+            updateLock();
+        });
+        updateLock();
+    }
+
+    function attachScreen(stream) {
+        screenStream = stream;
+        screenFeed.srcObject = stream;
+        screenFeed.play().catch(() => {});
+        screenOk = true;
+        stream.getVideoTracks()[0].addEventListener('ended', () => {
+            if (submitting || screenStream !== stream) return;
+            screenOk = false;
+            flag('screen_lost');
+            updateLock();
+        });
+        updateLock();
+    }
+
+    async function shareCamera() {
+        resharing = true;
+        lockNote('');
+        try {
+            attachCamera(await navigator.mediaDevices.getUserMedia({ video: { width: 640 } }));
+        } catch (e) {
+            lockNote('Camera access was refused. Allow the camera in your browser, then try again.');
+        } finally { setTimeout(() => { resharing = false; }, 1500); }
+    }
+
+    async function shareScreen() {
+        resharing = true;
+        lockNote('');
+        try {
+            attachScreen(await navigator.mediaDevices.getDisplayMedia({ video: true }));
+        } catch (e) {
+            lockNote('Screen sharing was cancelled. Choose your entire screen and try again.');
+        } finally { setTimeout(() => { resharing = false; }, 1500); }
+    }
+
+    document.getElementById('lockCam').addEventListener('click', shareCamera);
+    document.getElementById('lockScreen').addEventListener('click', shareScreen);
+
+    // ── face check (runs entirely in this browser) ───────────────────────
+    // Uses MediaPipe's small BlazeFace detector. It reads the camera video
+    // locally; no image leaves the device for this check. Only when something
+    // is flagged is one frame uploaded as evidence. If the model can't load
+    // (offline, blocked CDN) the check quietly does nothing: a failure of ours
+    // must never be counted against the student.
+    const FACE = {
+        everyMs: 3000,      // how often a frame is examined
+        noFaceAfter: 3,     // consecutive checks (~9s) with nobody in view
+        multiAfter: 2,      // consecutive checks (~6s) with 2+ faces
+        awayAfter: 4,       // consecutive checks (~12s) turned away
+        awayRatio: 0.45,    // nose offset from eye-centre, in eye-distances
+        cooldownMs: 60000,  // same flag type at most once a minute
+    };
+    const VISION = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14';
+    const FACE_MODEL = 'https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite';
+    let faceDetector = null;
+    const seen = { none: 0, multi: 0, away: 0 };
+    const lastRaised = {};
+
+    async function loadFaceDetector() {
+        try {
+            const vision = await import(VISION + '/+esm');
+            const fileset = await vision.FilesetResolver.forVisionTasks(VISION + '/wasm');
+            faceDetector = await vision.FaceDetector.createFromOptions(fileset, {
+                baseOptions: { modelAssetPath: FACE_MODEL },
+                runningMode: 'VIDEO',
+                minDetectionConfidence: 0.6,
+            });
+            setInterval(faceTick, FACE.everyMs);
+        } catch (e) { faceDetector = null; }
+    }
+
+    // Keypoint order from BlazeFace: right eye, left eye, nose tip, mouth, ears.
+    function isLookingAway(detection) {
+        const k = detection.keypoints;
+        if (!k || k.length < 3) return false;
+        const eyeDist = Math.abs(k[0].x - k[1].x);
+        if (eyeDist < 0.02) return false;
+        const eyeMid = (k[0].x + k[1].x) / 2;
+        return Math.abs(k[2].x - eyeMid) / eyeDist > FACE.awayRatio;
+    }
+
+    function raiseFace(type, meta) {
+        const now = Date.now();
+        if (now - (lastRaised[type] || 0) < FACE.cooldownMs) return;
+        lastRaised[type] = now;
+        flag(type, meta);
+        // Camera frame is the evidence for a face flag; the screen frame shows
+        // what was open at that moment.
+        grab('camera', type);
+        grab('screen', type);
+    }
+
+    function faceTick() {
+        if (!faceDetector || !camOk || submitting) return;
+        if (!camFeed.videoWidth || camFeed.readyState < 2) return;
+
+        let faces;
+        try { faces = faceDetector.detectForVideo(camFeed, performance.now()).detections || []; }
+        catch (e) { return; }
+
+        if (faces.length === 0) {
+            seen.none++; seen.multi = 0; seen.away = 0;
+            if (seen.none >= FACE.noFaceAfter) { raiseFace('no_face'); seen.none = 0; }
+        } else if (faces.length >= 2) {
+            seen.multi++; seen.none = 0; seen.away = 0;
+            if (seen.multi >= FACE.multiAfter) { raiseFace('multiple_faces', faces.length + ' faces'); seen.multi = 0; }
+        } else {
+            seen.none = 0; seen.multi = 0;
+            seen.away = isLookingAway(faces[0]) ? seen.away + 1 : 0;
+            if (seen.away >= FACE.awayAfter) { raiseFace('looking_away'); seen.away = 0; }
+        }
+    }
+
     async function startProctoring() {
         try {
-            camStream = await navigator.mediaDevices.getUserMedia({ video: { width: 640 } });
-            camFeed.srcObject = camStream;
-            // Autoplay is not reliably honored for a srcObject assigned after load,
-            // so play() is kicked off explicitly — muted, so no gesture is required.
-            camFeed.play().catch(() => {});
-            camStream.getVideoTracks()[0].addEventListener('ended', () => {
-                setCam(false);
-                flag('camera_lost');
-                warn('Your camera was turned off', 'This has been recorded. Turn it back on and reload to continue being monitored.');
-            });
+            attachCamera(await navigator.mediaDevices.getUserMedia({ video: { width: 640 } }));
         } catch (e) {
             setCam(false);
             flag('camera_lost', 'not granted at start');
         }
 
         try {
-            screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
-            screenFeed.srcObject = screenStream;
-            screenFeed.play().catch(() => {});
-            screenStream.getVideoTracks()[0].addEventListener('ended', () => {
-                flag('screen_lost');
-                warn('Screen sharing stopped', 'This has been recorded and reported to your faculty.');
-            });
+            attachScreen(await navigator.mediaDevices.getDisplayMedia({ video: true }));
         } catch (e) {
             flag('screen_lost', 'not granted at start');
         }
+        updateLock();
 
         setTimeout(() => { grab('camera', 'start'); grab('screen', 'start'); }, 2500);
-        setInterval(() => grab('camera', 'interval'), 60000);
-        setInterval(() => grab('screen', 'interval'), 300000);
+        // Routine frames are deliberately sparse: they are deleted at submit
+        // for a clean sitting, so they only exist to show the room is being
+        // watched. The frames that matter are the ones taken on a flag.
+        setInterval(() => grab('camera', 'interval'), 120000);
+        setInterval(() => grab('screen', 'interval'), 600000);
+        loadFaceDetector();
     }
 
     function setCam(on) {
@@ -317,7 +477,7 @@
     // there is a picture attached to the flag rather than just a timestamp.
     let lastFlag = 0;
     function leaveFlag(type, title, body) {
-        if (submitting) return;
+        if (submitting || resharing) return;
         const now = Date.now();
         // Debounced: blur and visibilitychange both fire on a single alt-tab,
         // which would otherwise double-count one action.
@@ -325,6 +485,7 @@
         lastFlag = now;
         flag(type);
         grab('camera', type);
+        grab('screen', type);
         warn(title, body);
     }
 

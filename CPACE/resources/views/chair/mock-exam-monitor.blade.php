@@ -79,7 +79,17 @@
         <i class="fas fa-camera"></i>
         <div>
             Snapshots refresh about every 15 seconds — this is a periodic capture, not a live video stream.
-            A student who revokes camera or screen sharing mid-exam is flagged immediately.
+            A student who revokes camera or screen sharing mid-exam is flagged immediately and locked out until they share again.
+        </div>
+    </div>
+
+    <div class="banner banner-info">
+        <i class="fas fa-hard-drive"></i>
+        <div>
+            <strong>Recordings stored for this exam: {{ $storage['count'] }} ({{ \App\Support\ProctorCaptureRetention::humanSize($storage['bytes']) }}).</strong>
+            Students with no flags have their recordings deleted as soon as they submit. Flagged students keep only the frames
+            behind a flag, and those are removed automatically {{ \App\Models\MockExamProctorCapture::RETENTION_DAYS }} days after the exam,
+            or sooner with “Delete recordings” on a student's page. The flag timeline is always kept.
         </div>
     </div>
 

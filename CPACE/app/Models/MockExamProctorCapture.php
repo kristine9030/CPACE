@@ -24,6 +24,16 @@ class MockExamProctorCapture extends Model
     /** Private-disk directory all captures live under. */
     public const ROOT = 'proctor';
 
+    /**
+     * How long frames that were kept as evidence survive after the exam.
+     * Clean sittings keep nothing at all; see ProctorCaptureRetention.
+     */
+    public const RETENTION_DAYS = 14;
+
+    /** Timer frames: routine, and the first thing discarded once a sitting ends. */
+    public const REASON_INTERVAL = 'interval';
+    public const REASON_START = 'start';
+
     protected $fillable = ['attempt_id', 'kind', 'path', 'captured_at', 'reason'];
 
     protected $casts = [
@@ -38,6 +48,6 @@ class MockExamProctorCapture extends Model
     /** Frames taken because something happened, rather than on the timer. */
     public function isEventTriggered(): bool
     {
-        return ! in_array($this->reason, ['interval', 'start'], true);
+        return ! in_array($this->reason, [self::REASON_INTERVAL, self::REASON_START], true);
     }
 }

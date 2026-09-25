@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\MockExamAttempt;
 use App\Models\MockExamProctorCapture;
 use App\Models\MockExamProctorEvent;
+use App\Support\ProctorCaptureRetention;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -112,6 +113,29 @@ class MockExamProctorController extends Controller
         abort_unless(Storage::disk('local')->exists($capture->path), 404);
 
         return response()->file(Storage::disk('local')->path($capture->path));
+    }
+
+    /**
+     * Delete every stored frame for one sitting, once the faculty or Chair has
+     * decided the case. The flag history stays. Refused while the student is
+     * still sitting, so a running exam can't be blinded mid-way.
+     */
+    public function destroyCaptures(MockExamAttempt $attempt)
+    {
+        $attempt->load('exam');
+
+        abort_unless(
+            Auth::user() && $attempt->exam?->canBeViewedBy(Auth::user()),
+            403,
+            'You are not authorised to delete these recordings.'
+        );
+        abort_unless($attempt->isSubmitted(), 409, 'This student is still sitting the exam.');
+
+        $deleted = app(ProctorCaptureRetention::class)->deleteAllFor($attempt);
+
+        return back()->with('status', $deleted > 0
+            ? "Deleted {$deleted} recording(s). The flag timeline was kept."
+            : 'There were no recordings to delete.');
     }
 
     /**
