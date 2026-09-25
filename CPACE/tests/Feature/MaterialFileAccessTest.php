@@ -66,6 +66,10 @@ class MaterialFileAccessTest extends TestCase
         Schema::create('student_profiles', function (Blueprint $table) {
             $table->unsignedBigInteger('user_id')->primary();
         });
+        Schema::create('community_resources', function (Blueprint $table) {
+            $table->id();
+            $table->string('file_path')->nullable();
+        });
         Schema::create('materials', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('topic_id')->default(1);
@@ -83,7 +87,7 @@ class MaterialFileAccessTest extends TestCase
 
     protected function tearDown(): void
     {
-        foreach (['materials', 'student_profiles', 'notifications', 'messages', 'conversation_participants', 'conversations', 'users'] as $table) {
+        foreach (['materials', 'community_resources', 'student_profiles', 'notifications', 'messages', 'conversation_participants', 'conversations', 'users'] as $table) {
             Schema::dropIfExists($table);
         }
         parent::tearDown();
@@ -167,10 +171,14 @@ class MaterialFileAccessTest extends TestCase
     public function test_the_secure_command_moves_public_files_to_private_storage(): void
     {
         $this->material(disk: 'public');
+        Storage::disk('public')->put('community-resources/r.pdf', 'X');
+        \Illuminate\Support\Facades\DB::table('community_resources')->insert(['file_path' => 'community-resources/r.pdf']);
 
         $this->artisan('materials:secure')->assertSuccessful();
 
         Storage::disk('local')->assertExists('materials/a.pdf');
         Storage::disk('public')->assertMissing('materials/a.pdf');
+        Storage::disk('local')->assertExists('community-resources/r.pdf');
+        Storage::disk('public')->assertMissing('community-resources/r.pdf');
     }
 }

@@ -84,7 +84,7 @@ class CommunityResourceController extends Controller
             'subject_id'    => $data['subject_id'] ?? null,
             'title'         => $data['title'],
             'description'   => $data['description'] ?? null,
-            'file_path'     => $file->store('community-resources', 'public'),
+            'file_path'     => $file->store('community-resources', 'local'),
             'original_name' => $file->getClientOriginalName(),
             'file_category' => CommunityResource::categoryFor($extension),
             'file_size'     => $file->getSize(),
@@ -94,15 +94,27 @@ class CommunityResourceController extends Controller
     }
 
     /**
-     * Download a resource and record the hit against its download counter.
+     * Stream a resource inline (view only — there is no download) and count the view.
+     * Needs a signed-in session or a short-lived signed link (Office Online).
      */
-    public function download(CommunityResource $resource)
+    public function file(Request $request, CommunityResource $resource)
     {
-        abort_unless($resource->file_path && Storage::disk('public')->exists($resource->file_path), 404);
+        if (! $request->hasValidSignature()) {
+            abort_unless(Auth::check(), 403);
+        }
+
+        $disk = $resource->storageDisk();
+        abort_unless($disk, 404);
 
         $resource->increment('downloads_count');
 
-        return Storage::disk('public')->download($resource->file_path, $resource->original_name);
+        $name = $resource->original_name ?: basename($resource->file_path);
+
+        return Storage::disk($disk)->response($resource->file_path, $name, [
+            'Content-Disposition'    => 'inline; filename="' . addslashes($name) . '"',
+            'Cache-Control'          => 'private, no-store, max-age=0',
+            'X-Content-Type-Options' => 'nosniff',
+        ]);
     }
 
     /**
@@ -114,7 +126,8 @@ class CommunityResourceController extends Controller
         abort_unless($user->isChair() || $resource->uploader_id === $user->id, 403);
 
         if ($resource->file_path) {
-            Storage::disk('public')->delete($resource->file_path);
+            Storage::disk('local')->delete($resource->file_path);
+            Storage::disk('public')->delete($resource->file_path); // legacy uploads
         }
 
         $resource->delete();

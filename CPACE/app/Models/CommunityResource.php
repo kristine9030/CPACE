@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
 
 class CommunityResource extends Model
 {
@@ -49,9 +50,48 @@ class CommunityResource extends Model
         return $this->hasMany(CommunityPost::class, 'resource_id');
     }
 
+    /** Guarded route the file is streamed from — never a direct storage URL. */
     public function url(): ?string
     {
-        return $this->file_path ? Storage::disk('public')->url($this->file_path) : null;
+        return $this->file_path ? route('community.resources.file', $this->id) : null;
+    }
+
+    /** Short-lived signed URL for viewers that can't carry our session (Office Online). */
+    public function previewUrl(int $minutes = 10): ?string
+    {
+        return $this->file_path
+            ? URL::temporarySignedRoute('community.resources.file', now()->addMinutes($minutes), $this->id)
+            : null;
+    }
+
+    /** What the View button opens: Office files go through Office Online, everything else streams inline. */
+    public function viewerUrl(): ?string
+    {
+        if (! $this->file_path) {
+            return null;
+        }
+
+        if (in_array($this->file_category, ['word', 'excel', 'powerpoint'], true)) {
+            return 'https://view.officeapps.live.com/op/view.aspx?src=' . urlencode($this->previewUrl());
+        }
+
+        return $this->url();
+    }
+
+    /** Disk holding the file: private storage, or the legacy public disk until migrated. */
+    public function storageDisk(): ?string
+    {
+        if (! $this->file_path) {
+            return null;
+        }
+
+        foreach (['local', 'public'] as $disk) {
+            if (Storage::disk($disk)->exists($this->file_path)) {
+                return $disk;
+            }
+        }
+
+        return null;
     }
 
     /** Human-readable file size, e.g. "1.4 MB". */

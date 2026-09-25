@@ -56,6 +56,8 @@ Route::get('/auth/microsoft/callback', [AuthController::class, 'handleMicrosoftC
 // controller requires a signed-in session or a short-lived signed link.
 Route::get('/materials/{material}/file', [MaterialFileController::class, 'show'])->name('materials.file');
 
+Route::get('/community/resources/{resource}/file', [CommunityResourceController::class, 'file'])->name('community.resources.file');
+
 // Authentication Routes
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
@@ -258,7 +260,6 @@ Route::middleware('auth')->group(function () {
     // Resource Library — persistent, filterable study materials, decoupled from the feed
     Route::get('/community/resources', [CommunityResourceController::class, 'index'])->name('community.resources.index');
     Route::post('/community/resources', [CommunityResourceController::class, 'store'])->name('community.resources.store');
-    Route::get('/community/resources/{resource}/download', [CommunityResourceController::class, 'download'])->name('community.resources.download');
     Route::delete('/community/resources/{resource}', [CommunityResourceController::class, 'destroy'])->name('community.resources.destroy');
 
     // Messenger-style chat — the default community GC, alumni-created group chats, and DMs

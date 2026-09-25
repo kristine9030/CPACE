@@ -28,6 +28,7 @@ class CommunityResourceTest extends TestCase
     {
         parent::setUp();
         Storage::fake('public');
+        Storage::fake('local');
 
         Schema::create('users', function (Blueprint $table) {
             $table->id();
@@ -120,15 +121,49 @@ class CommunityResourceTest extends TestCase
         $this->assertSame(0, DB::table('community_resources')->count());
     }
 
-    public function test_downloading_a_resource_increments_its_download_count(): void
+    public function test_viewing_a_resource_streams_it_inline_and_counts_the_view(): void
     {
         $alumnus = $this->user(Role::ALUMNI, 'alumnus@example.com');
         $resourceId = $this->resource($alumnus->id);
         $student = $this->user(Role::STUDENT, 'student@example.com');
 
-        $this->actingAs($student)->get(route('community.resources.download', $resourceId))->assertOk();
+        $response = $this->actingAs($student)->get(route('community.resources.file', $resourceId));
 
+        $response->assertOk();
+        $this->assertStringContainsString('inline', $response->headers->get('Content-Disposition'));
         $this->assertSame(1, DB::table('community_resources')->find($resourceId)->downloads_count);
+    }
+
+    public function test_there_is_no_download_route_and_guests_cannot_open_the_file(): void
+    {
+        $alumnus = $this->user(Role::ALUMNI, 'alumnus@example.com');
+        $resourceId = $this->resource($alumnus->id);
+
+        $this->assertFalse(\Illuminate\Support\Facades\Route::has('community.resources.download'));
+        $this->get(route('community.resources.file', $resourceId))->assertForbidden();
+    }
+
+    public function test_a_signed_link_works_without_a_session_and_a_tampered_one_does_not(): void
+    {
+        $alumnus = $this->user(Role::ALUMNI, 'alumnus@example.com');
+        $resource = \App\Models\CommunityResource::find($this->resource($alumnus->id));
+        $signed = $resource->previewUrl();
+
+        $this->get($signed)->assertOk();
+        $this->get($signed . 'x')->assertForbidden();
+    }
+
+    public function test_uploads_go_to_private_storage_not_the_public_disk(): void
+    {
+        $alumnus = $this->user(Role::ALUMNI, 'alumnus@example.com');
+
+        $this->actingAs($alumnus)->post(route('community.resources.store'), [
+            'title' => 'Private', 'file' => UploadedFile::fake()->create('n.pdf', 50, 'application/pdf'),
+        ]);
+
+        $path = DB::table('community_resources')->value('file_path');
+        Storage::disk('local')->assertExists($path);
+        Storage::disk('public')->assertMissing($path);
     }
 
     public function test_a_resource_can_be_deleted_by_its_uploader_or_the_chair_but_not_by_anyone_else(): void
@@ -160,7 +195,7 @@ class CommunityResourceTest extends TestCase
 
     private function resource(int $uploaderId): int
     {
-        $path = UploadedFile::fake()->create('notes.pdf', 500, 'application/pdf')->store('community-resources', 'public');
+        $path = UploadedFile::fake()->create('notes.pdf', 500, 'application/pdf')->store('community-resources', 'local');
 
         return DB::table('community_resources')->insertGetId([
             'uploader_id' => $uploaderId,
