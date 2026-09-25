@@ -130,6 +130,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/sections', [SectionManagementController::class, 'index'])->name('sections');
         Route::post('/sections', [SectionManagementController::class, 'store'])->name('sections.store');
         Route::put('/sections/{section}', [SectionManagementController::class, 'update'])->name('sections.update');
+        Route::get('/sections/{section}/students', [SectionManagementController::class, 'students'])->name('sections.students');
+        Route::post('/sections/{section}/students', [SectionManagementController::class, 'addStudents'])->name('sections.students.add');
         Route::post('/sections/{section}/toggle', [SectionManagementController::class, 'toggle'])->name('sections.toggle');
         Route::delete('/sections/{section}', [SectionManagementController::class, 'destroy'])->name('sections.destroy');
 
