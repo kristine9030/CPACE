@@ -76,6 +76,60 @@ class SectionManagementController extends Controller
         ]);
     }
 
+    /**
+     * Roster for the section modal: who is in this section, and every other
+     * enrolled student who could be added (with the section they currently sit
+     * in, so the chair sees that adding them moves them).
+     */
+    public function students(Section $section)
+    {
+        $rows = $this->enrolledStudents()
+            ->select('users.id', 'users.first_name', 'users.last_name', 'users.email',
+                'student_profiles.student_number', 'student_profiles.section')
+            ->orderBy('users.last_name')->orderBy('users.first_name')
+            ->get()
+            ->map(fn ($r) => [
+                'id' => $r->id,
+                'name' => trim($r->last_name . ', ' . $r->first_name),
+                'email' => $r->email,
+                'student_number' => $r->student_number,
+                'section' => $r->section,
+            ]);
+
+        return response()->json([
+            'members' => $rows->where('section', $section->name)->values(),
+            'available' => $rows->where('section', '!=', $section->name)->values(),
+        ]);
+    }
+
+    public function addStudents(Request $request, Section $section)
+    {
+        $data = $request->validate([
+            'student_ids' => ['required', 'array', 'min:1'],
+            'student_ids.*' => ['integer'],
+        ]);
+
+        // Only enrolled students can be sectioned, whatever ids were posted.
+        $ids = $this->enrolledStudents()->whereIn('users.id', $data['student_ids'])->pluck('users.id');
+
+        StudentProfile::whereIn('user_id', $ids)->update([
+            'section' => $section->name,
+            'year_level' => $section->year_level,
+        ]);
+
+        return response()->json(['added' => $ids->count()]);
+    }
+
+    private function enrolledStudents()
+    {
+        return StudentProfile::query()
+            ->join('users', 'users.id', '=', 'student_profiles.user_id')
+            ->where('users.role_id', Role::STUDENT)
+            ->where('users.is_active', true)
+            ->where('student_profiles.is_alumni', false)
+            ->where('student_profiles.is_shifted', false);
+    }
+
     public function store(Request $request)
     {
         $data = $request->validate([

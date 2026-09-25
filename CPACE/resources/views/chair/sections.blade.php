@@ -74,6 +74,29 @@
         .modal h3 { font-size:16px;color:#1a1a1a;margin-bottom:4px; }
         .modal-sub { font-size:11px;color:#999;margin-bottom:18px; }
         .modal-actions { display:flex;justify-content:flex-end;gap:9px;margin-top:20px; }
+
+        /* ── Section roster modal ── */
+        .section-cell.is-clickable { cursor:pointer; }
+        .section-cell.is-clickable:hover .section-name { color:var(--primary); text-decoration:underline; }
+        .modal.roster { max-width:560px; }
+        .roster-tabs { display:flex; gap:4px; border-bottom:1px solid #eee; margin-bottom:14px; }
+        .roster-tab { background:none; border:none; padding:9px 14px; font:inherit; font-size:12.5px; font-weight:600; color:#888; cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-1px; }
+        .roster-tab.active { color:var(--primary); border-bottom-color:var(--primary); }
+        .roster-tab .tab-count { background:#f3f4f6; color:#666; border-radius:10px; padding:1px 7px; font-size:10.5px; margin-left:4px; }
+        .roster-search { width:100%; padding:9px 12px; border:1px solid #e5e7eb; border-radius:9px; font:inherit; font-size:12.5px; margin-bottom:10px; }
+        .roster-list { max-height:340px; overflow-y:auto; border:1px solid #f0f0f0; border-radius:10px; }
+        .roster-row { display:flex; align-items:center; gap:10px; padding:9px 12px; border-bottom:1px solid #f5f5f5; font-size:12.5px; }
+        .roster-row:last-child { border-bottom:none; }
+        label.roster-row { cursor:pointer; }
+        label.roster-row:hover { background:#fafafa; }
+        .roster-row .r-name { font-weight:600; color:#1a1a1a; }
+        .roster-row .r-meta { font-size:11px; color:#999; }
+        .roster-row .r-body { flex:1; min-width:0; }
+        .roster-row .r-tag { font-size:10px; font-weight:700; background:#fef3c7; color:#b45309; border-radius:10px; padding:2px 8px; white-space:nowrap; }
+        .roster-empty { padding:26px; text-align:center; color:#999; font-size:12.5px; }
+        .roster-foot { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:14px; }
+        .roster-foot .sel-count { font-size:12px; color:#666; }
+        .roster-error { color:#b91c1c; font-size:12px; margin-top:8px; }
     </style>
 </head>
 <body>
@@ -161,7 +184,9 @@
             @forelse ($sections as $s)
                 <tr class="{{ $s->is_active ? '' : 'is-inactive' }}">
                     <td>
-                        <div class="section-cell">
+                        <div class="section-cell is-clickable" role="button" tabindex="0" title="View students in {{ $s->name }}"
+                             onclick='openRoster(@json(["id" => $s->id, "name" => $s->name]))'
+                             onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
                             <div class="section-avatar {{ $s->year_level ? '' : 'na' }}">
                                 {{ $s->year_level ? 'Y' . $s->year_level : '—' }}
                             </div>
@@ -260,7 +285,115 @@
     </div>
 </div>
 
+<div class="modal-overlay" id="rosterModal">
+    <div class="modal roster">
+        <h3 id="rosterTitle">Section</h3>
+        <div class="modal-sub" id="rosterSub">Students currently in this section.</div>
+        <div class="roster-tabs">
+            <button type="button" class="roster-tab active" data-tab="members" onclick="rosterTab('members')">Students <span class="tab-count" id="membersCount">0</span></button>
+            <button type="button" class="roster-tab" data-tab="add" onclick="rosterTab('add')">Add Students</button>
+        </div>
+        <input type="search" class="roster-search" id="rosterSearch" placeholder="Search by name, email or student number…" oninput="renderRoster()">
+        <div class="roster-list" id="rosterList"></div>
+        <div class="roster-foot" id="rosterFoot" style="display:none;">
+            <label style="font-size:12px;color:#666;cursor:pointer;"><input type="checkbox" id="rosterAll" onchange="toggleAllVisible(this.checked)"> Select all shown</label>
+            <span class="sel-count" id="rosterSelCount">0 selected</span>
+            <button type="button" class="btn btn-primary" id="rosterAddBtn" onclick="addSelected()" disabled><i class="fas fa-user-plus"></i> Add to section</button>
+        </div>
+        <div class="roster-error" id="rosterError"></div>
+        <div class="modal-actions"><button type="button" class="btn btn-ghost" onclick="closeModal('rosterModal')">Close</button></div>
+    </div>
+</div>
+
 <script>
+const roster = { section: null, tab: 'members', members: [], available: [], selected: new Set() };
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+async function openRoster(section) {
+    roster.section = section; roster.selected = new Set(); roster.tab = 'members';
+    document.getElementById('rosterTitle').textContent = section.name;
+    document.getElementById('rosterSearch').value = '';
+    document.getElementById('rosterError').textContent = '';
+    document.getElementById('rosterList').innerHTML = '<div class="roster-empty">Loading…</div>';
+    document.getElementById('rosterModal').classList.add('open');
+    rosterTab('members');
+    await loadRoster();
+}
+async function loadRoster() {
+    try {
+        const res = await fetch(`/chair/sections/${roster.section.id}/students`, { headers: { 'Accept': 'application/json' } });
+        if (!res.ok) throw new Error();
+        const data = await res.json();
+        roster.members = data.members; roster.available = data.available;
+        renderRoster();
+    } catch (e) {
+        document.getElementById('rosterList').innerHTML = '<div class="roster-empty">Could not load students. Please try again.</div>';
+    }
+}
+function rosterTab(tab) {
+    roster.tab = tab;
+    document.querySelectorAll('.roster-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+    document.getElementById('rosterSearch').value = '';
+    document.getElementById('rosterFoot').style.display = tab === 'add' ? 'flex' : 'none';
+    renderRoster();
+}
+function renderRoster() {
+    const q = document.getElementById('rosterSearch').value.trim().toLowerCase();
+    const matches = s => !q || [s.name, s.email, s.student_number].some(v => (v ?? '').toLowerCase().includes(q));
+    document.getElementById('membersCount').textContent = roster.members.length;
+    const list = document.getElementById('rosterList');
+    const adding = roster.tab === 'add';
+    const rows = (adding ? roster.available : roster.members).filter(matches);
+    document.getElementById('rosterSub').textContent = adding
+        ? `Tick the students to place in ${roster.section.name}. Students already in another section will be moved.`
+        : `${roster.members.length} student(s) currently in ${roster.section.name}.`;
+    if (!rows.length) {
+        list.innerHTML = `<div class="roster-empty">${q ? 'No students match your search.' : (adding ? 'Every enrolled student is already in this section.' : 'No students in this section yet. Use the Add Students tab.')}</div>`;
+    } else if (adding) {
+        list.innerHTML = rows.map(s => `
+            <label class="roster-row">
+                <input type="checkbox" value="${s.id}" ${roster.selected.has(s.id) ? 'checked' : ''} onchange="toggleStudent(${s.id}, this.checked)">
+                <div class="r-body"><div class="r-name">${esc(s.name)}</div><div class="r-meta">${esc(s.student_number || 'No student no.')} · ${esc(s.email)}</div></div>
+                ${s.section ? `<span class="r-tag">In ${esc(s.section)}</span>` : '<span class="r-tag" style="background:#e0f2fe;color:#0369a1;">No section</span>'}
+            </label>`).join('');
+    } else {
+        list.innerHTML = rows.map(s => `
+            <div class="roster-row">
+                <div class="r-body"><div class="r-name">${esc(s.name)}</div><div class="r-meta">${esc(s.student_number || 'No student no.')} · ${esc(s.email)}</div></div>
+            </div>`).join('');
+    }
+    if (adding) syncSelection();
+}
+function toggleStudent(id, on) { on ? roster.selected.add(id) : roster.selected.delete(id); syncSelection(); }
+function toggleAllVisible(on) {
+    document.querySelectorAll('#rosterList input[type=checkbox]').forEach(cb => { cb.checked = on; toggleStudent(Number(cb.value), on); });
+}
+function syncSelection() {
+    const n = roster.selected.size;
+    document.getElementById('rosterSelCount').textContent = `${n} selected`;
+    document.getElementById('rosterAddBtn').disabled = n === 0;
+    const boxes = [...document.querySelectorAll('#rosterList input[type=checkbox]')];
+    document.getElementById('rosterAll').checked = boxes.length > 0 && boxes.every(cb => cb.checked);
+}
+async function addSelected() {
+    const btn = document.getElementById('rosterAddBtn');
+    btn.disabled = true;
+    document.getElementById('rosterError').textContent = '';
+    try {
+        const res = await fetch(`/chair/sections/${roster.section.id}/students`, {
+            method: 'POST',
+            headers: { 'Accept': 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': @json(csrf_token()) },
+            body: JSON.stringify({ student_ids: [...roster.selected] }),
+        });
+        if (!res.ok) throw new Error();
+        // Counts on the page are server-rendered, so reload to refresh them.
+        location.reload();
+    } catch (e) {
+        document.getElementById('rosterError').textContent = 'Could not add the students. Please try again.';
+        btn.disabled = false;
+    }
+}
+
 function openSection(section = null) {
     const f = document.getElementById('sectionForm');
     document.getElementById('sectionModalTitle').textContent = section ? 'Edit Section' : 'Add Section';
