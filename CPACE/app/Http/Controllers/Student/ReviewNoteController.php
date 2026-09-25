@@ -285,7 +285,8 @@ class ReviewNoteController extends Controller
             'created_human'   => $r->created_at?->diffForHumans(),
             'date_display'    => $r->created_at?->format('M j, Y'),
             'view_url'        => $r->url(),
-            'download_url'    => route('community.resources.download', $r->id),
+            // Word/Excel/PowerPoint preview through Office Online, which needs a signed link.
+            'office_url'      => in_array($r->file_category, ['word', 'excel', 'powerpoint'], true) ? $r->previewUrl() : null,
         ];
     }
 }

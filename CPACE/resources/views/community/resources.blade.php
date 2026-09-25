@@ -117,7 +117,7 @@
             <div class="card composer">
                 <h4><i class="fas fa-cloud-arrow-up"></i> Upload a material</h4>
                 <form method="POST" action="{{ route('community.resources.store') }}" enctype="multipart/form-data" id="uploadForm"
-                      data-confirm="This file will be added to the shared library and can be downloaded by everyone in the community."
+                      data-confirm="This file will be added to the shared library and can be viewed by everyone in the community."
                       data-confirm-title="Share this material?"
                       data-confirm-ok="Yes, share it"
                       data-confirm-icon="question"
@@ -171,7 +171,7 @@
                 </select>
                 <select name="sort">
                     <option value="newest" {{ $filters['sort'] === 'newest' ? 'selected' : '' }}>Newest</option>
-                    <option value="most_downloaded" {{ $filters['sort'] === 'most_downloaded' ? 'selected' : '' }}>Most downloaded</option>
+                    <option value="most_downloaded" {{ $filters['sort'] === 'most_downloaded' ? 'selected' : '' }}>Most viewed</option>
                 </select>
                 <button type="submit"><i class="fas fa-filter"></i> Filter</button>
             </form>
@@ -216,8 +216,8 @@
                         </div>
 
                         <div class="res-foot">
-                            <span class="res-downloads"><i class="fas fa-download"></i> {{ $res->downloads_count }} download{{ $res->downloads_count === 1 ? '' : 's' }}</span>
-                            <a class="res-download-btn" href="{{ route('community.resources.download', $res->id) }}"><i class="fas fa-arrow-down-to-line"></i> Download</a>
+                            <span class="res-downloads"><i class="fas fa-eye"></i> {{ $res->downloads_count }} view{{ $res->downloads_count === 1 ? '' : 's' }}</span>
+                            <a class="res-download-btn" href="{{ $res->viewerUrl() }}" target="_blank" rel="noopener"><i class="fas fa-eye"></i> View</a>
                         </div>
                     </div>
             @if($loop->last)
