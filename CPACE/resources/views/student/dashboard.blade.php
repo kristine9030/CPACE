@@ -1266,12 +1266,12 @@
             </span>
             <div class="metric-left">
                 <div class="metric-number-lg">{{ $studyHours }}<small>h</small></div>
-                <div class="metric-label-lg">Study Time</div>
+                <div class="metric-label-lg">Time Spent on Quizzes</div>
                 <div class="metric-sub">
                     @if($studyHoursWeek > 0)<span class="up"><i class="fas fa-arrow-up"></i> {{ $studyHoursWeek }}h</span> this week @else No activity this week @endif
                 </div>
             </div>
-            <div class="metric-illust"><img src="{{ asset('images/9.png') }}" alt="Study Time"></div>
+            <div class="metric-illust"><img src="{{ asset('images/9.png') }}" alt="Time Spent on Quizzes"></div>
         </div>
 
         <!-- Day Streak -->
