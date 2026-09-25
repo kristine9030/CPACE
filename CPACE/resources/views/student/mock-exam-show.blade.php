@@ -101,8 +101,11 @@
                         <strong>recorded and flagged</strong> to your faculty and the Program Chair.</li>
                     <li>If your camera or screen sharing stops, the exam is <strong>locked</strong> until you share again. The timer keeps running.</li>
                     <li>Copy and paste are blocked inside the exam.</li>
-                    <li>If you finish with no flags, your recordings are <strong>deleted as soon as you submit</strong>. Otherwise only the
-                        flagged frames are kept, for {{ \App\Models\MockExamProctorCapture::RETENTION_DAYS }} days at most, and are visible only to your faculty and the Program Chair.</li>
+                    <li>You must share your <strong>entire screen</strong> (not a window or tab) and use <strong>one monitor</strong>.</li>
+                    <li>If you finish with no flags, your recordings are <strong>deleted as soon as you submit</strong>, apart from your
+                        opening camera photo. Otherwise only the flagged frames are kept. Anything kept is deleted after
+                        {{ \App\Models\MockExamProctorCapture::RETENTION_DAYS }} days at most, and is visible only to your faculty and the Program Chair.</li>
+                    <li>If you close the tab without submitting, your saved answers are graded when your time runs out.</li>
                     <li>Your browser will ask permission for the camera and for screen sharing — you must allow both to enter.</li>
                 </ul>
 
@@ -219,8 +222,18 @@
 
     document.getElementById('grantScreen').addEventListener('click', async () => {
         try {
-            const stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+            const stream = await navigator.mediaDevices.getDisplayMedia({
+                video: { displaySurface: 'monitor' }, selfBrowserSurface: 'exclude', monitorTypeSurfaces: 'include',
+            });
+            // Chrome and Edge say what was shared; anything but the entire screen is refused here
+            // so the student finds out now, not when the exam locks. Other browsers report nothing.
+            const surface = stream.getVideoTracks()[0]?.getSettings?.().displaySurface;
             stream.getTracks().forEach(t => t.stop());
+            if (surface && surface !== 'monitor') {
+                screenOk = false;
+                paint('permScreen', 'permScreenMsg', false, 'You shared a window or tab. Choose "Entire screen" and try again.');
+                return;
+            }
             screenOk = true;
             paint('permScreen', 'permScreenMsg', true, 'Shared — you will be asked again when the exam opens.');
         } catch (e) {

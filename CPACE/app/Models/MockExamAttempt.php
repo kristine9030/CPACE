@@ -57,4 +57,28 @@ class MockExamAttempt extends Model
     {
         return $this->status === self::STATUS_SUBMITTED;
     }
+
+    /**
+     * When this student's time is up: their own duration from started_at, but
+     * never later than the exam's scheduled window (a late starter gets the
+     * remainder, not a fresh clock).
+     */
+    public function deadline(): \Illuminate\Support\Carbon
+    {
+        $personal = $this->started_at->copy()->addMinutes($this->exam->duration_minutes);
+        $window = $this->exam->endsAt();
+
+        return $personal->lessThan($window) ? $personal : $window;
+    }
+
+    public function hasExpired(): bool
+    {
+        return ! $this->isSubmitted() && $this->deadline()->isPast();
+    }
+
+    /** True when the server closed this sitting because the student never submitted. */
+    public function wasAutoClosed(): bool
+    {
+        return $this->proctorEvents()->where('type', MockExamProctorEvent::TYPE_AUTO_CLOSED)->exists();
+    }
 }

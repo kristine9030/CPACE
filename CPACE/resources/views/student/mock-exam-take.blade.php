@@ -264,7 +264,9 @@
         if (!video.videoWidth || video.readyState < 2) return;
         // Downscaled hard: a 3-hour sitting is thousands of frames, and full
         // resolution would fill the server's disk within a term.
-        const w = kind === 'camera' ? 320 : 960;
+        // Wide enough to be read when a reviewer opens the frame full-size:
+        // faces at 480px, on-screen text at 1280px.
+        const w = kind === 'camera' ? 480 : 1280;
         const h = Math.round(w * (video.videoHeight / video.videoWidth));
         canvas.width = w; canvas.height = h;
         canvas.getContext('2d').drawImage(video, 0, 0, w, h);
@@ -347,13 +349,36 @@
         } finally { setTimeout(() => { resharing = false; }, 1500); }
     }
 
+    // Chrome and Edge report what was actually shared: 'monitor' (the entire
+    // screen), 'window' or 'browser' (a single tab). Other browsers report
+    // nothing, so they are let through rather than blocked for a limit of theirs.
+    const SCREEN_OPTS = { video: { displaySurface: 'monitor' }, selfBrowserSurface: 'exclude', monitorTypeSurfaces: 'include' };
+
+    function isWholeScreen(stream) {
+        const surface = stream.getVideoTracks()[0]?.getSettings?.().displaySurface;
+        return !surface || surface === 'monitor';
+    }
+
+    // Asks for the screen and refuses anything smaller than the whole display.
+    async function acquireScreen() {
+        const stream = await navigator.mediaDevices.getDisplayMedia(SCREEN_OPTS);
+        if (!isWholeScreen(stream)) {
+            stream.getTracks().forEach(t => t.stop());
+            flag('partial_screen', 'shared a window or tab');
+            throw new Error('partial');
+        }
+        return stream;
+    }
+
     async function shareScreen() {
         resharing = true;
         lockNote('');
         try {
-            attachScreen(await navigator.mediaDevices.getDisplayMedia({ video: true }));
+            attachScreen(await acquireScreen());
         } catch (e) {
-            lockNote('Screen sharing was cancelled. Choose your entire screen and try again.');
+            lockNote(e.message === 'partial'
+                ? 'You shared a window or tab. Choose "Entire screen" and try again.'
+                : 'Screen sharing was cancelled. Choose your entire screen and try again.');
         } finally { setTimeout(() => { resharing = false; }, 1500); }
     }
 
@@ -408,10 +433,9 @@
         if (now - (lastRaised[type] || 0) < FACE.cooldownMs) return;
         lastRaised[type] = now;
         flag(type, meta);
-        // Camera frame is the evidence for a face flag; the screen frame shows
-        // what was open at that moment.
+        // A face flag is about the camera, so the camera frame is the only
+        // evidence taken. (A screen frame here would just be confusing.)
         grab('camera', type);
-        grab('screen', type);
     }
 
     function faceTick() {
@@ -435,6 +459,32 @@
         }
     }
 
+    // Two things can change after the exam starts: a second monitor is plugged
+    // in, or the student uses the browser's "share this tab instead" control to
+    // narrow the share. Both are checked every few seconds.
+    let monitorFlagged = false;
+    function checkDisplay() {
+        if (submitting) return;
+
+        if (window.screen && window.screen.isExtended === true && !monitorFlagged) {
+            monitorFlagged = true;
+            flag('second_monitor');
+            warn('A second monitor is connected', 'Only one screen may be used during the exam. This has been recorded.');
+        } else if (window.screen && window.screen.isExtended === false) {
+            monitorFlagged = false;
+        }
+
+        if (screenOk && screenStream && !isWholeScreen(screenStream)) {
+            const stream = screenStream;
+            stream.getTracks().forEach(t => t.stop());
+            screenStream = null;
+            screenOk = false;
+            flag('partial_screen', 'switched to a window or tab');
+            lockNote('Your shared screen was narrowed to a window or tab. Choose "Entire screen" again.');
+            updateLock();
+        }
+    }
+
     async function startProctoring() {
         try {
             attachCamera(await navigator.mediaDevices.getUserMedia({ video: { width: 640 } }));
@@ -444,11 +494,15 @@
         }
 
         try {
-            attachScreen(await navigator.mediaDevices.getDisplayMedia({ video: true }));
+            attachScreen(await acquireScreen());
         } catch (e) {
-            flag('screen_lost', 'not granted at start');
+            // A partial share was already flagged as such; only a refusal is "not granted".
+            if (e.message !== 'partial') flag('screen_lost', 'not granted at start');
+            lockNote(e.message === 'partial' ? 'You shared a window or tab. Choose "Entire screen" and try again.' : '');
         }
         updateLock();
+        setInterval(checkDisplay, 10000);
+        checkDisplay();
 
         setTimeout(() => { grab('camera', 'start'); grab('screen', 'start'); }, 2500);
         // Routine frames are deliberately sparse: they are deleted at submit

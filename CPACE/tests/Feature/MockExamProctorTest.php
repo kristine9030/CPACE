@@ -215,17 +215,19 @@ class MockExamProctorTest extends TestCase
         $this->assertSame(3, $attempt->fresh()->flag_count);
     }
 
-    public function test_a_clean_sitting_keeps_no_recordings_once_submitted(): void
+    public function test_a_clean_sitting_keeps_only_its_opening_camera_photo_once_submitted(): void
     {
         [$student, $attempt] = $this->sitting();
-        $a = $this->storeCapture($attempt, 'start');
-        $b = $this->storeCapture($attempt, 'interval');
+        $opening = $this->storeCapture($attempt, 'start');
+        $routine = $this->storeCapture($attempt, 'interval');
+        $screenOpening = $this->storeCapture($attempt, 'start', MockExamProctorCapture::KIND_SCREEN);
 
         $this->actingAs($student)->post(route('mock-exams.submit', $attempt->exam))->assertRedirect();
 
-        $this->assertSame(0, MockExamProctorCapture::count());
-        Storage::disk('local')->assertMissing($a->path);
-        Storage::disk('local')->assertMissing($b->path);
+        $this->assertSame([$opening->id], MockExamProctorCapture::pluck('id')->all());
+        Storage::disk('local')->assertExists($opening->path);
+        Storage::disk('local')->assertMissing($routine->path);
+        Storage::disk('local')->assertMissing($screenOpening->path);
     }
 
     public function test_a_flagged_sitting_keeps_only_the_frames_behind_a_flag(): void
@@ -297,6 +299,35 @@ class MockExamProctorTest extends TestCase
             ->assertSee('name="capture_ids[]" value="' . $capture->id . '"', false)
             ->assertSee('Delete selected')
             ->assertSee('Select all');
+    }
+
+    public function test_each_recording_is_captioned_by_what_was_detected_and_where_it_came_from(): void
+    {
+        $labels = [
+            'interval' => 'Routine check',
+            'start' => 'Start of exam',
+            'blur' => 'Left the exam window',
+            'visibility_hidden' => 'Switched tab or minimised',
+            'fullscreen_exit' => 'Exited fullscreen',
+            'no_face' => 'No face detected',
+            'multiple_faces' => 'More than one face',
+            'looking_away' => 'Looking away',
+        ];
+        foreach ($labels as $reason => $label) {
+            $this->assertSame($label, (new MockExamProctorCapture(['reason' => $reason]))->reasonLabel(), $reason);
+        }
+
+        // On the page: the headline is the detection, the source is a separate tag,
+        // and every frame opens in the full-size viewer.
+        [, $attempt] = $this->sitting();
+        $this->storeCapture($attempt, 'looking_away');
+
+        $this->actingAs($this->makeChair())->get(route('chair.mock-exams.attempt', $attempt))
+            ->assertOk()
+            ->assertSee('Looking away')
+            ->assertSee('Camera')
+            ->assertSee('class="zoom"', false)
+            ->assertSee('id="lb"', false);
     }
 
     public function test_ticking_nothing_deletes_nothing(): void
@@ -417,14 +448,14 @@ class MockExamProctorTest extends TestCase
         return [$student, $attempt];
     }
 
-    private function storeCapture(MockExamAttempt $attempt, string $reason = 'interval'): MockExamProctorCapture
+    private function storeCapture(MockExamAttempt $attempt, string $reason = 'interval', string $kind = MockExamProctorCapture::KIND_CAMERA): MockExamProctorCapture
     {
-        $path = MockExamProctorCapture::ROOT . '/' . $attempt->exam_id . '/' . $attempt->id . '/camera-' . $reason . '-' . uniqid() . '.jpg';
+        $path = MockExamProctorCapture::ROOT . '/' . $attempt->exam_id . '/' . $attempt->id . '/' . $kind . '-' . $reason . '-' . uniqid() . '.jpg';
         Storage::disk('local')->put($path, 'fake-jpeg-bytes');
 
         return MockExamProctorCapture::create([
             'attempt_id' => $attempt->id,
-            'kind' => MockExamProctorCapture::KIND_CAMERA,
+            'kind' => $kind,
             'path' => $path,
             'captured_at' => now(),
             'reason' => $reason,
