@@ -254,11 +254,89 @@ class MockExamProctorTest extends TestCase
         MockExamProctorEvent::create(['attempt_id' => $attempt->id, 'type' => 'blur', 'occurred_at' => now()]);
 
         $faculty = User::find($attempt->exam->created_by);
-        $this->actingAs($faculty)->delete(route('mock-exams.captures.destroy', $attempt))->assertRedirect();
+        $this->actingAs($faculty)
+            ->delete(route('mock-exams.captures.destroy', $attempt), ['capture_ids' => [$capture->id]])
+            ->assertRedirect();
 
         $this->assertSame(0, MockExamProctorCapture::count());
         Storage::disk('local')->assertMissing($capture->path);
         $this->assertSame(1, MockExamProctorEvent::count());
+    }
+
+    public function test_only_the_ticked_recordings_are_deleted(): void
+    {
+        [, $attempt] = $this->sitting();
+        $attempt->update(['status' => MockExamAttempt::STATUS_SUBMITTED, 'submitted_at' => now()]);
+        $gone = $this->storeCapture($attempt, 'interval');
+        $kept = $this->storeCapture($attempt, 'multiple_faces');
+
+        $this->actingAs($this->makeChair())
+            ->delete(route('mock-exams.captures.destroy', $attempt), ['capture_ids' => [$gone->id]])
+            ->assertRedirect();
+
+        Storage::disk('local')->assertMissing($gone->path);
+        Storage::disk('local')->assertExists($kept->path);
+        $this->assertSame([$kept->id], MockExamProctorCapture::pluck('id')->all());
+    }
+
+    public function test_the_student_page_offers_a_checkbox_per_recording_only_once_submitted(): void
+    {
+        [, $attempt] = $this->sitting();
+        $capture = $this->storeCapture($attempt, 'multiple_faces');
+        $chair = $this->makeChair();
+
+        $this->actingAs($chair)->get(route('chair.mock-exams.attempt', $attempt))
+            ->assertOk()
+            ->assertDontSee('name="capture_ids[]"', false)
+            ->assertSee('once the student has submitted');
+
+        $attempt->update(['status' => MockExamAttempt::STATUS_SUBMITTED, 'submitted_at' => now()]);
+
+        $this->actingAs($chair)->get(route('chair.mock-exams.attempt', $attempt))
+            ->assertOk()
+            ->assertSee('name="capture_ids[]" value="' . $capture->id . '"', false)
+            ->assertSee('Delete selected')
+            ->assertSee('Select all');
+    }
+
+    public function test_ticking_nothing_deletes_nothing(): void
+    {
+        [, $attempt] = $this->sitting();
+        $attempt->update(['status' => MockExamAttempt::STATUS_SUBMITTED, 'submitted_at' => now()]);
+        $this->storeCapture($attempt);
+
+        $this->actingAs($this->makeChair())
+            ->from('/back')
+            ->delete(route('mock-exams.captures.destroy', $attempt), ['capture_ids' => []])
+            ->assertSessionHasErrors('capture_ids');
+
+        $this->assertSame(1, MockExamProctorCapture::count());
+    }
+
+    public function test_recording_ids_from_another_sitting_cannot_be_deleted_through_this_one(): void
+    {
+        [, $mine] = $this->sitting();
+        $mine->update(['status' => MockExamAttempt::STATUS_SUBMITTED, 'submitted_at' => now()]);
+        $mineCapture = $this->storeCapture($mine);
+
+        // A second student's sitting on the same exam.
+        $theirs = MockExamAttempt::create([
+            'exam_id' => $mine->exam_id,
+            'student_id' => $this->makeStudent('other-sitter@example.com')->id,
+            'started_at' => now(),
+            'status' => MockExamAttempt::STATUS_SUBMITTED,
+            'submitted_at' => now(),
+            'answers' => [],
+        ]);
+        $theirCapture = $this->storeCapture($theirs);
+
+        $this->actingAs($this->makeChair())
+            ->delete(route('mock-exams.captures.destroy', $mine), ['capture_ids' => [$mineCapture->id, $theirCapture->id]])
+            ->assertRedirect();
+
+        Storage::disk('local')->assertMissing($mineCapture->path);
+        Storage::disk('local')->assertExists($theirCapture->path);
+        $this->assertSame(1, MockExamProctorCapture::count());
     }
 
     public function test_recordings_cannot_be_deleted_while_the_student_is_still_sitting(): void

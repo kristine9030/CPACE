@@ -42,17 +42,36 @@ class ProctorCaptureRetention
         );
     }
 
-    /** Remove every frame for one attempt (the manual "delete recordings" action). */
+    /**
+     * Remove chosen frames of one attempt (the manual "delete selected" action).
+     * Ids that belong to some other attempt are ignored, whatever was posted.
+     *
+     * @param  array<int, int|string>  $ids
+     */
+    public function deleteSelected(MockExamAttempt $attempt, array $ids): int
+    {
+        return $this->discard($attempt->captures()->whereIn('id', $ids)->get())
+            + $this->tidy($attempt);
+    }
+
+    /** Remove every frame for one attempt. */
     public function deleteAllFor(MockExamAttempt $attempt): int
     {
         $deleted = $this->discard($attempt->captures()->get());
+        $this->tidy($attempt);
 
+        return $deleted;
+    }
+
+    /** Drop the attempt's directory once it holds nothing. Always returns 0 so callers can add it to a count. */
+    private function tidy(MockExamAttempt $attempt): int
+    {
         $dir = MockExamProctorCapture::ROOT . '/' . $attempt->exam_id . '/' . $attempt->id;
         if (Storage::disk('local')->exists($dir) && Storage::disk('local')->allFiles($dir) === []) {
             Storage::disk('local')->deleteDirectory($dir);
         }
 
-        return $deleted;
+        return 0;
     }
 
     /**

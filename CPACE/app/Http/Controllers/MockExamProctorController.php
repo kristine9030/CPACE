@@ -116,11 +116,11 @@ class MockExamProctorController extends Controller
     }
 
     /**
-     * Delete every stored frame for one sitting, once the faculty or Chair has
-     * decided the case. The flag history stays. Refused while the student is
-     * still sitting, so a running exam can't be blinded mid-way.
+     * Delete the frames the faculty or Chair ticked, once they have decided the
+     * case. The flag history stays. Refused while the student is still sitting,
+     * so a running exam can't be blinded mid-way.
      */
-    public function destroyCaptures(MockExamAttempt $attempt)
+    public function destroyCaptures(Request $request, MockExamAttempt $attempt)
     {
         $attempt->load('exam');
 
@@ -131,11 +131,19 @@ class MockExamProctorController extends Controller
         );
         abort_unless($attempt->isSubmitted(), 409, 'This student is still sitting the exam.');
 
-        $deleted = app(ProctorCaptureRetention::class)->deleteAllFor($attempt);
+        $data = $request->validate([
+            'capture_ids' => ['required', 'array', 'min:1'],
+            'capture_ids.*' => ['integer'],
+        ], [
+            'capture_ids.required' => 'Tick at least one recording to delete.',
+            'capture_ids.min' => 'Tick at least one recording to delete.',
+        ]);
+
+        $deleted = app(ProctorCaptureRetention::class)->deleteSelected($attempt, $data['capture_ids']);
 
         return back()->with('status', $deleted > 0
             ? "Deleted {$deleted} recording(s). The flag timeline was kept."
-            : 'There were no recordings to delete.');
+            : 'Those recordings were already gone.');
     }
 
     /**
