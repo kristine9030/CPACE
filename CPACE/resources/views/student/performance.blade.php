@@ -1470,7 +1470,7 @@
                     <div class="card-head">
                         <span class="card-title">Study Distribution
                             <span class="info-tip inline" tabindex="0"><i class="fas fa-circle-info"></i>
-                                <span class="info-tip-pop">Share of your total study time spent per subject, based on time-in-quiz across completed sessions.</span>
+                                <span class="info-tip-pop">Share of your total quiz time spent per subject, based on time-in-quiz across completed sessions.</span>
                             </span>
                         </span>
                     </div>
@@ -1500,7 +1500,7 @@
                             </div>
                         </div>
                     @else
-                        <div class="empty-note">Complete quizzes to see how your study time is distributed across subjects.</div>
+                        <div class="empty-note">Complete quizzes to see how your quiz time is distributed across subjects.</div>
                     @endif
                 </div>
 
@@ -1557,7 +1557,7 @@
                         <span class="info-tip" tabindex="0"><i class="fas fa-circle-info"></i>
                             <span class="info-tip-pop">Time spent in quizzes today, compared to the same time yesterday.</span>
                         </span>
-                        <div class="mini-head"><i class="fas fa-clock red"></i><span>Study Time Today</span></div>
+                        <div class="mini-head"><i class="fas fa-clock red"></i><span>Quiz Time Today</span></div>
                         <div class="mini-value">{{ $todayStudy }}</div>
                         @php [$cls, $ic, $txt] = $deltaRow($todayDelta); @endphp
                         <div class="mini-sub"><span class="d {{ $cls }}"><i class="fas {{ $ic }}"></i> {{ $txt }}</span> vs yesterday</div>
