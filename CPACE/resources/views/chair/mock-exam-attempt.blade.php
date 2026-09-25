@@ -14,6 +14,12 @@
         .shots { display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:12px; }
         .shot { border:1px solid var(--line); border-radius:10px; overflow:hidden; background:#fff; }
         .shot.evt { border-color:var(--red); }
+        .shot-img { position:relative; }
+        .shot-img .pick { position:absolute; top:7px; left:7px; width:18px; height:18px; cursor:pointer; accent-color:var(--primary); }
+        .pick-bar { display:flex; align-items:center; gap:14px; margin-top:12px; padding:9px 12px; background:#f7f8fa;
+                    border:1px solid var(--line); border-radius:10px; font-size:12.5px; }
+        .pick-all { display:flex; align-items:center; gap:7px; cursor:pointer; font-weight:600; color:var(--ink); }
+        .pick-count { color:var(--muted); }
         .shot img { width:100%; aspect-ratio:4/3; object-fit:cover; display:block; background:#101828; }
         .shot-cap { padding:7px 9px; font-size:10.5px; color:var(--muted); display:flex; justify-content:space-between; gap:5px; }
         .tl { position:relative; padding-left:18px; }
@@ -93,22 +99,36 @@
                     Red-bordered frames were taken because something was flagged. Recordings are deleted automatically
                     {{ \App\Models\MockExamProctorCapture::RETENTION_DAYS }} days after the exam.
                 </div>
-                @if($attempt->isSubmitted() && $attempt->captures->isNotEmpty())
-                    <form method="POST" action="{{ route('mock-exams.captures.destroy', $attempt) }}" style="margin-top:10px;"
-                          onsubmit="return confirm('Delete all recordings for this student? The flag timeline is kept, but the images cannot be recovered.');">
-                        @csrf
-                        @method('DELETE')
-                        <button type="submit" class="btn btn-ghost" style="font-size:12px;">
-                            <i class="fas fa-trash"></i> Delete recordings
-                        </button>
-                    </form>
-                @endif
+                @php $canDelete = $attempt->isSubmitted() && $attempt->captures->isNotEmpty(); @endphp
+                <form method="POST" action="{{ route('mock-exams.captures.destroy', $attempt) }}" id="deleteForm"
+                      onsubmit="return confirm('Delete the selected recordings? The flag timeline is kept, but the images cannot be recovered.');">
+                    @csrf
+                    @method('DELETE')
+
+                    @if($canDelete)
+                        <div class="pick-bar">
+                            <label class="pick-all"><input type="checkbox" id="pickAll"> Select all</label>
+                            <span class="pick-count" id="pickCount">None selected</span>
+                            <button type="submit" class="btn btn-ghost" id="pickDelete" style="font-size:12px;margin-left:auto;" disabled>
+                                <i class="fas fa-trash"></i> Delete selected
+                            </button>
+                        </div>
+                    @elseif($attempt->captures->isNotEmpty())
+                        <div class="card-sub" style="margin-top:8px;">Recordings can be deleted once the student has submitted.</div>
+                    @endif
+
                 <div class="shots" style="margin-top:14px;">
                     @forelse($attempt->captures as $capture)
                         <div class="shot {{ $capture->isEventTriggered() ? 'evt' : '' }}">
-                            <img src="{{ route('mock-exams.capture', $capture) }}" alt="" loading="lazy">
+                            <div class="shot-img">
+                                <img src="{{ route('mock-exams.capture', $capture) }}" alt="" loading="lazy">
+                                @if($canDelete)
+                                    <input type="checkbox" class="pick" name="capture_ids[]" value="{{ $capture->id }}"
+                                           aria-label="Select this recording">
+                                @endif
+                            </div>
                             <div class="shot-cap">
-                                <span>{{ $capture->kind }}</span>
+                                <span>{{ $capture->kind }} · {{ str_replace('_', ' ', $capture->reason) }}</span>
                                 <span>{{ $capture->captured_at?->format('g:i:s A') }}</span>
                             </div>
                         </div>
@@ -120,6 +140,7 @@
                         </div>
                     @endforelse
                 </div>
+                </form>
             </div>
         </div>
 
@@ -142,5 +163,26 @@
 </main>
 
 @include('partials.alerts')
+<script>
+(function () {
+    const all = document.getElementById('pickAll');
+    if (!all) return;
+    const boxes = Array.from(document.querySelectorAll('.pick'));
+    const count = document.getElementById('pickCount');
+    const btn = document.getElementById('pickDelete');
+
+    function sync() {
+        const n = boxes.filter(b => b.checked).length;
+        count.textContent = n === 0 ? 'None selected' : n + ' of ' + boxes.length + ' selected';
+        btn.disabled = n === 0;
+        all.checked = n > 0 && n === boxes.length;
+        all.indeterminate = n > 0 && n < boxes.length;
+    }
+
+    all.addEventListener('change', () => { boxes.forEach(b => { b.checked = all.checked; }); sync(); });
+    boxes.forEach(b => b.addEventListener('change', sync));
+    sync();
+})();
+</script>
 </body>
 </html>
