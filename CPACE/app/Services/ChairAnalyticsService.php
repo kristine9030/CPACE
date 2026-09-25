@@ -286,6 +286,7 @@ class ChairAnalyticsService
             'distribution' => $this->scoreDistribution($subjectId, $section),
             'difficulty' => $this->difficultyPerformance($subjectId, $section),
             'weak_topics' => $this->weakestTopics(10, $subjectId, $section),
+            'strong_topics' => $this->strongestTopics(10, $subjectId, $section),
             'cohort' => $this->cohortSummary($section),
         ];
     }
@@ -616,8 +617,32 @@ class ChairAnalyticsService
         ])->values();
     }
 
-    /** Lowest-scoring topics across the whole cohort — the remediation shortlist. */
+    /**
+     * Cohort-wide topics that are genuinely weak: pooled accuracy under the
+     * shared 60% line (WeaknessDetector), with TOPIC_MIN_ATTEMPTS behind them.
+     * A topic the class is doing fine on is never listed as "weakest".
+     */
     public function weakestTopics(int $limit = 10, ?int $subjectId = null, ?string $section = null): Collection
+    {
+        return $this->topicRollup($subjectId, $section)
+            ->filter(fn ($t) => $t['rate'] < WeaknessDetector::ACCURACY_THRESHOLD * 100)
+            ->sortBy('accuracy')
+            ->take($limit)
+            ->values();
+    }
+
+    /** Cohort-wide topics at or above the shared 75% mastery line - what is working. */
+    public function strongestTopics(int $limit = 10, ?int $subjectId = null, ?string $section = null): Collection
+    {
+        return $this->topicRollup($subjectId, $section)
+            ->filter(fn ($t) => $t['rate'] >= WeaknessDetector::STRENGTH_THRESHOLD * 100)
+            ->sortByDesc('accuracy')
+            ->take($limit)
+            ->values();
+    }
+
+    /** Pooled per-topic accuracy across students (topics with TOPIC_MIN_ATTEMPTS+ attempts). */
+    private function topicRollup(?int $subjectId, ?string $section): Collection
     {
         return DB::table('performance_records')
             ->join('topics', 'topics.id', '=', 'performance_records.topic_id')
@@ -646,9 +671,9 @@ class ChairAnalyticsService
                 'students' => (int) $row->students,
                 'flagged' => (int) $row->flagged,
                 'accuracy' => (int) round((int) $row->correct / max(1, (int) $row->attempts) * 100),
+                // Unrounded, so the 60% / 75% lines are applied exactly.
+                'rate' => (int) $row->correct / max(1, (int) $row->attempts) * 100,
             ])
-            ->sortBy('accuracy')
-            ->take($limit)
             ->values();
     }
 

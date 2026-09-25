@@ -909,6 +909,7 @@
         .weakness-num.n1 { background: var(--accent-red); }
         .weakness-num.n2 { background: var(--orange); }
         .weakness-num.n3 { background: var(--primary); }
+        .weakness-num.strength-num { background: #059669; }
 
         .weakness-info { flex: 1; }
         .weakness-title { font-size: 13px; font-weight: 600; color: var(--gray-900); margin-bottom: 2px; }
@@ -1319,7 +1320,8 @@
             @endforeach
         </div>
 
-        <!-- Top Weaknesses -->
+        <!-- Top Weaknesses + Top Strengths (stacked in one grid column) -->
+        <div class="right-panel">
         <div class="card">
             <div class="card-header">
                 <span class="card-title">Top Weaknesses
@@ -1343,6 +1345,33 @@
                     No weak areas detected yet. Take a few quizzes and your focus areas will appear here.
                 </p>
             @endforelse
+        </div>
+
+        <!-- Top Strengths -->
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">Top Strengths
+                    <span class="info-tip inline" tabindex="0"><i class="fas fa-circle-info"></i>
+                        <span class="info-tip-pop">Topics at 75% accuracy or higher over 5+ attempts - the same rule as the Strengths list on the Performance page.</span>
+                    </span>
+                </span>
+                <a class="card-link" href="{{ route('performance') }}">Performance</a>
+            </div>
+            @forelse($strengths as $i => $strength)
+                <div class="weakness-item" title="{{ $strength->topic }} ({{ $strength->subject_code }}): {{ (int) $strength->accuracy }}% accuracy">
+                    <div class="weakness-num strength-num">{{ $i + 1 }}</div>
+                    <div class="weakness-info">
+                        <div class="weakness-title">{{ $strength->topic }}</div>
+                        <div class="weakness-sub">{{ $strength->subject_code }} &ndash; {{ (int) $strength->accuracy }}% accuracy</div>
+                    </div>
+                    <i class="fas fa-chevron-right weakness-arrow"></i>
+                </div>
+            @empty
+                <p style="font-size:13px; color:var(--gray-500); padding:14px 0;">
+                    No strong topics yet. Reach 75% accuracy over 5+ attempts on a topic and it will appear here.
+                </p>
+            @endforelse
+        </div>
         </div>
 
         <!-- RIGHT PANEL -->

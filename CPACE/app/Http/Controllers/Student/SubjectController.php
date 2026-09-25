@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Material;
 use App\Models\Subject;
 use App\Models\Topic;
+use App\Services\WeaknessDetector;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -31,13 +32,16 @@ class SubjectController extends Controller
                     ->whereIn('topic_id', $topicIds)
                     ->count();
 
-                // A "weak" topic is one the student has attempted where their
-                // accuracy sits below this subject's passing threshold.
+                // A "weak" topic is decided by the shared WeaknessDetector (under
+                // 60% over 5+ attempts, or 3 wrong in a row) - the same rule as the
+                // dashboard, Performance page, Calendar, faculty and chair views.
+                $detector = app(WeaknessDetector::class);
                 $weakTopics = DB::table('performance_records')
                     ->where('student_id', $studentId)
                     ->whereIn('topic_id', $topicIds)
                     ->where('total_attempts', '>', 0)
-                    ->whereRaw('(correct_count / total_attempts) * 100 < ?', [$subject->passing_threshold])
+                    ->get(['total_attempts', 'correct_count', 'consecutive_wrong'])
+                    ->filter(fn ($r) => $detector->evaluate($r)[0])
                     ->count();
 
                 // Overall subject accuracy = correct answers / attempts summed

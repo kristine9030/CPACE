@@ -7,6 +7,7 @@ use App\Models\Question;
 use App\Models\QuizAnswer;
 use App\Models\QuizSession;
 use App\Models\Subject;
+use App\Services\PerformanceRecorder;
 use App\Services\QuestionParaphraser;
 use App\Services\SpacedRepetitionScheduler;
 use App\Services\StreakService;
@@ -210,9 +211,11 @@ class QuizApiController extends Controller
                         'answered_at'     => now(),
                     ]);
 
-                $topicTally[$question->topic_id] ??= ['attempts' => 0, 'correct' => 0];
+                $topicTally[$question->topic_id] ??= ['attempts' => 0, 'correct' => 0, 'trailing_wrong' => 0];
                 $topicTally[$question->topic_id]['attempts']++;
                 $topicTally[$question->topic_id]['correct'] += $isCorrect ? 1 : 0;
+                // Trailing run of wrong answers, in the order answered - the "3 in a row" streak.
+                $topicTally[$question->topic_id]['trailing_wrong'] = $isCorrect ? 0 : $topicTally[$question->topic_id]['trailing_wrong'] + 1;
             }
 
             $total = $questions->count();
@@ -444,39 +447,9 @@ class QuizApiController extends Controller
 
     private function updatePerformanceRecords(int $studentId, array $topicTally): void
     {
-        $weakness = app(WeaknessDetector::class);
-        foreach ($topicTally as $topicId => $tally) {
-            $record = DB::table('performance_records')->where('student_id', $studentId)->where('topic_id', $topicId)->first();
-            $wrong  = $tally['attempts'] - $tally['correct'];
-
-            if ($record) {
-                $totalAttempts    = $record->total_attempts + $tally['attempts'];
-                $correctCount     = $record->correct_count + $tally['correct'];
-                $consecutiveWrong = $wrong === 0 ? 0 : $record->consecutive_wrong + $wrong;
-                [$isWeak] = $weakness->evaluate((object) ['total_attempts' => $totalAttempts, 'correct_count' => $correctCount, 'consecutive_wrong' => $consecutiveWrong]);
-                // accuracy_rate is a STORED generated column in the database
-                // (computed from correct_count / total_attempts), so it is
-                // never written here - the DB keeps it in sync automatically.
-                DB::table('performance_records')->where('id', $record->id)->update([
-                    'total_attempts'    => $totalAttempts,
-                    'correct_count'     => $correctCount,
-                    'consecutive_wrong' => $consecutiveWrong,
-                    'is_weak_area'      => $isWeak,
-                    'last_attempted'    => now(),
-                ]);
-            } else {
-                [$isWeak] = $weakness->evaluate((object) ['total_attempts' => $tally['attempts'], 'correct_count' => $tally['correct'], 'consecutive_wrong' => $wrong]);
-                DB::table('performance_records')->insert([
-                    'student_id'        => $studentId,
-                    'topic_id'          => $topicId,
-                    'total_attempts'    => $tally['attempts'],
-                    'correct_count'     => $tally['correct'],
-                    'consecutive_wrong' => $wrong,
-                    'is_weak_area'      => $isWeak,
-                    'last_attempted'    => now(),
-                ]);
-            }
-        }
+        // Same arithmetic as the web quiz: one shared recorder, so the streak and
+        // weak flag can never differ between the app and the website.
+        app(PerformanceRecorder::class)->record($studentId, $topicTally);
     }
 
     private function awardPoints(int $studentId, int $correctCount, string $mode): void

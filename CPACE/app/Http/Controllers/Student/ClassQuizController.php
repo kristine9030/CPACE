@@ -325,9 +325,11 @@ class ClassQuizController extends Controller
 
             $source = $item->source_question_id ? $sourceQuestions->get($item->source_question_id) : null;
             if ($source) {
-                $topicTally[$source->topic_id] ??= ['attempts' => 0, 'correct' => 0];
+                $topicTally[$source->topic_id] ??= ['attempts' => 0, 'correct' => 0, 'trailing_wrong' => 0];
                 $topicTally[$source->topic_id]['attempts']++;
                 $topicTally[$source->topic_id]['correct'] += $isCorrect ? 1 : 0;
+                // Trailing run of wrong answers, in the order answered - the "3 in a row" streak.
+                $topicTally[$source->topic_id]['trailing_wrong'] = $isCorrect ? 0 : $topicTally[$source->topic_id]['trailing_wrong'] + 1;
                 $answerResults[] = [
                     'question_id' => $source->id,
                     'difficulty' => $source->difficulty,

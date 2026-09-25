@@ -93,6 +93,7 @@ class StudentDashboardTest extends TestCase
             $table->unsignedBigInteger('student_id');
             $table->unsignedBigInteger('topic_id');
             $table->integer('correct_count')->default(0);
+            $table->integer('consecutive_wrong')->default(0);
             $table->integer('total_attempts')->default(0);
             // Matches production exactly: a real STORED generated column, not
             // a plain writable one.
@@ -153,23 +154,88 @@ class StudentDashboardTest extends TestCase
         $response->assertSee(number_format(10)); // questionsAttempted = 10, not 30
     }
 
-    public function test_top_weaknesses_lists_the_three_lowest_accuracy_topics_with_attempts_first(): void
+    public function test_top_weaknesses_lists_only_topics_the_shared_weak_rule_flags_lowest_first(): void
     {
         $student = $this->student();
         $subjectId = $this->subject('AUD', 'Auditing');
 
         $this->performanceRecord($student->id, $subjectId, 'Weakest Topic', accuracy: 20.00, attempts: 10);
         $this->performanceRecord($student->id, $subjectId, 'Second Weakest', accuracy: 40.00, attempts: 10);
-        $this->performanceRecord($student->id, $subjectId, 'Third Weakest', accuracy: 60.00, attempts: 10);
-        $this->performanceRecord($student->id, $subjectId, 'Strongest Topic', accuracy: 90.00, attempts: 10);
+        $this->performanceRecord($student->id, $subjectId, 'Third Weakest', accuracy: 50.00, attempts: 10);
+        $this->performanceRecord($student->id, $subjectId, 'Fourth Weakest', accuracy: 55.00, attempts: 10);
+        // Exactly 60% is not "below 60%", so it is not weak.
+        $this->performanceRecord($student->id, $subjectId, 'Borderline Topic', accuracy: 60.00, attempts: 10);
+        $this->performanceRecord($student->id, $subjectId, 'Middling Topic', accuracy: 70.00, attempts: 10);
+        // One missed question is too little evidence to call a topic weak.
+        $this->performanceRecord($student->id, $subjectId, 'One Miss Only', accuracy: 0.00, attempts: 1);
         // Zero attempts: must never appear regardless of its (low) accuracy.
         $this->performanceRecord($student->id, $subjectId, 'Never Attempted', accuracy: 0.00, attempts: 0);
 
         $response = $this->actingAs($student)->get(route('dashboard'))->assertOk();
 
         $response->assertSeeInOrder(['Weakest Topic', 'Second Weakest', 'Third Weakest']);
-        $response->assertDontSee('Strongest Topic');
+        $response->assertDontSee('Fourth Weakest');
+        $response->assertDontSee('Borderline Topic');
+        $response->assertDontSee('Middling Topic');
+        $response->assertDontSee('One Miss Only');
         $response->assertDontSee('Never Attempted');
+    }
+
+    public function test_a_topic_flagged_weak_by_a_real_streak_is_weak_not_strong_even_at_high_accuracy(): void
+    {
+        $student = $this->student();
+        $subjectId = $this->subject('TAX', 'Taxation');
+
+        // 90% accuracy over 10 attempts, but the last 3 answers were all wrong.
+        $this->performanceRecord($student->id, $subjectId, 'Streaky Topic', accuracy: 90.00, attempts: 10, wrongRun: 3);
+
+        $response = $this->actingAs($student)->get(route('dashboard'))->assertOk();
+        $html = $response->getContent();
+        $strengthsCard = \Illuminate\Support\Str::before(
+            \Illuminate\Support\Str::after($html, '<span class="card-title">Top Strengths'),
+            'RIGHT PANEL'
+        );
+
+        $this->assertStringContainsString('Streaky Topic', \Illuminate\Support\Str::before($html, '<span class="card-title">Top Strengths'));
+        $this->assertStringNotContainsString('Streaky Topic', $strengthsCard);
+    }
+
+    public function test_top_strengths_lists_the_highest_accuracy_topics_with_enough_attempts(): void
+    {
+        $student = $this->student();
+        $subjectId = $this->subject('FAR', 'Financial Accounting');
+
+        $this->performanceRecord($student->id, $subjectId, 'Best Topic', accuracy: 100.00, attempts: 10);
+        $this->performanceRecord($student->id, $subjectId, 'Second Best', accuracy: 90.00, attempts: 10);
+        $this->performanceRecord($student->id, $subjectId, 'Third Best', accuracy: 80.00, attempts: 10);
+        $this->performanceRecord($student->id, $subjectId, 'Fourth Best', accuracy: 75.00, attempts: 10);
+        // Under the 75% line: not a strength.
+        // 100% but too few attempts: one lucky question can't make a strength.
+        $this->performanceRecord($student->id, $subjectId, 'Lucky Topic', accuracy: 100.00, attempts: 2);
+
+        $response = $this->actingAs($student)->get(route('dashboard'))->assertOk();
+
+        $response->assertSee('Top Strengths');
+
+        // Scope to the strengths card: the weaknesses card above it lists the
+        // lowest-accuracy topics, which would otherwise match these names.
+        $card = \Illuminate\Support\Str::before(
+            \Illuminate\Support\Str::after($response->getContent(), '<span class="card-title">Top Strengths'),
+            'RIGHT PANEL'
+        );
+        $this->assertSame(['Best Topic', 'Second Best', 'Third Best'], array_values(array_filter(
+            ['Best Topic', 'Second Best', 'Third Best', 'Fourth Best', 'Lucky Topic'],
+            fn ($t) => str_contains($card, '>' . $t . '<')
+        )));
+    }
+
+    public function test_top_strengths_shows_an_empty_state_for_a_student_with_no_strong_topics(): void
+    {
+        $student = $this->student();
+
+        $this->actingAs($student)->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('No strong topics yet.');
     }
 
     public function test_subject_mastery_shows_zero_for_an_untouched_subject_and_the_real_percentage_otherwise(): void
@@ -240,7 +306,7 @@ class StudentDashboardTest extends TestCase
         ]);
     }
 
-    private function performanceRecord(int $studentId, int $subjectId, string $topicName, float $accuracy, int $attempts, ?int $correct = null): void
+    private function performanceRecord(int $studentId, int $subjectId, string $topicName, float $accuracy, int $attempts, ?int $correct = null, int $wrongRun = 0): void
     {
         $topicId = DB::table('topics')->insertGetId([
             'subject_id' => $subjectId, 'name' => $topicName, 'created_at' => now(), 'updated_at' => now(),
@@ -254,6 +320,7 @@ class StudentDashboardTest extends TestCase
             'topic_id' => $topicId,
             'correct_count' => $correct ?? (int) round($accuracy / 100 * $attempts),
             'total_attempts' => $attempts,
+            'consecutive_wrong' => $wrongRun,
         ]);
     }
 

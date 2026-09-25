@@ -31,13 +31,12 @@ class PerformanceRecorder
                 ->where('topic_id', $topicId)
                 ->first();
 
-            $wrong = $tally['attempts'] - $tally['correct'];
-
             if ($record) {
                 $totalAttempts = $record->total_attempts + $tally['attempts'];
                 $correctCount = $record->correct_count + $tally['correct'];
-                // Reset the wrong-streak on a clean sitting, otherwise extend it.
-                $consecutiveWrong = $wrong === 0 ? 0 : $record->consecutive_wrong + $wrong;
+                // A real streak: extended only by a sitting with no correct
+                // answer, otherwise restarted from the wrong answers at its end.
+                $consecutiveWrong = WeaknessDetector::nextStreak((int) $record->consecutive_wrong, $tally);
 
                 [$isWeak] = $this->weakness->evaluate((object) [
                     'total_attempts' => $totalAttempts,
@@ -58,10 +57,12 @@ class PerformanceRecorder
                         'last_attempted' => now(),
                     ]);
             } else {
+                $consecutiveWrong = WeaknessDetector::nextStreak(0, $tally);
+
                 [$isWeak] = $this->weakness->evaluate((object) [
                     'total_attempts' => $tally['attempts'],
                     'correct_count' => $tally['correct'],
-                    'consecutive_wrong' => $wrong,
+                    'consecutive_wrong' => $consecutiveWrong,
                 ]);
 
                 DB::table('performance_records')->insert([
@@ -69,7 +70,7 @@ class PerformanceRecorder
                     'topic_id' => $topicId,
                     'total_attempts' => $tally['attempts'],
                     'correct_count' => $tally['correct'],
-                    'consecutive_wrong' => $wrong,
+                    'consecutive_wrong' => $consecutiveWrong,
                     'is_weak_area' => $isWeak,
                     'last_attempted' => now(),
                 ]);

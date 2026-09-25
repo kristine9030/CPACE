@@ -251,9 +251,11 @@ class MockExamController extends Controller
             }
 
             if ($item->topic_id) {
-                $topicTally[$item->topic_id] ??= ['attempts' => 0, 'correct' => 0];
+                $topicTally[$item->topic_id] ??= ['attempts' => 0, 'correct' => 0, 'trailing_wrong' => 0];
                 $topicTally[$item->topic_id]['attempts']++;
                 $topicTally[$item->topic_id]['correct'] += $isCorrect ? 1 : 0;
+                // Trailing run of wrong answers, in the order answered - the "3 in a row" streak.
+                $topicTally[$item->topic_id]['trailing_wrong'] = $isCorrect ? 0 : $topicTally[$item->topic_id]['trailing_wrong'] + 1;
             }
 
             if ($item->source_question_id) {

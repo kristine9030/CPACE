@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Student;
 use App\Http\Controllers\Controller;
 
 use App\Services\StreakService;
+use App\Services\WeaknessDetector;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -95,22 +96,40 @@ class DashboardController extends Controller
                 return $row;
             });
 
-        // ── Top weaknesses (lowest accuracy topics with attempts) ─────────
-        $weaknesses = DB::table('performance_records')
+        // ── Top weaknesses / strengths ────────────────────────────────────
+        // Both lists are classified by the shared WeaknessDetector, the same rule
+        // the Performance page, Calendar, faculty and chair views use, so a topic
+        // is never "weak" here and something else there.
+        $detector = app(WeaknessDetector::class);
+        $topicStats = DB::table('performance_records')
             ->join('topics', 'topics.id', '=', 'performance_records.topic_id')
             ->join('subjects', 'subjects.id', '=', 'topics.subject_id')
             ->where('performance_records.student_id', $studentId)
             ->where('performance_records.total_attempts', '>', 0)
-            ->orderBy('performance_records.accuracy_rate', 'asc')
-            ->orderByDesc('performance_records.total_attempts')
-            ->limit(3)
             ->select(
                 'topics.name as topic',
                 'subjects.code as subject_code',
                 'subjects.name as subject_name',
-                'performance_records.accuracy_rate'
+                'performance_records.correct_count',
+                'performance_records.total_attempts',
+                'performance_records.consecutive_wrong'
             )
-            ->get();
+            ->get()
+            ->map(function ($r) {
+                $r->accuracy_rate = $r->correct_count / max((int) $r->total_attempts, 1) * 100;
+                $r->accuracy      = (int) round($r->accuracy_rate);
+                return $r;
+            });
+
+        $weaknesses = $topicStats
+            ->filter(fn ($r) => $detector->evaluate($r)[0])
+            ->sortBy([['accuracy_rate', 'asc'], ['total_attempts', 'desc']])
+            ->take(3)->values();
+
+        $strengths = $topicStats
+            ->filter(fn ($r) => $detector->isStrong($r))
+            ->sortBy([['accuracy_rate', 'desc'], ['total_attempts', 'desc']])
+            ->take(3)->values();
 
         // ── Recent activity (latest sessions) ─────────────────────────────
         $recentActivity = DB::table('quiz_sessions')
@@ -148,6 +167,7 @@ class DashboardController extends Controller
             'readiness',
             'subjectMastery',
             'weaknesses',
+            'strengths',
             'recentActivity',
             'unreadNotifications'
         ));

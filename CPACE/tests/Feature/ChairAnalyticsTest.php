@@ -365,6 +365,9 @@ class ChairAnalyticsTest extends TestCase
 
     public function test_weakest_topics_ignores_topics_below_the_attempt_floor(): void
     {
+        $studentId = (int) DB::table('performance_records')->value('student_id');
+        $this->addTopicRecord($studentId, 'Cohort Weak', correct: 2, attempts: 10);
+
         $weak = app(ChairAnalyticsService::class)->weakestTopics(10);
 
         $this->assertNotEmpty($weak);
@@ -372,6 +375,47 @@ class ChairAnalyticsTest extends TestCase
         foreach ($weak as $topic) {
             $this->assertGreaterThanOrEqual(ChairAnalyticsService::TOPIC_MIN_ATTEMPTS, $topic['attempts']);
         }
+    }
+
+    public function test_weakest_topics_only_lists_topics_below_the_shared_60_percent_line(): void
+    {
+        $studentId = (int) DB::table('performance_records')->value('student_id');
+        $this->addTopicRecord($studentId, 'Cohort Weak', correct: 2, attempts: 10);     // 20%
+        $this->addTopicRecord($studentId, 'Cohort Borderline', correct: 6, attempts: 10); // exactly 60% - not weak
+        $this->addTopicRecord($studentId, 'Cohort Strong', correct: 9, attempts: 10);   // 90%
+
+        $names = app(ChairAnalyticsService::class)->weakestTopics(10)->pluck('name')->all();
+
+        $this->assertContains('Cohort Weak', $names);
+        $this->assertNotContains('Cohort Borderline', $names);
+        $this->assertNotContains('Cohort Strong', $names);
+        // The existing 70% fixture topics are doing fine, so they are not "weakest" either.
+        foreach (app(ChairAnalyticsService::class)->weakestTopics(10) as $topic) {
+            $this->assertLessThan(60, $topic['rate']);
+        }
+    }
+
+    public function test_strongest_topics_lists_topics_at_or_above_75_percent_with_enough_attempts(): void
+    {
+        $studentId = (int) DB::table('performance_records')->value('student_id');
+        $this->addTopicRecord($studentId, 'Cohort Strong', correct: 9, attempts: 10);    // 90%
+        $this->addTopicRecord($studentId, 'Cohort Exactly 75', correct: 15, attempts: 20); // 75%
+        $this->addTopicRecord($studentId, 'Cohort Just Under', correct: 7, attempts: 10);  // 70%
+        $this->addTopicRecord($studentId, 'Cohort Thin Sample', correct: 4, attempts: 4);  // 100% but under the floor
+
+        $strong = app(ChairAnalyticsService::class)->strongestTopics(10);
+
+        $this->assertSame('Cohort Strong', $strong->first()['name']);
+        $names = $strong->pluck('name')->all();
+        $this->assertContains('Cohort Exactly 75', $names);
+        $this->assertNotContains('Cohort Just Under', $names);
+        $this->assertNotContains('Cohort Thin Sample', $names);
+    }
+
+    private function addTopicRecord(int $studentId, string $name, int $correct, int $attempts): void
+    {
+        $topicId = DB::table('topics')->insertGetId(['subject_id' => 1, 'name' => $name, 'sort_order' => 1, 'is_active' => true, 'created_at' => now(), 'updated_at' => now()]);
+        DB::table('performance_records')->insert(['student_id' => $studentId, 'topic_id' => $topicId, 'correct_count' => $correct, 'total_attempts' => $attempts, 'is_weak_area' => false]);
     }
 
     public function test_pass_projection_reports_coverage_and_confidence(): void
