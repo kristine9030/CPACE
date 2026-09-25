@@ -155,6 +155,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/mock-exams/{mockExam}/close', [MockExamReviewController::class, 'close'])->name('mock-exams.close');
         Route::get('/mock-exams/{mockExam}/monitor', [MockExamReviewController::class, 'monitor'])->name('mock-exams.monitor');
         Route::get('/mock-exams/{mockExam}/monitor/feed', [MockExamReviewController::class, 'monitorFeed'])->name('mock-exams.monitor.feed');
+        Route::get('/mock-exams/{mockExam}/monitor/similarity', [MockExamReviewController::class, 'similarity'])->name('mock-exams.monitor.similarity');
         Route::get('/mock-exams/attempts/{attempt}', [MockExamReviewController::class, 'attempt'])->name('mock-exams.attempt');
 
         // Announcements and internal messages
@@ -229,6 +230,7 @@ Route::middleware('auth')->group(function () {
         // Faculty monitor their own subject's sitting, using the shared views.
         Route::get('/mock-exams/{mockExam}/monitor', [MockExamReviewController::class, 'monitor'])->name('mock-exams.monitor');
         Route::get('/mock-exams/{mockExam}/monitor/feed', [MockExamReviewController::class, 'monitorFeed'])->name('mock-exams.monitor.feed');
+        Route::get('/mock-exams/{mockExam}/monitor/similarity', [MockExamReviewController::class, 'similarity'])->name('mock-exams.monitor.similarity');
         Route::get('/mock-exams/attempts/{attempt}', [MockExamReviewController::class, 'attempt'])->name('mock-exams.attempt');
 
         Route::get('/performance', [FacultyPerformanceController::class, 'index'])->name('performance');

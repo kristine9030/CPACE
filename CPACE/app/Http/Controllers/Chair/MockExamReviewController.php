@@ -10,9 +10,13 @@ use App\Models\MockExamAttempt;
 use App\Models\MockExamAudit;
 use App\Models\MockExamEvent;
 use App\Models\MockExamProctorCapture;
+use App\Models\MockExamProctorEvent;
 use App\Models\Subject;
 use App\Models\Topic;
+use App\Services\MockExamGrader;
 use App\Support\MockExamAuditor;
+use App\Support\MockExamSimilarity;
+use App\Support\ProctorRisk;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -222,9 +226,17 @@ class MockExamReviewController extends Controller
     {
         $this->assertCanMonitor($mockExam);
 
+        // Anyone whose time ran out without submitting is graded now, so the
+        // monitor never shows a finished sitting as "in progress" until a cron
+        // tick happens to reach it.
+        app(MockExamGrader::class)->closeExpired($mockExam);
+
         $attempts = MockExamAttempt::with('student:id,first_name,last_name')
             ->where('exam_id', $mockExam->id)
             ->get();
+
+        // Flag counts per attempt in one query, then weighted into a risk level.
+        $counts = ProctorRisk::countsFor($attempts->pluck('id'));
 
         // One query for the newest camera frame per attempt, rather than an
         // N+1 across a roomful of students.
@@ -235,14 +247,19 @@ class MockExamReviewController extends Controller
             ->unique('attempt_id')
             ->keyBy('attempt_id');
 
-        $rows = $attempts->map(function (MockExamAttempt $attempt) use ($latest) {
+        $rows = $attempts->map(function (MockExamAttempt $attempt) use ($latest, $counts) {
             $capture = $latest->get($attempt->id);
+            $risk = ProctorRisk::assess($counts[$attempt->id] ?? []);
 
             return [
                 'attempt_id' => $attempt->id,
                 'student' => trim($attempt->student?->first_name . ' ' . $attempt->student?->last_name),
                 'status' => $attempt->status,
                 'flags' => $attempt->flag_count,
+                'risk_score' => $risk['score'],
+                'risk_level' => $risk['level'],
+                'risk_label' => $risk['label'],
+                'auto_closed' => isset($counts[$attempt->id][MockExamProctorEvent::TYPE_AUTO_CLOSED]),
                 'percent' => $attempt->isSubmitted() ? (float) $attempt->percent : null,
                 'started_at' => $attempt->started_at?->toIso8601String(),
                 'submitted_at' => $attempt->submitted_at?->toIso8601String(),
@@ -253,7 +270,8 @@ class MockExamReviewController extends Controller
                     ? route('chair.mock-exams.attempt', $attempt)
                     : route('faculty.mock-exams.attempt', $attempt),
             ];
-        })->sortByDesc('flags')->values();
+        // Highest risk first; raw flag count breaks ties.
+        })->sort(fn ($a, $b) => [$b['risk_score'], $b['flags']] <=> [$a['risk_score'], $a['flags']])->values();
 
         return response()->json([
             'exam' => [
@@ -266,19 +284,61 @@ class MockExamReviewController extends Controller
                 'started' => $attempts->count(),
                 'submitted' => $attempts->where('status', MockExamAttempt::STATUS_SUBMITTED)->count(),
                 'flagged' => $attempts->where('flag_count', '>', 0)->count(),
+                'high_risk' => $rows->where('risk_level', ProctorRisk::LEVEL_HIGH)->count(),
             ],
             'students' => $rows,
+        ]);
+    }
+
+    /**
+     * Pairs of submitted students with unusually many identical WRONG answers.
+     * Its own endpoint because it compares every pair, which is wasted work on
+     * the 15-second poll; the monitor asks for it on load and then each minute.
+     */
+    public function similarity(MockExam $mockExam)
+    {
+        $this->assertCanMonitor($mockExam);
+
+        $isChair = Auth::user()->isChair();
+        $pairs = collect(app(MockExamSimilarity::class)->pairs($mockExam))->map(function ($p) use ($isChair) {
+            $link = fn (MockExamAttempt $a) => $isChair
+                ? route('chair.mock-exams.attempt', $a)
+                : route('faculty.mock-exams.attempt', $a);
+
+            return [
+                'a' => ['name' => trim($p['a']->student?->first_name . ' ' . $p['a']->student?->last_name), 'url' => $link($p['a'])],
+                'b' => ['name' => trim($p['b']->student?->first_name . ' ' . $p['b']->student?->last_name), 'url' => $link($p['b'])],
+                'shared' => $p['shared'],
+                'both_wrong' => $p['both_wrong'],
+                'expected' => $p['expected'],
+            ];
+        })->values();
+
+        return response()->json([
+            'submitted' => MockExamAttempt::where('exam_id', $mockExam->id)->where('status', MockExamAttempt::STATUS_SUBMITTED)->count(),
+            'pairs' => $pairs,
         ]);
     }
 
     /** One student's sitting: their flag timeline and every capture taken. */
     public function attempt(MockExamAttempt $attempt)
     {
-        $attempt->load(['exam.subject', 'student', 'proctorEvents', 'captures']);
+        $attempt->load(['exam.subject', 'student']);
         $this->assertCanMonitor($attempt->exam);
+
+        // Time ran out without a submit: close it now so the page shows a result.
+        if ($attempt->hasExpired()) {
+            app(MockExamGrader::class)->closeOne($attempt);
+            $attempt->refresh();
+        }
+        $attempt->load(['proctorEvents', 'captures']);
+
+        $counts = $attempt->proctorEvents->countBy('type')->all();
 
         return view('chair.mock-exam-attempt', [
             'attempt' => $attempt,
+            'risk' => ProctorRisk::assess($counts),
+            'autoClosed' => isset($counts[MockExamProctorEvent::TYPE_AUTO_CLOSED]),
             'exam' => $attempt->exam,
             'theme' => self::theme($attempt->exam->subject?->code),
             'items' => $attempt->exam->items()->get(),

@@ -14,6 +14,10 @@
         .shots { display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:12px; }
         .shot { border:1px solid var(--line); border-radius:10px; overflow:hidden; background:#fff; }
         .shot.evt { border-color:var(--red); }
+        .risk-table { margin-top:10px; font-size:12px; border-collapse:collapse; }
+        .risk-table td { padding:3px 18px 3px 0; }
+        .risk-table .muted { opacity:.7; }
+        .risk-table .risk-total td { border-top:1px solid rgba(0,0,0,.15); padding-top:6px; }
         .shot-img { position:relative; }
         .shot-img .pick { position:absolute; top:7px; left:7px; width:18px; height:18px; cursor:pointer; accent-color:var(--primary); }
         .pick-bar { display:flex; align-items:center; gap:14px; margin-top:12px; padding:9px 12px; background:#f7f8fa;
@@ -21,7 +25,27 @@
         .pick-all { display:flex; align-items:center; gap:7px; cursor:pointer; font-weight:600; color:var(--ink); }
         .pick-count { color:var(--muted); }
         .shot img { width:100%; aspect-ratio:4/3; object-fit:cover; display:block; background:#101828; }
-        .shot-cap { padding:7px 9px; font-size:10.5px; color:var(--muted); display:flex; justify-content:space-between; gap:5px; }
+        .shot-cap { padding:8px 10px; font-size:10.5px; color:var(--muted); }
+        .shot-what { font-size:12px; font-weight:700; color:var(--ink); line-height:1.3; }
+        .shot.evt .shot-what { color:var(--red); }
+        .shot-meta { display:flex; justify-content:space-between; gap:6px; margin-top:3px; }
+        .shot-kind { display:inline-flex; align-items:center; gap:5px; font-weight:600; }
+        .shot-img img.zoom { cursor:zoom-in; }
+
+        /* full-size viewer */
+        .lb { position:fixed; inset:0; z-index:2000; background:rgba(10,12,20,.92); display:none;
+              align-items:center; justify-content:center; flex-direction:column; padding:24px; }
+        .lb.on { display:flex; }
+        .lb img { max-width:min(1200px, 94vw); max-height:78vh; border-radius:8px; background:#101828; }
+        .lb-cap { color:#fff; margin-top:14px; text-align:center; font-size:13.5px; }
+        .lb-cap b { font-size:15px; }
+        .lb-cap small { display:block; margin-top:4px; opacity:.7; font-size:12px; }
+        .lb-btn { position:absolute; background:rgba(255,255,255,.14); border:0; color:#fff; width:44px; height:44px;
+                  border-radius:50%; font-size:18px; cursor:pointer; }
+        .lb-btn:hover { background:rgba(255,255,255,.28); }
+        .lb-close { top:18px; right:18px; }
+        .lb-prev { left:18px; top:50%; transform:translateY(-50%); }
+        .lb-next { right:18px; top:50%; transform:translateY(-50%); }
         .tl { position:relative; padding-left:18px; }
         .tl-row { position:relative; padding:9px 0; border-bottom:1px solid #f0f1f4; font-size:12.5px; }
         .tl-row:last-child { border-bottom:none; }
@@ -57,12 +81,33 @@
         <div class="topbar-right">@include('partials.topbar-actions')</div>
     </div>
 
+    @if($autoClosed)
+        <div class="banner banner-warn">
+            <i class="fas fa-clock-rotate-left"></i>
+            <div>
+                <strong>Closed automatically.</strong>
+                This student did not press Submit before their time ran out. The server graded the answers saved by autosave,
+                and any question they hadn't reached counts as unanswered.
+            </div>
+        </div>
+    @endif
+
     @if($attempt->flag_count > 0)
         <div class="banner banner-danger">
             <i class="fas fa-flag"></i>
             <div>
-                <strong>{{ $attempt->flag_count }} {{ Str::plural('flag', $attempt->flag_count) }} raised during this sitting.</strong>
+                <strong>{{ $risk['label'] }} — {{ $attempt->flag_count }} {{ Str::plural('flag', $attempt->flag_count) }} raised during this sitting.</strong>
                 Flags are signals, not proof — review the timeline and captures before drawing a conclusion.
+                <table class="risk-table">
+                    @foreach($risk['rows'] as $row)
+                        <tr>
+                            <td>{{ $row['label'] }}</td>
+                            <td>×{{ $row['count'] }}@if($row['count'] > $row['counted']) <span class="muted">(first {{ $row['counted'] }} counted)</span>@endif</td>
+                            <td><strong>{{ $row['points'] }} pts</strong></td>
+                        </tr>
+                    @endforeach
+                    <tr class="risk-total"><td colspan="2">Weighted score (Medium from {{ \App\Support\ProctorRisk::MEDIUM_FROM }}, High from {{ \App\Support\ProctorRisk::HIGH_FROM }})</td><td><strong>{{ $risk['score'] }}</strong></td></tr>
+                </table>
             </div>
         </div>
     @endif
@@ -120,16 +165,24 @@
                 <div class="shots" style="margin-top:14px;">
                     @forelse($attempt->captures as $capture)
                         <div class="shot {{ $capture->isEventTriggered() ? 'evt' : '' }}">
+                            @php $isCamera = $capture->kind === \App\Models\MockExamProctorCapture::KIND_CAMERA; @endphp
                             <div class="shot-img">
-                                <img src="{{ route('mock-exams.capture', $capture) }}" alt="" loading="lazy">
+                                <img src="{{ route('mock-exams.capture', $capture) }}" alt="{{ $capture->reasonLabel() }}" loading="lazy"
+                                     class="zoom" title="Click to enlarge"
+                                     data-title="{{ $capture->reasonLabel() }}"
+                                     data-kind="{{ $isCamera ? 'Camera' : 'Screen' }}"
+                                     data-time="{{ $capture->captured_at?->format('g:i:s A') }}">
                                 @if($canDelete)
                                     <input type="checkbox" class="pick" name="capture_ids[]" value="{{ $capture->id }}"
                                            aria-label="Select this recording">
                                 @endif
                             </div>
                             <div class="shot-cap">
-                                <span>{{ $capture->kind }} · {{ str_replace('_', ' ', $capture->reason) }}</span>
-                                <span>{{ $capture->captured_at?->format('g:i:s A') }}</span>
+                                <div class="shot-what">{{ $capture->reasonLabel() }}</div>
+                                <div class="shot-meta">
+                                    <span class="shot-kind"><i class="fas {{ $isCamera ? 'fa-video' : 'fa-display' }}"></i> {{ $isCamera ? 'Camera' : 'Screen' }}</span>
+                                    <span>{{ $capture->captured_at?->format('g:i:s A') }}</span>
+                                </div>
                             </div>
                         </div>
                     @empty
@@ -163,6 +216,51 @@
 </main>
 
 @include('partials.alerts')
+
+{{-- Full-size viewer: click any recording; arrows / arrow keys step through them, Esc closes. --}}
+<div class="lb" id="lb" role="dialog" aria-modal="true" aria-label="Recording viewer">
+    <button type="button" class="lb-btn lb-close" id="lbClose" aria-label="Close"><i class="fas fa-xmark"></i></button>
+    <button type="button" class="lb-btn lb-prev" id="lbPrev" aria-label="Previous"><i class="fas fa-chevron-left"></i></button>
+    <button type="button" class="lb-btn lb-next" id="lbNext" aria-label="Next"><i class="fas fa-chevron-right"></i></button>
+    <img id="lbImg" alt="">
+    <div class="lb-cap"><b id="lbTitle"></b><small id="lbMeta"></small></div>
+</div>
+
+<script>
+(function () {
+    const frames = Array.from(document.querySelectorAll('img.zoom'));
+    if (!frames.length) return;
+    const lb = document.getElementById('lb');
+    const img = document.getElementById('lbImg');
+    let at = 0;
+
+    function show(i) {
+        at = (i + frames.length) % frames.length;
+        const f = frames[at];
+        img.src = f.src;
+        img.alt = f.dataset.title;
+        document.getElementById('lbTitle').textContent = f.dataset.title;
+        document.getElementById('lbMeta').textContent =
+            f.dataset.kind + ' · ' + f.dataset.time + ' · ' + (at + 1) + ' of ' + frames.length;
+    }
+    function open(i) { show(i); lb.classList.add('on'); }
+    function close() { lb.classList.remove('on'); img.removeAttribute('src'); }
+
+    frames.forEach((f, i) => f.addEventListener('click', () => open(i)));
+    document.getElementById('lbClose').addEventListener('click', close);
+    document.getElementById('lbPrev').addEventListener('click', () => show(at - 1));
+    document.getElementById('lbNext').addEventListener('click', () => show(at + 1));
+    // Clicking the dark backdrop (not the picture or buttons) also closes it.
+    lb.addEventListener('click', e => { if (e.target === lb) close(); });
+    document.addEventListener('keydown', e => {
+        if (!lb.classList.contains('on')) return;
+        if (e.key === 'Escape') close();
+        else if (e.key === 'ArrowLeft') show(at - 1);
+        else if (e.key === 'ArrowRight') show(at + 1);
+    });
+})();
+</script>
+
 <script>
 (function () {
     const all = document.getElementById('pickAll');

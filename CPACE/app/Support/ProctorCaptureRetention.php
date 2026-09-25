@@ -13,8 +13,9 @@ use Illuminate\Support\Facades\Storage;
  * Frames are photographs of students, so the rule is to keep as little as
  * possible for as short as possible:
  *
- *  - a sitting with no flags keeps NOTHING - there is nothing to prove, so its
- *    frames are deleted the moment the student submits;
+ *  - a sitting with no flags keeps only its opening camera photo (a few KB, to
+ *    show who sat the exam) - everything else is deleted the moment the student
+ *    submits;
  *  - a flagged sitting keeps only the frames that back a flag (plus the opening
  *    frame, as a "who sat this" reference) - the routine timer frames go at
  *    submit;
@@ -33,8 +34,12 @@ class ProctorCaptureRetention
     {
         $attempt->refresh();
 
+        // Clean sitting: nothing to prove, so only the opening camera photo is
+        // kept (a few KB) to show who sat the exam. Everything else goes.
         if ($attempt->flag_count <= 0) {
-            return $this->deleteAllFor($attempt);
+            return $this->discard(
+                $attempt->captures()->get()->reject(fn (MockExamProctorCapture $c) => $this->isOpeningPhoto($c))
+            );
         }
 
         return $this->discard(
@@ -107,6 +112,12 @@ class ProctorCaptureRetention
         }
 
         return round($bytes / 1048576, 1) . ' MB';
+    }
+
+    private function isOpeningPhoto(MockExamProctorCapture $capture): bool
+    {
+        return $capture->kind === MockExamProctorCapture::KIND_CAMERA
+            && $capture->reason === MockExamProctorCapture::REASON_START;
     }
 
     /** @param \Illuminate\Support\Collection<int, MockExamProctorCapture> $captures */

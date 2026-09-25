@@ -45,6 +45,26 @@ class MockExamProctorCapture extends Model
         return $this->belongsTo(MockExamAttempt::class, 'attempt_id');
     }
 
+    /**
+     * Plain-language "why was this frame taken", shown as the caption headline.
+     * The camera/screen source is shown separately, so a face flag can never
+     * read like a screen problem.
+     */
+    public function reasonLabel(): string
+    {
+        return match ($this->reason) {
+            self::REASON_INTERVAL => 'Routine check',
+            self::REASON_START => 'Start of exam',
+            MockExamProctorEvent::TYPE_BLUR => 'Left the exam window',
+            MockExamProctorEvent::TYPE_HIDDEN => 'Switched tab or minimised',
+            MockExamProctorEvent::TYPE_FULLSCREEN_EXIT => 'Exited fullscreen',
+            MockExamProctorEvent::TYPE_NO_FACE => 'No face detected',
+            MockExamProctorEvent::TYPE_MULTIPLE_FACES => 'More than one face',
+            MockExamProctorEvent::TYPE_LOOKING_AWAY => 'Looking away',
+            default => ucfirst(str_replace('_', ' ', (string) $this->reason)),
+        };
+    }
+
     /** Frames taken because something happened, rather than on the timer. */
     public function isEventTriggered(): bool
     {

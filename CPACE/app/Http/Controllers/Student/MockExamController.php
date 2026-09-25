@@ -9,10 +9,7 @@ use App\Models\MockExamAttempt;
 use App\Models\MockExamEvent;
 use App\Models\MockExamRegistration;
 use App\Models\Subject;
-use App\Services\PerformanceRecorder;
-use App\Services\SpacedRepetitionScheduler;
-use App\Services\WeaknessDetector;
-use App\Support\ProctorCaptureRetention;
+use App\Services\MockExamGrader;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -40,6 +37,10 @@ class MockExamController extends Controller
     {
         $student = Auth::user();
         $this->assertStudent();
+
+        // A sitting they abandoned is closed and graded before the list is drawn,
+        // so it shows as done rather than forever "in progress".
+        app(MockExamGrader::class)->closeExpired(studentId: $student->id);
 
         $exams = $this->registeredExams($student->id);
         $attempts = $this->attemptsFor($student->id, $exams->pluck('id'));
@@ -100,7 +101,7 @@ class MockExamController extends Controller
         );
 
         return redirect()->route('mock-exams')
-            ->with('status', 'Code redeemed — your exams for ' . $event->exam_date->format('M j, Y') . ' are now listed.');
+            ->with('status', 'Code redeemed â€” your exams for ' . $event->exam_date->format('M j, Y') . ' are now listed.');
     }
 
     /** One subject's folder: every redeemed exam for that subject. */
@@ -108,6 +109,8 @@ class MockExamController extends Controller
     {
         $student = Auth::user();
         $this->assertStudent();
+
+        app(MockExamGrader::class)->closeExpired(studentId: $student->id);
 
         $exams = $this->registeredExams($student->id)
             ->where('subject_id', $subject->id)
@@ -129,6 +132,7 @@ class MockExamController extends Controller
         $student = Auth::user();
         $this->assertRegistered($mockExam, $student->id);
 
+        app(MockExamGrader::class)->closeExpired($mockExam, $student->id);
         $attempt = MockExamAttempt::where('exam_id', $mockExam->id)->where('student_id', $student->id)->first();
 
         return view('student.mock-exam-show', [
@@ -185,6 +189,14 @@ class MockExamController extends Controller
             return redirect()->route('mock-exams.result', $mockExam);
         }
 
+        // Their time is already up (they walked away and came back late): close
+        // the sitting from the last autosave instead of showing the paper again.
+        if ($attempt->hasExpired()) {
+            app(MockExamGrader::class)->closeOne($attempt);
+
+            return redirect()->route('mock-exams.result', $mockExam);
+        }
+
         return view('student.mock-exam-take', [
             'exam' => $mockExam->load('subject'),
             'subject' => $mockExam->subject,
@@ -236,72 +248,14 @@ class MockExamController extends Controller
         }
 
         $answers = $this->sanitiseAnswers($request->input('answers', []), $mockExam);
-        $items = $mockExam->items()->get();
-
-        $score = 0;
-        $totalPoints = 0;
-        $topicTally = [];
-        $answerResults = [];
-
-        foreach ($items as $item) {
-            $selected = $answers[(string) $item->id] ?? null;
-            $isCorrect = $item->isCorrect($selected);
-            $totalPoints += $item->points;
-            if ($isCorrect) {
-                $score += $item->points;
-            }
-
-            if ($item->topic_id) {
-                $topicTally[$item->topic_id] ??= ['attempts' => 0, 'correct' => 0, 'trailing_wrong' => 0];
-                $topicTally[$item->topic_id]['attempts']++;
-                $topicTally[$item->topic_id]['correct'] += $isCorrect ? 1 : 0;
-                // Trailing run of wrong answers, in the order answered - the "3 in a row" streak.
-                $topicTally[$item->topic_id]['trailing_wrong'] = $isCorrect ? 0 : $topicTally[$item->topic_id]['trailing_wrong'] + 1;
-            }
-
-            if ($item->source_question_id) {
-                $answerResults[] = [
-                    'question_id' => $item->source_question_id,
-                    'difficulty' => $item->difficulty,
-                    'correct' => $isCorrect,
-                ];
-            }
-        }
 
         // Same server-side reasoning as quiz_sessions.is_late: derived from
         // started_at against the exam's own window, never from client state.
         $isLate = now()->greaterThan($mockExam->endsAt());
 
-        $attempt->update([
-            'answers' => $answers,
-            'score' => $score,
-            'total_points' => $totalPoints,
-            'percent' => $totalPoints > 0 ? round($score / $totalPoints * 100, 2) : 0,
-            'submitted_at' => now(),
-            'is_late' => $isLate,
-            'status' => MockExamAttempt::STATUS_SUBMITTED,
-        ]);
-
-        // Analytics run after the grade is committed so a failure here can
-        // never void a finished exam. No points are awarded: a graded exam is
-        // not practice, and a 100-item paper would distort the leaderboard.
-        try {
-            app(PerformanceRecorder::class)->record($student->id, $topicTally);
-            app(SpacedRepetitionScheduler::class)->recordAnswers($student->id, $answerResults);
-            app(WeaknessDetector::class)->syncMany($student->id, array_keys($topicTally));
-        } catch (\Throwable $e) {
-            report($e);
-        }
-
-        // Clean sittings keep no recordings at all; flagged ones keep only the
-        // frames that back a flag. Separate from the analytics above so a
-        // failure in either can't stop the other.
-        try {
-            app(ProctorCaptureRetention::class)->afterSubmit($attempt);
-        } catch (\Throwable $e) {
-            report($e);
-        }
-
+        // Grading, analytics and the recording cleanup live in one place so a
+        // submit and a server-side close can never grade differently.
+        app(MockExamGrader::class)->grade($mockExam, $attempt, $answers, now(), $isLate);
         return redirect()->route('mock-exams.result', $mockExam);
     }
 
@@ -328,7 +282,7 @@ class MockExamController extends Controller
         ]);
     }
 
-    // ── helpers ──────────────────────────────────────────────────────────────
+    // â”€â”€ helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     private function assertStudent(): void
     {

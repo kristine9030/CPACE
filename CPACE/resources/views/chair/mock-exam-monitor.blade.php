@@ -41,6 +41,20 @@
         .tile-body { padding:11px 13px; }
         .tile-name { font-size:12.5px; font-weight:600; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
         .tile-meta { font-size:11px; color:var(--muted); margin-top:4px; display:flex; justify-content:space-between; align-items:center; gap:6px; }
+        .tile.tile-high { border-color:var(--red); box-shadow:0 0 0 3px rgba(192,57,43,.28), 0 8px 20px -12px rgba(192,57,43,.5); }
+        .risk { display:inline-block; font-size:10px; font-weight:700; padding:2px 8px; border-radius:20px; letter-spacing:.2px; white-space:nowrap; }
+        .risk-low    { background:#e8f1fb; color:#2a5da8; }
+        .risk-medium { background:#fdf0d8; color:#9a6200; }
+        .risk-high   { background:#fdeceb; color:#a32318; }
+        .risk-auto   { background:#eef0f4; color:#556; margin-left:4px; }
+        .stat-sub { font-size:11px; color:var(--muted); margin-top:6px; }
+        .sim-row { display:flex; align-items:center; gap:14px; padding:11px 0; border-bottom:1px solid #f0f1f4; font-size:12.5px; flex-wrap:wrap; }
+        .sim-row:last-child { border-bottom:none; }
+        .sim-names { font-weight:600; color:var(--ink); min-width:240px; }
+        .sim-names a { color:inherit; text-decoration:none; border-bottom:1px dotted var(--muted); }
+        .sim-names a:hover { color:var(--primary); }
+        .sim-fact { color:var(--muted); }
+        .sim-fact b { color:var(--ink); }
         .live-dot { width:8px; height:8px; border-radius:50%; background:var(--green); display:inline-block; box-shadow:0 0 0 rgba(30,158,99,.5); animation:live-pulse 2s infinite; }
         @keyframes live-pulse {
             0%   { box-shadow:0 0 0 0 rgba(30,158,99,.45); }
@@ -87,8 +101,8 @@
         <i class="fas fa-hard-drive"></i>
         <div>
             <strong>Recordings stored for this exam: {{ $storage['count'] }} ({{ \App\Support\ProctorCaptureRetention::humanSize($storage['bytes']) }}).</strong>
-            Students with no flags have their recordings deleted as soon as they submit. Flagged students keep only the frames
-            behind a flag, and those are removed automatically {{ \App\Models\MockExamProctorCapture::RETENTION_DAYS }} days after the exam,
+            Students with no flags keep only their opening camera photo (to show who sat the exam); everything else is deleted as
+            soon as they submit. Flagged students keep only the frames behind a flag. What is kept is removed automatically {{ \App\Models\MockExamProctorCapture::RETENTION_DAYS }} days after the exam,
             or sooner with “Delete recordings” on a student's page. The flag timeline is always kept.
         </div>
     </div>
@@ -129,15 +143,29 @@
                 </div>
                 <div class="stat-icon si-red"><i class="fas fa-triangle-exclamation"></i></div>
             </div>
+            <div class="stat-sub"><span id="kpiHigh">0</span> high risk</div>
         </div>
     </div>
 
     <div class="card">
         <div class="card-title"><i class="fas fa-users-viewfinder"></i> Students</div>
-        <div class="card-sub">Most-flagged first. Click a tile for the full timeline and captures.</div>
+        <div class="card-sub">
+            Highest risk first. The badge weighs each flag by how serious it is (losing the camera or screen counts more than
+            a glance away). It is a signal for you to review, not a verdict. Click a tile for the timeline and captures.
+        </div>
         <div class="grid" id="grid" style="margin-top:16px;">
             <div class="empty" style="grid-column:1/-1;"><i class="fas fa-hourglass-half"></i><h3>Nobody has started yet</h3><p>Tiles appear as students enter the exam.</p></div>
         </div>
+    </div>
+
+    <div class="card">
+        <div class="card-title"><i class="fas fa-people-arrows"></i> Answer similarity</div>
+        <div class="card-sub">
+            Pairs of submitted students who chose the <strong>same wrong answer</strong> on far more questions than chance would
+            explain. Matching right answers means nothing; matching wrong ones is unusual. This is a signal, not proof: students
+            who studied from the same wrong source will match too.
+        </div>
+        <div id="simBody" style="margin-top:12px;font-size:12.5px;color:var(--muted);">Checking…</div>
     </div>
 </main>
 
@@ -161,12 +189,13 @@
             document.getElementById('kpiStarted').textContent = data.kpis.started;
             document.getElementById('kpiSubmitted').textContent = data.kpis.submitted;
             document.getElementById('kpiFlagged').textContent = data.kpis.flagged;
+            document.getElementById('kpiHigh').textContent = data.kpis.high_risk;
             document.getElementById('windowState').textContent = data.exam.window;
 
             if (!data.students.length) return;
 
             grid.innerHTML = data.students.map(s => `
-                <a class="tile ${s.flags > 0 ? 'flagged' : ''}" href="${s.detail}">
+                <a class="tile ${s.flags > 0 ? 'flagged' : ''} ${s.risk_level === 'high' ? 'tile-high' : ''}" href="${s.detail}">
                     ${s.camera
                         ? `<img class="tile-cam" src="${s.camera}" alt="">`
                         : `<div class="tile-none"><i class="fas fa-video-slash"></i></div>`}
@@ -174,7 +203,10 @@
                         <div class="tile-name">${escapeHtml(s.student)}</div>
                         <div class="tile-meta">
                             <span>${s.status === 'submitted' ? (s.percent !== null ? s.percent + '%' : 'submitted') : s.answered + ' answered'}</span>
-                            ${s.flags > 0 ? `<span class="chip chip-flag">${s.flags}</span>` : '<span></span>'}
+                            <span>
+                                ${s.risk_level !== 'none' ? `<span class="risk risk-${s.risk_level}" title="${s.flags} flag(s), weighted score ${s.risk_score}">${escapeHtml(s.risk_label)}</span>` : ''}
+                                ${s.auto_closed ? '<span class="risk risk-auto" title="Time ran out and the server graded the last autosave">auto-closed</span>' : ''}
+                            </span>
                         </div>
                     </div>
                 </a>`).join('');
@@ -186,6 +218,41 @@
 
     poll();
     setInterval(poll, 15000);
+
+    // Answer similarity compares every pair of students, so it runs on load and
+    // then once a minute rather than on the 15-second poll.
+    const simUrl = @json($isChair ? route('chair.mock-exams.monitor.similarity', $exam) : route('faculty.mock-exams.monitor.similarity', $exam));
+    const simBody = document.getElementById('simBody');
+
+    async function loadSimilarity() {
+        try {
+            const res = await fetch(simUrl, { headers: { 'Accept': 'application/json' } });
+            if (!res.ok) return;
+            const data = await res.json();
+
+            if (data.submitted < 2) {
+                simBody.textContent = 'Needs at least two submitted sittings to compare.';
+                return;
+            }
+            if (!data.pairs.length) {
+                simBody.textContent = 'No pair of the ' + data.submitted + ' submitted students stands out. Nothing to review.';
+                return;
+            }
+
+            simBody.innerHTML = data.pairs.map(p => `
+                <div class="sim-row">
+                    <div class="sim-names">
+                        <a href="${p.a.url}">${escapeHtml(p.a.name)}</a> &amp; <a href="${p.b.url}">${escapeHtml(p.b.name)}</a>
+                    </div>
+                    <div class="sim-fact">
+                        Same wrong answer on <b>${p.shared}</b> of the ${p.both_wrong} questions both got wrong
+                        (chance would give about ${p.expected}).
+                    </div>
+                </div>`).join('');
+        } catch (e) { /* the next minute will try again */ }
+    }
+    loadSimilarity();
+    setInterval(loadSimilarity, 60000);
 })();
 </script>
 </body>
