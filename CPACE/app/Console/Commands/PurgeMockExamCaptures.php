@@ -18,14 +18,14 @@ use Illuminate\Support\Facades\Storage;
 class PurgeMockExamCaptures extends Command
 {
     protected $signature = 'mock-exam:purge-captures
-                            {--days=30 : Delete captures for exams that ended more than this many days ago}
+                            {--days=14 : Delete captures for exams that ended more than this many days ago}
                             {--dry-run : Report what would be deleted without deleting it}';
 
     protected $description = 'Delete stored mock exam camera/screen frames for exams that ended more than N days ago';
 
     public function handle(): int
     {
-        $days = max(1, (int) $this->option('days'));
+        $days = max(1, (int) ($this->option('days') ?: MockExamProctorCapture::RETENTION_DAYS));
         $dryRun = (bool) $this->option('dry-run');
         $cutoff = now()->subDays($days);
 

@@ -213,6 +213,7 @@ class MockExamReviewController extends Controller
             'registered' => $mockExam->event
                 ? $mockExam->event->registrations()->count()
                 : 0,
+            'storage' => app(\App\Support\ProctorCaptureRetention::class)->usageFor($mockExam),
         ]);
     }
 

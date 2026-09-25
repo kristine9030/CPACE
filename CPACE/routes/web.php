@@ -318,6 +318,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/mock-exams/proctor/{attempt}/event', [MockExamProctorController::class, 'event'])->name('mock-exams.proctor.event');
     Route::post('/mock-exams/proctor/{attempt}/capture', [MockExamProctorController::class, 'capture'])->name('mock-exams.proctor.capture');
     Route::get('/mock-exams/captures/{capture}', [MockExamProctorController::class, 'show'])->name('mock-exams.capture');
+    Route::delete('/mock-exams/attempts/{attempt}/captures', [MockExamProctorController::class, 'destroyCaptures'])->name('mock-exams.captures.destroy');
     Route::get('/performance', [PerformanceController::class, 'index'])->name('performance');
     // Review Notes (personal study notes, real CRUD backed by the database)
     Route::get('/review-notes', [ReviewNoteController::class, 'index'])->name('review-notes');

@@ -184,6 +184,106 @@ class MockExamProctorTest extends TestCase
         $this->assertSame(1, MockExamProctorCapture::count());
     }
 
+    public function test_the_purge_command_defaults_to_the_fourteen_day_window(): void
+    {
+        [, $old] = $this->sitting(sitting: now()->subDays(20));
+        $oldCapture = $this->storeCapture($old);
+
+        $this->artisan('mock-exam:purge-captures')->assertSuccessful();
+
+        $this->assertSame(0, MockExamProctorCapture::count());
+        Storage::disk('local')->assertMissing($oldCapture->path);
+    }
+
+    public function test_the_purge_is_on_the_daily_schedule(): void
+    {
+        $scheduled = collect(app(\Illuminate\Console\Scheduling\Schedule::class)->events())
+            ->contains(fn ($e) => str_contains($e->command, 'mock-exam:purge-captures'));
+
+        $this->assertTrue($scheduled, 'Without a schedule entry nothing would ever delete the frames.');
+    }
+
+    public function test_the_face_check_flag_types_are_accepted(): void
+    {
+        [$student, $attempt] = $this->sitting();
+
+        foreach ([MockExamProctorEvent::TYPE_NO_FACE, MockExamProctorEvent::TYPE_MULTIPLE_FACES, MockExamProctorEvent::TYPE_LOOKING_AWAY] as $type) {
+            $this->actingAs($student)->postJson(route('mock-exams.proctor.event', $attempt), ['type' => $type])
+                ->assertOk();
+        }
+
+        $this->assertSame(3, $attempt->fresh()->flag_count);
+    }
+
+    public function test_a_clean_sitting_keeps_no_recordings_once_submitted(): void
+    {
+        [$student, $attempt] = $this->sitting();
+        $a = $this->storeCapture($attempt, 'start');
+        $b = $this->storeCapture($attempt, 'interval');
+
+        $this->actingAs($student)->post(route('mock-exams.submit', $attempt->exam))->assertRedirect();
+
+        $this->assertSame(0, MockExamProctorCapture::count());
+        Storage::disk('local')->assertMissing($a->path);
+        Storage::disk('local')->assertMissing($b->path);
+    }
+
+    public function test_a_flagged_sitting_keeps_only_the_frames_behind_a_flag(): void
+    {
+        [$student, $attempt] = $this->sitting();
+        $attempt->update(['flag_count' => 1]);
+        $start = $this->storeCapture($attempt, 'start');
+        $routine = $this->storeCapture($attempt, 'interval');
+        $evidence = $this->storeCapture($attempt, 'multiple_faces');
+
+        $this->actingAs($student)->post(route('mock-exams.submit', $attempt->exam))->assertRedirect();
+
+        $this->assertEqualsCanonicalizing(
+            [$start->id, $evidence->id],
+            MockExamProctorCapture::pluck('id')->all()
+        );
+        Storage::disk('local')->assertMissing($routine->path);
+        Storage::disk('local')->assertExists($evidence->path);
+    }
+
+    public function test_the_owner_can_delete_recordings_after_submit_and_the_flags_stay(): void
+    {
+        [, $attempt] = $this->sitting();
+        $attempt->update(['status' => MockExamAttempt::STATUS_SUBMITTED, 'submitted_at' => now(), 'flag_count' => 1]);
+        $capture = $this->storeCapture($attempt, 'blur');
+        MockExamProctorEvent::create(['attempt_id' => $attempt->id, 'type' => 'blur', 'occurred_at' => now()]);
+
+        $faculty = User::find($attempt->exam->created_by);
+        $this->actingAs($faculty)->delete(route('mock-exams.captures.destroy', $attempt))->assertRedirect();
+
+        $this->assertSame(0, MockExamProctorCapture::count());
+        Storage::disk('local')->assertMissing($capture->path);
+        $this->assertSame(1, MockExamProctorEvent::count());
+    }
+
+    public function test_recordings_cannot_be_deleted_while_the_student_is_still_sitting(): void
+    {
+        [, $attempt] = $this->sitting();
+        $this->storeCapture($attempt);
+
+        $this->actingAs($this->makeChair())->delete(route('mock-exams.captures.destroy', $attempt))->assertStatus(409);
+
+        $this->assertSame(1, MockExamProctorCapture::count());
+    }
+
+    public function test_only_the_owning_faculty_or_chair_can_delete_recordings(): void
+    {
+        [$student, $attempt] = $this->sitting();
+        $attempt->update(['status' => MockExamAttempt::STATUS_SUBMITTED, 'submitted_at' => now()]);
+        $this->storeCapture($attempt);
+
+        $this->actingAs($student)->delete(route('mock-exams.captures.destroy', $attempt))->assertForbidden();
+        $outsider = $this->makeFaculty('aud2@example.com', $this->audId);
+        $this->actingAs($outsider)->delete(route('mock-exams.captures.destroy', $attempt))->assertForbidden();
+
+        $this->assertSame(1, MockExamProctorCapture::count());
+    }
+
     // ── helpers ──────────────────────────────────────────────────────────
 
     /** @return array{0: User, 1: MockExamAttempt} */
@@ -239,9 +339,9 @@ class MockExamProctorTest extends TestCase
         return [$student, $attempt];
     }
 
-    private function storeCapture(MockExamAttempt $attempt): MockExamProctorCapture
+    private function storeCapture(MockExamAttempt $attempt, string $reason = 'interval'): MockExamProctorCapture
     {
-        $path = MockExamProctorCapture::ROOT . '/' . $attempt->exam_id . '/' . $attempt->id . '/camera-test.jpg';
+        $path = MockExamProctorCapture::ROOT . '/' . $attempt->exam_id . '/' . $attempt->id . '/camera-' . $reason . '-' . uniqid() . '.jpg';
         Storage::disk('local')->put($path, 'fake-jpeg-bytes');
 
         return MockExamProctorCapture::create([
@@ -249,7 +349,7 @@ class MockExamProctorTest extends TestCase
             'kind' => MockExamProctorCapture::KIND_CAMERA,
             'path' => $path,
             'captured_at' => now(),
-            'reason' => 'interval',
+            'reason' => $reason,
         ]);
     }
 }

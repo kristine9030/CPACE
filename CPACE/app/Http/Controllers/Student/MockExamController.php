@@ -12,6 +12,7 @@ use App\Models\Subject;
 use App\Services\PerformanceRecorder;
 use App\Services\SpacedRepetitionScheduler;
 use App\Services\WeaknessDetector;
+use App\Support\ProctorCaptureRetention;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -288,6 +289,15 @@ class MockExamController extends Controller
             app(PerformanceRecorder::class)->record($student->id, $topicTally);
             app(SpacedRepetitionScheduler::class)->recordAnswers($student->id, $answerResults);
             app(WeaknessDetector::class)->syncMany($student->id, array_keys($topicTally));
+        } catch (\Throwable $e) {
+            report($e);
+        }
+
+        // Clean sittings keep no recordings at all; flagged ones keep only the
+        // frames that back a flag. Separate from the analytics above so a
+        // failure in either can't stop the other.
+        try {
+            app(ProctorCaptureRetention::class)->afterSubmit($attempt);
         } catch (\Throwable $e) {
             report($e);
         }
