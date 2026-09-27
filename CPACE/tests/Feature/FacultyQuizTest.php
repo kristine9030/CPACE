@@ -90,6 +90,8 @@ class FacultyQuizTest extends TestCase
             $table->id();
             $table->unsignedBigInteger('subject_id');
             $table->string('name');
+            $table->unsignedBigInteger('parent_id')->nullable();
+            $table->unsignedSmallInteger('sort_order')->default(0);
             $table->boolean('is_active')->default(true);
         });
         Schema::create('questions', function (Blueprint $table) {
@@ -378,6 +380,96 @@ class FacultyQuizTest extends TestCase
         $this->assertSame(0, QuizProctorCapture::count());
     }
 
+    public function test_the_builder_lists_topics_in_tree_order_for_an_assigned_subject_only(): void
+    {
+        $faculty = $this->faculty();
+        $subjectId = $this->subjectFor($faculty);
+        $parent = DB::table('topics')->insertGetId(['subject_id' => $subjectId, 'name' => 'Parent']);
+        DB::table('topics')->insertGetId(['subject_id' => $subjectId, 'name' => 'Child', 'parent_id' => $parent]);
+        $this->bankQuestionInTopic($parent, 'Q under parent');
+
+        $rows = $this->actingAs($faculty)->getJson(route('faculty.quizzes.topics', ['subject' => $subjectId]))->assertOk()->json();
+        $this->assertSame(['Parent', 'Child'], array_column($rows, 'name'));
+        $this->assertSame([0, 1], array_column($rows, 'depth'));
+        $this->assertSame(1, $rows[0]['bank_count']);
+
+        $otherSubject = DB::table('subjects')->insertGetId(['code' => 'AUD', 'name' => 'Auditing', 'is_active' => true]);
+        $this->actingAs($faculty)->getJson(route('faculty.quizzes.topics', ['subject' => $otherSubject]))->assertForbidden();
+    }
+
+    public function test_auto_pick_returns_the_requested_number_and_reports_when_the_bank_runs_short(): void
+    {
+        $faculty = $this->faculty();
+        $subjectId = $this->subjectFor($faculty);
+        $topic = DB::table('topics')->insertGetId(['subject_id' => $subjectId, 'name' => 'T']);
+        foreach (range(1, 5) as $i) {
+            $this->bankQuestionInTopic($topic, "Question {$i}");
+        }
+
+        $r = $this->actingAs($faculty)->postJson(route('faculty.quizzes.pick-questions'), [
+            'subject_id' => $subjectId, 'mode' => 'auto', 'count' => 3, 'topic_ids' => [$topic],
+        ])->assertOk();
+        $this->assertCount(3, $r->json('questions'));
+        $this->assertFalse($r->json('short'));
+
+        $r = $this->actingAs($faculty)->postJson(route('faculty.quizzes.pick-questions'), [
+            'subject_id' => $subjectId, 'mode' => 'auto', 'count' => 9, 'topic_ids' => [$topic],
+        ])->assertOk();
+        $this->assertCount(5, $r->json('questions'));
+        $this->assertTrue($r->json('short'));
+
+        // Each picked question carries its choices so the builder can add it as-is.
+        $this->assertCount(4, $r->json('questions.0.choices'));
+    }
+
+    public function test_all_from_topics_takes_every_usable_question_and_skips_unanswerable_ones(): void
+    {
+        $faculty = $this->faculty();
+        $subjectId = $this->subjectFor($faculty);
+        $topic = DB::table('topics')->insertGetId(['subject_id' => $subjectId, 'name' => 'T']);
+        $this->bankQuestionInTopic($topic, 'Good 1');
+        $this->bankQuestionInTopic($topic, 'Good 2');
+        $this->questionInTopic($topic, 'No choices at all');
+
+        $r = $this->actingAs($faculty)->postJson(route('faculty.quizzes.pick-questions'), [
+            'subject_id' => $subjectId, 'mode' => 'all', 'topic_ids' => [$topic],
+        ])->assertOk();
+
+        $this->assertSame(['Good 1', 'Good 2'], array_column($r->json('questions'), 'question_text'));
+    }
+
+    public function test_picking_is_limited_to_the_faculty_members_own_subjects_and_needs_a_topic(): void
+    {
+        $faculty = $this->faculty();
+        $mine = $this->subjectFor($faculty);
+        $foreignSubject = DB::table('subjects')->insertGetId(['code' => 'AUD', 'name' => 'Auditing', 'is_active' => true]);
+        $foreignTopic = DB::table('topics')->insertGetId(['subject_id' => $foreignSubject, 'name' => 'Theirs']);
+        $this->bankQuestionInTopic($foreignTopic, 'Not yours');
+
+        $this->actingAs($faculty)->postJson(route('faculty.quizzes.pick-questions'), [
+            'subject_id' => $foreignSubject, 'mode' => 'all', 'topic_ids' => [$foreignTopic],
+        ])->assertForbidden();
+
+        // A topic that belongs to another subject is ignored even if the subject is assigned.
+        $r = $this->actingAs($faculty)->postJson(route('faculty.quizzes.pick-questions'), [
+            'subject_id' => $mine, 'mode' => 'all', 'topic_ids' => [$foreignTopic],
+        ])->assertOk();
+        $this->assertSame([], $r->json('questions'));
+
+        $this->actingAs($faculty)->postJson(route('faculty.quizzes.pick-questions'), [
+            'subject_id' => $mine, 'mode' => 'auto', 'count' => 2, 'topic_ids' => [],
+        ])->assertStatus(422);
+    }
+
+    public function test_the_quiz_form_offers_manual_auto_pick_and_all_from_topics(): void
+    {
+        $faculty = $this->faculty();
+        $this->subjectFor($faculty);
+
+        $this->actingAs($faculty)->get(route('faculty.quizzes.create'))
+            ->assertOk()->assertSee('Auto pick')->assertSee('All from topics')->assertSee('Manual');
+    }
+
     public function test_publishing_requires_at_least_one_question(): void
     {
         $faculty = $this->faculty();
@@ -645,6 +737,19 @@ class FacultyQuizTest extends TestCase
             'topic_id' => $topicId, 'question_text' => $text, 'question_type' => 'mcq',
             'difficulty' => 'easy', 'is_active' => $active, 'created_at' => now(), 'updated_at' => now(),
         ]);
+        foreach (['A', 'B', 'C', 'D'] as $label) {
+            DB::table('question_choices')->insert([
+                'question_id' => $questionId, 'choice_label' => $label, 'choice_text' => "Choice {$label}", 'is_correct' => $label === 'A',
+            ]);
+        }
+
+        return $questionId;
+    }
+
+    /** An active question with four choices, A correct, in the given topic. */
+    private function bankQuestionInTopic(int $topicId, string $text): int
+    {
+        $questionId = $this->questionInTopic($topicId, $text);
         foreach (['A', 'B', 'C', 'D'] as $label) {
             DB::table('question_choices')->insert([
                 'question_id' => $questionId, 'choice_label' => $label, 'choice_text' => "Choice {$label}", 'is_correct' => $label === 'A',
