@@ -470,7 +470,7 @@
                                     <span class="group-tag">{{ $student['section'] }}</span>
                                 @endif
                                 @if (! $student['year_level'] && ! $student['section'])
-                                    <span class="ungrouped">Ungrouped</span>
+                                    <span class="ungrouped">No section</span>
                                 @endif
                             </td>
                             <td>
