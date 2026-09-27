@@ -11,6 +11,8 @@ use App\Support\ProctorRisk;
 use Illuminate\Support\Facades\Storage;
 use App\Models\Question;
 use App\Models\Subject;
+use App\Models\Topic;
+use App\Support\MockExamQuestionPicker;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -553,6 +555,111 @@ class FacultyQuizController extends Controller
                 'is_correct' => (bool) $c->is_correct,
             ])->all(),
         ]));
+    }
+
+    /**
+     * The subject's topics for the quiz builder's Auto pick / All from topics
+     * panel: a flat list in tree order, each with its depth and how many active
+     * questions the bank holds for it.
+     */
+    public function topics(Request $request)
+    {
+        $subjectId = (int) $request->input('subject');
+        $this->assertAssignedSubject($subjectId);
+
+        $flat = Topic::where('subject_id', $subjectId)
+            ->where('is_active', true)
+            ->withCount(['questions as bank_count' => fn ($q) => $q->where('is_active', true)])
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get();
+
+        $walk = function ($nodes, int $depth) use (&$walk) {
+            return $nodes->flatMap(fn (Topic $t) => collect([[
+                'id' => $t->id, 'name' => $t->name, 'depth' => $depth, 'bank_count' => (int) $t->bank_count,
+                'parent_id' => $t->parent_id,
+            ]])->merge($walk($t->children, $depth + 1)));
+        };
+
+        return response()->json($walk(Topic::buildTree($flat), 0)->values());
+    }
+
+    /**
+     * Fill the quiz from the bank without hand-picking: `auto` spreads a chosen
+     * number of questions across the chosen topics (the mock exam's picker, so
+     * the easy/moderate/difficult mix is the same), `all` takes every usable
+     * question in them up to the item cap.
+     */
+    public function pickQuestions(Request $request)
+    {
+        $data = $request->validate([
+            'subject_id' => ['required', 'integer'],
+            'mode' => ['required', 'in:auto,all'],
+            'count' => ['nullable', 'integer', 'min:1', 'max:' . self::MAX_ITEMS],
+            'topic_ids' => ['required', 'array', 'min:1'],
+            'topic_ids.*' => ['integer'],
+        ], [
+            'topic_ids.required' => 'Choose at least one topic first.',
+            'topic_ids.min' => 'Choose at least one topic first.',
+            'count.max' => 'A quiz can have at most ' . self::MAX_ITEMS . ' questions.',
+        ]);
+
+        $subjectId = (int) $data['subject_id'];
+        $this->assertAssignedSubject($subjectId);
+
+        $topicIds = Topic::whereIn('id', array_map('intval', $data['topic_ids']))
+            ->where('subject_id', $subjectId)
+            ->pluck('id')->map('intval')->all();
+
+        if ($data['mode'] === 'auto') {
+            if (empty($data['count'])) {
+                throw ValidationException::withMessages(['count' => 'Enter how many questions you want.']);
+            }
+            $questions = MockExamQuestionPicker::pick($topicIds, (int) $data['count']);
+            $available = $questions->count();
+            $requested = (int) $data['count'];
+        } else {
+            $usable = Question::with(['choices', 'topic'])
+                ->whereIn('topic_id', $topicIds)
+                ->where('is_active', true)
+                ->orderBy('id')
+                ->get()
+                // Same rule as the auto-picker: unanswerable questions never reach a quiz.
+                ->filter(fn (Question $q) => $q->choices->count() >= 2 && $q->choices->contains('is_correct', true))
+                ->values();
+            $available = $usable->count();
+            $requested = $available;
+            $questions = $usable->take(self::MAX_ITEMS);
+        }
+
+        return response()->json([
+            'questions' => $questions->map(fn (Question $q) => [
+                'id' => $q->id,
+                'question_text' => $q->question_text,
+                'question_type' => $q->question_type,
+                'difficulty' => $q->difficulty,
+                'explanation' => $q->explanation,
+                'choices' => $q->choices->sortBy('choice_label')->values()->map(fn ($c) => [
+                    'label' => $c->choice_label,
+                    'text' => $c->choice_text,
+                    'is_correct' => (bool) $c->is_correct,
+                ])->all(),
+            ])->values(),
+            'requested' => $requested,
+            'returned' => $questions->count(),
+            // The builder tells faculty when the bank ran dry or the cap cut the list.
+            'short' => $data['mode'] === 'auto' ? $available < $requested : $available > self::MAX_ITEMS,
+            'available' => $available,
+        ]);
+    }
+
+    private function assertAssignedSubject(int $subjectId): void
+    {
+        abort_unless(
+            $subjectId > 0 && $this->subjectsFor(Auth::user())->contains('id', $subjectId),
+            403,
+            'You are not assigned to that subject.'
+        );
     }
 
     // ── helpers ──────────────────────────────────────────────────────────────

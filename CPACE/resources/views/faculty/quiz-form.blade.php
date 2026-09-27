@@ -116,6 +116,30 @@
         .share-box .row { display:flex; gap:8px; }
         .share-box .row .btn { flex:1; padding:8px 10px; font-size:12px; }
 
+        /* Manual / Auto pick / All from topics */
+        .modes { display:inline-flex; background:#eef0f4; border-radius:10px; padding:3px; gap:3px; margin-bottom:14px; }
+        .modes button { border:none; background:transparent; padding:7px 15px; border-radius:8px; cursor:pointer; font-family:'Poppins',sans-serif; font-size:12.5px; font-weight:600; color:#5b6377; }
+        .modes button.on { background:#fff; color:var(--primary); box-shadow:0 1px 3px rgba(0,0,0,.12); }
+        .pick-panel { border:1px solid #eceef2; border-radius:12px; padding:14px 16px; margin-bottom:14px; background:#fbfbfc; }
+        .pick-note { font-size:12px; color:#7a8296; margin-bottom:10px; line-height:1.55; }
+        .pick-tools { display:flex; gap:8px; align-items:center; margin-bottom:8px; flex-wrap:wrap; }
+        .pick-tools input[type=text] { flex:1; min-width:170px; padding:8px 12px; font-size:12.5px; border-radius:999px; }
+        .pick-tools button { border:1px solid #e0e0e0; background:#fff; border-radius:999px; padding:7px 13px; font-size:12px; font-weight:600; font-family:'Poppins',sans-serif; cursor:pointer; color:#444; }
+        .pick-tools button:hover { background:#f5f5f5; }
+        .topic-list { max-height:260px; overflow-y:auto; border:1px solid #eceef2; border-radius:10px; padding:6px; background:#fff; }
+        .topic-row { display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:8px; cursor:pointer; font-size:12.5px; }
+        .topic-row:hover { background:#f7f8fa; }
+        .topic-row:has(input:checked) { background:var(--primary-light); }
+        .topic-row input { width:16px; height:16px; accent-color:var(--primary); flex-shrink:0; }
+        .topic-row .tn { flex:1; color:#222; }
+        .topic-row .tc { font-size:11px; color:#7a8296; background:#f1f2f5; padding:2px 8px; border-radius:999px; flex-shrink:0; }
+        .topic-row .tc.zero { color:#c0392b; background:#fdeceb; }
+        .pick-foot { display:flex; align-items:center; gap:12px; margin-top:12px; flex-wrap:wrap; }
+        .pick-foot .count-box { display:flex; align-items:center; gap:8px; font-size:12.5px; color:#444; }
+        .pick-foot .count-box input { width:80px; padding:8px 10px; font-size:13px; }
+        .pick-foot label.rep { display:flex; align-items:center; gap:7px; font-size:12px; color:#666; cursor:pointer; }
+        .pick-msg { font-size:12.5px; margin-top:10px; }
+        .pick-msg.ok { color:#059669; } .pick-msg.warn { color:#b45309; } .pick-msg.err { color:#c0392b; }
         /* Bank modal */
         .modal-bg { display:none; position:fixed; inset:0; background:rgba(15,5,5,.55); z-index:3000; align-items:center; justify-content:center; padding:20px; }
         .modal-bg.open { display:flex; }
@@ -214,7 +238,7 @@
                     <div class="card-title">
                         <span><i class="fas fa-list-ol"></i>Questions <small id="qCountLabel"></small></span>
                         @unless($locked)
-                            <div style="display:flex;gap:8px;">
+                            <div style="display:flex;gap:8px;" id="manualBtns">
                                 <button type="button" class="btn btn-outline" id="openBankBtn" style="padding:7px 13px;font-size:12px;"><i class="fas fa-database"></i> Add from Test Bank</button>
                                 <button type="button" class="btn btn-primary" id="addQuestionBtn" style="padding:7px 13px;font-size:12px;"><i class="fas fa-plus"></i> Write question</button>
                             </div>
@@ -227,6 +251,34 @@
                             <div>Students have already answered this quiz, so its questions are locked to keep their scores meaningful. You can still change the title, deadline, and other settings.</div>
                         </div>
                     @endif
+
+                    @unless($locked)
+                        <div class="modes" id="qModes">
+                            <button type="button" data-mode="manual" class="on">Manual</button>
+                            <button type="button" data-mode="auto">Auto pick</button>
+                            <button type="button" data-mode="all">All from topics</button>
+                        </div>
+
+                        <div class="pick-panel" id="pickPanel" hidden>
+                            <div class="pick-note" id="pickNote"></div>
+                            <div id="pickNeedSubject" class="pick-msg warn" hidden>Choose a subject in Quiz Details first. Topics come from it.</div>
+                            <div id="pickTopics" hidden>
+                                <div class="pick-tools">
+                                    <input type="text" id="topicSearch" placeholder="Search topics..." autocomplete="off">
+                                    <button type="button" id="topicAll">Select all</button>
+                                    <button type="button" id="topicNone">Clear</button>
+                                </div>
+                                <div class="topic-list" id="topicList"><div class="modal-empty">Loading...</div></div>
+                                <div style="font-size:11.5px;color:#7a8296;margin-top:7px;"><span id="topicCount">0</span> selected · <span id="topicPool">0</span> questions in the bank for them</div>
+                                <div class="pick-foot">
+                                    <div class="count-box" id="countBox">How many? <input type="number" id="pickCount" min="1" max="100" value="10"></div>
+                                    <label class="rep"><input type="checkbox" id="pickReplace"> Replace the questions already in the list</label>
+                                    <button type="button" class="btn btn-primary" id="pickGo" style="padding:8px 15px;font-size:12.5px;margin-left:auto;"><i class="fas fa-wand-magic-sparkles"></i> <span id="pickGoLabel">Pick questions</span></button>
+                                </div>
+                                <div class="pick-msg" id="pickMsg"></div>
+                            </div>
+                        </div>
+                    @endunless
 
                     <div class="q-list" id="qList"></div>
 
@@ -579,6 +631,131 @@
     bankModal.addEventListener('click', ev => { if (ev.target === bankModal) closeBank(); });
     bankSearch.addEventListener('input', () => { clearTimeout(bankTimer); bankTimer = setTimeout(loadBank, 350); });
     bankSubject.addEventListener('change', loadBank);
+
+    /* ── Manual / Auto pick / All from topics ── */
+    const TOPICS_URL = @json(route('faculty.quizzes.topics'));
+    const PICK_URL = @json(route('faculty.quizzes.pick-questions'));
+    const CSRF = @json(csrf_token());
+    const MAX_ITEMS = 100;
+    const qModes = document.getElementById('qModes');
+    const pickPanel = document.getElementById('pickPanel');
+    const subjectSelect = document.querySelector('select[name=subject_id]');
+    let pickMode = 'manual', topicList = [], topicChecked = new Set(), topicsFor = null;
+
+    if (qModes) {
+        const $ = id => document.getElementById(id);
+        const pickMsg = (text, cls) => { $('pickMsg').textContent = text || ''; $('pickMsg').className = 'pick-msg ' + (cls || ''); };
+
+        function setMode(mode) {
+            pickMode = mode;
+            qModes.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.mode === mode));
+            const manual = mode === 'manual';
+            pickPanel.hidden = manual;
+            $('manualBtns').style.display = manual ? '' : 'none';
+            $('addBar').style.display = manual ? '' : 'none';
+            if (manual) return;
+            $('pickNote').textContent = mode === 'auto'
+                ? 'Spreads the number you ask for evenly across the topics you tick, aiming for about 30% easy, 50% moderate and 20% difficult.'
+                : 'Adds every usable question from the topics you tick, up to ' + MAX_ITEMS + '.';
+            $('countBox').style.display = mode === 'auto' ? '' : 'none';
+            $('pickGoLabel').textContent = mode === 'auto' ? 'Pick questions' : 'Add all questions';
+            pickMsg('');
+            ensureTopics();
+        }
+
+        async function ensureTopics() {
+            const subject = subjectSelect?.value || '';
+            $('pickNeedSubject').hidden = !!subject;
+            $('pickTopics').hidden = !subject;
+            if (!subject || topicsFor === subject) return;
+            $('topicList').innerHTML = '<div class="modal-empty">Loading...</div>';
+            try {
+                const res = await fetch(TOPICS_URL + '?subject=' + encodeURIComponent(subject), { headers: { 'Accept': 'application/json' } });
+                topicList = res.ok ? await res.json() : [];
+            } catch (e) { topicList = []; }
+            topicsFor = subject;
+            topicChecked = new Set();
+            renderTopics();
+        }
+
+        function descendants(id) {
+            const out = [], walk = pid => topicList.filter(t => t.parent_id === pid).forEach(t => { out.push(t.id); walk(t.id); });
+            walk(id);
+            return out;
+        }
+
+        function renderTopics() {
+            const q = ($('topicSearch').value || '').trim().toLowerCase();
+            const rows = topicList.filter(t => !q || t.name.toLowerCase().includes(q));
+            $('topicList').innerHTML = rows.length ? rows.map(t => `
+                <label class="topic-row" style="padding-left:${10 + t.depth * 20}px;">
+                    <input type="checkbox" data-topic="${t.id}" ${topicChecked.has(t.id) ? 'checked' : ''}>
+                    <span class="tn">${esc(t.name)}</span>
+                    <span class="tc ${t.bank_count ? '' : 'zero'}">${t.bank_count} q</span>
+                </label>`).join('') : '<div class="modal-empty">No topics found.</div>';
+            $('topicCount').textContent = topicChecked.size;
+            $('topicPool').textContent = topicList.filter(t => topicChecked.has(t.id)).reduce((n, t) => n + t.bank_count, 0);
+        }
+
+        qModes.addEventListener('click', ev => { const b = ev.target.closest('button[data-mode]'); if (b) setMode(b.dataset.mode); });
+        subjectSelect?.addEventListener('change', () => { topicsFor = null; topicChecked = new Set(); if (pickMode !== 'manual') ensureTopics(); });
+        $('topicSearch').addEventListener('input', renderTopics);
+        $('topicAll').addEventListener('click', () => { topicList.forEach(t => topicChecked.add(t.id)); renderTopics(); });
+        $('topicNone').addEventListener('click', () => { topicChecked.clear(); renderTopics(); });
+        $('topicList').addEventListener('change', ev => {
+            const cb = ev.target.closest('[data-topic]'); if (!cb) return;
+            const id = +cb.dataset.topic;
+            // Ticking a parent ticks its subtopics too, as the mock exam builder does.
+            [id, ...descendants(id)].forEach(x => cb.checked ? topicChecked.add(x) : topicChecked.delete(x));
+            renderTopics();
+        });
+
+        $('pickGo').addEventListener('click', async () => {
+            if (!topicChecked.size) { pickMsg('Tick at least one topic first.', 'err'); return; }
+            const btn = $('pickGo');
+            btn.disabled = true; pickMsg('Picking...');
+            try {
+                const res = await fetch(PICK_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': CSRF },
+                    body: JSON.stringify({
+                        subject_id: +subjectSelect.value, mode: pickMode, topic_ids: [...topicChecked],
+                        count: pickMode === 'auto' ? +$('pickCount').value : null,
+                    }),
+                });
+                const data = await res.json();
+                if (!res.ok) { pickMsg(data.message || 'Could not pick questions.', 'err'); return; }
+
+                if ($('pickReplace').checked) items = [];
+                const have = addedIds();
+                let added = 0, skipped = 0;
+                for (const q of data.questions) {
+                    if (have.has(q.id)) { skipped++; continue; }
+                    if (items.length >= MAX_ITEMS) break;
+                    const item = {
+                        question_text: q.question_text, question_type: q.question_type === 'true_false' ? 'true_false' : 'mcq',
+                        points: 1, explanation: q.explanation || '', source_question_id: q.id,
+                        choices: q.choices.map(c => ({ label: c.label, text: c.text, is_correct: !!c.is_correct })),
+                    };
+                    relabel(item);
+                    items.push(item);
+                    have.add(q.id);
+                    added++;
+                }
+                render();
+
+                let text = `Added ${added} question${added === 1 ? '' : 's'}.`;
+                if (skipped) text += ` ${skipped} already in the quiz were skipped.`;
+                let cls = 'ok';
+                if (pickMode === 'auto' && data.short) { text += ` The bank only had ${data.returned} of the ${data.requested} you asked for.`; cls = 'warn'; }
+                if (pickMode === 'all' && data.short) { text += ` Those topics hold ${data.available}; the first ${MAX_ITEMS} were used.`; cls = 'warn'; }
+                if (items.length >= MAX_ITEMS) { text += ` The quiz is at the ${MAX_ITEMS}-question limit.`; cls = 'warn'; }
+                pickMsg(text, cls);
+            } catch (e) {
+                pickMsg('Something went wrong. Try again.', 'err');
+            } finally { btn.disabled = false; }
+        });
+    }
 
     items.forEach(relabel);
     render();

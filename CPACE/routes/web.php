@@ -208,6 +208,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/quizzes', [FacultyQuizController::class, 'index'])->name('quizzes');
         Route::get('/quizzes/create', [FacultyQuizController::class, 'create'])->name('quizzes.create');
         Route::get('/quizzes/bank-questions', [FacultyQuizController::class, 'bankQuestions'])->name('quizzes.bank-questions');
+        Route::get('/quizzes/topics', [FacultyQuizController::class, 'topics'])->name('quizzes.topics');
+        Route::post('/quizzes/pick-questions', [FacultyQuizController::class, 'pickQuestions'])->name('quizzes.pick-questions');
         Route::get('/quizzes/subject/{subject}', [FacultyQuizController::class, 'subject'])->name('quizzes.subject');
         Route::post('/quizzes', [FacultyQuizController::class, 'store'])->name('quizzes.store');
         Route::get('/quizzes/{quiz}/edit', [FacultyQuizController::class, 'edit'])->name('quizzes.edit');
