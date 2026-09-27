@@ -12,12 +12,13 @@ class FacultyQuizAttempt extends Model
 {
     protected $fillable = [
         'quiz_id', 'student_id', 'started_at', 'submitted_at',
-        'answers', 'score', 'total_points', 'percent', 'flag_count',
+        'answers', 'score', 'total_points', 'percent', 'flag_count', 'last_seen_at',
     ];
 
     protected $casts = [
         'started_at' => 'datetime',
         'submitted_at' => 'datetime',
+        'last_seen_at' => 'datetime',
         'answers' => 'array',
         'score' => 'integer',
         'total_points' => 'integer',

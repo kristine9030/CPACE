@@ -145,6 +145,7 @@
         autosave: @json(route('mock-exams.autosave', $exam)),
         event: @json(route('mock-exams.proctor.event', $attempt)),
         capture: @json(route('mock-exams.proctor.capture', $attempt)),
+        heartbeat: @json(route('mock-exams.proctor.heartbeat', $attempt)),
         csrf: @json(csrf_token()),
     };
     let secondsLeft = {{ $secondsLeft }};
@@ -405,6 +406,16 @@
     const seen = { none: 0, multi: 0, away: 0 };
     const lastRaised = {};
 
+    // A face check that never ran must be visible to the reviewer, or a clean
+    // face record would look like good behaviour. Informational: no points.
+    let faceReported = false, faceErrors = 0;
+    function faceUnavailable(reason) {
+        faceDetector = null;
+        if (faceReported) return;
+        faceReported = true;
+        flag('face_check_unavailable', String(reason || 'could not load').slice(0, 120));
+    }
+
     async function loadFaceDetector() {
         try {
             const vision = await import(VISION + '/+esm');
@@ -415,7 +426,7 @@
                 minDetectionConfidence: 0.6,
             });
             setInterval(faceTick, FACE.everyMs);
-        } catch (e) { faceDetector = null; }
+        } catch (e) { faceUnavailable(e && e.message); }
     }
 
     // Keypoint order from BlazeFace: right eye, left eye, nose tip, mouth, ears.
@@ -443,8 +454,8 @@
         if (!camFeed.videoWidth || camFeed.readyState < 2) return;
 
         let faces;
-        try { faces = faceDetector.detectForVideo(camFeed, performance.now()).detections || []; }
-        catch (e) { return; }
+        try { faces = faceDetector.detectForVideo(camFeed, performance.now()).detections || []; faceErrors = 0; }
+        catch (e) { if (++faceErrors >= 5) faceUnavailable('detector kept failing'); return; }
 
         if (faces.length === 0) {
             seen.none++; seen.multi = 0; seen.away = 0;
@@ -485,7 +496,17 @@
         }
     }
 
+    // Pulse for the server: any long silence is recorded as a "no signal" flag,
+    // so a page that stops reporting can't pass for a student who behaved.
+    // Started before the permission prompts so waiting on them isn't a gap.
+    function beat() {
+        try { fetch(EXAM.heartbeat, { method: 'POST', headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': EXAM.csrf }, keepalive: true }).catch(() => {}); } catch (e) { /* ignore */ }
+    }
+
     async function startProctoring() {
+        beat();
+        setInterval(beat, 30000);
+
         try {
             attachCamera(await navigator.mediaDevices.getUserMedia({ video: { width: 640 } }));
         } catch (e) {

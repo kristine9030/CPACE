@@ -7,6 +7,8 @@ use App\Models\FacultyQuiz;
 use App\Models\FacultyQuizAttempt;
 use App\Models\FacultyQuizItem;
 use App\Models\QuizProctorCapture;
+use App\Models\QuizProctorEvent;
+use App\Support\ProctorHeartbeat;
 use App\Support\ProctorRisk;
 use Illuminate\Support\Facades\Storage;
 use App\Models\Question;
@@ -389,6 +391,8 @@ class FacultyQuizController extends Controller
                 'risk_score' => $risk['score'],
                 'risk_level' => $risk['level'],
                 'risk_label' => $risk['label'],
+                'silent_for' => ProctorHeartbeat::silentFor($attempt),
+                'face_check_off' => isset($counts[$attempt->id][QuizProctorEvent::TYPE_FACE_CHECK_UNAVAILABLE]),
                 'percent' => $attempt->isSubmitted() ? (float) $attempt->percent : null,
                 'answered' => is_array($attempt->answers) ? count(array_filter($attempt->answers)) : 0,
                 'camera' => $capture ? route('class-quiz.capture', $capture) : null,

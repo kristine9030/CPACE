@@ -311,6 +311,7 @@ Route::middleware('auth')->group(function () {
     // Monitored class quizzes: the student posts flags and frames, the owning
     // faculty reads them. Authorisation is re-checked inside the controller.
     Route::post('/q/proctor/{attempt}/event', [QuizProctorController::class, 'event'])->name('class-quiz.proctor.event');
+    Route::post('/q/proctor/{attempt}/heartbeat', [QuizProctorController::class, 'heartbeat'])->name('class-quiz.proctor.heartbeat');
     Route::post('/q/proctor/{attempt}/capture', [QuizProctorController::class, 'capture'])->name('class-quiz.proctor.capture');
     Route::get('/q/captures/{capture}', [QuizProctorController::class, 'show'])->name('class-quiz.capture');
     Route::delete('/q/attempts/{attempt}/captures', [QuizProctorController::class, 'destroy'])->name('class-quiz.captures.destroy');
@@ -332,6 +333,7 @@ Route::middleware('auth')->group(function () {
     // because captures are photographs of students and must never be reachable
     // by anyone else.
     Route::post('/mock-exams/proctor/{attempt}/event', [MockExamProctorController::class, 'event'])->name('mock-exams.proctor.event');
+    Route::post('/mock-exams/proctor/{attempt}/heartbeat', [MockExamProctorController::class, 'heartbeat'])->name('mock-exams.proctor.heartbeat');
     Route::post('/mock-exams/proctor/{attempt}/capture', [MockExamProctorController::class, 'capture'])->name('mock-exams.proctor.capture');
     Route::get('/mock-exams/captures/{capture}', [MockExamProctorController::class, 'show'])->name('mock-exams.capture');
     Route::delete('/mock-exams/attempts/{attempt}/captures', [MockExamProctorController::class, 'destroyCaptures'])->name('mock-exams.captures.destroy');

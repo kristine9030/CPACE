@@ -91,6 +91,15 @@
     </div>
 
     @if($quiz->monitor_enabled && $risk)
+        @if($attempt->proctorEvents->contains('type', \App\Models\QuizProctorEvent::TYPE_FACE_CHECK_UNAVAILABLE))
+            <div class="banner">
+                <i class="fas fa-face-meh"></i>
+                <div>
+                    <strong>Face check did not run on this device.</strong>
+                    The in-browser face detector could not load, so this sitting has no "no face", "more than one face" or "looking away" flags. A clean face record here means nothing; rely on the camera frames and the other flags.
+                </div>
+            </div>
+        @endif
         @if($attempt->flag_count > 0)
             <div class="banner">
                 <i class="fas fa-flag"></i>

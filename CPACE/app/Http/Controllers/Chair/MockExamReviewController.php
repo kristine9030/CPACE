@@ -16,6 +16,7 @@ use App\Models\Topic;
 use App\Services\MockExamGrader;
 use App\Support\MockExamAuditor;
 use App\Support\MockExamSimilarity;
+use App\Support\ProctorHeartbeat;
 use App\Support\ProctorRisk;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -260,6 +261,9 @@ class MockExamReviewController extends Controller
                 'risk_level' => $risk['level'],
                 'risk_label' => $risk['label'],
                 'auto_closed' => isset($counts[$attempt->id][MockExamProctorEvent::TYPE_AUTO_CLOSED]),
+                // Seconds since the page last reported in (unfinished sittings only).
+                'silent_for' => ProctorHeartbeat::silentFor($attempt),
+                'face_check_off' => isset($counts[$attempt->id][MockExamProctorEvent::TYPE_FACE_CHECK_UNAVAILABLE]),
                 'percent' => $attempt->isSubmitted() ? (float) $attempt->percent : null,
                 'started_at' => $attempt->started_at?->toIso8601String(),
                 'submitted_at' => $attempt->submitted_at?->toIso8601String(),

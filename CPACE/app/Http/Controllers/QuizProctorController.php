@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\FacultyQuizAttempt;
 use App\Models\QuizProctorCapture;
 use App\Models\QuizProctorEvent;
+use App\Support\ProctorHeartbeat;
 use App\Support\QuizProctorRetention;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -31,6 +32,18 @@ class QuizProctorController extends Controller
             'meta' => ['nullable', 'string', 'max:255'],
         ]);
 
+        ProctorHeartbeat::touch($attempt, QuizProctorEvent::class);
+
+        // A note, not a flag: recorded once, and never added to flag_count.
+        if (in_array($data['type'], QuizProctorEvent::INFO_TYPES, true)) {
+            QuizProctorEvent::firstOrCreate(
+                ['attempt_id' => $attempt->id, 'type' => $data['type']],
+                ['occurred_at' => now(), 'meta' => $data['meta'] ?? null],
+            );
+
+            return response()->json(['recorded' => true, 'flags' => $attempt->fresh()->flag_count]);
+        }
+
         DB::transaction(function () use ($attempt, $data) {
             QuizProctorEvent::create([
                 'attempt_id' => $attempt->id,
@@ -44,9 +57,20 @@ class QuizProctorController extends Controller
         return response()->json(['recorded' => true, 'flags' => $attempt->fresh()->flag_count]);
     }
 
+    /** The runner's pulse (every ~30s); see ProctorHeartbeat. */
+    public function heartbeat(FacultyQuizAttempt $attempt)
+    {
+        $this->assertOwnLiveMonitoredAttempt($attempt);
+
+        ProctorHeartbeat::touch($attempt, QuizProctorEvent::class);
+
+        return response()->json(['ok' => true]);
+    }
+
     public function capture(Request $request, FacultyQuizAttempt $attempt)
     {
         $this->assertOwnLiveMonitoredAttempt($attempt);
+        ProctorHeartbeat::touch($attempt, QuizProctorEvent::class);
 
         $data = $request->validate([
             'kind' => ['required', 'string', 'in:' . implode(',', QuizProctorCapture::KINDS)],

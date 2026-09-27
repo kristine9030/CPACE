@@ -158,6 +158,7 @@
     @include('partials.quiz-proctor-runner', [
         'eventUrl' => route('class-quiz.proctor.event', $attempt),
         'captureUrl' => route('class-quiz.proctor.capture', $attempt),
+        'heartbeatUrl' => route('class-quiz.proctor.heartbeat', $attempt),
     ])
 @endif
 

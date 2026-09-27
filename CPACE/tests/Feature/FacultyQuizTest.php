@@ -154,6 +154,7 @@ class FacultyQuizTest extends TestCase
             $table->unsignedBigInteger('student_id');
             $table->dateTime('started_at');
             $table->dateTime('submitted_at')->nullable();
+            $table->dateTime('last_seen_at')->nullable();
             $table->json('answers')->nullable();
             $table->unsignedSmallInteger('score')->default(0);
             $table->unsignedSmallInteger('total_points')->default(0);
@@ -340,6 +341,77 @@ class FacultyQuizTest extends TestCase
         $this->actingAs($faculty)->get(route('faculty.quizzes.results', $quizId))->assertOk()->assertSee('High risk');
         $this->actingAs($faculty)->get(route('faculty.quizzes.attempt', [$quizId, $attempt->id]))
             ->assertOk()->assertSee('Screen sharing stopped')->assertSee('Flag timeline');
+    }
+
+    public function test_a_quiz_heartbeat_records_a_gap_only_after_a_long_silence(): void
+    {
+        [, $student, , $attempt] = $this->monitoredSitting();
+        $attempt->update(['last_seen_at' => now()->subSeconds(60)]);
+
+        $this->actingAs($student)->postJson(route('class-quiz.proctor.heartbeat', $attempt))->assertOk();
+        $this->assertSame(0, \App\Models\QuizProctorEvent::count());
+
+        $attempt->update(['last_seen_at' => now()->subSeconds(5 * 60 + 3)]);
+        $this->actingAs($student)->postJson(route('class-quiz.proctor.heartbeat', $attempt))->assertOk();
+
+        $event = \App\Models\QuizProctorEvent::firstOrFail();
+        $this->assertSame('connection_gap', $event->type);
+        $this->assertSame('No signal for 5m 3s', $event->meta);
+        $this->assertSame(1, $attempt->fresh()->flag_count);
+    }
+
+    public function test_quiz_heartbeats_are_refused_for_other_students_unmonitored_quizzes_and_finished_attempts(): void
+    {
+        [, $student, $quizId, $attempt] = $this->monitoredSitting();
+
+        $this->actingAs($this->student('other@example.com'))
+            ->postJson(route('class-quiz.proctor.heartbeat', $attempt))->assertForbidden();
+
+        $attempt->update(['submitted_at' => now()]);
+        $this->actingAs($student)->postJson(route('class-quiz.proctor.heartbeat', $attempt))->assertStatus(409);
+
+        $attempt->update(['submitted_at' => null]);
+        DB::table('faculty_quizzes')->where('id', $quizId)->update(['monitor_enabled' => false]);
+        $this->actingAs($student)->postJson(route('class-quiz.proctor.heartbeat', $attempt))->assertStatus(409);
+    }
+
+    public function test_a_quiz_flag_after_a_silence_also_records_the_gap_and_the_client_cannot_post_one(): void
+    {
+        [, $student, , $attempt] = $this->monitoredSitting();
+
+        $this->actingAs($student)->postJson(route('class-quiz.proctor.event', $attempt), ['type' => 'connection_gap'])
+            ->assertStatus(422);
+
+        $attempt->update(['last_seen_at' => now()->subMinutes(6)]);
+        $this->actingAs($student)->postJson(route('class-quiz.proctor.event', $attempt), ['type' => 'blur'])->assertOk();
+
+        $this->assertEqualsCanonicalizing(['connection_gap', 'blur'], \App\Models\QuizProctorEvent::pluck('type')->all());
+        $this->assertSame(2, $attempt->fresh()->flag_count);
+    }
+
+    public function test_a_quiz_face_check_that_could_not_run_is_noted_once_without_a_flag(): void
+    {
+        [$faculty, $student, $quizId, $attempt] = $this->monitoredSitting();
+
+        foreach ([1, 2] as $_) {
+            $this->actingAs($student)->postJson(route('class-quiz.proctor.event', $attempt), [
+                'type' => 'face_check_unavailable', 'meta' => 'blocked',
+            ])->assertOk();
+        }
+
+        $this->assertSame(1, \App\Models\QuizProctorEvent::where('type', 'face_check_unavailable')->count());
+        $this->assertSame(0, $attempt->fresh()->flag_count);
+
+        // The faculty's monitor and the student's review page both say so.
+        $attempt->update(['last_seen_at' => now()->subMinutes(5)]);
+        $row = $this->actingAs($faculty)->getJson(route('faculty.quizzes.monitor.feed', $quizId))->json('students.0');
+        $this->assertTrue($row['face_check_off']);
+        $this->assertGreaterThanOrEqual(300, $row['silent_for']);
+
+        $attempt->update(['submitted_at' => now(), 'score' => 1, 'total_points' => 1, 'percent' => 100]);
+        $this->assertNull($this->actingAs($faculty)->getJson(route('faculty.quizzes.monitor.feed', $quizId))->json('students.0.silent_for'));
+        $this->actingAs($faculty)->get(route('faculty.quizzes.attempt', [$quizId, $attempt->id]))
+            ->assertOk()->assertSee('Face check did not run');
     }
 
     public function test_a_clean_monitored_sitting_keeps_only_its_opening_photo_once_submitted(): void

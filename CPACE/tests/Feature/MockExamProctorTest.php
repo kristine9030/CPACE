@@ -430,6 +430,138 @@ class MockExamProctorTest extends TestCase
     // ── helpers ──────────────────────────────────────────────────────────
 
     /** @return array{0: User, 1: MockExamAttempt} */
+    // ── heartbeat and silence ────────────────────────────────────────────
+
+    public function test_a_heartbeat_inside_the_threshold_records_no_gap(): void
+    {
+        [$student, $attempt] = $this->sitting();
+        $attempt->update(['last_seen_at' => now()->subSeconds(60)]);
+
+        $this->actingAs($student)->postJson(route('mock-exams.proctor.heartbeat', $attempt))->assertOk();
+
+        $this->assertSame(0, MockExamProctorEvent::count());
+        $this->assertSame(0, $attempt->fresh()->flag_count);
+        $this->assertTrue($attempt->fresh()->last_seen_at->gt(now()->subSeconds(5)));
+    }
+
+    public function test_a_heartbeat_after_a_long_silence_records_a_connection_gap(): void
+    {
+        [$student, $attempt] = $this->sitting();
+        $attempt->update(['last_seen_at' => now()->subSeconds(4 * 60 + 12)]);
+
+        $this->actingAs($student)->postJson(route('mock-exams.proctor.heartbeat', $attempt))->assertOk();
+
+        $event = MockExamProctorEvent::firstOrFail();
+        $this->assertSame(MockExamProctorEvent::TYPE_CONNECTION_GAP, $event->type);
+        $this->assertSame('No signal for 4m 12s', $event->meta);
+        $this->assertSame(1, $attempt->fresh()->flag_count);
+        // Refreshed, so the next beat is not a second gap.
+        $this->actingAs($student)->postJson(route('mock-exams.proctor.heartbeat', $attempt))->assertOk();
+        $this->assertSame(1, MockExamProctorEvent::count());
+    }
+
+    public function test_silence_is_measured_from_the_start_when_no_heartbeat_has_ever_arrived(): void
+    {
+        [$student, $attempt] = $this->sitting();
+        $attempt->update(['started_at' => now()->subMinutes(10), 'last_seen_at' => null]);
+
+        $this->actingAs($student)->postJson(route('mock-exams.proctor.heartbeat', $attempt))->assertOk();
+
+        $this->assertSame(MockExamProctorEvent::TYPE_CONNECTION_GAP, MockExamProctorEvent::firstOrFail()->type);
+    }
+
+    public function test_a_flag_arriving_after_a_silence_also_records_the_gap_so_it_cannot_hide_it(): void
+    {
+        [$student, $attempt] = $this->sitting();
+        $attempt->update(['last_seen_at' => now()->subMinutes(6)]);
+
+        $this->actingAs($student)->postJson(route('mock-exams.proctor.event', $attempt), [
+            'type' => MockExamProctorEvent::TYPE_BLUR,
+        ])->assertOk();
+
+        $this->assertEqualsCanonicalizing(
+            [MockExamProctorEvent::TYPE_CONNECTION_GAP, MockExamProctorEvent::TYPE_BLUR],
+            MockExamProctorEvent::pluck('type')->all()
+        );
+        $this->assertSame(2, $attempt->fresh()->flag_count);
+    }
+
+    public function test_a_connection_gap_weighs_two_points_like_a_lapse(): void
+    {
+        $this->assertSame(2, \App\Support\ProctorRisk::assess([MockExamProctorEvent::TYPE_CONNECTION_GAP => 1])['score']);
+        // Capped like every other type.
+        $this->assertSame(10, \App\Support\ProctorRisk::assess([MockExamProctorEvent::TYPE_CONNECTION_GAP => 40])['score']);
+    }
+
+    public function test_heartbeats_are_refused_for_other_students_and_finished_attempts(): void
+    {
+        [$student, $attempt] = $this->sitting();
+
+        $this->actingAs($this->makeStudent('intruder@example.com'))
+            ->postJson(route('mock-exams.proctor.heartbeat', $attempt))->assertForbidden();
+
+        $attempt->update(['submitted_at' => now(), 'status' => MockExamAttempt::STATUS_SUBMITTED]);
+        $this->actingAs($student)->postJson(route('mock-exams.proctor.heartbeat', $attempt))->assertStatus(409);
+    }
+
+    public function test_the_client_cannot_post_a_connection_gap_itself(): void
+    {
+        [$student, $attempt] = $this->sitting();
+
+        $this->actingAs($student)->postJson(route('mock-exams.proctor.event', $attempt), [
+            'type' => MockExamProctorEvent::TYPE_CONNECTION_GAP,
+        ])->assertStatus(422);
+    }
+
+    public function test_a_face_check_that_could_not_run_is_noted_once_and_costs_the_student_nothing(): void
+    {
+        [$student, $attempt] = $this->sitting();
+
+        foreach ([1, 2] as $_) {
+            $this->actingAs($student)->postJson(route('mock-exams.proctor.event', $attempt), [
+                'type' => MockExamProctorEvent::TYPE_FACE_CHECK_UNAVAILABLE, 'meta' => 'failed to fetch',
+            ])->assertOk();
+        }
+
+        $this->assertSame(1, MockExamProctorEvent::where('type', MockExamProctorEvent::TYPE_FACE_CHECK_UNAVAILABLE)->count());
+        $this->assertSame(0, $attempt->fresh()->flag_count);
+        $this->assertSame(0, \App\Support\ProctorRisk::assess([MockExamProctorEvent::TYPE_FACE_CHECK_UNAVAILABLE => 3])['score']);
+    }
+
+    public function test_the_monitor_feed_shows_silence_and_a_missing_face_check_for_unfinished_sittings(): void
+    {
+        [$student, $attempt] = $this->sitting();
+        $attempt->update(['last_seen_at' => now()->subMinutes(5)]);
+        MockExamProctorEvent::create([
+            'attempt_id' => $attempt->id, 'type' => MockExamProctorEvent::TYPE_FACE_CHECK_UNAVAILABLE, 'occurred_at' => now(),
+        ]);
+        $faculty = User::find($attempt->exam->created_by);
+
+        $row = $this->actingAs($faculty)->getJson(route('faculty.mock-exams.monitor.feed', $attempt->exam))
+            ->assertOk()->json('students.0');
+        $this->assertGreaterThanOrEqual(300, $row['silent_for']);
+        $this->assertTrue($row['face_check_off']);
+
+        $attempt->update(['submitted_at' => now(), 'status' => MockExamAttempt::STATUS_SUBMITTED]);
+        $this->assertNull($this->actingAs($faculty)->getJson(route('faculty.mock-exams.monitor.feed', $attempt->exam))->json('students.0.silent_for'));
+    }
+
+    public function test_the_review_page_tells_the_reviewer_when_the_face_check_did_not_run(): void
+    {
+        [, $attempt] = $this->sitting();
+        $chair = $this->makeChair();
+
+        $this->actingAs($chair)->get(route('chair.mock-exams.attempt', $attempt))
+            ->assertOk()->assertDontSee('Face check did not run');
+
+        MockExamProctorEvent::create([
+            'attempt_id' => $attempt->id, 'type' => MockExamProctorEvent::TYPE_FACE_CHECK_UNAVAILABLE, 'occurred_at' => now(),
+        ]);
+
+        $this->actingAs($chair)->get(route('chair.mock-exams.attempt', $attempt))
+            ->assertOk()->assertSee('Face check did not run')->assertSee('Face check was not running');
+    }
+
     private function sitting($sitting = null): array
     {
         $sitting ??= now()->subMinutes(10);

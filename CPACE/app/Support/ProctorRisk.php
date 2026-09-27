@@ -25,6 +25,8 @@ class ProctorRisk
         MockExamProctorEvent::TYPE_PARTIAL_SCREEN => 4,
         MockExamProctorEvent::TYPE_SECOND_MONITOR => 3,
         MockExamProctorEvent::TYPE_BLUR => 2,
+        // Wi-Fi drops are real, so a silence weighs like a lapse, not like a deliberate act.
+        MockExamProctorEvent::TYPE_CONNECTION_GAP => 2,
         MockExamProctorEvent::TYPE_HIDDEN => 2,
         MockExamProctorEvent::TYPE_NO_FACE => 2,
         MockExamProctorEvent::TYPE_LOOKING_AWAY => 1,
