@@ -73,6 +73,11 @@
         .card { background:#fff; border-radius:14px; overflow:hidden; }
         .card-head { padding:16px 20px; border-bottom:1px solid #f2f2f2; font-size:13.5px; font-weight:700; color:#222; display:flex; justify-content:space-between; align-items:center; }
         .card-head small { font-weight:500; color:#aaa; font-size:11px; }
+        /* Long lists scroll inside their card so the page itself stays short. */
+        .card.scroll-card { display:flex; flex-direction:column; max-height:520px; }
+        .card.scroll-card .card-head { flex-shrink:0; }
+        .scroll-body { overflow-y:auto; flex:1; min-height:0; }
+        .scroll-body thead th { position:sticky; top:0; z-index:1; }
         table { width:100%; border-collapse:collapse; }
         thead th { text-align:left; font-size:11px; color:#aaa; font-weight:600; padding:11px 16px; text-transform:uppercase; letter-spacing:.4px; background:#fafafa; border-bottom:1px solid #f5f5f5; }
         tbody td { padding:13px 16px; font-size:13px; border-bottom:1px solid #f8f8f8; vertical-align:middle; }
@@ -266,11 +271,12 @@
     @endif
 
     <div class="layout">
-        <div class="card">
+        <div class="card scroll-card">
             <div class="card-head">Student submissions <small>{{ $attempts->count() }}</small></div>
             @if($attempts->isEmpty())
                 <div class="empty">No student has opened this quiz yet. Share the quiz link to get started.</div>
             @else
+                <div class="scroll-body">
                 <table>
                     <thead><tr><th>Student</th><th>Status</th><th>Score</th><th>%</th><th>Submitted</th></tr></thead>
                     <tbody>
@@ -299,11 +305,13 @@
                     @endforeach
                     </tbody>
                 </table>
+                </div>
             @endif
         </div>
 
-        <div class="card">
+        <div class="card scroll-card">
             <div class="card-head">Per-question accuracy <small>of {{ $stats['submitted'] }} submitted</small></div>
+            <div class="scroll-body">
             @forelse($quiz->items as $i => $item)
                 @php $st = $itemStats[$item->id]; $rate = $st['rate']; @endphp
                 <div class="item-row">
@@ -317,6 +325,7 @@
             @empty
                 <div class="empty">This quiz has no questions.</div>
             @endforelse
+            </div>
         </div>
     </div>
 </main>
