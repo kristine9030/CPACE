@@ -38,7 +38,7 @@
             <div class="card empty">
                 <i class="fas fa-calendar-xmark"></i>
                 <h3>Nothing scheduled for {{ $subject->code }}</h3>
-                <p>Redeem a code for a day that includes this subject and it'll show up here.</p>
+                <p>Once one is published for your year and section, it'll show up here.</p>
             </div>
         @else
             @foreach($exams as $exam)

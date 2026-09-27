@@ -42,7 +42,7 @@
                     <th>Status</th>
                     <th>Sitting</th>
                     <th>Items</th>
-                    <th>Redeem code</th>
+                    <th>Audience</th>
                     <th style="text-align:right;">Actions</th>
                 </tr>
                 </thead>
@@ -77,14 +77,7 @@
                             @endif
                         </td>
                         <td>
-                            @if($exam->event)
-                                <span class="code-pill" style="font-size:12px;padding:6px 11px;letter-spacing:1px;">
-                                    {{ $exam->event->access_code }}
-                                    <button type="button" onclick="navigator.clipboard.writeText('{{ $exam->event->access_code }}');this.textContent='Copied';">Copy</button>
-                                </span>
-                            @else
-                                <span style="color:var(--muted);font-size:12px;">—</span>
-                            @endif
+                            <span style="font-size:12.5px;">{{ $exam->audienceLabel() }}</span>
                         </td>
                         <td style="text-align:right;white-space:nowrap;">
                             <a class="btn btn-ghost btn-sm" href="{{ route('chair.mock-exams.review', $exam) }}">

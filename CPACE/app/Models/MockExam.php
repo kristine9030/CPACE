@@ -97,6 +97,31 @@ class MockExam extends Model
         return trim($years . ($years && $sections ? ' · ' : '') . $sections);
     }
 
+    /**
+     * How many active, non-alumni students currently match this exam's
+     * audience - shown to the Chair/faculty as "who's expected", now that
+     * there's no redeem code and no registration to count instead.
+     */
+    public function eligibleStudentsCount(): int
+    {
+        $years = array_map('intval', (array) $this->audience_years);
+        $sections = array_map(fn ($s) => mb_strtolower(trim((string) $s)), (array) $this->audience_sections);
+
+        return User::query()
+            ->where('role_id', Role::STUDENT)
+            ->where('is_active', true)
+            ->whereHas('studentProfile', function ($q) use ($years, $sections) {
+                $q->where(fn ($q2) => $q2->whereNull('is_alumni')->orWhere('is_alumni', false));
+                if ($years) {
+                    $q->whereIn('year_level', $years);
+                }
+                if ($sections) {
+                    $q->whereRaw('LOWER(TRIM(section)) IN (' . implode(',', array_fill(0, count($sections), '?')) . ')', $sections);
+                }
+            })
+            ->count();
+    }
+
     public function event()
     {
         return $this->belongsTo(MockExamEvent::class, 'event_id');

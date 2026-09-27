@@ -9,6 +9,7 @@ use App\Models\MockExam;
 use App\Models\MockExamAudit;
 use App\Models\Question;
 use App\Models\Role;
+use App\Models\Section;
 use App\Models\Subject;
 use App\Models\Topic;
 use App\Models\User;
@@ -142,6 +143,8 @@ class MockExamController extends Controller
             'selectedTopics' => $mockExam->topics->pluck('id')->all(),
             'readOnly' => ! $mockExam->canBeEditedBy($faculty),
             'bankCounts' => $this->bankCounts($mockExam->subject_id),
+            'yearLabels' => Section::YEAR_LABELS,
+            'sections' => Section::where('is_active', true)->orderBy('year_level')->orderBy('name')->get(),
         ]);
     }
 

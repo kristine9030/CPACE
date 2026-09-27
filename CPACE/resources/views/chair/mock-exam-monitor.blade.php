@@ -115,10 +115,10 @@
         <div class="stat-card">
             <div class="stat-top">
                 <div>
-                    <div class="stat-lbl">Redeemed code</div>
+                    <div class="stat-lbl">Eligible students</div>
                     <div class="stat-num" id="kpiRegistered">{{ $registered }}</div>
                 </div>
-                <div class="stat-icon si-blue"><i class="fas fa-ticket"></i></div>
+                <div class="stat-icon si-blue"><i class="fas fa-users"></i></div>
             </div>
         </div>
         <div class="stat-card">

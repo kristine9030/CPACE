@@ -156,6 +156,7 @@ class MockExamReviewController extends Controller
      */
     public function audience(Request $request, MockExam $mockExam)
     {
+        abort_unless($mockExam->canBeViewedBy(Auth::user()), 403, 'You are not assigned to that subject.');
         abort_if($mockExam->isClosed(), 403, 'A closed exam can no longer change its audience.');
 
         $data = $request->validate([
@@ -182,17 +183,19 @@ class MockExamReviewController extends Controller
     }
 
     /**
-     * Publish: the one-way door. Resolves the day's event (creating the redeem
-     * code if this is the first exam published for that date) and freezes the
-     * paper.
+     * Publish: the one-way door. Resolves the day's event (subjects sitting the
+     * same date share one row for grouping/reporting) and freezes the paper.
+     * There is no code to hand out - eligible students see it automatically
+     * once published, based on the audience chosen below.
      */
     public function publish(MockExam $mockExam)
     {
         $this->assertEditable($mockExam);
         $this->assertExamComplete($mockExam);
 
-        // The code is shared by whoever hears it, so an exam must not go live
-        // until the Chair has said which year levels may sit it.
+        // Nobody types their way in any more, so an exam must not go live
+        // until the Chair (or an assigned faculty) has said which year levels
+        // may sit it.
         if (empty($mockExam->audience_years)) {
             return back()->withErrors(['audience' => 'Choose which year levels may take this exam before publishing.']);
         }
@@ -216,13 +219,13 @@ class MockExamReviewController extends Controller
             $mockExam,
             Auth::user(),
             MockExamAudit::ACTION_PUBLISHED,
-            'Code ' . $mockExam->event->access_code . ' · ' . $mockExam->total_items . ' questions'
+            $mockExam->audienceLabel() . ' · ' . $mockExam->total_items . ' questions'
         );
 
-        $this->notifySubjectFaculty($mockExam, 'Mock exam published', 'is now published. Code: ' . $mockExam->event->access_code);
+        $this->notifySubjectFaculty($mockExam, 'Mock exam published', 'is now published for ' . $mockExam->audienceLabel() . '.');
 
         return redirect()->route('chair.mock-exams.subject', $mockExam->subject_id)
-            ->with('status', 'Published. Redeem code: ' . $mockExam->event->access_code);
+            ->with('status', 'Published for ' . $mockExam->audienceLabel() . '.');
     }
 
     /** Close a sitting early; in-progress attempts are left to finish. */
@@ -257,9 +260,7 @@ class MockExamReviewController extends Controller
             'subject' => $mockExam->subject,
             'theme' => self::theme($mockExam->subject?->code),
             'isChair' => Auth::user()->isChair(),
-            'registered' => $mockExam->event
-                ? $mockExam->event->registrations()->count()
-                : 0,
+            'registered' => $mockExam->eligibleStudentsCount(),
             'storage' => app(\App\Support\ProctorCaptureRetention::class)->usageFor($mockExam),
         ]);
     }
@@ -326,7 +327,7 @@ class MockExamReviewController extends Controller
                 'window' => $mockExam->window(),
             ],
             'kpis' => [
-                'registered' => $mockExam->event?->registrations()->count() ?? 0,
+                'registered' => $mockExam->eligibleStudentsCount(),
                 'started' => $attempts->count(),
                 'submitted' => $attempts->where('status', MockExamAttempt::STATUS_SUBMITTED)->count(),
                 'flagged' => $attempts->where('flag_count', '>', 0)->count(),
@@ -410,7 +411,7 @@ class MockExamReviewController extends Controller
             ->sortBy(fn ($t) => $t['rate'] ?? 101);
 
         $stats = [
-            'registered' => $mockExam->event?->registrations()->count() ?? 0,
+            'registered' => $mockExam->eligibleStudentsCount(),
             'started' => $attempts->count(),
             'submitted' => $submitted->count(),
             'average' => $submitted->count() > 0 ? round($submitted->avg('percent'), 1) : null,

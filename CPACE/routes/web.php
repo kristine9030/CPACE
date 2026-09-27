@@ -235,6 +235,8 @@ Route::middleware('auth')->group(function () {
         Route::put('/mock-exams/{mockExam}', [FacultyMockExamController::class, 'update'])->name('mock-exams.update');
         Route::post('/mock-exams/{mockExam}/submit', [FacultyMockExamController::class, 'submitForReview'])->name('mock-exams.submit');
         Route::delete('/mock-exams/{mockExam}', [FacultyMockExamController::class, 'destroy'])->name('mock-exams.destroy');
+        // Faculty may also choose who the exam is open to, same as the Chair.
+        Route::put('/mock-exams/{mockExam}/audience', [MockExamReviewController::class, 'audience'])->name('mock-exams.audience');
         // Faculty monitor their own subject's sitting, using the shared views.
         Route::get('/mock-exams/{mockExam}/monitor', [MockExamReviewController::class, 'monitor'])->name('mock-exams.monitor');
         Route::get('/mock-exams/{mockExam}/monitor/feed', [MockExamReviewController::class, 'monitorFeed'])->name('mock-exams.monitor.feed');
@@ -316,11 +318,10 @@ Route::middleware('auth')->group(function () {
     Route::post('/q/proctor/{attempt}/capture', [QuizProctorController::class, 'capture'])->name('class-quiz.proctor.capture');
     Route::get('/q/captures/{capture}', [QuizProctorController::class, 'show'])->name('class-quiz.capture');
     Route::delete('/q/attempts/{attempt}/captures', [QuizProctorController::class, 'destroy'])->name('class-quiz.captures.destroy');
-    // Mock exams. A student redeems the day's code once, which registers them
-    // for every subject exam published for that date; each sitting then opens
-    // only inside its own scheduled window.
+    // Mock exams. No code to redeem: a published exam whose audience matches
+    // this student's year level (and section, if narrowed) just appears; each
+    // sitting then opens only inside its own scheduled window.
     Route::get('/mock-exams', [MockExamController::class, 'index'])->name('mock-exams');
-    Route::post('/mock-exams/redeem', [MockExamController::class, 'redeem'])->name('mock-exams.redeem');
     Route::get('/mock-exams/subject/{subject}', [MockExamController::class, 'subject'])->name('mock-exams.subject');
     Route::get('/mock-exams/{mockExam}', [MockExamController::class, 'show'])->name('mock-exams.show');
     Route::post('/mock-exams/{mockExam}/start', [MockExamController::class, 'start'])->name('mock-exams.start');

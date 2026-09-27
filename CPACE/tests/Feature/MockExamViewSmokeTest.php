@@ -101,7 +101,7 @@ class MockExamViewSmokeTest extends TestCase
         $exam = $this->exam(MockExam::STATUS_PUBLISHED, now()->subMinutes(10), withEvent: true);
         $this->register($exam);
 
-        $this->actingAs($this->student)->get(route('mock-exams'))->assertOk()->assertSee('Redeem');
+        $this->actingAs($this->student)->get(route('mock-exams'))->assertOk()->assertSee('Your exams');
         $this->actingAs($this->student)->get(route('mock-exams.subject', $this->subjectId))->assertOk();
         // The consent gate must actually say what is recorded.
         $this->actingAs($this->student)->get(route('mock-exams.show', $exam))

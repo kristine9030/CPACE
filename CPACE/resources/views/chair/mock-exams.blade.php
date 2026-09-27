@@ -22,7 +22,7 @@
     <div class="topbar">
         <div>
             <div class="page-title">Mock Exams</div>
-            <div class="page-sub">Review what faculty built, then publish it to release the redeem code to students.</div>
+            <div class="page-sub">Review what faculty built, then publish it to the year levels and sections you choose.</div>
         </div>
         <div class="topbar-right">@include('partials.topbar-actions')</div>
     </div>
@@ -35,10 +35,11 @@
     @endif
 
     <div class="banner banner-info">
-        <i class="fas fa-key"></i>
+        <i class="fas fa-users-viewfinder"></i>
         <div>
-            Publishing generates <strong>one redeem code per exam day</strong> — every subject sitting on that
-            date shares it. Once published an exam is locked and can no longer be edited by anyone.
+            There's no code to hand out — publishing opens the exam automatically to whichever year
+            levels and sections you (or the assigned faculty) choose. Once published it's locked and
+            can no longer be edited by anyone.
         </div>
     </div>
 
