@@ -113,6 +113,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/students/{id}/edit', [StudentManagementController::class, 'edit'])->name('students.edit');
         Route::put('/students/{id}', [StudentManagementController::class, 'update'])->name('students.update');
         Route::post('/students/{id}/toggle', [StudentManagementController::class, 'toggle'])->name('students.toggle');
+        Route::post('/students/bulk-alumni', [StudentManagementController::class, 'bulkMarkAlumni'])->name('students.bulk-alumni');
         Route::post('/students/{id}/regenerate-otp', [StudentManagementController::class, 'regenerateOtp'])->name('students.regenerate-otp');
 
         // Faculty account management

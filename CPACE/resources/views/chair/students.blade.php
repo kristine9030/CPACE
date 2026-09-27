@@ -395,10 +395,21 @@
     </form>
 
     <!-- Student roster -->
+    {{-- A standalone form (kept outside the table) that the "Mark as Alumni"
+         button fills with the checked ids and submits. It can't wrap the
+         table itself: each row already has its own <form> for the
+         enable/disable toggle, and HTML doesn't allow forms to nest. --}}
+    <form id="bulkAlumniForm" method="POST" action="{{ route('chair.students.bulk-alumni') }}">
+        @csrf
+    </form>
     <div class="card">
         <div class="card-head">
             <span class="card-title">Student Roster ({{ $students->total() }})</span>
-            <div style="display:flex;gap:7px;">
+            <div style="display:flex;gap:7px;align-items:center;">
+                <span id="bulkSelectedCount" class="student-meta" style="display:none;"></span>
+                <button type="button" id="bulkAlumniBtn" class="btn btn-outline btn-sm" style="display:none;">
+                    <i class="fas fa-user-graduate"></i> Mark as Alumni
+                </button>
                 <a href="{{ route('chair.students.export.csv', request()->query()) }}" class="btn btn-ghost btn-sm">
                     <i class="fas fa-file-csv"></i> CSV
                 </a>
@@ -412,8 +423,9 @@
             <table>
                 <thead>
                     <tr>
+                        <th style="width:30px;"><input type="checkbox" id="selectAllStudents" title="Select all on this page"></th>
                         <th>Student</th>
-                        <th>Group</th>
+                        <th>Section</th>
                         <th>Readiness</th>
                         <th>Quizzes</th>
                         <th>Streak</th>
@@ -433,6 +445,11 @@
                             };
                         @endphp
                         <tr>
+                            <td>
+                                @unless ($student['is_alumni'])
+                                    <input type="checkbox" class="student-select" name="student_ids[]" value="{{ $student['id'] }}">
+                                @endunless
+                            </td>
                             <td>
                                 <div class="student-cell">
                                     <div class="user-av">{{ $student['initials'] }}</div>
@@ -539,7 +556,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8">
+                            <td colspan="9">
                                 <div class="empty">
                                     <i class="fas fa-user-graduate"></i>
                                     <div>No students match the selected filters.</div>
@@ -626,6 +643,69 @@
         if (event.target === importModal) closeImportModal();
     });
 
+    // ── Bulk "Mark as Alumni" ───────────────────────────────────────────────
+    // Alumni rows have no checkbox (they're already Alumni), so this only
+    // ever selects students who can still be marked.
+    const selectAll = document.getElementById('selectAllStudents');
+    const rowChecks = () => Array.from(document.querySelectorAll('.student-select'));
+    const bulkBtn = document.getElementById('bulkAlumniBtn');
+    const bulkCount = document.getElementById('bulkSelectedCount');
+    const bulkForm = document.getElementById('bulkAlumniForm');
+
+    function syncBulkBar() {
+        const checked = rowChecks().filter(c => c.checked);
+        const all = rowChecks();
+        if (selectAll) {
+            selectAll.checked = all.length > 0 && checked.length === all.length;
+            selectAll.indeterminate = checked.length > 0 && checked.length < all.length;
+        }
+        if (checked.length > 0) {
+            bulkBtn.style.display = '';
+            bulkCount.style.display = '';
+            bulkCount.textContent = checked.length + ' selected';
+        } else {
+            bulkBtn.style.display = 'none';
+            bulkCount.style.display = 'none';
+        }
+    }
+
+    if (selectAll) {
+        selectAll.addEventListener('change', () => {
+            rowChecks().forEach(c => { c.checked = selectAll.checked; });
+            syncBulkBar();
+        });
+    }
+    document.addEventListener('change', event => {
+        if (event.target.classList && event.target.classList.contains('student-select')) syncBulkBar();
+    });
+
+    if (bulkBtn) {
+        bulkBtn.addEventListener('click', async () => {
+            const ids = rowChecks().filter(c => c.checked).map(c => c.value);
+            if (!ids.length) return;
+
+            const ok = await CPACE.confirm({
+                title: 'Mark as Alumni?',
+                text: ids.length === 1
+                    ? 'This student will be marked as Alumni.'
+                    : ids.length + ' students will be marked as Alumni.',
+                confirmText: 'Yes, mark as Alumni',
+                icon: 'question',
+            });
+            if (!ok) return;
+
+            bulkForm.querySelectorAll('input[name="student_ids[]"]').forEach(el => el.remove());
+            ids.forEach(id => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'student_ids[]';
+                input.value = id;
+                bulkForm.appendChild(input);
+            });
+            CPACE.loading('Marking students as Alumni...');
+            bulkForm.submit();
+        });
+    }
 </script>
 
     @include('partials.alerts')

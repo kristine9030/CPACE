@@ -330,6 +330,42 @@ class ChairAccountProvisioningTest extends TestCase
         $this->assertTrue($student->fresh()->is_active);
     }
 
+    public function test_bulk_marking_students_as_alumni_updates_every_selected_account_at_once(): void
+    {
+        $chair = $this->chair();
+        $a = $this->student('bulk-a@example.com');
+        $b = $this->student('bulk-b@example.com');
+        $untouched = $this->student('bulk-untouched@example.com');
+
+        $this->actingAs($chair)->post(route('chair.students.bulk-alumni'), [
+            'student_ids' => [$a->id, $b->id],
+        ])->assertRedirect();
+
+        $this->assertTrue((bool) DB::table('student_profiles')->where('user_id', $a->id)->value('is_alumni'));
+        $this->assertTrue((bool) DB::table('student_profiles')->where('user_id', $b->id)->value('is_alumni'));
+        $this->assertNotNull(DB::table('student_profiles')->where('user_id', $a->id)->value('alumni_marked_at'));
+        $this->assertFalse((bool) DB::table('student_profiles')->where('user_id', $untouched->id)->value('is_alumni'));
+        $this->assertSame(1, DB::table('alumni_profiles')->where('user_id', $a->id)->count());
+    }
+
+    public function test_bulk_marking_alumni_leaves_already_alumni_students_untouched(): void
+    {
+        $chair = $this->chair();
+        $alreadyAlumni = $this->student('already-alumni@example.com');
+        $markedAt = now()->subYear();
+        DB::table('student_profiles')->where('user_id', $alreadyAlumni->id)
+            ->update(['is_alumni' => true, 'alumni_marked_at' => $markedAt]);
+
+        $this->actingAs($chair)->post(route('chair.students.bulk-alumni'), [
+            'student_ids' => [$alreadyAlumni->id],
+        ])->assertRedirect();
+
+        $this->assertEquals(
+            $markedAt->toDateTimeString(),
+            DB::table('student_profiles')->where('user_id', $alreadyAlumni->id)->value('alumni_marked_at')
+        );
+    }
+
     public function test_updating_a_student_as_shifted_forces_the_account_inactive_regardless_of_the_toggle(): void
     {
         $chair = $this->chair();
