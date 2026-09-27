@@ -216,6 +216,55 @@ class StudentManagementController extends Controller
     }
 
     /**
+     * Marks every checked student as Alumni in one go, instead of opening each
+     * account's edit form individually. Students already marked keep their
+     * original `alumni_marked_at` (same rule as the single-account form); a
+     * blank AlumniProfile is created for anyone who doesn't have one yet so
+     * the Alumni directory has a row to show.
+     */
+    public function bulkMarkAlumni(Request $request)
+    {
+        $data = $request->validate([
+            'student_ids' => ['required', 'array', 'min:1'],
+            'student_ids.*' => ['integer'],
+        ]);
+
+        $students = User::where('role_id', Role::STUDENT)
+            ->whereIn('id', $data['student_ids'])
+            ->with('studentProfile')
+            ->get();
+
+        if ($students->isEmpty()) {
+            return back()->with('error', 'No matching students were selected.');
+        }
+
+        $marked = 0;
+        DB::transaction(function () use ($students, &$marked) {
+            foreach ($students as $student) {
+                $profile = $student->studentProfile;
+                if ($profile?->is_alumni) {
+                    continue; // already alumni — leave alumni_marked_at as is
+                }
+
+                StudentProfile::updateOrCreate(['user_id' => $student->id], [
+                    'is_alumni' => true,
+                    'alumni_marked_at' => now(),
+                ]);
+                AlumniProfile::firstOrCreate(['user_id' => $student->id]);
+                $marked++;
+            }
+        });
+
+        $skipped = $students->count() - $marked;
+        $status = $marked . ' student' . ($marked === 1 ? '' : 's') . ' marked as Alumni.';
+        if ($skipped > 0) {
+            $status .= ' ' . $skipped . ' were already Alumni and left unchanged.';
+        }
+
+        return back()->with('status', $status);
+    }
+
+    /**
      * Issue a fresh one-time password for a student who is still pending
      * first-login setup. Covers accounts enrolled before OTPs were persisted
      * (only the bcrypt hash was kept, so the original can't be recovered) as
