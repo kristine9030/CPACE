@@ -23,6 +23,9 @@
         .btn { display:inline-flex; align-items:center; gap:7px; padding:9px 16px; border-radius:8px; font-size:13px; font-weight:600; font-family:'Poppins',sans-serif; cursor:pointer; border:1px solid #e0e0e0; text-decoration:none; background:#fff; color:#555; }
         .card { background:#fff; border-radius:14px; padding:20px 24px; margin-bottom:18px; }
         .card-head { font-size:14px; font-weight:700; color:#222; margin-bottom:6px; }
+        /* Long lists scroll inside the card; the heading stays put. */
+        .card.scroll-card { display:flex; flex-direction:column; max-height:640px; }
+        .card.scroll-card .scroll-body { overflow-y:auto; min-height:0; padding-right:6px; margin-right:-6px; }
         .summary { display:flex; gap:32px; flex-wrap:wrap; }
         .summary b { display:block; font-size:28px; font-weight:700; color:#1a1a1a; line-height:1.1; }
         .summary span { font-size:11.5px; color:#999; }
@@ -41,7 +44,7 @@
         .shot-what { font-size:12px; font-weight:700; color:#14283E; line-height:1.3; }
         .shot.evt .shot-what { color:var(--accent); }
         .shot-meta { display:flex; justify-content:space-between; gap:6px; margin-top:3px; }
-        .tl { position:relative; padding-left:18px; max-height:520px; overflow-y:auto; }
+        .tl { position:relative; padding-left:18px; }
         .tl-row { position:relative; padding:9px 0; border-bottom:1px solid #f0f1f4; font-size:12.5px; }
         .tl-row:last-child { border-bottom:none; }
         .tl-row::before { content:''; position:absolute; left:-13px; top:15px; width:7px; height:7px; border-radius:50%; background:#c98a08; }
@@ -118,9 +121,11 @@
 
     <div class="split">
         <div>
-            <div class="card">
+            <div class="card scroll-card">
                 <div class="card-head">Answers</div>
-                @include('partials.answer-review', ['items' => $quiz->items, 'answers' => $answers])
+                <div class="scroll-body">
+                    @include('partials.answer-review', ['items' => $quiz->items, 'answers' => $answers])
+                </div>
             </div>
 
             @if($quiz->monitor_enabled)
@@ -166,9 +171,10 @@
         </div>
 
         @if($quiz->monitor_enabled)
-            <div class="card">
+            <div class="card scroll-card">
                 <div class="card-head"><i class="fas fa-flag"></i> Flag timeline</div>
                 <div style="font-size:12px;color:#7a8296;margin-bottom:10px;">Everything the quiz page detected, in order.</div>
+                <div class="scroll-body">
                 <div class="tl">
                     @forelse($attempt->proctorEvents as $event)
                         <div class="tl-row {{ $event->isSevere() ? 'severe' : '' }}">
@@ -179,6 +185,7 @@
                     @empty
                         <div style="font-size:12.5px;color:#7a8296;">No flags — clean sitting.</div>
                     @endforelse
+                </div>
                 </div>
             </div>
         @endif
