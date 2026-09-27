@@ -375,6 +375,85 @@
         </div>
     </form>
 
+    <div class="card" style="margin-top:18px;">
+        <div class="card-title"><i class="fas fa-users-viewfinder"></i> Who can take this exam</div>
+        <div class="card-sub">
+            There's no code to hand out any more — only the year levels (and sections) ticked here
+            will see this exam once it's published. This can be changed later by you or the Program Chair.
+        </div>
+        @error('audience')<div class="banner banner-danger" style="margin-top:10px;"><i class="fas fa-triangle-exclamation"></i><div>{{ $message }}</div></div>@enderror
+
+        @if($exam->isClosed())
+            <div style="margin-top:12px;font-size:13px;"><strong>{{ $exam->audienceLabel() }}</strong> <span style="color:var(--muted);">(closed — can't be changed)</span></div>
+        @else
+            <form method="POST" action="{{ route('faculty.mock-exams.audience', $exam) }}" style="margin-top:12px;">
+                @csrf @method('PUT')
+                @php
+                    $pickedYears = collect(old('audience_years', $exam->audience_years ?? []))->map(fn ($y) => (int) $y)->all();
+                    $pickedSections = old('audience_sections', $exam->audience_sections ?? []);
+                @endphp
+                <div style="font-size:12px;font-weight:600;margin-bottom:6px;">Year level</div>
+                <div style="display:flex;flex-wrap:wrap;gap:8px 14px;">
+                    @php
+                        // Only years that actually have an active section, plus any year already saved on this exam.
+                        $yearsInUse = $sections->pluck('year_level')->filter()->map(fn ($y) => (int) $y)
+                            ->merge($pickedYears)->unique()->sort()->values();
+                    @endphp
+                    @foreach($yearsInUse as $level)
+                        @php $label = $yearLabels[$level] ?? 'Year '.$level; @endphp
+                        <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+                            <input type="checkbox" name="audience_years[]" value="{{ $level }}" class="aud-year" {{ in_array($level, $pickedYears, true) ? 'checked' : '' }}>
+                            {{ $label }}
+                        </label>
+                    @endforeach
+                </div>
+                @if($yearsInUse->isEmpty())
+                    <div style="font-size:12.5px;color:var(--muted);">No sections exist yet. Ask the Program Chair to add one first.</div>
+                @endif
+
+                @if($sections->isNotEmpty())
+                    <div id="audSectionsWrap" style="display:none;">
+                    <div style="font-size:12px;font-weight:600;margin:14px 0 4px;">Sections <span style="font-weight:400;color:var(--muted);">(optional — leave all unticked to admit every section of the chosen years)</span></div>
+                    <div style="max-height:180px;overflow-y:auto;display:flex;flex-wrap:wrap;gap:6px 14px;">
+                        @foreach($sections as $section)
+                            <label class="aud-section" data-year="{{ $section->year_level }}" style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+                                <input type="checkbox" name="audience_sections[]" value="{{ $section->name }}" {{ in_array($section->name, (array) $pickedSections, true) ? 'checked' : '' }}>
+                                {{ $section->name }}
+                            </label>
+                        @endforeach
+                    </div>
+                    </div>
+                @endif
+
+                <div style="display:flex;align-items:center;gap:12px;margin-top:14px;flex-wrap:wrap;">
+                    <button class="btn btn-primary" type="submit"><i class="fas fa-floppy-disk"></i> Save audience</button>
+                    <span style="font-size:12px;color:var(--muted);">Now: <strong>{{ $exam->audienceLabel() }}</strong></span>
+                </div>
+            </form>
+            <script>
+                (function () {
+                    const card = document.currentScript.closest('.card');
+                    const years = card.querySelectorAll('.aud-year');
+                    const wrap = card.querySelector('#audSectionsWrap');
+                    if (!years.length || !wrap) return;
+                    const sync = () => {
+                        const on = new Set([...years].filter(y => y.checked).map(y => y.value));
+                        let any = false;
+                        card.querySelectorAll('.aud-section').forEach(l => {
+                            const show = on.has(l.dataset.year);
+                            l.style.display = show ? 'flex' : 'none';
+                            if (!show) l.querySelector('input').checked = false;
+                            any = any || show;
+                        });
+                        wrap.style.display = any ? 'block' : 'none';
+                    };
+                    years.forEach(y => y.addEventListener('change', sync));
+                    sync();
+                })();
+            </script>
+        @endif
+    </div>
+
     @unless($readOnly)
         <form method="POST" action="{{ route('faculty.mock-exams.submit', $exam) }}" id="reviewForm" style="display:none;">@csrf</form>
     @endunless
@@ -698,7 +777,7 @@
         dtPreview.style.display = 'flex';
         dtPreview.classList.toggle('warn', isPast);
         dtPreview.innerHTML = isPast
-            ? '<i class="fas fa-triangle-exclamation"></i><div>This date is in the past — move it forward so students can redeem and sit this exam.</div>'
+            ? '<i class="fas fa-triangle-exclamation"></i><div>This date is in the past — move it forward so students can sit this exam.</div>'
             : `<i class="fas fa-circle-info"></i><div><strong>${start.toLocaleDateString(undefined, dateFmt)}</strong><br>${start.toLocaleTimeString(undefined, timeFmt)} – ${end.toLocaleTimeString(undefined, timeFmt)} (${mins} min)</div>`;
     }
     if (schedInput) { schedInput.addEventListener('input', updateSchedulePreview); schedInput.addEventListener('change', updateSchedulePreview); }

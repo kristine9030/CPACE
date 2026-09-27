@@ -59,10 +59,7 @@
             <div>
                 <strong>Published — locked.</strong>
                 Neither you nor the faculty can change this paper any more. That's deliberate: students
-                must all sit the identical exam.
-                @if($exam->event)
-                    Redeem code <strong>{{ $exam->event->access_code }}</strong>.
-                @endif
+                must all sit the identical exam. It's already visible to <strong>{{ $exam->audienceLabel() }}</strong>.
             </div>
         </div>
     @endif
@@ -181,8 +178,8 @@
         <div class="card" style="margin-bottom:18px;">
             <div class="card-title"><i class="fas fa-users-viewfinder"></i> Who can take this exam</div>
             <div class="card-sub">
-                The redeem code is shared by whoever hears it, so only the year levels
-                (and sections) ticked here are let in. Anyone else is refused, even with the code.
+                There's no code to hand out — only the year levels (and sections) ticked here will
+                see this exam. This can also be changed by an assigned faculty member.
             </div>
             @error('audience')<div class="banner banner-danger" style="margin-top:10px;"><i class="fas fa-triangle-exclamation"></i><div>{{ $message }}</div></div>@enderror
 
@@ -316,7 +313,7 @@
 
     const publishBtn = document.getElementById('publishBtn');
     if (publishBtn) publishBtn.addEventListener('click', () => {
-        if (!confirm('Publish this mock exam?\n\nThis generates the redeem code and LOCKS the paper — after this nobody, including you, can edit it.')) return;
+        if (!confirm('Publish this mock exam?\n\nThis makes it visible to the audience you chose and LOCKS the paper — after this nobody, including you, can edit it.')) return;
         document.getElementById('publishForm').submit();
     });
 })();

@@ -97,7 +97,7 @@
     </div>
 
     <div class="kpis">
-        <div class="stat-card"><div class="stat-top"><div><div class="stat-lbl">Redeemed code</div><div class="stat-num">{{ $stats['registered'] }}</div></div><div class="stat-icon si-blue"><i class="fas fa-ticket"></i></div></div></div>
+        <div class="stat-card"><div class="stat-top"><div><div class="stat-lbl">Eligible students</div><div class="stat-num">{{ $stats['registered'] }}</div></div><div class="stat-icon si-blue"><i class="fas fa-users"></i></div></div></div>
         <div class="stat-card"><div class="stat-top"><div><div class="stat-lbl">Started</div><div class="stat-num">{{ $stats['started'] }}</div></div><div class="stat-icon si-orange"><i class="fas fa-person-running"></i></div></div></div>
         <div class="stat-card"><div class="stat-top"><div><div class="stat-lbl">Submitted</div><div class="stat-num">{{ $stats['submitted'] }}</div></div><div class="stat-icon si-green"><i class="fas fa-circle-check"></i></div></div></div>
         <div class="stat-card"><div class="stat-top"><div><div class="stat-lbl">Average</div><div class="stat-num">{{ $stats['average'] !== null ? $stats['average'] . '%' : '—' }}</div></div><div class="stat-icon si-orange"><i class="fas fa-chart-simple"></i></div></div></div>

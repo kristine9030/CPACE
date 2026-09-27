@@ -6,8 +6,6 @@ use App\Http\Controllers\Concerns\SubjectTheme;
 use App\Http\Controllers\Controller;
 use App\Models\MockExam;
 use App\Models\MockExamAttempt;
-use App\Models\MockExamEvent;
-use App\Models\MockExamRegistration;
 use App\Models\Subject;
 use App\Services\MockExamGrader;
 use Illuminate\Http\Request;
@@ -17,10 +15,10 @@ use Illuminate\Support\Facades\DB;
 /**
  * Student side of the mock exam workflow.
  *
- * A student redeems the day's code once; that registers them for the EVENT,
- * which covers every subject exam published for that date (including any the
- * Chair publishes later the same day). Each sitting then opens only inside its
- * own scheduled window.
+ * There is no code to redeem: the moment a mock exam is published, every
+ * student whose year level (and section, if the Chair or faculty narrowed it)
+ * matches its audience sees it automatically, grouped into subject folders.
+ * Each sitting then opens only inside its own scheduled window.
  *
  * Grading is deliberately self-contained: a mock exam does NOT create a
  * quiz_sessions row, so it stays out of normal quiz history and off the
@@ -32,7 +30,7 @@ class MockExamController extends Controller
 {
     use SubjectTheme;
 
-    /** Subject folders for everything the student has redeemed, plus the redeem box. */
+    /** Subject folders for everything this student is eligible for. */
     public function index()
     {
         $student = Auth::user();
@@ -42,7 +40,7 @@ class MockExamController extends Controller
         // so it shows as done rather than forever "in progress".
         app(MockExamGrader::class)->closeExpired(studentId: $student->id);
 
-        $exams = $this->registeredExams($student->id);
+        $exams = $this->eligibleExams($student->id);
         $attempts = $this->attemptsFor($student->id, $exams->pluck('id'));
 
         $folders = $exams->groupBy('subject_id')->map(function ($group) use ($attempts) {
@@ -67,57 +65,7 @@ class MockExamController extends Controller
         ]);
     }
 
-    /** Redeem the day's code. */
-    public function redeem(Request $request)
-    {
-        $student = Auth::user();
-        $this->assertStudent();
-        abort_if($student->hasAlumniAccess(), 403, 'Mock exams are locked for alumni accounts.');
-
-        $data = $request->validate([
-            'access_code' => ['required', 'string', 'max:60'],
-        ], [
-            'access_code.required' => 'Enter the code your faculty gave you.',
-        ]);
-
-        $code = MockExamEvent::normaliseCode($data['access_code']);
-        $event = MockExamEvent::where('access_code', $code)->first();
-
-        if (! $event) {
-            return back()->withErrors(['access_code' => 'That code was not recognised. Double-check it with your faculty.'])->withInput();
-        }
-
-        // Nothing published for the day yet means the code exists but has no
-        // exam behind it - treat it as a clear "not ready" rather than an error.
-        if ($event->exams()->where('status', MockExam::STATUS_PUBLISHED)->doesntExist()) {
-            return back()->withErrors(['access_code' => 'That exam day has no published exams yet. Try again closer to the schedule.'])->withInput();
-        }
-
-        // The code is shared by whoever hears it, so being able to type it is
-        // not enough - the student's own year level and section must be among
-        // those the Chair opened at least one of that day's exams to.
-        $profile = $student->studentProfile;
-        $admitted = $event->exams()
-            ->where('status', MockExam::STATUS_PUBLISHED)
-            ->get()
-            ->contains(fn (MockExam $e) => $e->admitsStudent($profile?->year_level, $profile?->section));
-
-        if (! $admitted) {
-            return back()->withErrors(['access_code' => 'This mock exam is not open to your year level or section. If you think that is a mistake, ask your Program Chair.'])->withInput();
-        }
-
-        // Redeeming twice is harmless and common (students re-paste the code),
-        // so it succeeds quietly instead of erroring.
-        MockExamRegistration::firstOrCreate(
-            ['event_id' => $event->id, 'student_id' => $student->id],
-            ['redeemed_at' => now()]
-        );
-
-        return redirect()->route('mock-exams')
-            ->with('status', 'Code redeemed â€” your exams for ' . $event->exam_date->format('M j, Y') . ' are now listed.');
-    }
-
-    /** One subject's folder: every redeemed exam for that subject. */
+    /** One subject's folder: every exam this student is eligible for. */
     public function subject(Subject $subject)
     {
         $student = Auth::user();
@@ -125,7 +73,7 @@ class MockExamController extends Controller
 
         app(MockExamGrader::class)->closeExpired(studentId: $student->id);
 
-        $exams = $this->registeredExams($student->id)
+        $exams = $this->eligibleExams($student->id)
             ->where('subject_id', $subject->id)
             ->sortBy('scheduled_at')
             ->values();
@@ -143,7 +91,7 @@ class MockExamController extends Controller
     public function show(MockExam $mockExam)
     {
         $student = Auth::user();
-        $this->assertRegistered($mockExam, $student->id);
+        $this->assertEligible($mockExam);
 
         app(MockExamGrader::class)->closeExpired($mockExam, $student->id);
         $attempt = MockExamAttempt::where('exam_id', $mockExam->id)->where('student_id', $student->id)->first();
@@ -166,7 +114,7 @@ class MockExamController extends Controller
     public function start(MockExam $mockExam)
     {
         $student = Auth::user();
-        $this->assertRegistered($mockExam, $student->id);
+        $this->assertEligible($mockExam);
 
         if ($mockExam->window() !== 'open') {
             return back()->withErrors([
@@ -192,7 +140,7 @@ class MockExamController extends Controller
     public function take(MockExam $mockExam)
     {
         $student = Auth::user();
-        $this->assertRegistered($mockExam, $student->id);
+        $this->assertEligible($mockExam);
 
         $attempt = MockExamAttempt::where('exam_id', $mockExam->id)->where('student_id', $student->id)->first();
         if (! $attempt) {
@@ -228,7 +176,7 @@ class MockExamController extends Controller
     public function autosave(Request $request, MockExam $mockExam)
     {
         $student = Auth::user();
-        $this->assertRegistered($mockExam, $student->id);
+        $this->assertEligible($mockExam);
 
         $attempt = MockExamAttempt::where('exam_id', $mockExam->id)->where('student_id', $student->id)->firstOrFail();
         if ($attempt->isSubmitted()) {
@@ -253,7 +201,7 @@ class MockExamController extends Controller
     public function submit(Request $request, MockExam $mockExam)
     {
         $student = Auth::user();
-        $this->assertRegistered($mockExam, $student->id);
+        $this->assertEligible($mockExam);
 
         $attempt = MockExamAttempt::where('exam_id', $mockExam->id)->where('student_id', $student->id)->firstOrFail();
         if ($attempt->isSubmitted()) {
@@ -276,7 +224,7 @@ class MockExamController extends Controller
     public function result(MockExam $mockExam)
     {
         $student = Auth::user();
-        $this->assertRegistered($mockExam, $student->id);
+        $this->assertEligible($mockExam);
 
         $attempt = MockExamAttempt::where('exam_id', $mockExam->id)->where('student_id', $student->id)->firstOrFail();
         abort_unless($attempt->isSubmitted(), 403, 'This exam has not been submitted yet.');
@@ -295,7 +243,7 @@ class MockExamController extends Controller
         ]);
     }
 
-    // â”€â”€ helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // Ã¢â€â‚¬Ã¢â€â‚¬ helpers Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
     private function assertStudent(): void
     {
@@ -303,38 +251,28 @@ class MockExamController extends Controller
     }
 
     /**
-     * A student may only see an exam whose day-code they actually redeemed,
-     * and only once it is published.
+     * A student may only see an exam that is published (or closed, so a
+     * finished sitting still shows results) and whose audience their own
+     * year level and section match. No code, no registration - eligibility
+     * alone decides.
      */
-    private function assertRegistered(MockExam $exam, int $studentId): void
+    private function assertEligible(MockExam $exam): void
     {
         $this->assertStudent();
         abort_if(Auth::user()->hasAlumniAccess(), 403, 'Mock exams are locked for alumni accounts.');
 
+        abort_unless(in_array($exam->status, [MockExam::STATUS_PUBLISHED, MockExam::STATUS_CLOSED], true), 403, 'This mock exam is not available.');
+
         $profile = Auth::user()->studentProfile;
         abort_unless($exam->admitsStudent($profile?->year_level, $profile?->section), 403, 'This mock exam is not open to your year level or section.');
-
-        abort_unless(
-            in_array($exam->status, [MockExam::STATUS_PUBLISHED, MockExam::STATUS_CLOSED], true)
-                && $exam->event_id !== null
-                && MockExamRegistration::where('event_id', $exam->event_id)->where('student_id', $studentId)->exists(),
-            403,
-            'You have not redeemed the code for this exam.'
-        );
     }
 
-    /** Every published exam on a day this student has redeemed. */
-    private function registeredExams(int $studentId)
+    /** Every published (or closed) exam whose audience this student matches. */
+    private function eligibleExams(int $studentId)
     {
-        $eventIds = MockExamRegistration::where('student_id', $studentId)->pluck('event_id');
-        if ($eventIds->isEmpty()) {
-            return collect();
-        }
-
         $profile = Auth::user()->studentProfile;
 
         return MockExam::with('subject')
-            ->whereIn('event_id', $eventIds)
             ->whereIn('status', [MockExam::STATUS_PUBLISHED, MockExam::STATUS_CLOSED])
             ->orderBy('scheduled_at')
             ->get()
