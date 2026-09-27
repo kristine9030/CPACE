@@ -178,8 +178,14 @@ class MockExamReviewController extends Controller
 
         MockExamAuditor::record($mockExam, Auth::user(), MockExamAudit::ACTION_AUDIENCE, $mockExam->audienceLabel());
 
-        return redirect()->route('chair.mock-exams.review', $mockExam)
-            ->with('status', 'Audience saved: ' . $mockExam->audienceLabel() . '.');
+        // Shared between the Chair's review screen and the faculty build
+        // screen, so send each back to their own page rather than always
+        // routing to the Chair-only one.
+        $back = Auth::user()->isChair()
+            ? redirect()->route('chair.mock-exams.review', $mockExam)
+            : redirect()->route('faculty.mock-exams.build', $mockExam);
+
+        return $back->with('status', 'Audience saved: ' . $mockExam->audienceLabel() . '.');
     }
 
     /**

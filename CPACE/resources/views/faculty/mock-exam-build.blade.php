@@ -394,15 +394,25 @@
                 @endphp
                 <div style="font-size:12px;font-weight:600;margin-bottom:6px;">Year level</div>
                 <div style="display:flex;flex-wrap:wrap;gap:8px 14px;">
-                    @foreach($yearLabels as $level => $label)
+                    @php
+                        // Only years that actually have an active section, plus any year already saved on this exam.
+                        $yearsInUse = $sections->pluck('year_level')->filter()->map(fn ($y) => (int) $y)
+                            ->merge($pickedYears)->unique()->sort()->values();
+                    @endphp
+                    @foreach($yearsInUse as $level)
+                        @php $label = $yearLabels[$level] ?? 'Year '.$level; @endphp
                         <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
                             <input type="checkbox" name="audience_years[]" value="{{ $level }}" class="aud-year" {{ in_array($level, $pickedYears, true) ? 'checked' : '' }}>
                             {{ $label }}
                         </label>
                     @endforeach
                 </div>
+                @if($yearsInUse->isEmpty())
+                    <div style="font-size:12.5px;color:var(--muted);">No sections exist yet. Ask the Program Chair to add one first.</div>
+                @endif
 
                 @if($sections->isNotEmpty())
+                    <div id="audSectionsWrap" style="display:none;">
                     <div style="font-size:12px;font-weight:600;margin:14px 0 4px;">Sections <span style="font-weight:400;color:var(--muted);">(optional — leave all unticked to admit every section of the chosen years)</span></div>
                     <div style="max-height:180px;overflow-y:auto;display:flex;flex-wrap:wrap;gap:6px 14px;">
                         @foreach($sections as $section)
@@ -411,6 +421,7 @@
                                 {{ $section->name }}
                             </label>
                         @endforeach
+                    </div>
                     </div>
                 @endif
 
@@ -421,16 +432,22 @@
             </form>
             <script>
                 (function () {
-                    const wrap = document.currentScript.closest('.card');
+                    const card = document.currentScript.closest('.card');
+                    const years = card.querySelectorAll('.aud-year');
+                    const wrap = card.querySelector('#audSectionsWrap');
+                    if (!years.length || !wrap) return;
                     const sync = () => {
-                        const years = new Set(Array.from(wrap.querySelectorAll('.aud-year:checked')).map(el => el.value));
-                        wrap.querySelectorAll('.aud-section').forEach(label => {
-                            const on = years.has(label.dataset.year);
-                            label.style.display = on ? 'flex' : 'none';
-                            if (!on) label.querySelector('input').checked = false;
+                        const on = new Set([...years].filter(y => y.checked).map(y => y.value));
+                        let any = false;
+                        card.querySelectorAll('.aud-section').forEach(l => {
+                            const show = on.has(l.dataset.year);
+                            l.style.display = show ? 'flex' : 'none';
+                            if (!show) l.querySelector('input').checked = false;
+                            any = any || show;
                         });
+                        wrap.style.display = any ? 'block' : 'none';
                     };
-                    wrap.querySelectorAll('.aud-year').forEach(el => el.addEventListener('change', sync));
+                    years.forEach(y => y.addEventListener('change', sync));
                     sync();
                 })();
             </script>

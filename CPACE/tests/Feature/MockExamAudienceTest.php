@@ -125,7 +125,7 @@ class MockExamAudienceTest extends TestCase
 
         $this->actingAs($faculty)
             ->put(route('faculty.mock-exams.audience', $exam), ['audience_years' => [3]])
-            ->assertRedirect();
+            ->assertRedirect(route('faculty.mock-exams.build', $exam));
 
         $this->assertSame([3], $exam->fresh()->audience_years);
     }
