@@ -8,6 +8,10 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Http\UploadedFile;
+use App\Models\QuizProctorCapture;
+use App\Support\QuizProctorRetention;
 use Tests\TestCase;
 
 /**
@@ -19,6 +23,7 @@ class FacultyQuizTest extends TestCase
 {
     private const TABLES = [
         'weakness_reports', 'spaced_repetition_items', 'performance_records',
+        'quiz_proctor_captures', 'quiz_proctor_events',
         'faculty_quiz_attempts', 'faculty_quiz_items', 'faculty_quizzes',
         'question_choices', 'questions', 'topics', 'subjects', 'faculty_subjects',
         'notifications', 'messages', 'conversation_participants', 'conversations', 'student_profiles', 'users',
@@ -125,6 +130,7 @@ class FacultyQuizTest extends TestCase
             $table->unsignedSmallInteger('time_limit_minutes')->nullable();
             $table->boolean('shuffle_questions')->default(false);
             $table->boolean('show_results')->default(true);
+            $table->boolean('monitor_enabled')->default(false);
             $table->dateTime('published_at')->nullable();
             $table->timestamps();
         });
@@ -150,8 +156,24 @@ class FacultyQuizTest extends TestCase
             $table->unsignedSmallInteger('score')->default(0);
             $table->unsignedSmallInteger('total_points')->default(0);
             $table->decimal('percent', 5, 2)->nullable();
+            $table->unsignedInteger('flag_count')->default(0);
             $table->timestamps();
             $table->unique(['quiz_id', 'student_id']);
+        });
+        Schema::create('quiz_proctor_events', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('attempt_id');
+            $table->string('type', 30);
+            $table->dateTime('occurred_at');
+            $table->string('meta', 255)->nullable();
+        });
+        Schema::create('quiz_proctor_captures', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('attempt_id');
+            $table->string('kind', 10);
+            $table->string('path', 255);
+            $table->dateTime('captured_at');
+            $table->string('reason', 30)->default('interval');
         });
         Schema::create('performance_records', function (Blueprint $table) {
             $table->id();
@@ -218,6 +240,142 @@ class FacultyQuizTest extends TestCase
         $choices = json_decode($tf->choices, true);
         $this->assertSame(['T', 'F'], array_column($choices, 'label'));
         $this->assertTrue($choices[1]['is_correct']);
+    }
+
+    public function test_monitoring_is_a_per_quiz_toggle_that_defaults_to_off(): void
+    {
+        $faculty = $this->faculty();
+        $subjectId = $this->subjectFor($faculty);
+        $payload = ['action' => 'draft', 'title' => 'Q', 'subject_id' => $subjectId, 'items_json' => json_encode([$this->mcqItem('One?', 'A')])];
+
+        $this->actingAs($faculty)->post(route('faculty.quizzes.store'), $payload)->assertRedirect();
+        $this->assertFalse((bool) DB::table('faculty_quizzes')->latest('id')->value('monitor_enabled'));
+
+        $this->actingAs($faculty)->post(route('faculty.quizzes.store'), $payload + ['monitor_enabled' => 1])->assertRedirect();
+        $this->assertTrue((bool) DB::table('faculty_quizzes')->latest('id')->value('monitor_enabled'));
+    }
+
+    public function test_a_monitored_quiz_asks_the_student_for_camera_and_screen_before_starting(): void
+    {
+        $faculty = $this->faculty();
+        $student = $this->student();
+        $plain = $this->quiz($faculty, 'published', [$this->mcqItem('One?', 'A')]);
+        $watched = $this->quiz($faculty, 'published', [$this->mcqItem('One?', 'A')], ['monitor_enabled' => true]);
+
+        $token = fn ($id) => DB::table('faculty_quizzes')->where('id', $id)->value('share_token');
+
+        $this->actingAs($student)->get(route('class-quiz.show', $token($watched)))
+            ->assertOk()->assertSee('This quiz is monitored')->assertSee('Screen sharing');
+        $this->actingAs($student)->get(route('class-quiz.show', $token($plain)))
+            ->assertOk()->assertDontSee('This quiz is monitored');
+    }
+
+    public function test_monitor_flags_and_captures_are_recorded_only_for_the_students_own_live_monitored_attempt(): void
+    {
+        Storage::fake('local');
+        [$faculty, $student, $quizId, $attempt] = $this->monitoredSitting();
+
+        $this->actingAs($student)->postJson(route('class-quiz.proctor.event', $attempt), ['type' => 'blur'])
+            ->assertOk()->assertJson(['flags' => 1]);
+        $this->actingAs($student)->postJson(route('class-quiz.proctor.event', $attempt), ['type' => 'not_a_real_flag'])
+            ->assertStatus(422);
+
+        $this->actingAs($student)->post(route('class-quiz.proctor.capture', $attempt), [
+            'kind' => 'camera', 'reason' => 'blur', 'frame' => UploadedFile::fake()->image('f.jpg'),
+        ])->assertOk();
+        $capture = QuizProctorCapture::first();
+        Storage::disk('local')->assertExists($capture->path);
+        $this->assertStringStartsWith('proctor-quiz/', $capture->path);
+
+        // Another student cannot post onto this attempt.
+        $other = $this->student('other@example.com');
+        $this->actingAs($other)->postJson(route('class-quiz.proctor.event', $attempt), ['type' => 'blur'])->assertForbidden();
+
+        // A quiz with monitoring off records nothing.
+        DB::table('faculty_quizzes')->where('id', $quizId)->update(['monitor_enabled' => false]);
+        $this->actingAs($student)->postJson(route('class-quiz.proctor.event', $attempt), ['type' => 'blur'])->assertStatus(409);
+    }
+
+    public function test_only_the_owning_faculty_can_view_a_capture_or_the_monitor(): void
+    {
+        Storage::fake('local');
+        [$faculty, $student, $quizId, $attempt] = $this->monitoredSitting();
+        $this->actingAs($student)->post(route('class-quiz.proctor.capture', $attempt), [
+            'kind' => 'camera', 'reason' => 'start', 'frame' => UploadedFile::fake()->image('f.jpg'),
+        ])->assertOk();
+        $capture = QuizProctorCapture::first();
+        $stranger = $this->faculty('stranger@example.com');
+
+        $this->actingAs($faculty)->get(route('class-quiz.capture', $capture))->assertOk();
+        $this->actingAs($stranger)->get(route('class-quiz.capture', $capture))->assertForbidden();
+        $this->actingAs($student)->get(route('class-quiz.capture', $capture))->assertForbidden();
+
+        $this->actingAs($faculty)->get(route('faculty.quizzes.monitor', $quizId))->assertOk()->assertSee('Live monitor');
+        $feed = $this->actingAs($faculty)->getJson(route('faculty.quizzes.monitor.feed', $quizId))->assertOk();
+        $this->assertSame(1, $feed->json('kpis.started'));
+        $this->assertNotNull($feed->json('students.0.camera'));
+        $this->actingAs($stranger)->get(route('faculty.quizzes.monitor', $quizId))->assertForbidden();
+
+        // No monitor page for a quiz that isn't monitored.
+        DB::table('faculty_quizzes')->where('id', $quizId)->update(['monitor_enabled' => false]);
+        $this->actingAs($faculty)->get(route('faculty.quizzes.monitor', $quizId))->assertNotFound();
+    }
+
+    public function test_flags_feed_the_same_risk_score_as_the_mock_exam_and_show_on_the_results_page(): void
+    {
+        Storage::fake('local');
+        [$faculty, $student, $quizId, $attempt] = $this->monitoredSitting();
+
+        // 3 x screen_lost (5 pts each) = 15 => High risk, same weights as a mock exam.
+        foreach (range(1, 3) as $i) {
+            $this->actingAs($student)->postJson(route('class-quiz.proctor.event', $attempt), ['type' => 'screen_lost'])->assertOk();
+        }
+        $attempt->update(['submitted_at' => now(), 'score' => 1, 'total_points' => 1, 'percent' => 100]);
+
+        $feed = $this->actingAs($faculty)->getJson(route('faculty.quizzes.monitor.feed', $quizId));
+        $this->assertSame('high', $feed->json('students.0.risk_level'));
+
+        $this->actingAs($faculty)->get(route('faculty.quizzes.results', $quizId))->assertOk()->assertSee('High risk');
+        $this->actingAs($faculty)->get(route('faculty.quizzes.attempt', [$quizId, $attempt->id]))
+            ->assertOk()->assertSee('Screen sharing stopped')->assertSee('Flag timeline');
+    }
+
+    public function test_a_clean_monitored_sitting_keeps_only_its_opening_photo_once_submitted(): void
+    {
+        Storage::fake('local');
+        [$faculty, $student, $quizId, $attempt] = $this->monitoredSitting();
+
+        foreach ([['camera', 'start'], ['camera', 'interval'], ['screen', 'interval']] as [$kind, $reason]) {
+            $this->actingAs($student)->post(route('class-quiz.proctor.capture', $attempt), [
+                'kind' => $kind, 'reason' => $reason, 'frame' => UploadedFile::fake()->image('f.jpg'),
+            ])->assertOk();
+        }
+        $this->assertSame(3, QuizProctorCapture::count());
+
+        $attempt->update(['submitted_at' => now()]);
+        app(QuizProctorRetention::class)->afterSubmit($attempt);
+
+        $this->assertSame(1, QuizProctorCapture::count());
+        $this->assertSame('start', QuizProctorCapture::first()->reason);
+    }
+
+    public function test_only_the_owner_can_delete_recordings_and_only_after_submit(): void
+    {
+        Storage::fake('local');
+        [$faculty, $student, $quizId, $attempt] = $this->monitoredSitting();
+        $this->actingAs($student)->post(route('class-quiz.proctor.capture', $attempt), [
+            'kind' => 'camera', 'reason' => 'blur', 'frame' => UploadedFile::fake()->image('f.jpg'),
+        ])->assertOk();
+        $id = QuizProctorCapture::value('id');
+
+        $this->actingAs($faculty)->delete(route('class-quiz.captures.destroy', $attempt), ['capture_ids' => [$id]])->assertStatus(409);
+
+        $attempt->update(['submitted_at' => now()]);
+        $this->actingAs($this->faculty('stranger@example.com'))->delete(route('class-quiz.captures.destroy', $attempt), ['capture_ids' => [$id]])->assertForbidden();
+        $this->assertSame(1, QuizProctorCapture::count());
+
+        $this->actingAs($faculty)->delete(route('class-quiz.captures.destroy', $attempt), ['capture_ids' => [$id]])->assertRedirect();
+        $this->assertSame(0, QuizProctorCapture::count());
     }
 
     public function test_publishing_requires_at_least_one_question(): void
@@ -295,6 +453,14 @@ class FacultyQuizTest extends TestCase
 
         // The faculty sees the submission on the results page.
         $this->actingAs($faculty)->get(route('faculty.quizzes.results', $quizId))->assertOk()->assertSee($student->email);
+
+        // ...and can open that student's own result, question by question.
+        $this->actingAs($faculty)->get(route('faculty.quizzes.attempt', [$quizId, $attempt->id]))
+            ->assertOk()->assertSee('Correct')->assertSee('Wrong')->assertSee('75%');
+
+        // Another faculty member cannot.
+        $other = $this->faculty('other-fac@example.com');
+        $this->actingAs($other)->get(route('faculty.quizzes.attempt', [$quizId, $attempt->id]))->assertForbidden();
     }
 
     public function test_submitting_a_class_quiz_updates_the_students_performance_records(): void
@@ -510,6 +676,19 @@ class FacultyQuizTest extends TestCase
             'question_text' => $text, 'question_type' => 'true_false', 'points' => $points,
             'choices' => [['label' => 'T', 'text' => 'True', 'is_correct' => $answer], ['label' => 'F', 'text' => 'False', 'is_correct' => ! $answer]],
         ];
+    }
+
+    /** @return array{0: User, 1: User, 2: int, 3: \App\Models\FacultyQuizAttempt} */
+    private function monitoredSitting(): array
+    {
+        $faculty = $this->faculty();
+        $student = $this->student();
+        $quizId = $this->quiz($faculty, 'published', [$this->mcqItem('One?', 'A')], ['monitor_enabled' => true]);
+        $attempt = \App\Models\FacultyQuizAttempt::create([
+            'quiz_id' => $quizId, 'student_id' => $student->id, 'started_at' => now(),
+        ]);
+
+        return [$faculty, $student, $quizId, $attempt];
     }
 
     /** Insert a quiz directly (bypassing the form) in the given status. */

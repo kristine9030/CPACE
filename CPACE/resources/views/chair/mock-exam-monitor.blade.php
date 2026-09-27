@@ -86,7 +86,10 @@
                 <span id="windowState">{{ $exam->window() }}</span>
             </div>
         </div>
-        <div class="topbar-right">@include('partials.topbar-actions')</div>
+        <div class="topbar-right">
+            @include('partials.topbar-actions')
+            <a href="{{ route($isChair ? 'chair.mock-exams.results' : 'faculty.mock-exams.results', $exam) }}" class="btn btn-ghost"><i class="fas fa-chart-column"></i> Results</a>
+        </div>
     </div>
 
     <div class="banner banner-info">

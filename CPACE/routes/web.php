@@ -20,6 +20,7 @@ use App\Http\Controllers\Chair\StudentManagementController;
 use App\Http\Controllers\Student\PerformanceController;
 use App\Http\Controllers\Student\QuizController;
 use App\Http\Controllers\Student\MockExamController;
+use App\Http\Controllers\QuizProctorController;
 use App\Http\Controllers\Student\ReviewNoteController;
 use App\Http\Controllers\Student\AiTutorController;
 use App\Http\Controllers\Faculty\TestBankController;
@@ -156,6 +157,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/mock-exams/{mockExam}/monitor', [MockExamReviewController::class, 'monitor'])->name('mock-exams.monitor');
         Route::get('/mock-exams/{mockExam}/monitor/feed', [MockExamReviewController::class, 'monitorFeed'])->name('mock-exams.monitor.feed');
         Route::get('/mock-exams/{mockExam}/monitor/similarity', [MockExamReviewController::class, 'similarity'])->name('mock-exams.monitor.similarity');
+        Route::get('/mock-exams/{mockExam}/results', [MockExamReviewController::class, 'results'])->name('mock-exams.results');
         Route::get('/mock-exams/attempts/{attempt}', [MockExamReviewController::class, 'attempt'])->name('mock-exams.attempt');
 
         // Announcements and internal messages
@@ -215,6 +217,9 @@ Route::middleware('auth')->group(function () {
         Route::post('/quizzes/{quiz}/reopen', [FacultyQuizController::class, 'reopen'])->name('quizzes.reopen');
         Route::delete('/quizzes/{quiz}', [FacultyQuizController::class, 'destroy'])->name('quizzes.destroy');
         Route::get('/quizzes/{quiz}/results', [FacultyQuizController::class, 'results'])->name('quizzes.results');
+        Route::get('/quizzes/{quiz}/attempts/{attempt}', [FacultyQuizController::class, 'attempt'])->name('quizzes.attempt');
+        Route::get('/quizzes/{quiz}/monitor', [FacultyQuizController::class, 'monitor'])->name('quizzes.monitor');
+        Route::get('/quizzes/{quiz}/monitor/feed', [FacultyQuizController::class, 'monitorFeed'])->name('quizzes.monitor.feed');
 
         // Mock exams: faculty assembles a per-subject exam, the Program Chair
         // reviews and publishes it. Editing stops the moment it is published.
@@ -231,6 +236,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/mock-exams/{mockExam}/monitor', [MockExamReviewController::class, 'monitor'])->name('mock-exams.monitor');
         Route::get('/mock-exams/{mockExam}/monitor/feed', [MockExamReviewController::class, 'monitorFeed'])->name('mock-exams.monitor.feed');
         Route::get('/mock-exams/{mockExam}/monitor/similarity', [MockExamReviewController::class, 'similarity'])->name('mock-exams.monitor.similarity');
+        Route::get('/mock-exams/{mockExam}/results', [MockExamReviewController::class, 'results'])->name('mock-exams.results');
         Route::get('/mock-exams/attempts/{attempt}', [MockExamReviewController::class, 'attempt'])->name('mock-exams.attempt');
 
         Route::get('/performance', [FacultyPerformanceController::class, 'index'])->name('performance');
@@ -300,6 +306,12 @@ Route::middleware('auth')->group(function () {
     Route::get('/q/{token}/take', [ClassQuizController::class, 'take'])->name('class-quiz.take');
     Route::post('/q/{token}/submit', [ClassQuizController::class, 'submit'])->name('class-quiz.submit');
     Route::get('/q/{token}/result', [ClassQuizController::class, 'result'])->name('class-quiz.result');
+    // Monitored class quizzes: the student posts flags and frames, the owning
+    // faculty reads them. Authorisation is re-checked inside the controller.
+    Route::post('/q/proctor/{attempt}/event', [QuizProctorController::class, 'event'])->name('class-quiz.proctor.event');
+    Route::post('/q/proctor/{attempt}/capture', [QuizProctorController::class, 'capture'])->name('class-quiz.proctor.capture');
+    Route::get('/q/captures/{capture}', [QuizProctorController::class, 'show'])->name('class-quiz.capture');
+    Route::delete('/q/attempts/{attempt}/captures', [QuizProctorController::class, 'destroy'])->name('class-quiz.captures.destroy');
     // Mock exams. A student redeems the day's code once, which registers them
     // for every subject exam published for that date; each sitting then opens
     // only inside its own scheduled window.

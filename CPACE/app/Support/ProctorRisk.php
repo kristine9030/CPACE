@@ -101,9 +101,10 @@ class ProctorRisk
      * Flag counts for many attempts in a single query.
      *
      * @param  iterable<int>  $attemptIds
+     * @param  string  $table  the events table: mock_exam_proctor_events or quiz_proctor_events
      * @return array<int, array<string, int>>  attempt id => [type => count]
      */
-    public static function countsFor(iterable $attemptIds): array
+    public static function countsFor(iterable $attemptIds, string $table = 'mock_exam_proctor_events'): array
     {
         $ids = collect($attemptIds)->all();
         if ($ids === []) {
@@ -111,7 +112,7 @@ class ProctorRisk
         }
 
         $out = [];
-        $rows = DB::table('mock_exam_proctor_events')
+        $rows = DB::table($table)
             ->whereIn('attempt_id', $ids)
             ->selectRaw('attempt_id, type, count(*) as c')
             ->groupBy('attempt_id', 'type')

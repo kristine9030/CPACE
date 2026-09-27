@@ -265,6 +265,10 @@
                         <div class="toggle-lbl">Show answers after submitting<small>Students see which items they got right, with explanations.</small></div>
                         <label class="toggle"><input type="checkbox" name="show_results" value="1" {{ old('show_results', $quiz->show_results) ? 'checked' : '' }}><span class="toggle-slider"></span></label>
                     </div>
+                    <div class="toggle-row">
+                        <div class="toggle-lbl">Monitor students<small>Students must share their camera and entire screen. Switching tabs, leaving fullscreen or an absent or extra face is flagged, and you can review snapshots on the Monitor page.</small></div>
+                        <label class="toggle"><input type="checkbox" name="monitor_enabled" value="1" {{ old('monitor_enabled', $quiz->monitor_enabled) ? 'checked' : '' }}><span class="toggle-slider"></span></label>
+                    </div>
                 </div>
 
                 <div class="card">

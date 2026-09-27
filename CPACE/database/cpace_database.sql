@@ -231,6 +231,7 @@ CREATE TABLE faculty_quizzes (
     time_limit_minutes  SMALLINT UNSIGNED NULL,
     shuffle_questions   BOOLEAN NOT NULL DEFAULT FALSE,
     show_results        BOOLEAN NOT NULL DEFAULT TRUE,
+    monitor_enabled     BOOLEAN NOT NULL DEFAULT FALSE,     -- camera/screen/tab-switch monitoring
     published_at        DATETIME NULL,
     created_at          DATETIME NULL,
     updated_at          DATETIME NULL,
@@ -264,11 +265,36 @@ CREATE TABLE faculty_quiz_attempts (
     score               SMALLINT UNSIGNED NOT NULL DEFAULT 0,
     total_points        SMALLINT UNSIGNED NOT NULL DEFAULT 0,
     percent             DECIMAL(5,2) NULL,
+    flag_count          INT UNSIGNED NOT NULL DEFAULT 0,   -- proctoring flags (monitored quizzes only)
     created_at          DATETIME NULL,
     updated_at          DATETIME NULL,
     UNIQUE KEY uq_fqa_quiz_student (quiz_id, student_id),
     CONSTRAINT fk_fqa_quiz    FOREIGN KEY (quiz_id)    REFERENCES faculty_quizzes(id) ON DELETE CASCADE,
     CONSTRAINT fk_fqa_student FOREIGN KEY (student_id) REFERENCES users(id)           ON DELETE CASCADE
+);
+
+-- Optional monitoring of a class quiz (faculty_quizzes.monitor_enabled). Same
+-- idea as the mock exam's proctoring: flags are tiny and kept; frames are
+-- photographs on the PRIVATE disk and are swept by mock-exam:purge-captures.
+CREATE TABLE quiz_proctor_events (
+    id          BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    attempt_id  BIGINT UNSIGNED NOT NULL,
+    type        VARCHAR(30) NOT NULL,
+    occurred_at DATETIME NOT NULL,
+    meta        VARCHAR(255) NULL,
+    INDEX idx_qpe_attempt (attempt_id, occurred_at),
+    CONSTRAINT fk_qpe_attempt FOREIGN KEY (attempt_id) REFERENCES faculty_quiz_attempts(id) ON DELETE CASCADE
+);
+
+CREATE TABLE quiz_proctor_captures (
+    id          BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    attempt_id  BIGINT UNSIGNED NOT NULL,
+    kind        VARCHAR(10) NOT NULL,                  -- camera|screen
+    path        VARCHAR(255) NOT NULL,                 -- relative to the private disk root
+    captured_at DATETIME NOT NULL,
+    reason      VARCHAR(30) NOT NULL DEFAULT 'interval',
+    INDEX idx_qpc_attempt (attempt_id, captured_at),
+    CONSTRAINT fk_qpc_attempt FOREIGN KEY (attempt_id) REFERENCES faculty_quiz_attempts(id) ON DELETE CASCADE
 );
 
 -- Import-from-file staging: an uploaded PDF/Word/Excel/image is parsed into

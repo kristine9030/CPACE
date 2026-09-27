@@ -4,7 +4,11 @@ namespace App\Http\Controllers\Faculty;
 
 use App\Http\Controllers\Controller;
 use App\Models\FacultyQuiz;
+use App\Models\FacultyQuizAttempt;
 use App\Models\FacultyQuizItem;
+use App\Models\QuizProctorCapture;
+use App\Support\ProctorRisk;
+use Illuminate\Support\Facades\Storage;
 use App\Models\Question;
 use App\Models\Subject;
 use App\Models\User;
@@ -130,7 +134,7 @@ class FacultyQuizController extends Controller
         }
 
         return view('faculty.quiz-form', [
-            'quiz' => new FacultyQuiz(['show_results' => true, 'shuffle_questions' => false, 'subject_id' => $subjectId]),
+            'quiz' => new FacultyQuiz(['show_results' => true, 'shuffle_questions' => false, 'monitor_enabled' => false, 'subject_id' => $subjectId]),
             'items' => [],
             'subjects' => $this->subjectsFor(Auth::user()),
             'locked' => false,
@@ -311,7 +315,112 @@ class FacultyQuizController extends Controller
 
         $insights = $this->buildResultInsights($stats, $itemStats, $buckets, $passRate, $quiz->items);
 
-        return view('faculty.quiz-results', compact('quiz', 'attempts', 'stats', 'itemStats', 'buckets', 'passRate', 'insights'));
+        $riskScores = $quiz->monitor_enabled
+            ? collect(ProctorRisk::countsFor($attempts->pluck('id'), 'quiz_proctor_events'))->map(fn ($c) => ProctorRisk::assess($c)['score'])->all()
+            : [];
+
+        return view('faculty.quiz-results', compact('quiz', 'attempts', 'stats', 'itemStats', 'buckets', 'passRate', 'insights', 'riskScores'));
+    }
+
+    /** One student's sitting of a class quiz, question by question. */
+    public function attempt(FacultyQuiz $quiz, FacultyQuizAttempt $attempt)
+    {
+        $this->authorizeQuiz($quiz);
+        abort_unless($attempt->quiz_id === $quiz->id && $attempt->isSubmitted(), 404);
+
+        $quiz->load(['items', 'subject']);
+        $attempt->load(['student:id,first_name,last_name,email', 'proctorEvents', 'captures']);
+
+        $risk = $quiz->monitor_enabled
+            ? ProctorRisk::assess($attempt->proctorEvents->countBy('type')->all())
+            : null;
+
+        return view('faculty.quiz-attempt', compact('quiz', 'attempt', 'risk'));
+    }
+
+    /**
+     * Live monitor for a monitored quiz: who has started, who has flags, and
+     * the newest camera frame per student. Rendered once and refreshed from
+     * monitorFeed() on a poll, like the mock exam's.
+     */
+    public function monitor(FacultyQuiz $quiz)
+    {
+        $this->authorizeQuiz($quiz);
+        abort_unless($quiz->monitor_enabled, 404, 'Monitoring is off for this quiz.');
+
+        $quiz->load('subject');
+
+        return view('faculty.quiz-monitor', [
+            'quiz' => $quiz,
+            'storage' => $this->captureUsage($quiz),
+        ]);
+    }
+
+    /** JSON behind the monitor's poll. */
+    public function monitorFeed(FacultyQuiz $quiz)
+    {
+        $this->authorizeQuiz($quiz);
+        abort_unless($quiz->monitor_enabled, 404, 'Monitoring is off for this quiz.');
+
+        $attempts = FacultyQuizAttempt::with('student:id,first_name,last_name')
+            ->where('quiz_id', $quiz->id)
+            ->get();
+
+        $counts = ProctorRisk::countsFor($attempts->pluck('id'), 'quiz_proctor_events');
+
+        $latest = QuizProctorCapture::whereIn('attempt_id', $attempts->pluck('id'))
+            ->where('kind', QuizProctorCapture::KIND_CAMERA)
+            ->orderByDesc('captured_at')
+            ->get()
+            ->unique('attempt_id')
+            ->keyBy('attempt_id');
+
+        $rows = $attempts->map(function (FacultyQuizAttempt $attempt) use ($latest, $counts, $quiz) {
+            $capture = $latest->get($attempt->id);
+            $risk = ProctorRisk::assess($counts[$attempt->id] ?? []);
+
+            return [
+                'attempt_id' => $attempt->id,
+                'student' => trim($attempt->student?->first_name . ' ' . $attempt->student?->last_name),
+                'submitted' => $attempt->isSubmitted(),
+                'flags' => $attempt->flag_count,
+                'risk_score' => $risk['score'],
+                'risk_level' => $risk['level'],
+                'risk_label' => $risk['label'],
+                'percent' => $attempt->isSubmitted() ? (float) $attempt->percent : null,
+                'answered' => is_array($attempt->answers) ? count(array_filter($attempt->answers)) : 0,
+                'camera' => $capture ? route('class-quiz.capture', $capture) : null,
+                'detail' => route('faculty.quizzes.attempt', [$quiz->id, $attempt->id]),
+            ];
+        })->sort(fn ($a, $b) => [$b['risk_score'], $b['flags']] <=> [$a['risk_score'], $a['flags']])->values();
+
+        return response()->json([
+            'kpis' => [
+                'started' => $attempts->count(),
+                'submitted' => $attempts->filter->isSubmitted()->count(),
+                'flagged' => $attempts->where('flag_count', '>', 0)->count(),
+                'high_risk' => $rows->where('risk_level', ProctorRisk::LEVEL_HIGH)->count(),
+            ],
+            'students' => $rows,
+        ]);
+    }
+
+    /** Frame count and disk size behind the monitor's storage line. */
+    private function captureUsage(FacultyQuiz $quiz): array
+    {
+        $captures = QuizProctorCapture::whereIn(
+            'attempt_id',
+            FacultyQuizAttempt::where('quiz_id', $quiz->id)->select('id')
+        )->get();
+
+        $bytes = 0;
+        foreach ($captures as $capture) {
+            if (Storage::disk('local')->exists($capture->path)) {
+                $bytes += Storage::disk('local')->size($capture->path);
+            }
+        }
+
+        return ['count' => $captures->count(), 'bytes' => $bytes];
     }
 
     /**
@@ -516,6 +625,7 @@ class FacultyQuizController extends Controller
             'time_limit_minutes' => ['nullable', 'integer', 'min:1', 'max:600'],
             'shuffle_questions' => ['nullable', 'boolean'],
             'show_results' => ['nullable', 'boolean'],
+            'monitor_enabled' => ['nullable', 'boolean'],
         ], [
             'title.required' => 'Please give the quiz a title.',
         ]);
@@ -540,6 +650,7 @@ class FacultyQuizController extends Controller
             'time_limit_minutes' => ! empty($data['time_limit_minutes']) ? (int) $data['time_limit_minutes'] : null,
             'shuffle_questions' => (bool) ($data['shuffle_questions'] ?? false),
             'show_results' => (bool) ($data['show_results'] ?? false),
+            'monitor_enabled' => (bool) ($data['monitor_enabled'] ?? false),
         ];
     }
 

@@ -320,6 +320,85 @@ class MockExamReviewController extends Controller
         ]);
     }
 
+    /**
+     * Results page for one sitting: scores, distribution, pass rate, and how each
+     * question and topic went. Same shape as the Class Quizzes results, but for
+     * the people who run the sitting rather than the one who wrote the paper.
+     */
+    public function results(MockExam $mockExam)
+    {
+        $this->assertCanMonitor($mockExam);
+
+        // Grade anyone whose time ran out so the numbers here are final.
+        app(MockExamGrader::class)->closeExpired($mockExam);
+
+        $mockExam->load(['subject', 'event', 'items.topic']);
+
+        $attempts = MockExamAttempt::with('student:id,first_name,last_name,email')
+            ->where('exam_id', $mockExam->id)
+            ->orderByRaw('submitted_at IS NULL')
+            ->orderByDesc('percent')
+            ->get();
+
+        $submitted = $attempts->filter->isSubmitted();
+        $counts = ProctorRisk::countsFor($attempts->pluck('id'));
+        $risk = $attempts->mapWithKeys(fn ($a) => [$a->id => ProctorRisk::assess($counts[$a->id] ?? [])]);
+
+        $itemStats = [];
+        $topicStats = [];
+        foreach ($mockExam->items as $item) {
+            $correct = $item->correctLabel();
+            $right = $submitted->filter(fn ($a) => ($a->answers[$item->id] ?? null) === $correct)->count();
+            $itemStats[$item->id] = [
+                'right' => $right,
+                'rate' => $submitted->count() > 0 ? (int) round($right / $submitted->count() * 100) : null,
+            ];
+
+            $key = $item->topic?->name ?? 'No topic';
+            $topicStats[$key] ??= ['right' => 0, 'total' => 0];
+            $topicStats[$key]['right'] += $right;
+            $topicStats[$key]['total'] += $submitted->count();
+        }
+        $topicStats = collect($topicStats)
+            ->map(fn ($t) => $t + ['rate' => $t['total'] > 0 ? (int) round($t['right'] / $t['total'] * 100) : null])
+            ->sortBy(fn ($t) => $t['rate'] ?? 101);
+
+        $stats = [
+            'registered' => $mockExam->event?->registrations()->count() ?? 0,
+            'started' => $attempts->count(),
+            'submitted' => $submitted->count(),
+            'average' => $submitted->count() > 0 ? round($submitted->avg('percent'), 1) : null,
+            'highest' => $submitted->count() > 0 ? round($submitted->max('percent'), 1) : null,
+            'lowest' => $submitted->count() > 0 ? round($submitted->min('percent'), 1) : null,
+        ];
+
+        $buckets = ['0-49' => 0, '50-59' => 0, '60-69' => 0, '70-79' => 0, '80-89' => 0, '90-100' => 0];
+        foreach ($submitted as $a) {
+            $p = (float) $a->percent;
+            $buckets[match (true) {
+                $p < 50 => '0-49',
+                $p < 60 => '50-59',
+                $p < 70 => '60-69',
+                $p < 80 => '70-79',
+                $p < 90 => '80-89',
+                default => '90-100',
+            }]++;
+        }
+
+        return view('chair.mock-exam-results', [
+            'exam' => $mockExam,
+            'subject' => $mockExam->subject,
+            'attempts' => $attempts,
+            'stats' => $stats,
+            'itemStats' => $itemStats,
+            'topicStats' => $topicStats,
+            'buckets' => $buckets,
+            'passCount' => $submitted->filter(fn ($a) => (float) $a->percent >= 75)->count(),
+            'risk' => $risk,
+            'isChair' => Auth::user()->isChair(),
+        ]);
+    }
+
     /** One student's sitting: their flag timeline and every capture taken. */
     public function attempt(MockExamAttempt $attempt)
     {

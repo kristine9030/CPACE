@@ -18,7 +18,7 @@ class FacultyQuiz extends Model
 
     protected $fillable = [
         'faculty_id', 'subject_id', 'title', 'instructions', 'status', 'share_token',
-        'opens_at', 'due_at', 'time_limit_minutes', 'shuffle_questions', 'show_results', 'published_at',
+        'opens_at', 'due_at', 'time_limit_minutes', 'shuffle_questions', 'show_results', 'monitor_enabled', 'published_at',
     ];
 
     protected $casts = [
@@ -27,6 +27,7 @@ class FacultyQuiz extends Model
         'published_at' => 'datetime',
         'shuffle_questions' => 'boolean',
         'show_results' => 'boolean',
+        'monitor_enabled' => 'boolean',
         'time_limit_minutes' => 'integer',
     ];
 

@@ -57,6 +57,7 @@
         .mini { display:inline-flex; align-items:center; gap:6px; padding:7px 12px; border-radius:8px; font-size:12px; font-weight:600; border:none; cursor:pointer; text-decoration:none; font-family:'Poppins',sans-serif; transition:all .18s; }
         .m-edit { background:#dbeafe; color:#2563eb; } .m-edit:hover { background:#bfdbfe; }
         .m-res { background:#ede9fe; color:#7c3aed; } .m-res:hover { background:#ddd6fe; }
+        .m-mon { background:#dff3e8; color:#1e9e63; } .m-mon:hover { background:#c9ecd8; }
         .m-pub { background:#d1fae5; color:#059669; } .m-pub:hover { background:#a7f3d0; }
         .m-close { background:#fef3c7; color:#d97706; } .m-close:hover { background:#fde68a; }
         .m-del { background:#fde8e8; color:var(--accent); } .m-del:hover { background:#fecaca; }
@@ -132,9 +133,12 @@
                     <div class="qc-meta">
                         <span><i class="fas fa-list-ol"></i><b>{{ $quiz->items_count }}</b> question{{ $quiz->items_count === 1 ? '' : 's' }}</span>
                         <span><i class="fas fa-users"></i><b>{{ $quiz->submitted_count }}</b> submitted</span>
-                        <span><i class="fas fa-calendar-day"></i>{{ $quiz->due_at ? 'Due <b>' . $quiz->due_at->format('M j, g:i A') . '</b>' : 'No deadline' }}</span>
+                        <span><i class="fas fa-calendar-day"></i>@if($quiz->due_at)Due <b>{{ $quiz->due_at->format('M j, g:i A') }}</b>@else No deadline @endif</span>
                         @if($quiz->time_limit_minutes)
                             <span><i class="fas fa-stopwatch"></i><b>{{ $quiz->time_limit_minutes }}</b> min</span>
+                        @endif
+                        @if($quiz->monitor_enabled)
+                            <span title="Students share camera and screen; flags are recorded"><i class="fas fa-video"></i><b>Monitored</b></span>
                         @endif
                     </div>
 
@@ -149,6 +153,9 @@
                     <div class="qc-actions">
                         <a href="{{ route('faculty.quizzes.edit', $quiz->id) }}" class="mini m-edit"><i class="fas fa-pen"></i> Edit</a>
                         <a href="{{ route('faculty.quizzes.results', $quiz->id) }}" class="mini m-res"><i class="fas fa-chart-simple"></i> Results</a>
+                        @if($quiz->monitor_enabled && $quiz->status !== 'draft')
+                            <a href="{{ route('faculty.quizzes.monitor', $quiz->id) }}" class="mini m-mon"><i class="fas fa-desktop"></i> Monitor</a>
+                        @endif
 
                         @if($quiz->status === 'draft')
                             <form method="POST" action="{{ route('faculty.quizzes.publish', $quiz->id) }}"

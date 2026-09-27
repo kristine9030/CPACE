@@ -159,6 +159,40 @@ class MockExamProctorTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_the_results_page_shows_scores_to_the_owning_faculty_and_chair_but_not_outsiders(): void
+    {
+        [$student, $attempt] = $this->sitting();
+        $item = DB::table('mock_exam_items')->where('exam_id', $attempt->exam_id)->first();
+        $attempt->update([
+            'status' => MockExamAttempt::STATUS_SUBMITTED,
+            'submitted_at' => now(),
+            'answers' => [(string) $item->id => 'A'],
+            'score' => 1, 'total_points' => 1, 'percent' => 100,
+        ]);
+
+        $faculty = User::find($attempt->exam->created_by);
+        $this->actingAs($faculty)
+            ->get(route('faculty.mock-exams.results', $attempt->exam))
+            ->assertOk()
+            ->assertSee('Student submissions')
+            ->assertSee('1 correct (100%)');
+
+        $this->actingAs($this->makeChair())
+            ->get(route('chair.mock-exams.results', $attempt->exam))
+            ->assertOk();
+
+        // The per-student page lists each answer against the correct one.
+        $this->actingAs($faculty)
+            ->get(route('faculty.mock-exams.attempt', $attempt))
+            ->assertOk()
+            ->assertSee('Their answer')
+            ->assertSee('A question');
+
+        $this->actingAs($student)
+            ->get(route('faculty.mock-exams.results', $attempt->exam))
+            ->assertForbidden();
+    }
+
     public function test_the_purge_command_deletes_old_frames_but_keeps_the_flag_history(): void
     {
         [, $attempt] = $this->sitting(sitting: now()->subDays(60));

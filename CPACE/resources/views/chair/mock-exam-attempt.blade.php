@@ -138,6 +138,14 @@
                 </div>
             </div>
 
+            <div class="card" id="answers">
+                <div class="card-title"><i class="fas fa-list-check"></i> Answers</div>
+                <div class="card-sub">What this student picked on each question, against the correct answer.</div>
+                <div style="margin-top:10px;max-height:560px;overflow-y:auto;">
+                    @include('partials.answer-review', ['items' => $items, 'answers' => (array) $attempt->answers])
+                </div>
+            </div>
+
             <div class="card">
                 <div class="card-title"><i class="fas fa-images"></i> Captures ({{ $attempt->captures->count() }})</div>
                 <div class="card-sub">

@@ -54,6 +54,9 @@
             <b>{{ $quiz->title }}</b>
             <span>{{ $quiz->subject?->code ?? 'Class quiz' }} · {{ $items->count() }} questions · {{ $items->sum('points') }} points</span>
         </div>
+        @if($quiz->monitor_enabled)
+            <div class="qp-dot" id="qpDot"><span class="d"></span><span id="qpDotLabel">Monitored</span></div>
+        @endif
         @if($secondsLeft !== null)
             <div class="timer" id="timer"><i class="fas fa-clock"></i><span id="timerText">--:--</span></div>
         @endif
@@ -117,6 +120,7 @@
         submitting = true;
         submitBtn.disabled = true;
         window.onbeforeunload = null;
+        window.quizProctorFinish?.();
         form.submit();
     }
 
@@ -149,6 +153,13 @@
     @endif
 })();
 </script>
+
+@if($quiz->monitor_enabled)
+    @include('partials.quiz-proctor-runner', [
+        'eventUrl' => route('class-quiz.proctor.event', $attempt),
+        'captureUrl' => route('class-quiz.proctor.capture', $attempt),
+    ])
+@endif
 
 @include('partials.alerts')
 </body>
