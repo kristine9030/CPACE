@@ -14,6 +14,7 @@ use App\Models\Communication;
 use App\Models\QuizSession;
 use App\Models\Message;
 use App\Models\User;
+use App\Support\CurriculumScope;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -82,6 +83,7 @@ class GlobalSearchController extends Controller
                 $q->where('name', 'LIKE', $like)
                   ->orWhere('description', 'LIKE', $like);
             })->with('subject')
+            ->forStudent($user->id)
             ->whereHas('subject', fn($q) => $q->where('is_active', true))
             ->limit(8)->get();
         foreach ($topics as $t) {
@@ -509,7 +511,7 @@ class GlobalSearchController extends Controller
         // ── Questions ──
         $questions = Question::where('is_active', true)
             ->where('question_text', 'LIKE', $like)
-            ->whereHas('topic', fn($q) => $q->whereIn('subject_id', $assignedSubjectIds))
+            ->whereHas('topic', fn($q) => $q->whereIn('subject_id', $assignedSubjectIds)->inCurriculum(CurriculumScope::testBankVersionId()))
             ->with('topic.subject')->limit(10)->get();
         foreach ($questions as $q) {
             $this->addResult($results, 'Test Bank', 'fa-database', '#7C3AED',
@@ -519,9 +521,9 @@ class GlobalSearchController extends Controller
         }
 
         // ── Question Choices (answers) ──
-        $choices = DB::table('question_choices')
+        $choices = CurriculumScope::restrictTo(DB::table('question_choices')
             ->join('questions', 'question_choices.question_id', '=', 'questions.id')
-            ->join('topics', 'questions.topic_id', '=', 'topics.id')
+            ->join('topics', 'questions.topic_id', '=', 'topics.id'), CurriculumScope::testBankVersionId())
             ->whereIn('topics.subject_id', $assignedSubjectIds)
             ->where('question_choices.choice_text', 'LIKE', $like)
             ->select('question_choices.*', 'questions.question_text')

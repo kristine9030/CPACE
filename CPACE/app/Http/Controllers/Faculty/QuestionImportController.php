@@ -11,6 +11,7 @@ use App\Models\Topic;
 use App\Services\AiQuestionImportService;
 use App\Services\QuestionImportParser;
 use App\Services\QuestionImportTemplateGenerator;
+use App\Support\CurriculumScope;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
@@ -94,7 +95,7 @@ class QuestionImportController extends Controller
                 // insensitive) so the review screen can pre-select it. No
                 // match just leaves it blank for the faculty to pick, same
                 // as before this existed.
-                $topics = Topic::where('subject_id', $batch->subject_id)->where('is_active', true)->get(['id', 'name']);
+                $topics = Topic::where('subject_id', $batch->subject_id)->inCurriculum(CurriculumScope::testBankVersionId())->where('is_active', true)->get(['id', 'name']);
 
                 foreach ($items as $i => $item) {
                     $topicId = null;
@@ -226,7 +227,7 @@ class QuestionImportController extends Controller
 
         return view('faculty.test-bank-import-review', [
             'batch'  => $importBatch,
-            'topics' => Topic::where('subject_id', $importBatch->subject_id)->where('is_active', true)->orderBy('sort_order')->get(),
+            'topics' => Topic::where('subject_id', $importBatch->subject_id)->inCurriculum(CurriculumScope::testBankVersionId())->where('is_active', true)->orderBy('sort_order')->get(),
         ]);
     }
 
@@ -263,7 +264,7 @@ class QuestionImportController extends Controller
                 $type = $row['question_type'] ?? 'mcq';
                 $difficulty = in_array($row['difficulty'] ?? null, ['Easy', 'Medium', 'Hard'], true) ? $row['difficulty'] : 'Medium';
 
-                if (! $topicId || $questionText === '' || ! Topic::where('id', $topicId)->where('subject_id', $importBatch->subject_id)->exists()) {
+                if (! $topicId || $questionText === '' || ! Topic::where('id', $topicId)->where('subject_id', $importBatch->subject_id)->inCurriculum(CurriculumScope::testBankVersionId())->exists()) {
                     $skipped++;
                     continue;
                 }

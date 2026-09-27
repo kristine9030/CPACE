@@ -500,6 +500,7 @@ class MockExamReviewController extends Controller
     private function topicsFor(int $subjectId)
     {
         $flat = Topic::where('subject_id', $subjectId)
+            ->inActiveCurriculum()
             ->where('is_active', true)
             ->withCount(['questions as bank_count' => fn ($q) => $q->where('is_active', true)])
             ->orderBy('sort_order')

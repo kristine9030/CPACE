@@ -24,7 +24,17 @@ class SubjectController extends Controller
             ->orderBy('id')
             ->get()
             ->map(function ($subject) use ($studentId) {
-                $topicIds = $subject->topics()->where('is_active', true)->pluck('id');
+                // What's available to practice right now: the topics of the
+                // curriculum covering this student's batch, so the question
+                // count reflects what a new quiz can actually draw from.
+                $topicIds = $subject->topics()->forStudent($studentId)->where('is_active', true)->pluck('id');
+
+                // What the student has actually done: EVERY topic this subject
+                // has ever had, across every curriculum. A curriculum change
+                // must never make a student's quiz history, weak areas or
+                // accuracy disappear — those stay keyed to the topic they were
+                // recorded against, not to whichever curriculum is active today.
+                $allTopicIds = $subject->topics()->pluck('id');
 
                 $questionCount = DB::table('questions')
                     ->where('is_active', true)
@@ -37,7 +47,7 @@ class SubjectController extends Controller
                 $detector = app(WeaknessDetector::class);
                 $weakTopics = DB::table('performance_records')
                     ->where('student_id', $studentId)
-                    ->whereIn('topic_id', $topicIds)
+                    ->whereIn('topic_id', $allTopicIds)
                     ->where('total_attempts', '>', 0)
                     ->get(['total_attempts', 'correct_count', 'consecutive_wrong'])
                     ->filter(fn ($r) => $detector->evaluate($r)[0])
@@ -49,7 +59,7 @@ class SubjectController extends Controller
                 // so heavily-attempted topics weigh more than lightly-touched ones).
                 $totals = DB::table('performance_records')
                     ->where('student_id', $studentId)
-                    ->whereIn('topic_id', $topicIds)
+                    ->whereIn('topic_id', $allTopicIds)
                     ->selectRaw('SUM(total_attempts) as attempts, SUM(correct_count) as correct')
                     ->first();
 
@@ -74,6 +84,7 @@ class SubjectController extends Controller
         abort_unless($subject->is_active, 404);
 
         $topics = Topic::where('subject_id', $subject->id)
+            ->forStudent(Auth::id())
             ->where('is_active', true)
             ->withCount([
                 'questions as question_count' => fn ($q) => $q->where('is_active', true),
@@ -85,6 +96,11 @@ class SubjectController extends Controller
 
         $topicTree = Topic::buildTree($topics);
 
+        // Per-topic rows only ever cover the topics on screen (the active
+        // curriculum's tree) — a row for a topic that isn't shown would be
+        // meaningless. But the subject-level "Overall accuracy" badge must
+        // match the Subjects grid, so it's summed separately across every
+        // topic this subject has EVER had, not just the visible tree.
         $performanceByTopicId = DB::table('performance_records')
             ->where('student_id', Auth::id())
             ->whereIn('topic_id', $topics->pluck('id'))
@@ -93,12 +109,13 @@ class SubjectController extends Controller
 
         Topic::attachProgress($topicTree, $performanceByTopicId);
 
-        // Overall subject accuracy = correct/attempts summed across every
-        // topic and subtopic in this subject — same rollup rule as the
-        // Subjects grid card, computed here from the records already fetched
-        // above instead of a second query.
-        $overallAttempts = (int) $performanceByTopicId->sum('total_attempts');
-        $overallCorrect = (int) $performanceByTopicId->sum('correct_count');
+        $overallTotals = DB::table('performance_records')
+            ->where('student_id', Auth::id())
+            ->whereIn('topic_id', $subject->topics()->pluck('id'))
+            ->selectRaw('SUM(total_attempts) as attempts, SUM(correct_count) as correct')
+            ->first();
+        $overallAttempts = (int) ($overallTotals->attempts ?? 0);
+        $overallCorrect = (int) ($overallTotals->correct ?? 0);
         $overallAccuracy = $overallAttempts > 0 ? (int) round($overallCorrect / $overallAttempts * 100) : null;
 
         return view('student.subject-topics', compact(

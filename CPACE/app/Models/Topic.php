@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\CurriculumScope;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 
@@ -9,16 +10,47 @@ class Topic extends Model
 {
     public $timestamps = false;
 
-    protected $fillable = ['subject_id', 'parent_id', 'name', 'description', 'sort_order', 'is_active'];
+    protected $fillable = [
+        'subject_id', 'curriculum_version_id', 'parent_id', 'name', 'description', 'sort_order', 'is_active',
+        'tos_weight', 'tos_items',
+    ];
 
     protected $casts = [
         'sort_order' => 'integer',
         'is_active' => 'boolean',
+        'tos_weight' => 'float',
+        'tos_items' => 'integer',
     ];
 
     public function subject()
     {
         return $this->belongsTo(Subject::class);
+    }
+
+    public function curriculumVersion()
+    {
+        return $this->belongsTo(CurriculumVersion::class);
+    }
+
+    /** Only the published curriculum's topics — see App\Support\CurriculumScope. */
+    public function scopeInActiveCurriculum($query)
+    {
+        return CurriculumScope::restrictToActive($query, $query->getModel()->getTable() . '.curriculum_version_id');
+    }
+
+    /**
+     * Only the topics of the curriculum this student studies — the one
+     * covering their enrollment batch (see CurriculumScope::forStudent).
+     */
+    public function scopeForStudent($query, ?int $studentId)
+    {
+        return CurriculumScope::restrictForStudent($query, $studentId, $query->getModel()->getTable() . '.curriculum_version_id');
+    }
+
+    /** Only one curriculum version's topics (no-op when $versionId is null). */
+    public function scopeInCurriculum($query, ?int $versionId)
+    {
+        return CurriculumScope::restrictTo($query, $versionId, $query->getModel()->getTable() . '.curriculum_version_id');
     }
 
     public function parent()

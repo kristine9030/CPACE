@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\ReviewNote;
 use App\Models\Subject;
+use App\Support\CurriculumScope;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -50,7 +51,7 @@ class ReviewNoteApiController extends Controller
         $subjectsCovered = (clone $allNotes)->whereNotNull('subject_id')->distinct('subject_id')->count('subject_id');
 
         $subjects = Subject::orderBy('id')->get(['id', 'code', 'name']);
-        $topics   = DB::table('topics')->orderBy('subject_id')->orderBy('name')->get(['id', 'subject_id', 'name']);
+        $topics   = CurriculumScope::restrictForStudent(DB::table('topics'), $studentId)->orderBy('subject_id')->orderBy('name')->get(['id', 'subject_id', 'name']);
 
         return response()->json([
             'data'             => $notes->map(fn ($n) => $this->present($n)),

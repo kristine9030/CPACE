@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Storage;
 use App\Models\Question;
 use App\Models\Subject;
 use App\Models\Topic;
+use App\Support\CurriculumScope;
 use App\Support\MockExamQuestionPicker;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -528,8 +529,8 @@ class FacultyQuizController extends Controller
         $faculty = Auth::user();
         $subjectIds = $this->subjectsFor($faculty)->pluck('id');
 
-        $query = Question::query()
-            ->join('topics', 'topics.id', '=', 'questions.topic_id')
+        $query = CurriculumScope::restrictToActive(Question::query()
+            ->join('topics', 'topics.id', '=', 'questions.topic_id'))
             ->join('subjects', 'subjects.id', '=', 'topics.subject_id')
             ->whereIn('subjects.id', $subjectIds)
             ->where('questions.is_active', true)
@@ -572,6 +573,7 @@ class FacultyQuizController extends Controller
         $this->assertAssignedSubject($subjectId);
 
         $flat = Topic::where('subject_id', $subjectId)
+            ->inActiveCurriculum()
             ->where('is_active', true)
             ->withCount(['questions as bank_count' => fn ($q) => $q->where('is_active', true)])
             ->orderBy('sort_order')
@@ -613,6 +615,7 @@ class FacultyQuizController extends Controller
 
         $topicIds = Topic::whereIn('id', array_map('intval', $data['topic_ids']))
             ->where('subject_id', $subjectId)
+            ->inActiveCurriculum()
             ->pluck('id')->map('intval')->all();
 
         if ($data['mode'] === 'auto') {

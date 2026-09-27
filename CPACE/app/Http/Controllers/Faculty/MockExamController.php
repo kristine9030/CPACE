@@ -13,6 +13,7 @@ use App\Models\Section;
 use App\Models\Subject;
 use App\Models\Topic;
 use App\Models\User;
+use App\Support\CurriculumScope;
 use App\Support\MockExamAuditor;
 use App\Support\MockExamQuestionPicker;
 use Illuminate\Http\Request;
@@ -309,6 +310,7 @@ class MockExamController extends Controller
     private function topicsFor(int $subjectId)
     {
         $flat = Topic::where('subject_id', $subjectId)
+            ->inActiveCurriculum()
             ->where('is_active', true)
             ->withCount(['questions as bank_count' => fn ($q) => $q->where('is_active', true)])
             ->orderBy('sort_order')
@@ -321,7 +323,7 @@ class MockExamController extends Controller
     /** Totals shown in the builder so faculty can see what the bank can support. */
     private function bankCounts(int $subjectId): array
     {
-        $rows = Question::join('topics', 'questions.topic_id', '=', 'topics.id')
+        $rows = CurriculumScope::restrictToActive(Question::join('topics', 'questions.topic_id', '=', 'topics.id'))
             ->where('topics.subject_id', $subjectId)
             ->where('questions.is_active', true)
             ->selectRaw('questions.difficulty, COUNT(*) as total')

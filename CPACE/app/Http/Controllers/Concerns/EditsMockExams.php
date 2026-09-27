@@ -111,7 +111,7 @@ trait EditsMockExams
             return [];
         }
 
-        return Topic::whereIn('id', $ids)->where('subject_id', $subjectId)->pluck('id')->map('intval')->all();
+        return Topic::whereIn('id', $ids)->where('subject_id', $subjectId)->inActiveCurriculum()->pluck('id')->map('intval')->all();
     }
 
     /**

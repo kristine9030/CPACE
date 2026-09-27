@@ -8,6 +8,7 @@ use App\Models\Role;
 use App\Models\Subject;
 use App\Services\BrandedXlsxReport;
 use App\Services\WeaknessDetector;
+use App\Support\CurriculumScope;
 use App\Support\FacultySectionScope;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -575,8 +576,8 @@ class FacultyReportController extends Controller
             return collect();
         }
 
-        return DB::table('questions')
-            ->join('topics', 'topics.id', '=', 'questions.topic_id')
+        return CurriculumScope::restrictToActive(DB::table('questions')
+            ->join('topics', 'topics.id', '=', 'questions.topic_id'))
             ->join('subjects', 'subjects.id', '=', 'topics.subject_id')
             ->leftJoin('quiz_answers', function ($join) {
                 $join->on('quiz_answers.question_id', '=', 'questions.id')

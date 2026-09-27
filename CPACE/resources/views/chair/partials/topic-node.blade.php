@@ -1,4 +1,4 @@
-@php $depth = $depth ?? 0; @endphp
+@php $depth = $depth ?? 0; $readOnly = $readOnly ?? false; @endphp
 @foreach($topics as $topic)
     <div class="topic-node" style="margin-left: {{ $depth * 18 }}px;">
         <div class="topic-row">
@@ -10,18 +10,24 @@
             <span class="topic-order">{{ $topic->sort_order }}</span>
             <div class="topic-info">
                 <div class="topic-name">{{ $topic->name }} @unless($topic->is_active)<span class="inactive-pill">Inactive</span>@endunless</div>
-                <div class="topic-meta">{{ $topic->questions_count }} test-bank question{{ $topic->questions_count === 1 ? '' : 's' }}@if($topic->children->isNotEmpty()) &middot; {{ $topic->children->count() }} subtopic{{ $topic->children->count() === 1 ? '' : 's' }}@endif</div>
+                <div class="topic-meta">{{ $topic->questions_count }} test-bank question{{ $topic->questions_count === 1 ? '' : 's' }}@if($topic->children->isNotEmpty()) &middot; {{ $topic->children->count() }} subtopic{{ $topic->children->count() === 1 ? '' : 's' }}@endif
+                    @if($topic->tos_weight !== null || $topic->tos_items !== null)
+                        &middot; <span title="From the PRC Table of Specifications" style="color:#b45309;font-weight:600;">TOS{{ $topic->tos_weight !== null ? ' ' . rtrim(rtrim(number_format($topic->tos_weight, 2), '0'), '.') . '%' : '' }}{{ $topic->tos_items !== null ? ' · ' . $topic->tos_items . ' item' . ($topic->tos_items === 1 ? '' : 's') : '' }}</span>
+                    @endif
+                </div>
             </div>
+            @unless($readOnly)
             <div class="topic-actions">
                 <button type="button" class="icon-btn ib-edit" title="Add subtopic" onclick="openTopic({{ $subject->id }}, '{{ addslashes($subject->code) }}', null, {{ $topic->id }})"><i class="fas fa-plus"></i></button>
                 <button type="button" class="icon-btn ib-edit" title="Edit topic" onclick="openTopic({{ $subject->id }}, '{{ addslashes($subject->code) }}', {{ Illuminate\Support\Js::from(['id'=>$topic->id,'name'=>$topic->name,'description'=>$topic->description,'sort_order'=>$topic->sort_order,'is_active'=>$topic->is_active,'parent_id'=>$topic->parent_id]) }})"><i class="fas fa-pen"></i></button>
                 <button type="button" class="icon-btn {{ $topic->is_active ? 'ib-success' : 'ib-muted' }}" title="{{ $topic->is_active ? 'Disable' : 'Enable' }} topic" onclick="openTopicToggle({{ $subject->id }}, {{ $topic->id }}, '{{ addslashes($topic->name) }}', {{ $topic->is_active ? 'false' : 'true' }})"><i class="fas {{ $topic->is_active ? 'fa-eye' : 'fa-eye-slash' }}"></i></button>
                 <button type="button" class="icon-btn ib-delete" title="Remove topic" onclick="openTopicDelete({{ $subject->id }}, {{ $topic->id }}, '{{ addslashes($topic->name) }}')"><i class="fas fa-trash"></i></button>
             </div>
+            @endunless
         </div>
         @if($topic->children->isNotEmpty())
             <div class="topic-children" hidden>
-                @include('chair.partials.topic-node', ['subject' => $subject, 'topics' => $topic->children, 'depth' => $depth + 1])
+                @include('chair.partials.topic-node', ['subject' => $subject, 'topics' => $topic->children, 'depth' => $depth + 1, 'readOnly' => $readOnly])
             </div>
         @endif
     </div>

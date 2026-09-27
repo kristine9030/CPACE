@@ -230,6 +230,17 @@
                     </select>
                 </div>
                 <div class="form-group">
+                    <label>Batch (School Year)</label>
+                    <input
+                        type="text"
+                        name="student_batch"
+                        pattern="\d{4}-\d{4}"
+                        value="{{ old('student_batch', $profile?->batch_year) }}"
+                        placeholder="{{ \App\Support\BatchYear::current() }}"
+                    >
+                    <div class="hint">Set automatically from the enrollment date. Change it only for transferees or irregular students.</div>
+                </div>
+                <div class="form-group">
                     <label>Target Exam Date</label>
                     <input
                         type="date"

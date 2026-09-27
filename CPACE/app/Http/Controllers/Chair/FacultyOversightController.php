@@ -7,6 +7,7 @@ use App\Models\Question;
 use App\Models\Role;
 use App\Models\Subject;
 use App\Models\User;
+use App\Support\CurriculumScope;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -20,10 +21,16 @@ class FacultyOversightController extends Controller
             ->with('assignedSubjects')
             ->findOrFail($id);
 
-        $questions = Question::query()
-            ->where('created_by', $faculty->id)
+        // Scoped to the active curriculum, same reasoning as performance():
+        // this page is reached from "Needs Your Attention" rows that are
+        // themselves scoped, so it must show the same "nothing yet" picture
+        // rather than surfacing questions from a retired curriculum.
+        $questions = CurriculumScope::restrictToActive(Question::query()
+            ->join('topics', 'topics.id', '=', 'questions.topic_id'))
+            ->where('questions.created_by', $faculty->id)
+            ->select('questions.*')
             ->with(['topic.subject'])
-            ->orderByDesc('updated_at')
+            ->orderByDesc('questions.updated_at')
             ->get();
 
         $questionIds = $questions->pluck('id')->all();
@@ -109,26 +116,35 @@ class FacultyOversightController extends Controller
             ->orderBy('first_name')
             ->get();
 
-        $questionAgg = DB::table('questions')
-            ->whereNotNull('created_by')
-            ->groupBy('created_by')
+        // This report is a snapshot of the test bank's CURRENT, live state —
+        // "is the active curriculum's bank covered, and who's contributing to
+        // it" — so every count on it is scoped to the active curriculum.
+        // Questions authored under an archived curriculum are real work, but
+        // they're not what the chair is acting on here; they'd otherwise make
+        // a freshly-published, empty curriculum look falsely covered.
+        $questionAgg = CurriculumScope::restrictToActive(DB::table('questions')
+            ->join('topics', 'topics.id', '=', 'questions.topic_id'))
+            ->whereNotNull('questions.created_by')
+            ->groupBy('questions.created_by')
             ->select(
-                'created_by',
+                'questions.created_by',
                 DB::raw('COUNT(*) as total'),
-                DB::raw('SUM(CASE WHEN is_active = 1 THEN 1 ELSE 0 END) as active'),
-                DB::raw('SUM(CASE WHEN is_active = 0 THEN 1 ELSE 0 END) as draft'),
-                DB::raw('MAX(updated_at) as last_contribution')
+                DB::raw('SUM(CASE WHEN questions.is_active = 1 THEN 1 ELSE 0 END) as active'),
+                DB::raw('SUM(CASE WHEN questions.is_active = 0 THEN 1 ELSE 0 END) as draft'),
+                DB::raw('MAX(questions.updated_at) as last_contribution')
             )->get()->keyBy('created_by');
 
-        $variantAgg = DB::table('question_variants')
+        $variantAgg = CurriculumScope::restrictToActive(DB::table('question_variants')
             ->join('questions', 'questions.id', '=', 'question_variants.question_id')
+            ->join('topics', 'topics.id', '=', 'questions.topic_id'))
             ->whereNotNull('questions.created_by')
             ->groupBy('questions.created_by')
             ->select('questions.created_by', DB::raw('COUNT(*) as total'))
             ->pluck('total', 'created_by');
 
-        $answerAgg = DB::table('quiz_answers')
+        $answerAgg = CurriculumScope::restrictToActive(DB::table('quiz_answers')
             ->join('questions', 'questions.id', '=', 'quiz_answers.question_id')
+            ->join('topics', 'topics.id', '=', 'questions.topic_id'))
             ->whereNotNull('quiz_answers.is_correct')
             ->whereNotNull('questions.created_by')
             ->groupBy('questions.created_by')
@@ -164,7 +180,7 @@ class FacultyOversightController extends Controller
         })->sortByDesc('questions')->values();
 
         $subjectQuestionAgg = DB::table('subjects')
-            ->leftJoin('topics', 'topics.subject_id', '=', 'subjects.id')
+            ->leftJoin('topics', fn ($join) => CurriculumScope::restrictToActive($join->on('topics.subject_id', '=', 'subjects.id')))
             ->leftJoin('questions', 'questions.topic_id', '=', 'topics.id')
             ->groupBy('subjects.id')
             ->select(
@@ -174,9 +190,9 @@ class FacultyOversightController extends Controller
                 DB::raw('COUNT(DISTINCT questions.created_by) as contributors')
             )->get()->keyBy('id');
 
-        $subjectAnswerAgg = DB::table('quiz_answers')
+        $subjectAnswerAgg = CurriculumScope::restrictToActive(DB::table('quiz_answers')
             ->join('questions', 'questions.id', '=', 'quiz_answers.question_id')
-            ->join('topics', 'topics.id', '=', 'questions.topic_id')
+            ->join('topics', 'topics.id', '=', 'questions.topic_id'))
             ->whereNotNull('quiz_answers.is_correct')
             ->groupBy('topics.subject_id')
             ->select(
@@ -233,10 +249,15 @@ class FacultyOversightController extends Controller
             )->get()->keyBy('question_id');
     }
 
-    /** Question flags use the same thresholds as the faculty quality report. */
+    /**
+     * Question flags use the same thresholds as the faculty quality report.
+     * Scoped to the active curriculum for the same reason as performance():
+     * a flag on a retired question isn't something the chair can still act on.
+     */
     private function questionQuality()
     {
-        return DB::table('questions')
+        return CurriculumScope::restrictToActive(DB::table('questions')
+            ->join('topics', 'topics.id', '=', 'questions.topic_id'))
             ->leftJoin('quiz_answers', function ($join) {
                 $join->on('quiz_answers.question_id', '=', 'questions.id')
                     ->whereNotNull('quiz_answers.is_correct');

@@ -3,25 +3,54 @@
 namespace App\Http\Controllers\Chair;
 
 use App\Http\Controllers\Controller;
+use App\Models\CurriculumAudit;
+use App\Models\CurriculumVersion;
 use App\Models\Subject;
 use App\Models\Topic;
+use App\Support\BatchYear;
+use App\Support\CurriculumAuditor;
+use App\Support\CurriculumScope;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 
 class SubjectManagementController extends Controller
 {
-    public function index()
+    /**
+     * The Subject & Curriculum page. Subjects are shared by every curriculum;
+     * the topic trees belong to one curriculum version, chosen with
+     * ?version=. With no choice the draft is shown when one is in progress
+     * (that's where the chair is working), otherwise the active curriculum.
+     */
+    public function index(Request $request)
     {
+        $versions = CurriculumScope::enabled()
+            ? CurriculumVersion::with('creator')->orderByDesc('id')->get()
+            : collect();
+
+        $version = $versions->firstWhere('id', (int) $request->query('version'))
+            ?? $versions->firstWhere('status', CurriculumVersion::STATUS_DRAFT)
+            ?? $versions->firstWhere('status', CurriculumVersion::STATUS_ACTIVE);
+
+        $versionId = $version?->id;
+
         $subjects = Subject::with([
             'faculty' => fn ($query) => $query->orderBy('first_name'),
-            'topics' => fn ($query) => $query->withCount('questions')->orderBy('sort_order')->orderBy('name'),
+            'topics' => fn ($query) => $query->inCurriculum($versionId)->withCount('questions')->orderBy('sort_order')->orderBy('name'),
         ])->orderBy('id')->get();
 
         $subjects->each(function (Subject $subject) {
             $subject->setRelation('topicTree', Topic::buildTree($subject->topics));
         });
 
-        return view('chair.subjects', ['subjects' => $subjects]);
+        return view('chair.subjects', [
+            'subjects' => $subjects,
+            'versions' => $versions,
+            'version' => $version,
+            'readOnly' => $version !== null && ! $version->isEditable(),
+            'audits' => $version ? $version->audits()->with(['user', 'subject'])->limit(15)->get() : collect(),
+            'suggestedBatch' => $this->suggestedFirstBatch($versions),
+        ]);
     }
 
     public function storeSubject(Request $request)
@@ -56,8 +85,15 @@ class SubjectManagementController extends Controller
 
     public function storeTopic(Request $request, Subject $subject)
     {
-        $data = $this->validateTopic($request, $subject);
-        $subject->topics()->create($data);
+        $version = $this->targetVersion($request);
+        if ($version && ! $version->isEditable()) {
+            return back()->with('error', self::ARCHIVED_MESSAGE);
+        }
+
+        $data = $this->validateTopic($request, $subject, $version?->id);
+        $topic = $subject->topics()->create($version ? $data + ['curriculum_version_id' => $version->id] : $data);
+
+        $this->audit($topic, CurriculumAudit::ACTION_TOPIC_ADDED, $topic->name);
 
         return back()->with('status', "Topic “{$data['name']}” was added to {$subject->code}.");
     }
@@ -65,13 +101,19 @@ class SubjectManagementController extends Controller
     public function updateTopic(Request $request, Subject $subject, Topic $topic)
     {
         abort_unless($topic->subject_id === $subject->id, 404);
-        $data = $this->validateTopic($request, $subject, $topic);
+        if ($this->isArchived($topic)) {
+            return back()->with('error', self::ARCHIVED_MESSAGE);
+        }
 
-        if (! empty($data['parent_id']) && $topic->isSelfOrDescendant((int) $data['parent_id'], $subject->topics)) {
+        $data = $this->validateTopic($request, $subject, $topic->curriculum_version_id, $topic);
+
+        $siblings = $subject->topics()->inCurriculum($topic->curriculum_version_id)->get();
+        if (! empty($data['parent_id']) && $topic->isSelfOrDescendant((int) $data['parent_id'], $siblings)) {
             return back()->withInput()->withErrors(['parent_id' => 'A topic cannot be moved under itself or one of its own subtopics.']);
         }
 
         $topic->update($data);
+        $this->audit($topic, CurriculumAudit::ACTION_TOPIC_EDITED, $topic->name);
 
         return back()->with('status', "Topic “{$topic->name}” was updated.");
     }
@@ -79,6 +121,9 @@ class SubjectManagementController extends Controller
     public function toggleTopic(Subject $subject, Topic $topic)
     {
         abort_unless($topic->subject_id === $subject->id, 404);
+        if ($this->isArchived($topic)) {
+            return back()->with('error', self::ARCHIVED_MESSAGE);
+        }
 
         $topic->update(['is_active' => !$topic->is_active]);
 
@@ -89,6 +134,9 @@ class SubjectManagementController extends Controller
     public function destroyTopic(Subject $subject, Topic $topic)
     {
         abort_unless($topic->subject_id === $subject->id, 404);
+        if ($this->isArchived($topic)) {
+            return back()->with('error', self::ARCHIVED_MESSAGE);
+        }
 
         if ($topic->questions()->exists()) {
             return back()->with('error', 'This topic contains test-bank questions and cannot be removed. Edit it and mark it inactive instead.');
@@ -99,9 +147,63 @@ class SubjectManagementController extends Controller
         }
 
         $name = $topic->name;
+        $this->audit($topic, CurriculumAudit::ACTION_TOPIC_REMOVED, $name);
         $topic->delete();
 
         return back()->with('status', "Topic “{$name}” was removed from {$subject->code}.");
+    }
+
+    /**
+     * Default first batch for a new curriculum: next school year's batch, but
+     * never at or before the current curriculum's first batch (the new one
+     * must take over from a later batch).
+     */
+    private function suggestedFirstBatch($versions): string
+    {
+        $suggested = BatchYear::forDate(now()->addYear());
+        $activeFrom = $versions->firstWhere('status', CurriculumVersion::STATUS_ACTIVE)?->effective_from_batch;
+
+        if ($activeFrom && $suggested <= $activeFrom) {
+            $suggested = BatchYear::next($activeFrom) ?? $suggested;
+        }
+
+        return $suggested;
+    }
+
+    private const ARCHIVED_MESSAGE = 'This curriculum is archived and kept as read-only history, so its topics can no longer be changed.';
+
+    /**
+     * The curriculum a new topic goes into: the version the chair is viewing
+     * (posted by the form), falling back to the active one.
+     */
+    private function targetVersion(Request $request): ?CurriculumVersion
+    {
+        if (! CurriculumScope::enabled()) {
+            return null;
+        }
+
+        $id = (int) $request->input('curriculum_version_id') ?: CurriculumScope::activeId();
+
+        return $id ? CurriculumVersion::find($id) : null;
+    }
+
+    private function isArchived(Topic $topic): bool
+    {
+        return CurriculumScope::enabled()
+            && $topic->curriculum_version_id !== null
+            && CurriculumVersion::whereKey($topic->curriculum_version_id)->where('status', CurriculumVersion::STATUS_ARCHIVED)->exists();
+    }
+
+    private function audit(Topic $topic, string $action, string $details): void
+    {
+        if (! CurriculumScope::enabled() || $topic->curriculum_version_id === null) {
+            return;
+        }
+
+        $version = CurriculumVersion::find($topic->curriculum_version_id);
+        if ($version) {
+            CurriculumAuditor::record($version, Auth::user(), $action, $details, $topic->subject_id);
+        }
     }
 
     private function validateSubject(Request $request, ?Subject $subject = null): array
@@ -119,15 +221,33 @@ class SubjectManagementController extends Controller
         ]);
     }
 
-    private function validateTopic(Request $request, Subject $subject, ?Topic $topic = null): array
+    /**
+     * Names are unique among siblings (same parent) within a subject in ONE
+     * curriculum version: a new curriculum reuses the same names, and the TOS
+     * itself repeats leaf names under different parents ("Accounting for
+     * SMEs"). A parent must be in the same subject and version.
+     */
+    private function validateTopic(Request $request, Subject $subject, ?int $versionId, ?Topic $topic = null): array
     {
+        $sameCurriculum = function ($query) use ($subject, $versionId) {
+            $query->where('subject_id', $subject->id);
+            if ($versionId !== null) {
+                $query->where('curriculum_version_id', $versionId);
+            }
+        };
+        $parentId = $request->filled('parent_id') ? (int) $request->input('parent_id') : null;
+        $sameParent = function ($query) use ($sameCurriculum, $parentId) {
+            $sameCurriculum($query);
+            $parentId === null ? $query->whereNull('parent_id') : $query->where('parent_id', $parentId);
+        };
+
         return $request->validate([
             'name' => [
-                'required', 'string', 'max:255',
-                Rule::unique('topics', 'name')->where(fn ($query) => $query->where('subject_id', $subject->id))->ignore($topic?->id),
+                'required', 'string', 'max:150',
+                Rule::unique('topics', 'name')->where($sameParent)->ignore($topic?->id),
             ],
             'description' => ['nullable', 'string', 'max:2000'],
-            'parent_id'    => ['nullable', 'integer', Rule::exists('topics', 'id')->where('subject_id', $subject->id)],
+            'parent_id'    => ['nullable', 'integer', Rule::exists('topics', 'id')->where($sameCurriculum)],
             'sort_order'   => ['required', 'integer', 'min:0', 'max:9999'],
             'is_active'    => ['required', 'boolean'],
         ]);

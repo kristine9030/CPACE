@@ -43,6 +43,7 @@ class MaterialController extends Controller
 
             if ($selectedSubject) {
                 $topics = Topic::where('subject_id', $selectedSubject->id)
+                    ->inActiveCurriculum()
                     ->where('is_active', true)
                     ->withCount('materials')
                     ->orderBy('sort_order')

@@ -7,6 +7,7 @@ use App\Models\Role;
 use App\Models\Subject;
 use App\Models\User;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
@@ -84,6 +85,7 @@ class ChairAccountProvisioningTest extends TestCase
             $table->string('student_number', 30)->nullable();
             $table->integer('year_level')->nullable();
             $table->string('section', 30)->nullable();
+            $table->string('batch_year', 9)->nullable();
             $table->date('exam_target_date')->nullable();
             $table->integer('total_points')->default(0);
             $table->integer('streak_days')->default(0);
@@ -364,6 +366,51 @@ class ChairAccountProvisioningTest extends TestCase
             $markedAt->toDateTimeString(),
             DB::table('student_profiles')->where('user_id', $alreadyAlumni->id)->value('alumni_marked_at')
         );
+    }
+
+    public function test_a_new_student_is_given_the_current_school_year_as_their_batch(): void
+    {
+        Mail::fake();
+        $this->travelTo(Carbon::create(2026, 8, 15));
+
+        $this->actingAs($this->chair())->post(route('chair.students.store'), [
+            'first_name' => 'Juan', 'last_name' => 'Dela Cruz',
+            'email' => 'batch@example.com', 'is_active' => '1',
+        ])->assertRedirect();
+
+        $student = User::where('email', 'batch@example.com')->firstOrFail();
+        $this->assertSame('2026-2027', DB::table('student_profiles')->where('user_id', $student->id)->value('batch_year'));
+    }
+
+    public function test_the_chair_can_override_a_students_batch_and_later_saves_keep_it(): void
+    {
+        $chair = $this->chair();
+        $student = $this->student('transferee@example.com');
+        DB::table('student_profiles')->where('user_id', $student->id)->update(['batch_year' => '2026-2027']);
+        $base = [
+            'first_name' => $student->first_name, 'last_name' => $student->last_name,
+            'email' => $student->email, 'is_active' => '1',
+        ];
+
+        // Transferee: moved to an earlier batch.
+        $this->actingAs($chair)->put(route('chair.students.update', $student->id), $base + ['student_batch' => '2025-2026'])
+            ->assertSessionDoesntHaveErrors();
+        $this->assertSame('2025-2026', DB::table('student_profiles')->where('user_id', $student->id)->value('batch_year'));
+
+        // Saving the form again with the field left blank keeps the override.
+        $this->actingAs($chair)->put(route('chair.students.update', $student->id), $base)->assertSessionDoesntHaveErrors();
+        $this->assertSame('2025-2026', DB::table('student_profiles')->where('user_id', $student->id)->value('batch_year'));
+    }
+
+    public function test_a_batch_must_be_two_consecutive_years(): void
+    {
+        $chair = $this->chair();
+        $student = $this->student('badbatch@example.com');
+
+        $this->actingAs($chair)->put(route('chair.students.update', $student->id), [
+            'first_name' => $student->first_name, 'last_name' => $student->last_name,
+            'email' => $student->email, 'is_active' => '1', 'student_batch' => '2025-2027',
+        ])->assertSessionHasErrors('student_batch');
     }
 
     public function test_updating_a_student_as_shifted_forces_the_account_inactive_regardless_of_the_toggle(): void

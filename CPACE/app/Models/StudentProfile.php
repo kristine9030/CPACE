@@ -16,6 +16,7 @@ class StudentProfile extends Model
         'student_number',
         'year_level',
         'section',
+        'batch_year',
         'exam_target_date',
         'total_points',
         'streak_days',
