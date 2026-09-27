@@ -17,7 +17,11 @@ class SubjectsApiController extends Controller
             ->orderBy('id')
             ->get()
             ->map(function ($subject) use ($studentId) {
-                $topicIds = $subject->topics()->where('is_active', true)->pluck('id');
+                // This student's curriculum only: what a new quiz can draw from.
+                $topicIds = $subject->topics()->forStudent($studentId)->where('is_active', true)->pluck('id');
+                // Every topic this subject has ever had: a curriculum change
+                // must never erase a student's recorded mastery.
+                $allTopicIds = $subject->topics()->pluck('id');
 
                 $questionCount = DB::table('questions')
                     ->where('is_active', true)
@@ -26,7 +30,7 @@ class SubjectsApiController extends Controller
 
                 $perf = DB::table('performance_records')
                     ->where('student_id', $studentId)
-                    ->whereIn('topic_id', $topicIds)
+                    ->whereIn('topic_id', $allTopicIds)
                     ->selectRaw('COALESCE(SUM(correct_count),0) c, COALESCE(SUM(total_attempts),0) t')
                     ->first();
 

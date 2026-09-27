@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Role;
 use App\Models\Section;
+use App\Support\CurriculumScope;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -686,7 +687,7 @@ class ChairAnalyticsService
      */
     public function coverageReport(?int $subjectId = null): Collection
     {
-        $topics = DB::table('topics')
+        $topics = CurriculumScope::restrictToActive(DB::table('topics'))
             ->select('id', 'parent_id', 'subject_id', 'is_active')
             ->get();
 
@@ -749,7 +750,7 @@ class ChairAnalyticsService
             $rolled[$root] = $bucket;
         }
 
-        return DB::table('topics')
+        return CurriculumScope::restrictToActive(DB::table('topics'))
             ->join('subjects', 'subjects.id', '=', 'topics.subject_id')
             ->when($subjectId, fn ($query) => $query->where('subjects.id', $subjectId))
             ->where('topics.is_active', true)
@@ -818,8 +819,8 @@ class ChairAnalyticsService
     {
         $from = now()->startOfMonth()->subMonths($months - 1);
 
-        $questions = DB::table('questions')
-            ->join('topics', 'topics.id', '=', 'questions.topic_id')
+        $questions = CurriculumScope::restrictToActive(DB::table('questions')
+            ->join('topics', 'topics.id', '=', 'questions.topic_id'))
             ->when($subjectId, fn ($query) => $query->where('topics.subject_id', $subjectId))
             ->where('questions.created_at', '>=', $from)
             ->select('questions.created_at', 'questions.is_active')

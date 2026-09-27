@@ -12,6 +12,7 @@ use App\Services\QuestionParaphraser;
 use App\Services\SpacedRepetitionScheduler;
 use App\Services\StreakService;
 use App\Services\WeaknessDetector;
+use App\Support\CurriculumScope;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -36,7 +37,7 @@ class QuizApiController extends Controller
                 'color'          => $subject->color,
                 'icon'           => $subject->icon,
                 'question_count' => Question::where('is_active', true)
-                    ->whereIn('topic_id', $subject->topics()->where('is_active', true)->pluck('id'))
+                    ->whereIn('topic_id', $subject->topics()->forStudent(Auth::id())->where('is_active', true)->pluck('id'))
                     ->count(),
             ];
         });
@@ -107,7 +108,7 @@ class QuizApiController extends Controller
             : 'testing';
 
         $count    = max(1, min((int) $data['count'], self::MAX_QUIZ_LENGTH));
-        $topicIds = DB::table('topics')->where('subject_id', $data['subject_id'])->where('is_active', true)->pluck('id');
+        $topicIds = CurriculumScope::restrictForStudent(DB::table('topics'), Auth::id())->where('subject_id', $data['subject_id'])->where('is_active', true)->pluck('id');
 
         [$questionIds, $focusTopicId] = $this->selectQuestions($mode, $topicIds, Auth::id(), $count);
 

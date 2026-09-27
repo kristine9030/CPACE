@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Role;
 use App\Models\Subject;
 use App\Services\WeaknessDetector;
+use App\Support\CurriculumScope;
 use App\Support\FacultySectionScope;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -256,8 +257,8 @@ class FacultyDashboardController extends Controller
      */
     private function scopedQuestions(array $subjectIds)
     {
-        return DB::table('questions')
-            ->join('topics', 'topics.id', '=', 'questions.topic_id')
+        return CurriculumScope::restrictToActive(DB::table('questions')
+            ->join('topics', 'topics.id', '=', 'questions.topic_id'))
             ->whereIn('topics.subject_id', $subjectIds);
     }
 
@@ -644,8 +645,8 @@ class FacultyDashboardController extends Controller
      */
     private function questionsBySubject($assigned)
     {
-        $counts = DB::table('questions')
-            ->join('topics', 'topics.id', '=', 'questions.topic_id')
+        $counts = CurriculumScope::restrictToActive(DB::table('questions')
+            ->join('topics', 'topics.id', '=', 'questions.topic_id'))
             ->whereIn('topics.subject_id', $assigned->pluck('id')->all())
             ->groupBy('topics.subject_id')
             ->select('topics.subject_id', DB::raw('COUNT(*) as total'))

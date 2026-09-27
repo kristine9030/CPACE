@@ -15,6 +15,8 @@ use App\Http\Controllers\Chair\EmailAvailabilityController;
 use App\Http\Controllers\Chair\ProgramChairController;
 use App\Http\Controllers\Chair\FacultyOversightController;
 use App\Http\Controllers\Chair\SubjectManagementController;
+use App\Http\Controllers\Chair\CurriculumVersionController;
+use App\Http\Controllers\Chair\CurriculumImportController;
 use App\Http\Controllers\Chair\SectionManagementController;
 use App\Http\Controllers\Chair\StudentManagementController;
 use App\Http\Controllers\Student\PerformanceController;
@@ -147,6 +149,18 @@ Route::middleware('auth')->group(function () {
         Route::delete('/subjects/{subject}/topics/{topic}', [SubjectManagementController::class, 'destroyTopic'])->name('subjects.topics.destroy');
         Route::patch('/subjects/{subject}/topics/{topic}/toggle', [SubjectManagementController::class, 'toggleTopic'])->name('subjects.topics.toggle');
 
+        // Curriculum versions: start a draft, publish it, discard it, copy questions forward.
+        Route::post('/curriculum', [CurriculumVersionController::class, 'store'])->name('curriculum.store');
+        Route::put('/curriculum/{version}', [CurriculumVersionController::class, 'update'])->name('curriculum.update');
+        Route::post('/curriculum/{version}/publish', [CurriculumVersionController::class, 'publish'])->name('curriculum.publish');
+        Route::delete('/curriculum/{version}', [CurriculumVersionController::class, 'destroy'])->name('curriculum.destroy');
+        Route::post('/curriculum/{version}/subjects/{subject}/copy-questions', [CurriculumVersionController::class, 'copyQuestions'])->name('curriculum.copy-questions');
+        // PRC Table of Specifications import: upload -> review -> commit.
+        Route::post('/curriculum/import', [CurriculumImportController::class, 'store'])->middleware('throttle:10,1')->name('curriculum.import.store');
+        Route::get('/curriculum/import/{batch}', [CurriculumImportController::class, 'review'])->name('curriculum.import.review');
+        Route::post('/curriculum/import/{batch}/commit', [CurriculumImportController::class, 'commit'])->name('curriculum.import.commit');
+        Route::delete('/curriculum/import/{batch}', [CurriculumImportController::class, 'destroy'])->name('curriculum.import.destroy');
+
         // Mock exam review: subject folders -> review/edit -> publish -> monitor.
         Route::get('/mock-exams', [MockExamReviewController::class, 'index'])->name('mock-exams');
         Route::get('/mock-exams/subject/{subject}', [MockExamReviewController::class, 'subject'])->name('mock-exams.subject');
@@ -178,6 +192,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/dashboard/insights', [FacultyDashboardController::class, 'insights'])->name('dashboard.insights');
         Route::get('/test-bank', [TestBankController::class, 'index'])->name('test-bank');
         Route::get('/test-bank/export', [TestBankController::class, 'export'])->name('test-bank.export');
+        Route::post('/test-bank/curriculum', [TestBankController::class, 'switchCurriculum'])->name('test-bank.curriculum');
         Route::get('/test-bank/create', [TestBankController::class, 'create'])->name('question.create');
         Route::post('/test-bank/ai-draft', [TestBankController::class, 'aiDraft'])->middleware('throttle:8,1')->name('question.ai-draft');
         Route::post('/test-bank', [TestBankController::class, 'store'])->name('question.store');

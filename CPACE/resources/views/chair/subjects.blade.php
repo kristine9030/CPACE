@@ -108,6 +108,26 @@
         .del-warn i { margin-top:1px;flex-shrink:0; }
         .info-note { margin:14px 0;padding:12px;background:#eff6ff;border-radius:8px;font-size:11.5px;color:#1e40af;display:flex;align-items:flex-start;gap:8px; }
         .info-note i { margin-top:1px;flex-shrink:0; }
+        /* ── Curriculum version bar ── */
+        .curr-bar { display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;background:#fff;border:1px solid #e8e8e8;border-radius:14px;padding:14px 18px;margin-bottom:16px; }
+        .curr-bar.is-draft { border-color:#fcd34d;background:#fffbeb; }
+        .curr-bar.is-archived { border-color:#e5e7eb;background:#f9fafb; }
+        .curr-left { display:flex;align-items:center;gap:12px;flex-wrap:wrap;min-width:0; }
+        .curr-left select { width:auto;min-width:260px;padding:8px 10px;font-size:12px; }
+        .curr-meta { font-size:11px;color:#777; }
+        .curr-meta strong { color:#1a1a1a; }
+        .curr-pill { display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:12px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.3px; }
+        .curr-pill.active { background:#d1fae5;color:#047857; }
+        .curr-pill.draft { background:#fef3c7;color:#b45309; }
+        .curr-pill.archived { background:#e5e7eb;color:#4b5563; }
+        .curr-actions { display:flex;gap:8px;flex-wrap:wrap; }
+        .curr-note { font-size:11px;color:#92400e;margin-top:6px;flex-basis:100%; }
+        .curr-note.muted { color:#6b7280; }
+        .audit-list { list-style:none;margin:0;padding:0;font-size:11px;color:#555; }
+        .audit-list li { padding:6px 0;border-bottom:1px dashed #eee;display:flex;gap:8px; }
+        .audit-list li:last-child { border-bottom:0; }
+        .audit-when { color:#aaa;white-space:nowrap;min-width:92px; }
+        @media(max-width:620px) { .curr-left select { min-width:0;width:100%; } }
         @media(max-width:1050px) { .stats-row { grid-template-columns:repeat(2,1fr); } }
         @media(max-width:900px) { .subj-grid { grid-template-columns:1fr; } }
         @media(max-width:620px) { .modal-grid { grid-template-columns:1fr; }.full { grid-column:auto; }.sc-top,.sc-section { padding-left:14px;padding-right:14px; } }
@@ -135,12 +155,60 @@
     <div class="topbar">
         <div class="topbar-left"><div><div class="page-title">Subject & Curriculum</div><div class="page-sub">Manage CPALE subjects, faculty coverage, topics, and readiness thresholds.</div></div></div>
         <div class="topbar-right">
-            <button type="button" class="btn btn-primary" onclick="openSubject()"><i class="fas fa-plus"></i> Add Subject</button>
+            @unless($readOnly)
+                <button type="button" class="btn btn-primary" onclick="openSubject()"><i class="fas fa-plus"></i> Add Subject</button>
+            @endunless
             @include('partials.topbar-actions')
         </div>
     </div>
 
     {{-- Status and validation messages surface as SweetAlert popups via partials.alerts --}}
+
+    {{-- Curriculum version bar: which curriculum's topics this page shows,
+         plus the draft lifecycle (start -> build -> publish / discard). --}}
+    @if($version)
+        @php
+            $hasDraft = $versions->contains('status', \App\Models\CurriculumVersion::STATUS_DRAFT);
+        @endphp
+        <div class="curr-bar {{ $version->isDraft() ? 'is-draft' : ($version->isArchived() ? 'is-archived' : '') }}">
+            <div class="curr-left">
+                <i class="fas fa-book-bookmark" style="color:var(--primary);"></i>
+                <select aria-label="Curriculum version" onchange="window.location = '{{ route('chair.subjects') }}?version=' + encodeURIComponent(this.value)">
+                    @foreach($versions as $v)
+                        <option value="{{ $v->id }}" @selected($v->id === $version->id)>
+                            {{ $v->label }} — {{ ucfirst($v->status) }}{{ $v->effectiveRange() ? ' (' . $v->effectiveRange() . ')' : '' }}
+                        </option>
+                    @endforeach
+                </select>
+                <span class="curr-pill {{ $version->status }}">{{ $version->status }}</span>
+                <span class="curr-meta">
+                    @if($version->effectiveRange())
+                        Batches <strong>{{ $version->effectiveRange() }}</strong>
+                    @else
+                        No batch range set
+                    @endif
+                    @if($version->published_at) · published {{ $version->published_at->format('M j, Y') }} @endif
+                </span>
+            </div>
+            <div class="curr-actions">
+                @unless($readOnly)
+                    <button type="button" class="btn btn-ghost btn-sm" onclick="document.getElementById('tosModal').classList.add('open')"><i class="fas fa-file-import"></i> Import TOS</button>
+                @endunless
+                @if($version->isDraft())
+                    <button type="button" class="btn btn-ghost btn-sm" onclick="document.getElementById('curriculumEditModal').classList.add('open')"><i class="fas fa-pen"></i> Edit details</button>
+                    <button type="button" class="btn btn-ghost btn-sm" onclick="discardDraft()"><i class="fas fa-trash"></i> Discard draft</button>
+                    <button type="button" class="btn btn-primary btn-sm" onclick="publishDraft()"><i class="fas fa-rocket"></i> Publish curriculum</button>
+                @elseif(! $hasDraft)
+                    <button type="button" class="btn btn-primary btn-sm" onclick="document.getElementById('curriculumModal').classList.add('open')"><i class="fas fa-plus"></i> Start New Curriculum</button>
+                @endif
+            </div>
+            @if($version->isDraft())
+                <div class="curr-note"><i class="fas fa-circle-info"></i> This is a <strong>draft</strong>. Students keep studying the current curriculum until you publish it. Add or import each subject's topics, then copy over the Test Bank questions that still apply.</div>
+            @elseif($version->isArchived())
+                <div class="curr-note muted"><i class="fas fa-lock"></i> This is an <strong>archived</strong> curriculum, kept as read-only history. Past quiz results and questions under it are preserved.</div>
+            @endif
+        </div>
+    @endif
 
     @php
         $summaryCards = [
@@ -203,8 +271,10 @@
                         <span class="threshold"><i class="fas fa-bullseye"></i> Passing threshold: {{ $subject->passing_threshold }}%</span>
                     </div>
                     <div class="sc-actions">
+                        @unless($readOnly)
                         <button type="button" class="icon-btn ib-edit" title="Edit subject" onclick="openSubject({{ Illuminate\Support\Js::from(['id'=>$subject->id,'code'=>$subject->code,'name'=>$subject->name,'description'=>$subject->description,'passing_threshold'=>$subject->passing_threshold,'color'=>$color,'is_active'=>$subject->is_active]) }})"><i class="fas fa-pen"></i></button>
                         <button type="button" class="icon-btn ib-delete" title="Remove subject" onclick="openSubjectDelete({{ $subject->id }}, '{{ addslashes($subject->code) }}')"><i class="fas fa-trash"></i></button>
+                        @endunless
                     </div>
                 </div>
 
@@ -230,7 +300,14 @@
                             Topics
                             <span class="topics-count">{{ $subject->topics->count() }}</span>
                         </span>
-                        <button type="button" class="add-mini" onclick="event.stopPropagation(); openTopic({{ $subject->id }}, '{{ addslashes($subject->code) }}')"><i class="fas fa-plus"></i> Add Topic</button>
+                        @unless($readOnly)
+                            <span style="display:inline-flex;gap:6px;">
+                                @if($version?->isDraft())
+                                    <button type="button" class="add-mini" title="Copy this subject's Test Bank questions from the current curriculum into matching topics of this draft" onclick="event.stopPropagation(); copyQuestions({{ $subject->id }}, '{{ addslashes($subject->code) }}')"><i class="fas fa-copy"></i> Copy questions</button>
+                                @endif
+                                <button type="button" class="add-mini" onclick="event.stopPropagation(); openTopic({{ $subject->id }}, '{{ addslashes($subject->code) }}')"><i class="fas fa-plus"></i> Add Topic</button>
+                            </span>
+                        @endunless
                     </div>
 
                     <div class="topics-panel" id="topics-panel-{{ $subject->id }}" data-subject="{{ $subject->id }}">
@@ -243,9 +320,9 @@
                             @endif
                             <div class="topic-list" id="topics-data-{{ $subject->id }}" data-topics="{{ json_encode($subject->topics->map(fn($t) => ['id' => $t->id, 'name' => $t->name, 'parent_id' => $t->parent_id])) }}">
                                 @if($subject->topicTree->isNotEmpty())
-                                    @include('chair.partials.topic-node', ['subject' => $subject, 'topics' => $subject->topicTree, 'depth' => 0])
+                                    @include('chair.partials.topic-node', ['subject' => $subject, 'topics' => $subject->topicTree, 'depth' => 0, 'readOnly' => $readOnly])
                                 @else
-                                    <div class="empty-msg"><i class="fas fa-list"></i>No topics added yet.</div>
+                                    <div class="empty-msg"><i class="fas fa-list"></i>{{ $version?->isDraft() ? 'No topics in this draft yet — add them or import the subject\'s TOS.' : 'No topics added yet.' }}</div>
                                 @endif
                             </div>
                         </div>
@@ -256,7 +333,94 @@
             <div class="card" style="grid-column:1/-1;"><div class="empty"><i class="fas fa-layer-group"></i><div>No subjects yet. Add the first subject to begin.</div></div></div>
         @endforelse
     </div>
+
+    @if($version && $audits->isNotEmpty())
+        <div class="card" style="margin-top:16px;">
+            <div class="card-head"><span class="card-title"><i class="fas fa-clock-rotate-left"></i> Curriculum history — {{ $version->label }}</span></div>
+            <div style="padding:6px 18px 12px;">
+                <ul class="audit-list">
+                    @foreach($audits as $audit)
+                        <li>
+                            <span class="audit-when">{{ $audit->created_at?->format('M j, g:i A') }}</span>
+                            <span><strong>{{ $audit->user?->name ?? 'System' }}</strong> · {{ $audit->label() }}@if($audit->subject) ({{ $audit->subject->code }})@endif @if($audit->details)— {{ $audit->details }}@endif</span>
+                        </li>
+                    @endforeach
+                </ul>
+            </div>
+        </div>
+    @endif
 </main>
+
+{{-- Import the PRC Table of Specifications PDF into the curriculum being viewed. --}}
+@if($version && ! $readOnly)
+<div class="modal-overlay" id="tosModal">
+    <div class="modal">
+        <h3>Import Table of Specifications</h3>
+        <div class="modal-sub">Upload the official PRC LECPA Table of Specifications (PDF). Every subject found in it is read into an outline you review before anything is saved.</div>
+        <form method="POST" action="{{ route('chair.curriculum.import.store') }}" enctype="multipart/form-data" data-loading="Reading the Table of Specifications...">
+            @csrf
+            <input type="hidden" name="curriculum_version_id" value="{{ $version->id }}">
+            <div class="form-group"><label>TOS PDF</label><input type="file" name="file" accept="application/pdf,.pdf" required></div>
+            <div class="info-note"><i class="fas fa-circle-info"></i><span>Importing into <strong>{{ $version->label }}</strong>{{ $version->isDraft() ? ' (draft — students won\'t see it until you publish)' : ' (the current curriculum — students see new topics right away)' }}. Only the official PRC layout is supported for now.</span></div>
+            <div class="modal-actions"><button type="button" class="btn btn-ghost" onclick="closeModal('tosModal')">Cancel</button><button class="btn btn-primary"><i class="fas fa-magnifying-glass"></i> Read PDF</button></div>
+        </form>
+    </div>
+</div>
+@endif
+
+{{-- Start a new curriculum: creates an empty DRAFT the chair builds before publishing. --}}
+<div class="modal-overlay" id="curriculumModal">
+    <div class="modal">
+        <h3>Start a New Curriculum</h3>
+        <div class="modal-sub">Creates a blank draft. Students keep studying the current curriculum until you publish the draft; the current one then becomes read-only history.</div>
+        <form method="POST" action="{{ route('chair.curriculum.store') }}"
+              data-confirm="A blank draft curriculum will be created. Nothing students see changes until you publish it."
+              data-confirm-title="Start a new curriculum?"
+              data-confirm-ok="Yes, start draft"
+              data-confirm-icon="question">@csrf
+            <div class="modal-grid">
+                <div class="form-group full"><label>Curriculum Name</label><input type="text" name="label" maxlength="80" required placeholder="e.g. CPALE TOS — Effective Oct 2027"></div>
+                <div class="form-group full"><label>First Batch Covered</label><input type="text" name="effective_from_batch" required pattern="\d{4}-\d{4}" value="{{ old('effective_from_batch', $suggestedBatch) }}" placeholder="e.g. {{ $suggestedBatch }}"><div class="hint">The school-year batch this curriculum starts with. It must come after the current curriculum's first batch; the current curriculum will be marked as covering batches up to the one before.</div></div>
+            </div>
+            <div class="modal-actions"><button type="button" class="btn btn-ghost" onclick="closeModal('curriculumModal')">Cancel</button><button class="btn btn-primary"><i class="fas fa-plus"></i> Start Draft</button></div>
+        </form>
+    </div>
+</div>
+
+{{-- Edit a draft's name and first batch. Locked once published, because
+     publishing closes the previous curriculum's range at this batch. --}}
+@if($version?->isDraft())
+@php
+    $activeVersion = $versions->firstWhere('status', \App\Models\CurriculumVersion::STATUS_ACTIVE);
+@endphp
+<div class="modal-overlay" id="curriculumEditModal">
+    <div class="modal">
+        <h3>Edit Draft Curriculum</h3>
+        <div class="modal-sub">You can change these until the draft is published. After that the batch range is locked, because students are assigned to it.</div>
+        <form method="POST" action="{{ route('chair.curriculum.update', $version) }}"
+              data-confirm="The draft's name and first batch will be updated."
+              data-confirm-title="Save these details?"
+              data-confirm-ok="Yes, save"
+              data-confirm-icon="question">@csrf @method('PUT')
+            <div class="modal-grid">
+                <div class="form-group full"><label>Curriculum Name</label><input type="text" name="label" maxlength="80" required value="{{ old('label', $version->label) }}"></div>
+                <div class="form-group full">
+                    <label>First Batch Covered</label>
+                    <input type="text" name="effective_from_batch" required pattern="\d{4}-\d{4}" value="{{ old('effective_from_batch', $version->effective_from_batch) }}" placeholder="e.g. {{ $suggestedBatch }}">
+                    <div class="hint">
+                        @if($activeVersion?->effective_from_batch)
+                            Must be after <strong>{{ $activeVersion->effective_from_batch }}</strong>, the first batch of the current curriculum ("{{ $activeVersion->label }}"). Batches before this one keep the current curriculum.
+                        @else
+                            Batches before this one keep the current curriculum.
+                        @endif
+                    </div>
+                </div>
+            </div>
+            <div class="modal-actions"><button type="button" class="btn btn-ghost" onclick="closeModal('curriculumEditModal')">Cancel</button><button class="btn btn-primary"><i class="fas fa-save"></i> Save Details</button></div>
+        </form>
+    </div>
+</div>
+@endif
 
 <div class="modal-overlay" id="subjectModal">
     <div class="modal">
@@ -287,6 +451,7 @@
               data-confirm-title="Save this topic?"
               data-confirm-ok="Yes, save topic"
               data-confirm-icon="question">@csrf <input type="hidden" name="_method" id="topicMethod" value="POST">
+            @if($version)<input type="hidden" name="curriculum_version_id" value="{{ $version->id }}">@endif
             <div class="modal-grid">
                 <div class="form-group"><label>Topic Name</label><input type="text" name="name" required placeholder="Topic name"></div>
                 <div class="form-group"><label>Display Order</label><input type="number" name="sort_order" min="0" max="9999" value="0" required></div>
@@ -524,6 +689,38 @@ function openTopicToggle(subjectId, topicId, topicName, makeActive) {
         danger: !makeActive,
     });
 }
+
+@if($version?->isDraft())
+function publishDraft() {
+    askThenSubmit(@json(route('chair.curriculum.publish', $version)), 'POST', {
+        title: 'Publish this curriculum?',
+        html: @json('"' . $version->label . '" becomes the curriculum students study, and quizzes switch to its topics immediately.')
+            + '<div class="cpace-note">The current curriculum becomes read-only history. Every subject needs at least one active topic in this draft.</div>',
+        confirmText: 'Yes, publish it',
+        icon: 'warning',
+    });
+}
+
+function discardDraft() {
+    askThenSubmit(@json(route('chair.curriculum.destroy', $version)), 'DELETE', {
+        title: 'Discard this draft?',
+        html: 'Every topic and copied question in this draft will be deleted.'
+            + '<div class="cpace-note">Nothing students see is affected &mdash; they are still on the current curriculum.</div>',
+        confirmText: 'Yes, discard draft',
+        danger: true,
+    });
+}
+
+function copyQuestions(subjectId, subjectCode) {
+    askThenSubmit(@json(url('/chair/curriculum/' . $version->id . '/subjects')) + '/' + subjectId + '/copy-questions', 'POST', {
+        title: `Copy ${subjectCode} questions?`,
+        html: `${subjectCode}'s Test Bank questions in the current curriculum will be copied into the matching topics of this draft (matched by topic name).`
+            + '<div class="cpace-note">The originals stay untouched. Questions already copied are skipped, so this is safe to run again after adding more topics.</div>',
+        confirmText: 'Yes, copy them',
+        icon: 'question',
+    });
+}
+@endif
 
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 document.querySelectorAll('.modal-overlay').forEach(modal => modal.addEventListener('click', event => { if (event.target === modal) modal.classList.remove('open'); }));

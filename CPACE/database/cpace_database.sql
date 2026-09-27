@@ -43,9 +43,20 @@ CREATE TABLE student_profiles (
     student_number  VARCHAR(20)  NULL UNIQUE,
     year_level      TINYINT UNSIGNED NULL,             -- 4 or 5 for BSA
     section         VARCHAR(10)  NULL,
+    batch_year      VARCHAR(9)   NULL,                 -- enrollment batch, e.g. '2026-2027' (set from the enrollment date, editable)
     exam_target_date DATE        NULL,                 -- expected CPALE exam date
     total_points    INT UNSIGNED NOT NULL DEFAULT 0,   -- gamification points
     streak_days     SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+    mobile          VARCHAR(30)  NULL,
+    study_days      VARCHAR(255) NULL,
+    study_time      VARCHAR(30)  NULL,
+    study_intensity VARCHAR(20)  NULL,
+    focus_subjects  VARCHAR(255) NULL,
+    is_alumni       BOOLEAN NOT NULL DEFAULT FALSE,
+    alumni_marked_at DATETIME    NULL,
+    is_shifted      BOOLEAN NOT NULL DEFAULT FALSE,
+    shift_reason    VARCHAR(500) NULL,
+    shifted_at      DATETIME     NULL,
     CONSTRAINT fk_sp_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
@@ -119,15 +130,83 @@ CREATE TABLE subjects (
     id          TINYINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     code        VARCHAR(10) NOT NULL UNIQUE,   -- e.g., 'FAR', 'AFAR', 'MS'
     name        VARCHAR(100) NOT NULL,
-    description TEXT NULL
+    description TEXT NULL,
+    passing_threshold TINYINT UNSIGNED NOT NULL DEFAULT 75,
+    color       VARCHAR(20) NULL,
+    icon        VARCHAR(50) NULL,
+    is_active   BOOLEAN NOT NULL DEFAULT TRUE
+);
+
+-- A generation of the curriculum (the topic trees of every subject).
+-- At most one 'active' (what students study) and one 'draft' (being built by
+-- the chair); older ones are 'archived' read-only history. Old topics are kept
+-- because questions, performance records and quiz history still point at them.
+CREATE TABLE curriculum_versions (
+    id                   INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    label                VARCHAR(80) NOT NULL,
+    effective_from_batch VARCHAR(9)  NULL,        -- first enrollment batch, e.g. '2026-2027'
+    effective_to_batch   VARCHAR(9)  NULL,        -- last batch; NULL = open-ended
+    status               VARCHAR(10) NOT NULL DEFAULT 'draft',  -- draft | active | archived
+    created_by           INT UNSIGNED NULL,
+    published_at         DATETIME NULL,
+    created_at           DATETIME NULL,
+    KEY idx_cv_status (status)
+);
+
+-- Who changed what in a curriculum version (written by CurriculumAuditor).
+CREATE TABLE curriculum_audits (
+    id                    INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    curriculum_version_id INT UNSIGNED NOT NULL,
+    subject_id            TINYINT UNSIGNED NULL,
+    user_id               INT UNSIGNED NULL,
+    action                VARCHAR(30) NOT NULL,
+    details               TEXT NULL,
+    created_at            DATETIME NULL,
+    KEY idx_ca_version (curriculum_version_id)
 );
 
 CREATE TABLE topics (
     id          SMALLINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     subject_id  TINYINT UNSIGNED NOT NULL,
+    curriculum_version_id INT UNSIGNED NULL,    -- which curriculum this topic belongs to
+    parent_id   SMALLINT UNSIGNED NULL,         -- subtopic of another topic
     name        VARCHAR(150) NOT NULL,
     description TEXT NULL,
-    CONSTRAINT fk_topics_subject FOREIGN KEY (subject_id) REFERENCES subjects(id)
+    sort_order  INT UNSIGNED NOT NULL DEFAULT 0,
+    tos_weight  DECIMAL(5,2) NULL,              -- PRC Table of Specifications weight %
+    tos_items   SMALLINT UNSIGNED NULL,         -- PRC Table of Specifications no. of items
+    is_active   BOOLEAN NOT NULL DEFAULT TRUE,
+    KEY idx_topics_version (curriculum_version_id),
+    CONSTRAINT fk_topics_subject FOREIGN KEY (subject_id) REFERENCES subjects(id),
+    CONSTRAINT topics_parent_id_foreign FOREIGN KEY (parent_id) REFERENCES topics(id) ON DELETE SET NULL
+);
+
+-- Staging for a Table of Specifications PDF import; nothing becomes a topic
+-- until the chair reviews and commits it.
+CREATE TABLE curriculum_import_batches (
+    id                    INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    curriculum_version_id INT UNSIGNED NOT NULL,
+    created_by            INT UNSIGNED NULL,
+    original_filename     VARCHAR(255) NOT NULL,
+    status                VARCHAR(20) NOT NULL DEFAULT 'pending',  -- pending | committed
+    created_at            TIMESTAMP NULL,
+    updated_at            TIMESTAMP NULL
+);
+
+CREATE TABLE curriculum_import_items (
+    id             INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    batch_id       INT UNSIGNED NOT NULL,
+    subject_id     TINYINT UNSIGNED NOT NULL,
+    parent_item_id INT UNSIGNED NULL,
+    ref            VARCHAR(30) NULL,            -- the TOS numbering, e.g. 'A.', '1.1'
+    name           VARCHAR(150) NOT NULL,
+    full_name      TEXT NULL,
+    depth          TINYINT UNSIGNED NOT NULL DEFAULT 0,
+    weight_percent DECIMAL(5,2) NULL,
+    item_count     SMALLINT UNSIGNED NULL,
+    sort_order     SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+    included       BOOLEAN NOT NULL DEFAULT TRUE,
+    KEY idx_cii_batch (batch_id)
 );
 
 -- =============================================================
@@ -769,6 +848,11 @@ INSERT INTO topics (subject_id, name) VALUES
     (6, 'Corporation Code'),
     (6, 'Negotiable Instruments Law'),
     (6, 'Insurance Code');
+
+-- The starting curriculum every seeded topic belongs to.
+INSERT INTO curriculum_versions (label, status, published_at, created_at)
+VALUES ('CPALE Curriculum (current)', 'active', NOW(), NOW());
+UPDATE topics SET curriculum_version_id = LAST_INSERT_ID() WHERE curriculum_version_id IS NULL;
 
 -- =============================================================
 -- SEED: Resource Categories

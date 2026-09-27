@@ -12,6 +12,7 @@ use App\Models\Section;
 use App\Models\StudentProfile;
 use App\Models\User;
 use App\Services\WeaknessDetector;
+use App\Support\BatchYear;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
@@ -463,10 +464,11 @@ class StudentManagementController extends Controller
                         'setup_completed_at' => null, // must run first-login Account Setup
                         'temp_password' => $tempPassword,
                     ]);
-                    StudentProfile::updateOrCreate(
-                        ['user_id' => $student->id],
-                        ['student_number' => $studentNumber, 'section' => $section]
-                    );
+                    $profile = ['student_number' => $studentNumber, 'section' => $section];
+                    if (BatchYear::columnExists()) {
+                        $profile['batch_year'] = BatchYear::forDate(now());
+                    }
+                    StudentProfile::updateOrCreate(['user_id' => $student->id], $profile);
 
                     return $student;
                 });
@@ -674,6 +676,13 @@ class StudentManagementController extends Controller
             'student_number' => ['nullable', 'string', 'max:30', Rule::unique('student_profiles', 'student_number')->ignore($student?->id, 'user_id')],
             'year_level' => ['nullable', 'integer', 'between:1,6'],
             'section' => ['nullable', 'string', 'max:30', Rule::exists('sections', 'name')],
+            // Enrollment batch ("2026-2027"). Not the alumni `batch_year` below,
+            // which is a graduation year.
+            'student_batch' => ['nullable', 'string', function ($attribute, $value, $fail) {
+                if (! BatchYear::isValid($value)) {
+                    $fail('Enter the batch as a school year, e.g. ' . BatchYear::current() . '.');
+                }
+            }],
             'exam_target_date' => ['nullable', 'date'],
             'is_active' => ['required', 'boolean'],
             'is_alumni' => ['nullable', 'boolean'],
@@ -698,7 +707,7 @@ class StudentManagementController extends Controller
         $isAlumni = (bool) ($data['is_alumni'] ?? false);
         $isShifted = (bool) ($data['is_shifted'] ?? false);
 
-        StudentProfile::updateOrCreate(['user_id' => $student->id], [
+        $fields = [
             'student_number' => $data['student_number'] ?? null,
             'year_level' => $data['year_level'] ?? null,
             'section' => $data['section'] ?? null,
@@ -712,7 +721,18 @@ class StudentManagementController extends Controller
             'shifted_at' => $isShifted
                 ? ($wasShifted ? $profile?->shifted_at : now())
                 : null,
-        ]);
+        ];
+
+        // Batch is set automatically from the enrollment date the first time
+        // and never silently recomputed; the chair may override it for
+        // transferees / irregular students.
+        if (BatchYear::columnExists()) {
+            $fields['batch_year'] = ! empty($data['student_batch'])
+                ? $data['student_batch']
+                : ($profile?->batch_year ?? BatchYear::forDate($student->created_at ?? now()));
+        }
+
+        StudentProfile::updateOrCreate(['user_id' => $student->id], $fields);
 
         if ($isAlumni) {
             AlumniProfile::updateOrCreate(['user_id' => $student->id], [

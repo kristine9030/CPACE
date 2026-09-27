@@ -8,6 +8,7 @@ use App\Models\CommunityResource;
 use App\Models\ReviewNote;
 use App\Models\Subject;
 use App\Services\AiNoteQuizService;
+use App\Support\CurriculumScope;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -34,7 +35,7 @@ class ReviewNoteController extends Controller
 
         // Lookups for the folder rail and the New / Edit note modal.
         $subjects = Subject::orderBy('id')->get(['id', 'code', 'name']);
-        $topics   = DB::table('topics')
+        $topics   = CurriculumScope::restrictForStudent(DB::table('topics'), $studentId)
             ->orderBy('subject_id')->orderBy('name')
             ->get(['id', 'subject_id', 'name']);
 

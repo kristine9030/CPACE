@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Faculty;
 
 use App\Http\Controllers\Controller;
 
+use App\Models\CurriculumVersion;
 use App\Models\Question;
 use App\Models\QuestionVariant;
 use App\Models\Subject;
@@ -11,6 +12,7 @@ use App\Models\Topic;
 use App\Services\AiQuestionAssistantService;
 use App\Services\BrandedXlsxReport;
 use App\Services\QuestionParaphraser;
+use App\Support\CurriculumScope;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -44,12 +46,29 @@ class TestBankController extends Controller
             'this_week' => (clone $statsBase)->where('questions.created_at', '>=', now()->subDays(7))->count(),
         ];
 
+        $draftId = CurriculumScope::draftId();
+
         return view('faculty.test-bank', [
             'questions' => $questions,
             'stats'     => $stats,
             'subjects'  => $this->subjectsFor(Auth::user())->orderBy('id')->get(),
             'filters'   => $request->only(['search', 'subject', 'type', 'difficulty', 'status']),
+            'draftCurriculum' => $draftId ? CurriculumVersion::find($draftId) : null,
+            'showingDraft'    => CurriculumScope::testBankShowsDraft(),
         ]);
+    }
+
+    /**
+     * Switch the Test Bank between the published curriculum and the draft the
+     * chair is preparing, so faculty can get the draft's questions ready
+     * before it goes live. Remembered for the session.
+     */
+    public function switchCurriculum(Request $request)
+    {
+        $request->validate(['curriculum' => 'required|in:current,draft']);
+        session([CurriculumScope::TEST_BANK_SESSION_KEY => $request->input('curriculum')]);
+
+        return redirect()->route('faculty.test-bank');
     }
 
     /**
@@ -57,11 +76,12 @@ class TestBankController extends Controller
      * the current faculty member is assigned to (chair/admin see everything).
      * "All Subjects" in the UI therefore still only ever means "all of my
      * assigned subjects" for a faculty member, never the whole test bank.
+     * Only the curriculum the Test Bank is showing (published or draft).
      */
     private function scopedQuestionQuery(\App\Models\User $user)
     {
-        $query = Question::query()
-            ->join('topics', 'topics.id', '=', 'questions.topic_id')
+        $query = CurriculumScope::restrictTo(Question::query()
+            ->join('topics', 'topics.id', '=', 'questions.topic_id'), CurriculumScope::testBankVersionId())
             ->join('subjects', 'subjects.id', '=', 'topics.subject_id');
 
         if (! $user->isChair()) {
@@ -227,7 +247,7 @@ class TestBankController extends Controller
     {
         return view('faculty.question-form', [
             'subjects'    => $this->subjectsFor(Auth::user())
-                ->with(['topics' => fn ($query) => $query->where('is_active', true)->orderBy('sort_order')])
+                ->with(['topics' => fn ($query) => $query->inCurriculum(CurriculumScope::testBankVersionId())->where('is_active', true)->orderBy('sort_order')])
                 ->orderBy('id')->get(),
             'editMode'    => false,
         ]);
@@ -247,6 +267,18 @@ class TestBankController extends Controller
 
     /** Message shown (as a friendly modal, not a hard error page) when a faculty member strays outside their assigned subjects. */
     private const NOT_ASSIGNED_MESSAGE = "You're not assigned to this subject, so you can't manage its questions. Ask your Program Chair for access if you think this is a mistake.";
+
+    private const ARCHIVED_MESSAGE = 'That topic belongs to an archived curriculum, which is kept as read-only history. Add or move questions into the current (or draft) curriculum instead.';
+
+    /** Archived curricula are history: their questions can't be added to or moved. */
+    private function isArchivedTopic(Topic $topic): bool
+    {
+        if (! CurriculumScope::enabled() || $topic->curriculum_version_id === null) {
+            return false;
+        }
+
+        return ! in_array((int) $topic->curriculum_version_id, array_filter([CurriculumScope::activeId(), CurriculumScope::draftId()]), true);
+    }
 
     /** Whether this faculty member is allowed to manage questions in the given subject. Chair/admin can manage everything. */
     private function canManageSubject(\App\Models\User $user, int $subjectId): bool
@@ -307,9 +339,13 @@ class TestBankController extends Controller
     public function store(Request $request)
     {
         $data = $this->validateQuestion($request);
+        $topic = Topic::findOrFail($data['topic_id']);
 
-        if (! $this->canManageSubject(Auth::user(), Topic::findOrFail($data['topic_id'])->subject_id)) {
+        if (! $this->canManageSubject(Auth::user(), $topic->subject_id)) {
             return redirect()->route('faculty.test-bank')->with('warning', self::NOT_ASSIGNED_MESSAGE);
+        }
+        if ($this->isArchivedTopic($topic)) {
+            return redirect()->route('faculty.test-bank')->with('warning', self::ARCHIVED_MESSAGE);
         }
 
         DB::transaction(function () use ($data, $request) {
@@ -340,8 +376,14 @@ class TestBankController extends Controller
             return redirect()->route('faculty.test-bank')->with('warning', self::NOT_ASSIGNED_MESSAGE);
         }
 
+        // Offer the topics of the curriculum this question belongs to, so moving
+        // it never silently jumps it into another curriculum version.
+        $versionId = $question->topic->curriculum_version_id;
+
         return view('faculty.question-form', [
-            'subjects'       => $this->subjectsFor(Auth::user())->with('topics')->orderBy('id')->get(),
+            'subjects'       => $this->subjectsFor(Auth::user())
+                ->with(['topics' => fn ($query) => $query->inCurriculum($versionId)])
+                ->orderBy('id')->get(),
             'editMode'       => true,
             'question'       => $question,
             'currentSubject' => $question->topic->subject_id,
@@ -388,11 +430,15 @@ class TestBankController extends Controller
         $question = Question::with('topic')->findOrFail($id);
         $data = $this->validateQuestion($request);
 
+        $newTopic = Topic::findOrFail($data['topic_id']);
         $canManage = $this->canManageSubject(Auth::user(), $question->topic->subject_id)
-            && $this->canManageSubject(Auth::user(), Topic::findOrFail($data['topic_id'])->subject_id);
+            && $this->canManageSubject(Auth::user(), $newTopic->subject_id);
 
         if (! $canManage) {
             return redirect()->route('faculty.test-bank')->with('warning', self::NOT_ASSIGNED_MESSAGE);
+        }
+        if ($this->isArchivedTopic($question->topic) || $this->isArchivedTopic($newTopic)) {
+            return redirect()->route('faculty.test-bank')->with('warning', self::ARCHIVED_MESSAGE);
         }
 
         DB::transaction(function () use ($question, $data, $request) {

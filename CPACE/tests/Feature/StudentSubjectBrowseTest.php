@@ -19,7 +19,7 @@ use Tests\TestCase;
 class StudentSubjectBrowseTest extends TestCase
 {
     private const TABLES = [
-        'performance_records', 'materials', 'questions', 'topics', 'subjects',
+        'performance_records', 'materials', 'questions', 'topics', 'subjects', 'curriculum_versions',
         'notifications', 'messages', 'conversation_participants', 'conversations', 'student_profiles', 'users',
     ];
 
@@ -69,6 +69,7 @@ class StudentSubjectBrowseTest extends TestCase
         });
         Schema::create('student_profiles', function (Blueprint $table) {
             $table->unsignedBigInteger('user_id')->primary();
+            $table->string('batch_year', 9)->nullable();
         });
         Schema::create('subjects', function (Blueprint $table) {
             $table->id();
@@ -78,9 +79,17 @@ class StudentSubjectBrowseTest extends TestCase
             $table->boolean('is_active')->default(true);
             $table->timestamps();
         });
+        Schema::create('curriculum_versions', function (Blueprint $table) {
+            $table->increments('id');
+            $table->string('label', 80);
+            $table->string('effective_from_batch', 9)->nullable();
+            $table->string('effective_to_batch', 9)->nullable();
+            $table->string('status', 10)->default('draft');
+        });
         Schema::create('topics', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('subject_id');
+            $table->unsignedInteger('curriculum_version_id')->nullable();
             $table->unsignedBigInteger('parent_id')->nullable();
             $table->string('name');
             $table->integer('sort_order')->default(0);
@@ -122,6 +131,7 @@ class StudentSubjectBrowseTest extends TestCase
         foreach (self::TABLES as $table) {
             Schema::dropIfExists($table);
         }
+        \App\Support\CurriculumScope::flush();
         parent::tearDown();
     }
 
@@ -146,6 +156,76 @@ class StudentSubjectBrowseTest extends TestCase
 
             return $subject->weak_count === 1 && $subject->overall_attempts === 20 && $subject->overall_accuracy === 75;
         });
+    }
+
+    public function test_a_curriculum_change_does_not_erase_a_students_history_on_an_archived_topic(): void
+    {
+        $student = $this->student();
+        $subjectId = DB::table('subjects')->insertGetId(['code' => 'FAR', 'name' => 'Financial Accounting', 'passing_threshold' => 75, 'created_at' => now(), 'updated_at' => now()]);
+
+        $archivedVersion = DB::table('curriculum_versions')->insertGetId(['label' => 'Old', 'status' => 'archived']);
+        $activeVersion = DB::table('curriculum_versions')->insertGetId(['label' => 'New', 'status' => 'active']);
+
+        $oldTopicId = DB::table('topics')->insertGetId(['subject_id' => $subjectId, 'curriculum_version_id' => $archivedVersion, 'name' => 'Inventory (old)', 'created_at' => now(), 'updated_at' => now()]);
+        $newTopicId = DB::table('topics')->insertGetId(['subject_id' => $subjectId, 'curriculum_version_id' => $activeVersion, 'name' => 'Inventory (new)', 'created_at' => now(), 'updated_at' => now()]);
+        DB::table('performance_records')->insert(['student_id' => $student->id, 'topic_id' => $oldTopicId, 'total_attempts' => 10, 'correct_count' => 5]);
+        \App\Support\CurriculumScope::flush();
+
+        $response = $this->actingAs($student)->get(route('subjects'));
+
+        $response->assertOk();
+        $response->assertViewHas('subjects', function ($subjects) use ($subjectId) {
+            $subject = $subjects->firstWhere('id', $subjectId);
+
+            // The weak topic and its attempts are from the ARCHIVED curriculum,
+            // but must still be counted — a curriculum change never erases
+            // recorded history.
+            return $subject->weak_count === 1
+                && $subject->overall_attempts === 10
+                && $subject->overall_accuracy === 50
+                // Only the active curriculum's topic is offered to browse/study now.
+                && $subject->topic_count === 1;
+        });
+
+        $this->actingAs($student)->get(route('subjects.show', $subjectId))
+            ->assertOk()
+            ->assertViewHas('overallAccuracy', 50)
+            ->assertViewHas('overallAttempts', 10)
+            ->assertSee('Inventory (new)')
+            ->assertDontSee('Inventory (old)');
+    }
+
+    public function test_students_in_different_batches_browse_their_own_curriculums_topics(): void
+    {
+        $subjectId = DB::table('subjects')->insertGetId(['code' => 'FAR', 'name' => 'Financial Accounting', 'created_at' => now(), 'updated_at' => now()]);
+        $oldVersion = DB::table('curriculum_versions')->insertGetId(['label' => 'Old', 'status' => 'archived', 'effective_to_batch' => '2026-2027']);
+        $newVersion = DB::table('curriculum_versions')->insertGetId(['label' => 'New', 'status' => 'active', 'effective_from_batch' => '2027-2028']);
+        DB::table('topics')->insert(['subject_id' => $subjectId, 'curriculum_version_id' => $oldVersion, 'name' => 'Topic From Old Curriculum', 'created_at' => now(), 'updated_at' => now()]);
+        DB::table('topics')->insert(['subject_id' => $subjectId, 'curriculum_version_id' => $newVersion, 'name' => 'Topic From New Curriculum', 'created_at' => now(), 'updated_at' => now()]);
+
+        $olderStudent = $this->student();
+        DB::table('student_profiles')->insert(['user_id' => $olderStudent->id, 'batch_year' => '2026-2027']);
+        \App\Support\CurriculumScope::flush();
+
+        // A 2026-2027 student is still in 4th year after the new curriculum
+        // is published for 2027-2028 onward — they keep studying theirs.
+        $this->actingAs($olderStudent)->get(route('subjects.show', $subjectId))
+            ->assertOk()
+            ->assertSee('Topic From Old Curriculum')
+            ->assertDontSee('Topic From New Curriculum');
+
+        $newerStudent = User::create([
+            'role_id' => Role::STUDENT, 'first_name' => 'New', 'last_name' => 'Student',
+            'email' => 'newer@example.com', 'password' => Hash::make('password'),
+            'is_active' => true, 'setup_completed_at' => now(),
+        ]);
+        DB::table('student_profiles')->insert(['user_id' => $newerStudent->id, 'batch_year' => '2027-2028']);
+        \App\Support\CurriculumScope::flush();
+
+        $this->actingAs($newerStudent)->get(route('subjects.show', $subjectId))
+            ->assertOk()
+            ->assertSee('Topic From New Curriculum')
+            ->assertDontSee('Topic From Old Curriculum');
     }
 
     public function test_an_inactive_subject_cannot_be_opened(): void

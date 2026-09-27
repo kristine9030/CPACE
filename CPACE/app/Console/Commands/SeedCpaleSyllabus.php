@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\Topic;
+use App\Support\CurriculumScope;
 use Illuminate\Console\Command;
 
 /**
@@ -46,10 +47,14 @@ class SeedCpaleSyllabus extends Command
 
     private function upsert(int $subjectId, ?int $parentId, string $name, int $order, array $children): void
     {
-        $topic = Topic::firstOrCreate(
-            ['subject_id' => $subjectId, 'parent_id' => $parentId, 'name' => $name],
-            ['sort_order' => $order, 'is_active' => true]
-        );
+        // Seeds into the published curriculum only; a draft or archived
+        // version is never touched.
+        $match = ['subject_id' => $subjectId, 'parent_id' => $parentId, 'name' => $name];
+        if (CurriculumScope::enabled()) {
+            $match['curriculum_version_id'] = CurriculumScope::activeId();
+        }
+
+        $topic = Topic::firstOrCreate($match, ['sort_order' => $order, 'is_active' => true]);
 
         $childOrder = 0;
         foreach ($children as $childName => $grandchildren) {

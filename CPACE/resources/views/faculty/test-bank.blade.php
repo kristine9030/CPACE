@@ -209,6 +209,27 @@
 
     {{-- Status and validation messages surface as SweetAlert popups via partials.alerts --}}
 
+    {{-- Only while the Program Chair is preparing a new curriculum: switch the
+         Test Bank to the draft to get its questions ready before it goes live. --}}
+    @if(!empty($draftCurriculum))
+        <form method="POST" action="{{ route('faculty.test-bank.curriculum') }}"
+              style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:12px 16px;margin-bottom:16px;border-radius:12px;border:1px solid {{ $showingDraft ? '#fcd34d' : '#e5e7eb' }};background:{{ $showingDraft ? '#fffbeb' : '#fff' }};font-size:12px;">
+            @csrf
+            <div>
+                <i class="fas fa-book-bookmark" style="color:#b45309;"></i>
+                @if($showingDraft)
+                    You're preparing questions for the <strong>draft curriculum "{{ $draftCurriculum->label }}"</strong>. Students can't see these until the Program Chair publishes it.
+                @else
+                    A new curriculum, <strong>"{{ $draftCurriculum->label }}"</strong>, is being prepared. You're viewing the <strong>current</strong> curriculum's questions.
+                @endif
+            </div>
+            <input type="hidden" name="curriculum" value="{{ $showingDraft ? 'current' : 'draft' }}">
+            <button class="btn btn-ghost" style="padding:7px 14px;font-size:12px;">
+                <i class="fas fa-right-left"></i> {{ $showingDraft ? 'Back to current curriculum' : 'Switch to draft curriculum' }}
+            </button>
+        </form>
+    @endif
+
     <!-- STATS -->
     @php
         $activePct = $stats['total'] > 0 ? round($stats['active'] / $stats['total'] * 100) : 0;

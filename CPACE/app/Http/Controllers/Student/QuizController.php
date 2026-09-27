@@ -14,6 +14,7 @@ use App\Services\RivalTierService;
 use App\Services\SpacedRepetitionScheduler;
 use App\Services\StreakService;
 use App\Services\WeaknessDetector;
+use App\Support\CurriculumScope;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -68,9 +69,9 @@ class QuizController extends Controller
     {
         $studentId = Auth::id();
 
-        $subjects = Subject::where('is_active', true)->orderBy('id')->get()->map(function ($subject) {
+        $subjects = Subject::where('is_active', true)->orderBy('id')->get()->map(function ($subject) use ($studentId) {
             $subject->question_count = Question::where('is_active', true)
-                ->whereIn('topic_id', $subject->topics()->where('is_active', true)->pluck('id'))
+                ->whereIn('topic_id', $subject->topics()->forStudent($studentId)->where('is_active', true)->pluck('id'))
                 ->count();
             return $subject;
         });
@@ -219,9 +220,10 @@ class QuizController extends Controller
         // How many questions the student wants this sitting (capped to the max).
         $count = max(1, min((int) $data['count'], self::MAX_QUIZ_LENGTH));
 
-        // Draw from every chosen subject's active topics. A multi-subject quiz
-        // is a "mixed" session (subject_id = null); a single subject keeps its id.
-        $topicIds = DB::table('topics')->whereIn('subject_id', $subjectIds)->where('is_active', true)->pluck('id');
+        // Draw from every chosen subject's active topics, in the curriculum
+        // covering this student's batch. A multi-subject quiz is a "mixed"
+        // session (subject_id = null); a single subject keeps its id.
+        $topicIds = CurriculumScope::restrictForStudent(DB::table('topics'), Auth::id())->whereIn('subject_id', $subjectIds)->where('is_active', true)->pluck('id');
         $sessionSubjectId = $subjectIds->count() === 1 ? $subjectIds->first() : null;
 
         // A requested focus topic is honoured only if it belongs to the subject.

@@ -21,7 +21,7 @@ use Tests\TestCase;
 class ChairFacultyActivityTest extends TestCase
 {
     private const TABLES = [
-        'quiz_answers', 'question_variants', 'questions', 'topics', 'subjects', 'faculty_subjects',
+        'quiz_answers', 'question_variants', 'questions', 'topics', 'curriculum_versions', 'subjects', 'faculty_subjects',
         'notifications', 'messages', 'conversation_participants', 'conversations', 'users',
     ];
 
@@ -76,9 +76,15 @@ class ChairFacultyActivityTest extends TestCase
             $table->boolean('is_active')->default(true);
             $table->timestamps();
         });
+        Schema::create('curriculum_versions', function (Blueprint $table) {
+            $table->increments('id');
+            $table->string('label', 80);
+            $table->string('status', 10)->default('draft');
+        });
         Schema::create('topics', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('subject_id');
+            $table->unsignedInteger('curriculum_version_id')->nullable();
             $table->string('name');
             $table->timestamps();
         });
@@ -113,6 +119,7 @@ class ChairFacultyActivityTest extends TestCase
         foreach (self::TABLES as $table) {
             Schema::dropIfExists($table);
         }
+        \App\Support\CurriculumScope::flush();
         parent::tearDown();
     }
 
@@ -146,6 +153,33 @@ class ChairFacultyActivityTest extends TestCase
         });
         $response->assertSee('Mine');
         $response->assertDontSee('Not mine');
+    }
+
+    public function test_a_question_authored_under_an_archived_curriculum_does_not_count_as_current_activity(): void
+    {
+        $chair = $this->chair();
+        $faculty = $this->faculty('me@example.com');
+        $subjectId = DB::table('subjects')->insertGetId(['code' => 'FAR', 'name' => 'Financial Accounting', 'created_at' => now(), 'updated_at' => now()]);
+
+        $archivedVersion = DB::table('curriculum_versions')->insertGetId(['label' => 'Old', 'status' => 'archived']);
+        $activeVersion = DB::table('curriculum_versions')->insertGetId(['label' => 'New', 'status' => 'active']);
+        $oldTopicId = DB::table('topics')->insertGetId(['subject_id' => $subjectId, 'curriculum_version_id' => $archivedVersion, 'name' => 'Retired Topic', 'created_at' => now(), 'updated_at' => now()]);
+        DB::table('topics')->insertGetId(['subject_id' => $subjectId, 'curriculum_version_id' => $activeVersion, 'name' => 'Current Topic', 'created_at' => now(), 'updated_at' => now()]);
+
+        DB::table('questions')->insert([
+            'topic_id' => $oldTopicId, 'created_by' => $faculty->id, 'question_text' => 'From the old curriculum',
+            'created_at' => now(), 'updated_at' => now(),
+        ]);
+        \App\Support\CurriculumScope::flush();
+
+        // "Needs Your Attention" would call this faculty "never contributed"
+        // for the current curriculum, so its own activity page must agree
+        // rather than surfacing the retired-curriculum question as if it counted.
+        $response = $this->actingAs($chair)->get(route('chair.faculty.activity', $faculty->id));
+
+        $response->assertOk();
+        $response->assertViewHas('stats', fn ($stats) => $stats['questions'] === 0);
+        $response->assertDontSee('From the old curriculum');
     }
 
     public function test_a_faculty_member_with_no_contributions_shows_a_zero_state(): void
