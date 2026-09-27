@@ -39,6 +39,8 @@
         .risk-low    { background:#e8f1fb; color:#2a5da8; }
         .risk-medium { background:#fdf0d8; color:#9a6200; }
         .risk-high   { background:#fdeceb; color:#a32318; }
+        .risk-silent { background:#fdeceb; color:#a32318; margin-left:4px; }
+        .risk-auto   { background:#eef0f4; color:#556; margin-left:4px; }
         .live-dot { width:8px; height:8px; border-radius:50%; background:var(--green); display:inline-block; animation:live-pulse 2s infinite; }
         @keyframes live-pulse {
             0%   { box-shadow:0 0 0 0 rgba(30,158,99,.45); }
@@ -139,7 +141,11 @@
                         <div class="tile-name">${esc(s.student)}</div>
                         <div class="tile-meta">
                             <span>${s.submitted ? (s.percent !== null ? s.percent + '%' : 'submitted') : s.answered + ' answered'}</span>
-                            ${s.risk_level !== 'none' ? `<span class="risk risk-${s.risk_level}" title="${s.flags} flag(s), weighted score ${s.risk_score}">${esc(s.risk_label)}</span>` : ''}
+                            <span>
+                                ${s.risk_level !== 'none' ? `<span class="risk risk-${s.risk_level}" title="${s.flags} flag(s), weighted score ${s.risk_score}">${esc(s.risk_label)}</span>` : ''}
+                                ${!s.submitted && s.silent_for !== null && s.silent_for > 150 ? `<span class="risk risk-silent" title="The page has not reported in for ${Math.floor(s.silent_for / 60)} minute(s). It may be offline, asleep or blocked.">No signal ${Math.floor(s.silent_for / 60)}m</span>` : ''}
+                                ${s.face_check_off ? '<span class="risk risk-auto" title="The in-browser face check could not run on this device, so there are no face flags for this sitting.">no face check</span>' : ''}
+                            </span>
                         </div>
                     </div>
                 </a>`).join('');

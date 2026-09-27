@@ -8,7 +8,7 @@
     on the quiz's start page, the browser shows a sharing indicator throughout,
     and revoking either one is itself flagged.
 
-    Expects $eventUrl and $captureUrl. The host page calls
+    Expects $eventUrl, $captureUrl and $heartbeatUrl. The host page calls
     window.quizProctorFinish() just before it submits.
 --}}
 <style>
@@ -56,7 +56,7 @@
 
 <script>
 (function () {
-    const URLS = { event: @json($eventUrl), capture: @json($captureUrl), csrf: @json(csrf_token()) };
+    const URLS = { event: @json($eventUrl), capture: @json($captureUrl), heartbeat: @json($heartbeatUrl), csrf: @json(csrf_token()) };
     const canvas = document.getElementById('qpShot');
     const camFeed = document.getElementById('qpCam');
     const screenFeed = document.getElementById('qpScreen');
@@ -197,6 +197,16 @@
     const seen = { none: 0, multi: 0, away: 0 };
     const lastRaised = {};
 
+    // A face check that never ran must be visible to the reviewer, or a clean
+    // face record would look like good behaviour. Informational: no points.
+    let faceReported = false, faceErrors = 0;
+    function faceUnavailable(reason) {
+        faceDetector = null;
+        if (faceReported) return;
+        faceReported = true;
+        flag('face_check_unavailable', String(reason || 'could not load').slice(0, 120));
+    }
+
     async function loadFaceDetector() {
         try {
             const vision = await import(VISION + '/+esm');
@@ -205,7 +215,7 @@
                 baseOptions: { modelAssetPath: FACE_MODEL }, runningMode: 'VIDEO', minDetectionConfidence: 0.6,
             });
             setInterval(faceTick, FACE.everyMs);
-        } catch (e) { faceDetector = null; }
+        } catch (e) { faceUnavailable(e && e.message); }
     }
 
     function isLookingAway(detection) {
@@ -229,8 +239,8 @@
         if (!faceDetector || !camOk || submitting) return;
         if (!camFeed.videoWidth || camFeed.readyState < 2) return;
         let faces;
-        try { faces = faceDetector.detectForVideo(camFeed, performance.now()).detections || []; }
-        catch (e) { return; }
+        try { faces = faceDetector.detectForVideo(camFeed, performance.now()).detections || []; faceErrors = 0; }
+        catch (e) { if (++faceErrors >= 5) faceUnavailable('detector kept failing'); return; }
 
         if (faces.length === 0) {
             seen.none++; seen.multi = 0; seen.away = 0;
@@ -309,7 +319,17 @@
         document.removeEventListener('click', once);
     }, { once: true });
 
+    // Pulse for the server: any long silence is recorded as a "no signal" flag,
+    // so a page that stops reporting can't pass for a student who behaved.
+    // Started before the permission prompts so waiting on them isn't a gap.
+    function beat() {
+        try { fetch(URLS.heartbeat, { method: 'POST', headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': URLS.csrf }, keepalive: true }).catch(() => {}); } catch (e) { /* ignore */ }
+    }
+
     async function start() {
+        beat();
+        setInterval(beat, 30000);
+
         try {
             attachCamera(await navigator.mediaDevices.getUserMedia({ video: { width: 640 } }));
         } catch (e) {

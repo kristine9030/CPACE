@@ -248,6 +248,7 @@ trait BuildsMockExamSchema
             $table->unsignedBigInteger('student_id');
             $table->dateTime('started_at');
             $table->dateTime('submitted_at')->nullable();
+            $table->dateTime('last_seen_at')->nullable();
             $table->json('answers')->nullable();
             $table->unsignedSmallInteger('score')->default(0);
             $table->unsignedSmallInteger('total_points')->default(0);

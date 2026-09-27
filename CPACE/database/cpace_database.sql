@@ -261,6 +261,7 @@ CREATE TABLE faculty_quiz_attempts (
     student_id          INT UNSIGNED NOT NULL,
     started_at          DATETIME NOT NULL,
     submitted_at        DATETIME NULL,
+    last_seen_at        DATETIME NULL,                     -- last heartbeat/flag/frame from the page (monitored quizzes)
     answers             JSON NULL,                         -- {"<item_id>": "B"}
     score               SMALLINT UNSIGNED NOT NULL DEFAULT 0,
     total_points        SMALLINT UNSIGNED NOT NULL DEFAULT 0,
@@ -525,6 +526,7 @@ CREATE TABLE mock_exam_attempts (
     student_id    INT UNSIGNED NOT NULL,
     started_at    DATETIME NOT NULL,
     submitted_at  DATETIME NULL,
+    last_seen_at  DATETIME NULL,                       -- last heartbeat/flag/frame from the page
     answers       JSON NULL,                           -- {"<item_id>": "B"} - autosaved during the sitting
     score         SMALLINT UNSIGNED NOT NULL DEFAULT 0,
     total_points  SMALLINT UNSIGNED NOT NULL DEFAULT 0,

@@ -6,6 +6,7 @@ use App\Models\MockExamAttempt;
 use App\Models\MockExamProctorCapture;
 use App\Models\MockExamProctorEvent;
 use App\Support\ProctorCaptureRetention;
+use App\Support\ProctorHeartbeat;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -49,6 +50,18 @@ class MockExamProctorController extends Controller
             'meta' => ['nullable', 'string', 'max:255'],
         ]);
 
+        ProctorHeartbeat::touch($attempt, MockExamProctorEvent::class);
+
+        // A note, not a flag: recorded once, and never added to flag_count.
+        if (in_array($data['type'], MockExamProctorEvent::INFO_TYPES, true)) {
+            MockExamProctorEvent::firstOrCreate(
+                ['attempt_id' => $attempt->id, 'type' => $data['type']],
+                ['occurred_at' => now(), 'meta' => $data['meta'] ?? null],
+            );
+
+            return response()->json(['recorded' => true, 'flags' => $attempt->fresh()->flag_count]);
+        }
+
         DB::transaction(function () use ($attempt, $data) {
             MockExamProctorEvent::create([
                 'attempt_id' => $attempt->id,
@@ -65,10 +78,24 @@ class MockExamProctorController extends Controller
         return response()->json(['recorded' => true, 'flags' => $attempt->fresh()->flag_count]);
     }
 
+    /**
+     * The runner's pulse (every ~30s). Its only job is to show the page is
+     * still alive; see ProctorHeartbeat for how a long silence is recorded.
+     */
+    public function heartbeat(MockExamAttempt $attempt)
+    {
+        $this->assertOwnLiveAttempt($attempt);
+
+        ProctorHeartbeat::touch($attempt, MockExamProctorEvent::class);
+
+        return response()->json(['ok' => true]);
+    }
+
     /** Store one camera or screen frame. */
     public function capture(Request $request, MockExamAttempt $attempt)
     {
         $this->assertOwnLiveAttempt($attempt);
+        ProctorHeartbeat::touch($attempt, MockExamProctorEvent::class);
 
         $data = $request->validate([
             'kind' => ['required', 'string', 'in:' . implode(',', MockExamProctorCapture::KINDS)],

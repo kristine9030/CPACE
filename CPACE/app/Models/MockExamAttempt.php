@@ -19,12 +19,13 @@ class MockExamAttempt extends Model
 
     protected $fillable = [
         'exam_id', 'student_id', 'started_at', 'submitted_at', 'answers',
-        'score', 'total_points', 'percent', 'is_late', 'flag_count', 'status',
+        'score', 'total_points', 'percent', 'is_late', 'flag_count', 'status', 'last_seen_at',
     ];
 
     protected $casts = [
         'started_at' => 'datetime',
         'submitted_at' => 'datetime',
+        'last_seen_at' => 'datetime',
         'answers' => 'array',
         'score' => 'integer',
         'total_points' => 'integer',

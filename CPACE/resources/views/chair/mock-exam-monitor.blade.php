@@ -47,6 +47,7 @@
         .risk-medium { background:#fdf0d8; color:#9a6200; }
         .risk-high   { background:#fdeceb; color:#a32318; }
         .risk-auto   { background:#eef0f4; color:#556; margin-left:4px; }
+        .risk-silent { background:#fdeceb; color:#a32318; margin-left:4px; }
         .stat-sub { font-size:11px; color:var(--muted); margin-top:6px; }
         .sim-row { display:flex; align-items:center; gap:14px; padding:11px 0; border-bottom:1px solid #f0f1f4; font-size:12.5px; flex-wrap:wrap; }
         .sim-row:last-child { border-bottom:none; }
@@ -209,6 +210,8 @@
                             <span>
                                 ${s.risk_level !== 'none' ? `<span class="risk risk-${s.risk_level}" title="${s.flags} flag(s), weighted score ${s.risk_score}">${escapeHtml(s.risk_label)}</span>` : ''}
                                 ${s.auto_closed ? '<span class="risk risk-auto" title="Time ran out and the server graded the last autosave">auto-closed</span>' : ''}
+                                ${s.silent_for !== null && s.silent_for > 150 ? `<span class="risk risk-silent" title="The page has not reported in for ${Math.floor(s.silent_for / 60)} minute(s). It may be offline, asleep or blocked.">No signal ${Math.floor(s.silent_for / 60)}m</span>` : ''}
+                                ${s.face_check_off ? '<span class="risk risk-auto" title="The in-browser face check could not run on this device, so there are no face flags for this sitting.">no face check</span>' : ''}
                             </span>
                         </div>
                     </div>
