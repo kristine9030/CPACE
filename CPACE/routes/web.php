@@ -152,6 +152,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/mock-exams/{mockExam}/review', [MockExamReviewController::class, 'review'])->name('mock-exams.review');
         Route::put('/mock-exams/{mockExam}', [MockExamReviewController::class, 'update'])->name('mock-exams.update');
         Route::post('/mock-exams/{mockExam}/return', [MockExamReviewController::class, 'returnForRevision'])->name('mock-exams.return');
+        Route::put('/mock-exams/{mockExam}/audience', [MockExamReviewController::class, 'audience'])->name('mock-exams.audience');
         Route::post('/mock-exams/{mockExam}/publish', [MockExamReviewController::class, 'publish'])->name('mock-exams.publish');
         Route::post('/mock-exams/{mockExam}/close', [MockExamReviewController::class, 'close'])->name('mock-exams.close');
         Route::get('/mock-exams/{mockExam}/monitor', [MockExamReviewController::class, 'monitor'])->name('mock-exams.monitor');

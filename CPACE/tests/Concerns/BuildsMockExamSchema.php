@@ -29,7 +29,7 @@ trait BuildsMockExamSchema
         'mock_exams', 'mock_exam_events',
         'points_log', 'weakness_reports', 'spaced_repetition_items', 'performance_records',
         'question_choices', 'questions', 'topics', 'faculty_subjects', 'subjects',
-        'student_profiles', 'notifications', 'messages', 'conversation_participants',
+        'student_profiles', 'sections', 'notifications', 'messages', 'conversation_participants',
         'conversations', 'users',
     ];
 
@@ -90,10 +90,19 @@ trait BuildsMockExamSchema
 
         Schema::create('student_profiles', function (Blueprint $table) {
             $table->unsignedBigInteger('user_id')->primary();
+            $table->unsignedTinyInteger('year_level')->nullable();
             $table->string('section')->nullable();
             $table->integer('total_points')->default(0);
             $table->integer('streak_days')->default(0);
             $table->boolean('is_alumni')->default(false);
+        });
+
+        Schema::create('sections', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->unsignedTinyInteger('year_level')->nullable();
+            $table->boolean('is_active')->default(true);
+            $table->timestamps();
         });
 
         Schema::create('subjects', function (Blueprint $table) {
@@ -206,6 +215,8 @@ trait BuildsMockExamSchema
             $table->dateTime('published_at')->nullable();
             $table->dateTime('closed_at')->nullable();
             $table->unsignedInteger('version')->default(1);
+            $table->json('audience_years')->nullable();
+            $table->json('audience_sections')->nullable();
             $table->timestamps();
         });
         Schema::create('mock_exam_topics', function (Blueprint $table) {

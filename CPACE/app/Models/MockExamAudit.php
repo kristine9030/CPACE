@@ -25,6 +25,7 @@ class MockExamAudit extends Model
     public const ACTION_RETURNED = 'returned';
     public const ACTION_PUBLISHED = 'published';
     public const ACTION_CLOSED = 'closed';
+    public const ACTION_AUDIENCE = 'audience_changed';
 
     protected $fillable = ['exam_id', 'user_id', 'action', 'details'];
 
@@ -54,6 +55,7 @@ class MockExamAudit extends Model
             self::ACTION_RETURNED => 'returned it for revision',
             self::ACTION_PUBLISHED => 'published the exam',
             self::ACTION_CLOSED => 'closed the exam',
+            self::ACTION_AUDIENCE => 'changed who can take the exam',
             default => $this->action,
         };
     }

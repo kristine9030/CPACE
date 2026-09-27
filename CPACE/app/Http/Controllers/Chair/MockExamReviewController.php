@@ -11,6 +11,7 @@ use App\Models\MockExamAudit;
 use App\Models\MockExamEvent;
 use App\Models\MockExamProctorCapture;
 use App\Models\MockExamProctorEvent;
+use App\Models\Section;
 use App\Models\Subject;
 use App\Models\Topic;
 use App\Services\MockExamGrader;
@@ -106,6 +107,8 @@ class MockExamReviewController extends Controller
             'topicTree' => $this->topicsFor($mockExam->subject_id),
             'selectedTopics' => $mockExam->topics->pluck('id')->all(),
             'readOnly' => ! $mockExam->isEditable(),
+            'yearLabels' => Section::YEAR_LABELS,
+            'sections' => Section::where('is_active', true)->orderBy('year_level')->orderBy('name')->get(),
         ]);
     }
 
@@ -146,6 +149,39 @@ class MockExamReviewController extends Controller
     }
 
     /**
+     * Choose which year levels and sections may take this exam. Separate from
+     * the paper's own edit lock: who is admitted can be widened or narrowed
+     * after publishing (a class that missed the sitting, a wrong year ticked)
+     * without touching a single question.
+     */
+    public function audience(Request $request, MockExam $mockExam)
+    {
+        abort_if($mockExam->isClosed(), 403, 'A closed exam can no longer change its audience.');
+
+        $data = $request->validate([
+            'audience_years' => ['nullable', 'array'],
+            'audience_years.*' => ['integer', 'between:1,6'],
+            'audience_sections' => ['nullable', 'array'],
+            'audience_sections.*' => ['string', 'max:100'],
+        ]);
+
+        $years = collect($data['audience_years'] ?? [])->map(fn ($y) => (int) $y)->unique()->sort()->values()->all();
+        // Only real, active sections - a tampered name would silently admit nobody.
+        $sections = Section::where('is_active', true)
+            ->whereIn('name', $data['audience_sections'] ?? [])
+            ->when($years, fn ($q) => $q->whereIn('year_level', $years))
+            ->orderBy('year_level')->orderBy('name')
+            ->pluck('name')->all();
+
+        $mockExam->update(['audience_years' => $years ?: null, 'audience_sections' => $sections ?: null]);
+
+        MockExamAuditor::record($mockExam, Auth::user(), MockExamAudit::ACTION_AUDIENCE, $mockExam->audienceLabel());
+
+        return redirect()->route('chair.mock-exams.review', $mockExam)
+            ->with('status', 'Audience saved: ' . $mockExam->audienceLabel() . '.');
+    }
+
+    /**
      * Publish: the one-way door. Resolves the day's event (creating the redeem
      * code if this is the first exam published for that date) and freezes the
      * paper.
@@ -154,6 +190,12 @@ class MockExamReviewController extends Controller
     {
         $this->assertEditable($mockExam);
         $this->assertExamComplete($mockExam);
+
+        // The code is shared by whoever hears it, so an exam must not go live
+        // until the Chair has said which year levels may sit it.
+        if (empty($mockExam->audience_years)) {
+            return back()->withErrors(['audience' => 'Choose which year levels may take this exam before publishing.']);
+        }
 
         DB::transaction(function () use ($mockExam) {
             $event = MockExamEvent::forDate($mockExam->scheduled_at, Auth::id());
