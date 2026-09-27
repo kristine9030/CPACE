@@ -120,6 +120,9 @@
                                 <a class="btn btn-ghost btn-sm" href="{{ route('faculty.mock-exams.monitor', $exam) }}">
                                     <i class="fas fa-desktop"></i> Monitor
                                 </a>
+                                <a class="btn btn-ghost btn-sm" href="{{ route('faculty.mock-exams.results', $exam) }}">
+                                    <i class="fas fa-chart-column"></i> Results
+                                </a>
                             @endif
                         @endif
                         @if($exam->isDraft())

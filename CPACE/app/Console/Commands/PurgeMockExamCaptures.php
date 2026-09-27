@@ -33,6 +33,15 @@ class PurgeMockExamCaptures extends Command
             ->where('scheduled_at', '<', $cutoff)
             ->pluck('id');
 
+        // Monitored class quizzes have no scheduled sitting, so their frames are
+        // simply swept by age.
+        if (! $dryRun && \Illuminate\Support\Facades\Schema::hasTable('quiz_proctor_captures')) {
+            $quizFrames = app(\App\Support\QuizProctorRetention::class)->purgeOlderThan($days);
+            if ($quizFrames > 0) {
+                $this->info("Purged {$quizFrames} class quiz capture(s).");
+            }
+        }
+
         if ($examIds->isEmpty()) {
             $this->info('No mock exams older than ' . $days . ' days. Nothing to purge.');
 

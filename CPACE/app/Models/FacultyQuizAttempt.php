@@ -12,7 +12,7 @@ class FacultyQuizAttempt extends Model
 {
     protected $fillable = [
         'quiz_id', 'student_id', 'started_at', 'submitted_at',
-        'answers', 'score', 'total_points', 'percent',
+        'answers', 'score', 'total_points', 'percent', 'flag_count',
     ];
 
     protected $casts = [
@@ -22,6 +22,7 @@ class FacultyQuizAttempt extends Model
         'score' => 'integer',
         'total_points' => 'integer',
         'percent' => 'float',
+        'flag_count' => 'integer',
     ];
 
     public function quiz()
@@ -32,6 +33,16 @@ class FacultyQuizAttempt extends Model
     public function student()
     {
         return $this->belongsTo(User::class, 'student_id');
+    }
+
+    public function proctorEvents()
+    {
+        return $this->hasMany(QuizProctorEvent::class, 'attempt_id')->orderBy('occurred_at');
+    }
+
+    public function captures()
+    {
+        return $this->hasMany(QuizProctorCapture::class, 'attempt_id')->orderByDesc('captured_at');
     }
 
     public function isSubmitted(): bool

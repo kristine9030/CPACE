@@ -270,6 +270,13 @@
         </div>
     @endif
 
+    @if($quiz->monitor_enabled)
+        <div class="insights-head" style="justify-content:space-between;">
+            <span><i class="fas fa-video"></i> This quiz is monitored</span>
+            <a href="{{ route('faculty.quizzes.monitor', $quiz->id) }}" class="btn btn-outline"><i class="fas fa-desktop"></i> Open monitor</a>
+        </div>
+    @endif
+
     <div class="layout">
         <div class="card scroll-card">
             <div class="card-head">Student submissions <small>{{ $attempts->count() }}</small></div>
@@ -278,7 +285,7 @@
             @else
                 <div class="scroll-body">
                 <table>
-                    <thead><tr><th>Student</th><th>Status</th><th>Score</th><th>%</th><th>Submitted</th></tr></thead>
+                    <thead><tr><th>Student</th><th>Status</th><th>Score</th><th>%</th>@if($quiz->monitor_enabled)<th>Integrity</th>@endif<th>Submitted</th><th></th></tr></thead>
                     <tbody>
                     @foreach($attempts as $a)
                         <tr>
@@ -300,7 +307,22 @@
                                     <span class="pct {{ $p >= 75 ? 'good' : ($p >= 50 ? 'mid' : 'bad') }}">{{ round($p, 1) }}%</span>
                                 @else — @endif
                             </td>
+                            @if($quiz->monitor_enabled)
+                                <td>
+                                    @php $lvl = \App\Support\ProctorRisk::level((int) ($riskScores[$a->id] ?? 0)); @endphp
+                                    @if($lvl === 'none')
+                                        <span style="color:#bbb;font-size:12px;">Clean</span>
+                                    @else
+                                        <span class="pill" style="background:{{ $lvl === 'high' ? '#fdeceb' : ($lvl === 'medium' ? '#fdf0d8' : '#e8f1fb') }};color:{{ $lvl === 'high' ? '#a32318' : ($lvl === 'medium' ? '#9a6200' : '#2a5da8') }};" title="{{ $a->flag_count }} flag(s)">{{ \App\Support\ProctorRisk::label($lvl) }}</span>
+                                    @endif
+                                </td>
+                            @endif
                             <td style="font-size:12px;color:#777;">{{ $a->submitted_at?->format('M j, g:i A') ?? 'started ' . $a->started_at->diffForHumans() }}</td>
+                            <td style="text-align:right;">
+                                @if($a->isSubmitted())
+                                    <a href="{{ route('faculty.quizzes.attempt', [$quiz->id, $a->id]) }}" class="btn btn-outline" style="padding:5px 11px;font-size:12px;"><i class="fas fa-file-lines"></i> Result</a>
+                                @endif
+                            </td>
                         </tr>
                     @endforeach
                     </tbody>

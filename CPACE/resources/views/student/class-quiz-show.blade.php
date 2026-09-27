@@ -42,6 +42,17 @@
         .score-big { text-align:center; padding:8px 0 14px; }
         .score-big b { font-size:40px; color:#7B1D1D; line-height:1; }
         .score-big span { display:block; font-size:12px; color:#999; margin-top:6px; }
+        .rules { margin:0 0 16px 18px; font-size:12.5px; color:#444; line-height:1.65; }
+        .rules li { margin-bottom:5px; }
+        .perm { display:flex; align-items:center; gap:12px; border:1px solid #e5e7eb; border-radius:12px; padding:11px 14px; margin-bottom:9px; }
+        .perm.ok { border-color:#a7f3d0; background:#ecfdf5; }
+        .perm.fail { border-color:#fecaca; background:#fef2f2; }
+        .perm .ic { width:34px; height:34px; border-radius:9px; background:#f3f4f6; display:flex; align-items:center; justify-content:center; color:#7B1D1D; }
+        .perm-body { flex:1; min-width:0; }
+        .perm-t { font-size:13px; font-weight:700; }
+        .perm-s { font-size:11.5px; color:#6b7280; }
+        .perm button { border:1px solid #e0e0e0; background:#fff; border-radius:8px; padding:7px 14px; font-size:12px; font-weight:600; font-family:'Poppins',sans-serif; cursor:pointer; }
+        .btn:disabled { opacity:.5; cursor:not-allowed; }
         @media (max-width:480px) { .facts { grid-template-columns:1fr; } .head, .body { padding-left:20px; padding-right:20px; } }
     </style>
 </head>
@@ -79,13 +90,32 @@
             @else
                 <div class="state s-open"><i class="fas fa-circle-check"></i><div>This quiz is open. You get <strong>one attempt</strong>{{ $quiz->time_limit_minutes ? ', and the timer starts as soon as you click Start' : '' }}.</div></div>
             @endif
+            @if($quiz->monitor_enabled)
+                <div class="instr" style="white-space:normal;background:#fdf2f2;border-color:#f5cdc9;color:#7a2a24;">
+                    <strong style="color:#a32318;">This quiz is monitored</strong>
+                    <ul class="rules" style="margin-bottom:0;">
+                        <li>Your <strong>camera</strong> is photographed periodically, and your <strong>entire screen</strong> is captured now and then.</li>
+                        <li>Your browser checks, <strong>on your own device</strong>, that exactly one face is in view and that you are facing the screen. Only a flagged moment is photographed.</li>
+                        <li>Switching tabs, leaving fullscreen, or an absent, extra or turned-away face is <strong>recorded and flagged</strong> to your instructor.</li>
+                        <li>If your camera or screen sharing stops, the quiz is <strong>locked</strong> until you share again. The timer keeps running.</li>
+                        <li>Copy and paste are blocked, and you must use <strong>one monitor</strong>.</li>
+                        <li>If you finish with no flags, your recordings are deleted as soon as you submit, apart from your opening camera photo. They are visible only to your instructor.</li>
+                    </ul>
+                </div>
+                <div class="perm" id="permCam"><div class="ic"><i class="fas fa-video"></i></div><div class="perm-body"><div class="perm-t">Camera</div><div class="perm-s" id="permCamMsg">Not granted yet</div></div><button type="button" id="grantCam">Allow</button></div>
+                <div class="perm" id="permScreen"><div class="ic"><i class="fas fa-display"></i></div><div class="perm-body"><div class="perm-t">Screen sharing</div><div class="perm-s" id="permScreenMsg">Not shared yet</div></div><button type="button" id="grantScreen">Share</button></div>
+                <label style="display:flex;gap:9px;align-items:flex-start;font-size:13px;margin:14px 0;cursor:pointer;">
+                    <input type="checkbox" id="agree" style="margin-top:3px;">
+                    <span>I understand my camera and screen will be recorded during this quiz, and I agree to take it under these conditions.</span>
+                </label>
+            @endif
             <form method="POST" action="{{ route('class-quiz.start', $quiz->share_token) }}"
                   @unless($attempt)
                   data-confirm="{{ $quiz->time_limit_minutes ? 'Your ' . $quiz->time_limit_minutes . '-minute timer starts now and cannot be paused.' : 'You get one attempt at this quiz.' }}"
                   data-confirm-title="Start the quiz?" data-confirm-ok="Yes, start" data-confirm-icon="question"
                   @endunless>
                 @csrf
-                <button class="btn btn-primary"><i class="fas fa-play"></i> {{ $attempt ? 'Continue quiz' : 'Start quiz' }}</button>
+                <button class="btn btn-primary" id="startBtn" @if($quiz->monitor_enabled) disabled @endif><i class="fas fa-play"></i> {{ $attempt ? 'Continue quiz' : 'Start quiz' }}</button>
             </form>
             <a href="{{ route('class-quizzes') }}" class="btn btn-ghost"><i class="fas fa-arrow-left"></i> All class quizzes</a>
         @else
@@ -99,6 +129,61 @@
         @endif
     </div>
 </div>
+@if($quiz->monitor_enabled && ! $isOwner && $canTake && ! $done && $avail === 'open')
+<script>
+(function () {
+    // The browser will not open the camera or read the screen without an explicit
+    // prompt and a user gesture, so the student is let in only once both are
+    // actually granted. Both streams are released here; the quiz page re-acquires them.
+    const startBtn = document.getElementById('startBtn');
+    let camOk = false, screenOk = false;
+
+    function refresh() {
+        startBtn.disabled = !(camOk && screenOk && document.getElementById('agree').checked);
+    }
+    function paint(id, msgId, ok, text) {
+        const box = document.getElementById(id);
+        box.classList.toggle('ok', ok === true);
+        box.classList.toggle('fail', ok === false);
+        document.getElementById(msgId).textContent = text;
+        refresh();
+    }
+    document.getElementById('agree').addEventListener('change', refresh);
+
+    document.getElementById('grantCam').addEventListener('click', async () => {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            stream.getTracks().forEach(t => t.stop());
+            camOk = true;
+            paint('permCam', 'permCamMsg', true, 'Allowed');
+        } catch (e) {
+            camOk = false;
+            paint('permCam', 'permCamMsg', false, 'Blocked. Allow camera access in your browser, then try again.');
+        }
+    });
+
+    document.getElementById('grantScreen').addEventListener('click', async () => {
+        try {
+            const stream = await navigator.mediaDevices.getDisplayMedia({
+                video: { displaySurface: 'monitor' }, selfBrowserSurface: 'exclude', monitorTypeSurfaces: 'include',
+            });
+            const surface = stream.getVideoTracks()[0]?.getSettings?.().displaySurface;
+            stream.getTracks().forEach(t => t.stop());
+            if (surface && surface !== 'monitor') {
+                screenOk = false;
+                paint('permScreen', 'permScreenMsg', false, 'You shared a window or tab. Choose "Entire screen" and try again.');
+                return;
+            }
+            screenOk = true;
+            paint('permScreen', 'permScreenMsg', true, 'Shared. You will be asked again when the quiz opens.');
+        } catch (e) {
+            screenOk = false;
+            paint('permScreen', 'permScreenMsg', false, 'Not shared. You must share your entire screen to take this quiz.');
+        }
+    });
+})();
+</script>
+@endif
 @include('partials.alerts')
 </body>
 </html>

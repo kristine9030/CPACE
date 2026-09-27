@@ -10,6 +10,7 @@ use App\Models\Subject;
 use App\Services\PerformanceRecorder;
 use App\Services\SpacedRepetitionScheduler;
 use App\Services\WeaknessDetector;
+use App\Support\QuizProctorRetention;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -356,6 +357,14 @@ class ClassQuizController extends Controller
             app(WeaknessDetector::class)->syncMany(Auth::id(), array_keys($topicTally));
         } catch (\Throwable $e) {
             report($e);
+        }
+
+        if ($quiz->monitor_enabled) {
+            try {
+                app(QuizProctorRetention::class)->afterSubmit($attempt);
+            } catch (\Throwable $e) {
+                report($e);
+            }
         }
 
         return redirect()->route('class-quiz.result', $token);
