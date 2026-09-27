@@ -195,6 +195,7 @@ class MockExamReviewTest extends TestCase
             'duration_minutes' => 180,
             'total_items' => 1,
             'submitted_for_review_at' => now(),
+            'audience_years' => [4, 5],
         ]);
 
         DB::table('mock_exam_items')->insert([

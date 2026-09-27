@@ -93,6 +93,19 @@ class MockExamController extends Controller
             return back()->withErrors(['access_code' => 'That exam day has no published exams yet. Try again closer to the schedule.'])->withInput();
         }
 
+        // The code is shared by whoever hears it, so being able to type it is
+        // not enough - the student's own year level and section must be among
+        // those the Chair opened at least one of that day's exams to.
+        $profile = $student->studentProfile;
+        $admitted = $event->exams()
+            ->where('status', MockExam::STATUS_PUBLISHED)
+            ->get()
+            ->contains(fn (MockExam $e) => $e->admitsStudent($profile?->year_level, $profile?->section));
+
+        if (! $admitted) {
+            return back()->withErrors(['access_code' => 'This mock exam is not open to your year level or section. If you think that is a mistake, ask your Program Chair.'])->withInput();
+        }
+
         // Redeeming twice is harmless and common (students re-paste the code),
         // so it succeeds quietly instead of erroring.
         MockExamRegistration::firstOrCreate(
@@ -298,6 +311,9 @@ class MockExamController extends Controller
         $this->assertStudent();
         abort_if(Auth::user()->hasAlumniAccess(), 403, 'Mock exams are locked for alumni accounts.');
 
+        $profile = Auth::user()->studentProfile;
+        abort_unless($exam->admitsStudent($profile?->year_level, $profile?->section), 403, 'This mock exam is not open to your year level or section.');
+
         abort_unless(
             in_array($exam->status, [MockExam::STATUS_PUBLISHED, MockExam::STATUS_CLOSED], true)
                 && $exam->event_id !== null
@@ -315,11 +331,15 @@ class MockExamController extends Controller
             return collect();
         }
 
+        $profile = Auth::user()->studentProfile;
+
         return MockExam::with('subject')
             ->whereIn('event_id', $eventIds)
             ->whereIn('status', [MockExam::STATUS_PUBLISHED, MockExam::STATUS_CLOSED])
             ->orderBy('scheduled_at')
-            ->get();
+            ->get()
+            ->filter(fn (MockExam $e) => $e->admitsStudent($profile?->year_level, $profile?->section))
+            ->values();
     }
 
     private function attemptsFor(int $studentId, $examIds)

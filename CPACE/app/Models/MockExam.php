@@ -35,6 +35,7 @@ class MockExam extends Model
         'event_id', 'subject_id', 'created_by', 'title', 'status', 'scheduled_at',
         'duration_minutes', 'total_items', 'topic_mode', 'question_mode', 'review_note',
         'submitted_for_review_at', 'reviewed_by', 'published_by', 'published_at', 'closed_at', 'version',
+        'audience_years', 'audience_sections',
     ];
 
     protected $casts = [
@@ -45,7 +46,56 @@ class MockExam extends Model
         'duration_minutes' => 'integer',
         'total_items' => 'integer',
         'version' => 'integer',
+        'audience_years' => 'array',
+        'audience_sections' => 'array',
     ];
+
+    /**
+     * Who may take this exam. The redeem code is shared by everyone who hears
+     * it, so the code alone must not be enough: the Chair names the year levels
+     * (and optionally sections) that are allowed, and a student outside them is
+     * refused at redeem and at every later step.
+     *
+     * No year levels recorded = open to everyone, which is how exams published
+     * before this control existed keep working. Sections only narrow within
+     * the chosen years.
+     */
+    public function hasAudience(): bool
+    {
+        return ! empty($this->audience_years) || ! empty($this->audience_sections);
+    }
+
+    public function admitsStudent(?int $yearLevel, ?string $section): bool
+    {
+        if (! $this->hasAudience()) {
+            return true;
+        }
+
+        $years = array_map('intval', (array) $this->audience_years);
+        if ($years && ($yearLevel === null || ! in_array((int) $yearLevel, $years, true))) {
+            return false;
+        }
+
+        $sections = array_map(fn ($s) => mb_strtolower(trim((string) $s)), (array) $this->audience_sections);
+        if ($sections) {
+            return $section !== null && in_array(mb_strtolower(trim($section)), $sections, true);
+        }
+
+        return true;
+    }
+
+    /** "4th Year, 5th Year · BSA 4-A" for the Chair and student screens. */
+    public function audienceLabel(): string
+    {
+        if (! $this->hasAudience()) {
+            return 'All students';
+        }
+
+        $years = collect((array) $this->audience_years)->map(fn ($y) => Section::YEAR_LABELS[(int) $y] ?? "Year {$y}")->implode(', ');
+        $sections = collect((array) $this->audience_sections)->implode(', ');
+
+        return trim($years . ($years && $sections ? ' · ' : '') . $sections);
+    }
 
     public function event()
     {
