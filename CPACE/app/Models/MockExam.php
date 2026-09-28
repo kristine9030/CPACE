@@ -35,7 +35,7 @@ class MockExam extends Model
         'event_id', 'subject_id', 'created_by', 'title', 'status', 'scheduled_at',
         'duration_minutes', 'total_items', 'topic_mode', 'question_mode', 'review_note',
         'submitted_for_review_at', 'reviewed_by', 'published_by', 'published_at', 'closed_at', 'version',
-        'audience_years', 'audience_sections',
+        'audience_years', 'audience_sections', 'audience_batch_years',
     ];
 
     protected $casts = [
@@ -48,24 +48,25 @@ class MockExam extends Model
         'version' => 'integer',
         'audience_years' => 'array',
         'audience_sections' => 'array',
+        'audience_batch_years' => 'array',
     ];
 
     /**
      * Who may take this exam. The redeem code is shared by everyone who hears
      * it, so the code alone must not be enough: the Chair names the year levels
-     * (and optionally sections) that are allowed, and a student outside them is
-     * refused at redeem and at every later step.
+     * (and optionally sections and enrollment batches) that are allowed, and a
+     * student outside them is refused at redeem and at every later step.
      *
      * No year levels recorded = open to everyone, which is how exams published
-     * before this control existed keep working. Sections only narrow within
-     * the chosen years.
+     * before this control existed keep working. Sections and batch years each
+     * narrow independently within the chosen years.
      */
     public function hasAudience(): bool
     {
-        return ! empty($this->audience_years) || ! empty($this->audience_sections);
+        return ! empty($this->audience_years) || ! empty($this->audience_sections) || ! empty($this->audience_batch_years);
     }
 
-    public function admitsStudent(?int $yearLevel, ?string $section): bool
+    public function admitsStudent(?int $yearLevel, ?string $section, ?string $batchYear = null): bool
     {
         if (! $this->hasAudience()) {
             return true;
@@ -77,14 +78,19 @@ class MockExam extends Model
         }
 
         $sections = array_map(fn ($s) => mb_strtolower(trim((string) $s)), (array) $this->audience_sections);
-        if ($sections) {
-            return $section !== null && in_array(mb_strtolower(trim($section)), $sections, true);
+        if ($sections && ! ($section !== null && in_array(mb_strtolower(trim($section)), $sections, true))) {
+            return false;
+        }
+
+        $batchYears = array_map(fn ($b) => mb_strtolower(trim((string) $b)), (array) $this->audience_batch_years);
+        if ($batchYears && ! ($batchYear !== null && in_array(mb_strtolower(trim($batchYear)), $batchYears, true))) {
+            return false;
         }
 
         return true;
     }
 
-    /** "4th Year, 5th Year · BSA 4-A" for the Chair and student screens. */
+    /** "4th Year, 5th Year · BSA 4-A · 2026-2027" for the Chair and student screens. */
     public function audienceLabel(): string
     {
         if (! $this->hasAudience()) {
@@ -93,8 +99,9 @@ class MockExam extends Model
 
         $years = collect((array) $this->audience_years)->map(fn ($y) => Section::YEAR_LABELS[(int) $y] ?? "Year {$y}")->implode(', ');
         $sections = collect((array) $this->audience_sections)->implode(', ');
+        $batchYears = collect((array) $this->audience_batch_years)->implode(', ');
 
-        return trim($years . ($years && $sections ? ' · ' : '') . $sections);
+        return collect([$years, $sections, $batchYears])->filter()->implode(' · ');
     }
 
     /**
@@ -106,17 +113,21 @@ class MockExam extends Model
     {
         $years = array_map('intval', (array) $this->audience_years);
         $sections = array_map(fn ($s) => mb_strtolower(trim((string) $s)), (array) $this->audience_sections);
+        $batchYears = array_map(fn ($b) => mb_strtolower(trim((string) $b)), (array) $this->audience_batch_years);
 
         return User::query()
             ->where('role_id', Role::STUDENT)
             ->where('is_active', true)
-            ->whereHas('studentProfile', function ($q) use ($years, $sections) {
+            ->whereHas('studentProfile', function ($q) use ($years, $sections, $batchYears) {
                 $q->where(fn ($q2) => $q2->whereNull('is_alumni')->orWhere('is_alumni', false));
                 if ($years) {
                     $q->whereIn('year_level', $years);
                 }
                 if ($sections) {
                     $q->whereRaw('LOWER(TRIM(section)) IN (' . implode(',', array_fill(0, count($sections), '?')) . ')', $sections);
+                }
+                if ($batchYears) {
+                    $q->whereRaw('LOWER(TRIM(batch_year)) IN (' . implode(',', array_fill(0, count($batchYears), '?')) . ')', $batchYears);
                 }
             })
             ->count();

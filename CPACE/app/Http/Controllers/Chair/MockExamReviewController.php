@@ -15,6 +15,7 @@ use App\Models\Section;
 use App\Models\Subject;
 use App\Models\Topic;
 use App\Services\MockExamGrader;
+use App\Support\BatchYear;
 use App\Support\MockExamAuditor;
 use App\Support\MockExamSimilarity;
 use App\Support\ProctorHeartbeat;
@@ -109,6 +110,7 @@ class MockExamReviewController extends Controller
             'readOnly' => ! $mockExam->isEditable(),
             'yearLabels' => Section::YEAR_LABELS,
             'sections' => Section::where('is_active', true)->orderBy('year_level')->orderBy('name')->get(),
+            'batchYears' => $this->availableBatchYears(),
         ]);
     }
 
@@ -164,6 +166,12 @@ class MockExamReviewController extends Controller
             'audience_years.*' => ['integer', 'between:1,6'],
             'audience_sections' => ['nullable', 'array'],
             'audience_sections.*' => ['string', 'max:100'],
+            'audience_batch_years' => ['nullable', 'array'],
+            'audience_batch_years.*' => ['string', function ($attribute, $value, $fail) {
+                if (! BatchYear::isValid($value)) {
+                    $fail('That batch year is not a valid "2026-2027"-shaped label.');
+                }
+            }],
         ]);
 
         $years = collect($data['audience_years'] ?? [])->map(fn ($y) => (int) $y)->unique()->sort()->values()->all();
@@ -173,8 +181,15 @@ class MockExamReviewController extends Controller
             ->when($years, fn ($q) => $q->whereIn('year_level', $years))
             ->orderBy('year_level')->orderBy('name')
             ->pluck('name')->all();
+        // Batch year isn't tied to a lookup table like sections are, so any
+        // well-formed label ("2026-2027") is accepted as-is.
+        $batchYears = collect($data['audience_batch_years'] ?? [])->unique()->sort()->values()->all();
 
-        $mockExam->update(['audience_years' => $years ?: null, 'audience_sections' => $sections ?: null]);
+        $mockExam->update([
+            'audience_years' => $years ?: null,
+            'audience_sections' => $sections ?: null,
+            'audience_batch_years' => $batchYears ?: null,
+        ]);
 
         MockExamAuditor::record($mockExam, Auth::user(), MockExamAudit::ACTION_AUDIENCE, $mockExam->audienceLabel());
 

@@ -146,6 +146,7 @@ class MockExamController extends Controller
             'bankCounts' => $this->bankCounts($mockExam->subject_id),
             'yearLabels' => Section::YEAR_LABELS,
             'sections' => Section::where('is_active', true)->orderBy('year_level')->orderBy('name')->get(),
+            'batchYears' => $this->availableBatchYears(),
         ]);
     }
 

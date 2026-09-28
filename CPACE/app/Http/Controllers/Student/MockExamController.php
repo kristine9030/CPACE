@@ -264,7 +264,7 @@ class MockExamController extends Controller
         abort_unless(in_array($exam->status, [MockExam::STATUS_PUBLISHED, MockExam::STATUS_CLOSED], true), 403, 'This mock exam is not available.');
 
         $profile = Auth::user()->studentProfile;
-        abort_unless($exam->admitsStudent($profile?->year_level, $profile?->section), 403, 'This mock exam is not open to your year level or section.');
+        abort_unless($exam->admitsStudent($profile?->year_level, $profile?->section, $profile?->batch_year), 403, 'This mock exam is not open to your year level, section, or batch.');
     }
 
     /** Every published (or closed) exam whose audience this student matches. */
@@ -276,7 +276,7 @@ class MockExamController extends Controller
             ->whereIn('status', [MockExam::STATUS_PUBLISHED, MockExam::STATUS_CLOSED])
             ->orderBy('scheduled_at')
             ->get()
-            ->filter(fn (MockExam $e) => $e->admitsStudent($profile?->year_level, $profile?->section))
+            ->filter(fn (MockExam $e) => $e->admitsStudent($profile?->year_level, $profile?->section, $profile?->batch_year))
             ->values();
     }
 
