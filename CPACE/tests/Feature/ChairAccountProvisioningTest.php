@@ -368,6 +368,39 @@ class ChairAccountProvisioningTest extends TestCase
         );
     }
 
+    public function test_select_all_matching_filters_marks_every_matching_student_not_just_the_ids_sent(): void
+    {
+        // Guards against the bug where the header "select all" checkbox only
+        // ever reached the rows rendered on the current page: confirming
+        // "select all matching" must reach every student that matches the
+        // active filters, including ones never sent in student_ids[].
+        $chair = $this->chair();
+        $yearFour = [
+            $this->student('y4-a@example.com'),
+            $this->student('y4-b@example.com'),
+            $this->student('y4-c@example.com'),
+        ];
+        foreach ($yearFour as $student) {
+            DB::table('student_profiles')->where('user_id', $student->id)->update(['year_level' => 4]);
+        }
+        $otherYear = $this->student('y2@example.com');
+        DB::table('student_profiles')->where('user_id', $otherYear->id)->update(['year_level' => 2]);
+
+        // Only the first Year 4 student's id is sent — simulating a page
+        // that shows one of the three matches — but select_all should still
+        // pick up the other two via the year filter.
+        $this->actingAs($chair)->post(route('chair.students.bulk-alumni'), [
+            'select_all' => '1',
+            'year' => '4',
+            'student_ids' => [$yearFour[0]->id],
+        ])->assertRedirect();
+
+        foreach ($yearFour as $student) {
+            $this->assertTrue((bool) DB::table('student_profiles')->where('user_id', $student->id)->value('is_alumni'));
+        }
+        $this->assertFalse((bool) DB::table('student_profiles')->where('user_id', $otherYear->id)->value('is_alumni'));
+    }
+
     public function test_a_new_student_is_given_the_current_school_year_as_their_batch(): void
     {
         Mail::fake();
