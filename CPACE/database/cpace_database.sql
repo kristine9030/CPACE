@@ -175,6 +175,8 @@ CREATE TABLE topics (
     sort_order  INT UNSIGNED NOT NULL DEFAULT 0,
     tos_weight  DECIMAL(5,2) NULL,              -- PRC Table of Specifications weight %
     tos_items   SMALLINT UNSIGNED NULL,         -- PRC Table of Specifications no. of items
+    gap_flagged_at DATETIME NULL,               -- first seen short of tos_items (curriculum:fill-gaps)
+    gap_warned_at  DATETIME NULL,               -- final warning sent before AI substitutes
     is_active   BOOLEAN NOT NULL DEFAULT TRUE,
     KEY idx_topics_version (curriculum_version_id),
     CONSTRAINT fk_topics_subject FOREIGN KEY (subject_id) REFERENCES subjects(id),
@@ -217,12 +219,16 @@ CREATE TABLE curriculum_import_items (
 CREATE TABLE questions (
     id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     topic_id        SMALLINT UNSIGNED NOT NULL,
-    created_by      INT UNSIGNED NOT NULL,             -- faculty user_id
+    created_by      INT UNSIGNED NULL,                 -- faculty user_id (NULL for AI substitutes)
+    source          VARCHAR(20) NOT NULL DEFAULT 'faculty', -- faculty | ai_substitute
     question_text   TEXT NOT NULL,
     question_type   ENUM('mcq','true_false') NOT NULL DEFAULT 'mcq',
     difficulty      ENUM('easy','moderate','difficult') NOT NULL DEFAULT 'moderate',
     explanation     TEXT NULL,                         -- shown after answer in Training Mode
     is_active       BOOLEAN NOT NULL DEFAULT TRUE,
+    review_status   VARCHAR(10) NULL,                  -- AI substitutes: pending | approved | rejected
+    reviewed_by     INT UNSIGNED NULL,
+    reviewed_at     DATETIME NULL,
     created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT fk_q_topic   FOREIGN KEY (topic_id)   REFERENCES topics(id),

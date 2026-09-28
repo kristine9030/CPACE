@@ -17,6 +17,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 
 class TestBankController extends Controller
 {
@@ -55,6 +56,7 @@ class TestBankController extends Controller
             'filters'   => $request->only(['search', 'subject', 'type', 'difficulty', 'status']),
             'draftCurriculum' => $draftId ? CurriculumVersion::find($draftId) : null,
             'showingDraft'    => CurriculumScope::testBankShowsDraft(),
+            'aiPendingCount'  => Schema::hasColumn('questions', 'source') ? (clone $statsBase)->pendingAiReview()->count() : 0,
         ]);
     }
 
@@ -442,6 +444,16 @@ class TestBankController extends Controller
         }
 
         DB::transaction(function () use ($question, $data, $request) {
+            $review = [];
+            // Publishing a pending AI substitute from the edit form is the faculty approving it.
+            if ($question->isPendingAiReview() && $request->boolean('is_active')) {
+                $review = [
+                    'review_status' => Question::REVIEW_APPROVED,
+                    'reviewed_by'   => Auth::id(),
+                    'reviewed_at'   => now(),
+                ];
+            }
+
             $question->update([
                 'topic_id'      => $data['topic_id'],
                 'question_text' => $data['question_text'],
@@ -449,7 +461,7 @@ class TestBankController extends Controller
                 'difficulty'    => self::DIFFICULTY_MAP[$data['difficulty']],
                 'explanation'   => $data['explanation'] ?? null,
                 'is_active'     => $request->boolean('is_active'),
-            ]);
+            ] + $review);
 
             $this->replaceChoices($question, $data);
         });

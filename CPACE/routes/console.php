@@ -13,6 +13,10 @@ Schedule::command('mock-exam:purge-captures')->dailyAt('02:00');
 // the student's own pages also do this on the fly; this catches the rest.
 Schedule::command('mock-exam:close-expired')->everyFiveMinutes();
 
+// Topics short of their TOS item count: remind faculty, then after the grace
+// period draft AI substitutes that wait for faculty/chair review.
+Schedule::command('curriculum:fill-gaps')->dailyAt('03:00')->withoutOverlapping();
+
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
