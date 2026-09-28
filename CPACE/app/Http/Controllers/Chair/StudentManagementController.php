@@ -225,10 +225,26 @@ class StudentManagementController extends Controller
      */
     public function bulkMarkAlumni(Request $request)
     {
-        $data = $request->validate([
-            'student_ids' => ['required', 'array', 'min:1'],
-            'student_ids.*' => ['integer'],
-        ]);
+        // "Select all matching filters" mode: the checkbox in the header only
+        // ever reaches the rows rendered on the current page, so when the
+        // chair confirms "select all N students" we re-run the same
+        // search/year/section/status filters used by index() instead of
+        // trusting whatever ids happened to be on that page.
+        if ($request->boolean('select_all')) {
+            $filters = $this->filters($request);
+            $rows = $this->applyFilters($this->studentRows(), $filters)
+                ->where('is_alumni', false);
+            $data = ['student_ids' => $rows->pluck('id')->values()->all()];
+        } else {
+            $data = $request->validate([
+                'student_ids' => ['required', 'array', 'min:1'],
+                'student_ids.*' => ['integer'],
+            ]);
+        }
+
+        if (empty($data['student_ids'])) {
+            return back()->with('error', 'No matching students were selected.');
+        }
 
         $students = User::where('role_id', Role::STUDENT)
             ->whereIn('id', $data['student_ids'])

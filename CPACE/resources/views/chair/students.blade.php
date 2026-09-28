@@ -419,6 +419,21 @@
             </div>
         </div>
 
+        {{-- Shown once every checkbox on the current page is ticked, so a
+             filtered result that spans several pages can be acted on in one
+             go instead of page by page. --}}
+        <div id="selectAllBar" style="display:none;padding:8px 24px;background:#fdf6e3;border-bottom:1px solid #f0e4bd;font-size:12.5px;color:#7a5c00;">
+            All <strong id="selectAllBarPageCount"></strong> students on this page are selected.
+            <button type="button" id="selectAllMatchingBtn" style="background:none;border:0;padding:0;color:#7B1D1D;font-weight:700;font-size:12.5px;cursor:pointer;text-decoration:underline;">
+                Select all <span id="selectAllBarTotal"></span> students matching your filters
+            </button>
+        </div>
+        <div id="selectAllActiveBar" style="display:none;padding:8px 24px;background:#fdeceb;border-bottom:1px solid #f5cdc9;font-size:12.5px;color:#8d2b22;">
+            All <strong id="selectAllActiveTotal"></strong> students matching your filters are selected.
+            <button type="button" id="clearSelectAllBtn" style="background:none;border:0;padding:0;color:#7B1D1D;font-weight:700;font-size:12.5px;cursor:pointer;text-decoration:underline;">
+                Clear selection
+            </button>
+        </div>
         <div class="table-wrap">
             <table>
                 <thead>
@@ -643,12 +658,30 @@
 
     // ── Bulk "Mark as Alumni" ───────────────────────────────────────────────
     // Alumni rows have no checkbox (they're already Alumni), so this only
-    // ever selects students who can still be marked.
+    // ever selects students who can still be marked. The header checkbox can
+    // only reach rows on the current page, so once every one of those is
+    // ticked we surface a "select all N matching your filters" prompt; that
+    // mode is submitted as select_all=1 + the active filters, and the
+    // server re-resolves the full matching set instead of trusting ids.
     const selectAll = document.getElementById('selectAllStudents');
     const rowChecks = () => Array.from(document.querySelectorAll('.student-select'));
     const bulkBtn = document.getElementById('bulkAlumniBtn');
     const bulkCount = document.getElementById('bulkSelectedCount');
     const bulkForm = document.getElementById('bulkAlumniForm');
+    const selectAllBar = document.getElementById('selectAllBar');
+    const selectAllBarPageCount = document.getElementById('selectAllBarPageCount');
+    const selectAllBarTotal = document.getElementById('selectAllBarTotal');
+    const selectAllMatchingBtn = document.getElementById('selectAllMatchingBtn');
+    const selectAllActiveBar = document.getElementById('selectAllActiveBar');
+    const selectAllActiveTotal = document.getElementById('selectAllActiveTotal');
+    const clearSelectAllBtn = document.getElementById('clearSelectAllBtn');
+    const totalMatching = {{ (int) $students->total() }};
+    let selectAllMode = false;
+
+    function exitSelectAllMode() {
+        selectAllMode = false;
+        selectAllActiveBar.style.display = 'none';
+    }
 
     function syncBulkBar() {
         const checked = rowChecks().filter(c => c.checked);
@@ -657,11 +690,29 @@
             selectAll.checked = all.length > 0 && checked.length === all.length;
             selectAll.indeterminate = checked.length > 0 && checked.length < all.length;
         }
-        if (checked.length > 0) {
+
+        // Offer "select all matching" only when this page doesn't already
+        // hold every matching student, and the page really is fully ticked.
+        const pageIsFull = all.length > 0 && checked.length === all.length;
+        if (pageIsFull && all.length < totalMatching && !selectAllMode) {
+            selectAllBarPageCount.textContent = all.length;
+            selectAllBarTotal.textContent = totalMatching;
+            selectAllBar.style.display = '';
+        } else {
+            selectAllBar.style.display = 'none';
+        }
+
+        if (selectAllMode && checked.length === all.length && all.length > 0) {
+            bulkBtn.style.display = '';
+            bulkCount.style.display = '';
+            bulkCount.textContent = totalMatching + ' selected (all matching filters)';
+        } else if (checked.length > 0) {
+            exitSelectAllMode();
             bulkBtn.style.display = '';
             bulkCount.style.display = '';
             bulkCount.textContent = checked.length + ' selected';
         } else {
+            exitSelectAllMode();
             bulkBtn.style.display = 'none';
             bulkCount.style.display = 'none';
         }
@@ -670,6 +721,7 @@
     if (selectAll) {
         selectAll.addEventListener('change', () => {
             rowChecks().forEach(c => { c.checked = selectAll.checked; });
+            if (!selectAll.checked) exitSelectAllMode();
             syncBulkBar();
         });
     }
@@ -677,22 +729,69 @@
         if (event.target.classList && event.target.classList.contains('student-select')) syncBulkBar();
     });
 
+    if (selectAllMatchingBtn) {
+        selectAllMatchingBtn.addEventListener('click', () => {
+            selectAllMode = true;
+            selectAllBar.style.display = 'none';
+            selectAllActiveTotal.textContent = totalMatching;
+            selectAllActiveBar.style.display = '';
+            bulkBtn.style.display = '';
+            bulkCount.style.display = '';
+            bulkCount.textContent = totalMatching + ' selected (all matching filters)';
+        });
+    }
+
+    if (clearSelectAllBtn) {
+        clearSelectAllBtn.addEventListener('click', () => {
+            exitSelectAllMode();
+            rowChecks().forEach(c => { c.checked = false; });
+            syncBulkBar();
+        });
+    }
+
     if (bulkBtn) {
         bulkBtn.addEventListener('click', async () => {
             const ids = rowChecks().filter(c => c.checked).map(c => c.value);
-            if (!ids.length) return;
+            const useSelectAll = selectAllMode;
+            if (!useSelectAll && !ids.length) return;
 
             const ok = await CPACE.confirm({
                 title: 'Mark as Alumni?',
-                text: ids.length === 1
-                    ? 'This student will be marked as Alumni.'
-                    : ids.length + ' students will be marked as Alumni.',
+                text: useSelectAll
+                    ? totalMatching + ' students matching your filters will be marked as Alumni.'
+                    : (ids.length === 1
+                        ? 'This student will be marked as Alumni.'
+                        : ids.length + ' students will be marked as Alumni.'),
                 confirmText: 'Yes, mark as Alumni',
                 icon: 'question',
             });
             if (!ok) return;
 
-            bulkForm.querySelectorAll('input[name="student_ids[]"]').forEach(el => el.remove());
+            bulkForm.querySelectorAll('input[name="student_ids[]"], input[name="select_all"], input[name="search"], input[name="year"], input[name="section"], input[name="status"]').forEach(el => el.remove());
+
+            if (useSelectAll) {
+                const flag = document.createElement('input');
+                flag.type = 'hidden';
+                flag.name = 'select_all';
+                flag.value = '1';
+                bulkForm.appendChild(flag);
+
+                const params = new URLSearchParams(window.location.search);
+                ['search', 'year', 'section', 'status'].forEach(key => {
+                    const value = params.get(key);
+                    if (value === null || value === '') return;
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = key;
+                    input.value = value;
+                    bulkForm.appendChild(input);
+                });
+
+                CPACE.loading('Marking students as Alumni...');
+                bulkForm.submit();
+                return;
+            }
+
             ids.forEach(id => {
                 const input = document.createElement('input');
                 input.type = 'hidden';
