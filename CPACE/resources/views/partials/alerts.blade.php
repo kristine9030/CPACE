@@ -422,5 +422,22 @@
 
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', flash);
     else flash();
+
+    /* ── Force a fresh page on back/forward ──────────────────────────────────
+       The server already sends Cache-Control: no-store on every authenticated
+       route (see PreventBackHistory middleware), which stops modern browsers
+       from bfcache-ing the page in the first place. This is the client-side
+       half of that same fix, for browsers that restore the page from history
+       anyway: `pageshow` fires with persisted=true when the page came back
+       from bfcache instead of a real request. Reloading forces the browser to
+       ask the server again, which re-checks the session — if it's still
+       valid nothing changes, if it was ended (logout, expiry, another tab)
+       the auth middleware bounces to login. Without this, the back button
+       could show a stale authenticated page with an old CSRF token baked in;
+       clicking anything on it then 419'd instead of doing what it looked
+       like it would do. */
+    window.addEventListener('pageshow', function (e) {
+        if (e.persisted) window.location.reload();
+    });
 })();
 </script>

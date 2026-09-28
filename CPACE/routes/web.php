@@ -74,7 +74,7 @@ Route::middleware('guest')->group(function () {
     Route::post('/reset-password', [AuthController::class, 'resetPassword'])->name('password.update');
 });
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'no-back-cache'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
     // First-login onboarding flow (change one-time password + build study plan)
@@ -317,6 +317,14 @@ Route::middleware('auth')->group(function () {
     Route::post('/messages/{conversation}/leave', [ChatController::class, 'leave'])->name('messages.leave');
     Route::get('/messages/attachments/{message}/download', [ChatController::class, 'download'])->name('messages.attachments.download');
 
+    // Student-only area (dashboard, subjects, quizzes, mock exams, calendar,
+    // achievements, review notes, performance/settings). Gated to isStudent()
+    // — see StudentMiddleware for why this matters. The token-based /q/{token}
+    // class-quiz routes and both proctoring ingest/playback blocks stay
+    // outside this gate on purpose (comments below explain each) — they're
+    // reachable by more than just the student and re-check authorisation
+    // themselves.
+    Route::middleware('student')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/subjects', [SubjectController::class, 'index'])->name('subjects');
     Route::get('/subjects/{subject}', [SubjectController::class, 'show'])->name('subjects.show');
@@ -330,10 +338,14 @@ Route::middleware('auth')->group(function () {
     Route::get('/quiz/{session}/take', [QuizController::class, 'take'])->name('quiz.take');
     Route::post('/quiz/{session}/submit', [QuizController::class, 'submit'])->name('quiz.submit');
     Route::get('/quiz/{session}/results', [QuizController::class, 'results'])->name('quiz.results');
-    // Class quizzes assigned by faculty. /q/{token} is the link a faculty
-    // member shares when announcing a quiz; guests are sent to login first.
     Route::get('/class-quizzes', [ClassQuizController::class, 'index'])->name('class-quizzes');
     Route::get('/class-quizzes/{subject}', [ClassQuizController::class, 'subject'])->name('class-quizzes.subject');
+    });
+
+    // Class quizzes assigned by faculty. /q/{token} is the link a faculty
+    // member shares when announcing a quiz; guests are sent to login first.
+    // Not student-only: the owning faculty can preview their own draft here
+    // too, so authorisation is re-checked inside the controller instead.
     Route::get('/q/{token}', [ClassQuizController::class, 'show'])->name('class-quiz.show');
     Route::post('/q/{token}/start', [ClassQuizController::class, 'start'])->name('class-quiz.start');
     Route::get('/q/{token}/take', [ClassQuizController::class, 'take'])->name('class-quiz.take');
@@ -346,6 +358,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/q/proctor/{attempt}/capture', [QuizProctorController::class, 'capture'])->name('class-quiz.proctor.capture');
     Route::get('/q/captures/{capture}', [QuizProctorController::class, 'show'])->name('class-quiz.capture');
     Route::delete('/q/attempts/{attempt}/captures', [QuizProctorController::class, 'destroy'])->name('class-quiz.captures.destroy');
+
+    Route::middleware('student')->group(function () {
     // Mock exams. No code to redeem: a published exam whose audience matches
     // this student's year level (and section, if narrowed) just appears; each
     // sitting then opens only inside its own scheduled window.
@@ -357,16 +371,19 @@ Route::middleware('auth')->group(function () {
     Route::post('/mock-exams/{mockExam}/autosave', [MockExamController::class, 'autosave'])->name('mock-exams.autosave');
     Route::post('/mock-exams/{mockExam}/submit', [MockExamController::class, 'submit'])->name('mock-exams.submit');
     Route::get('/mock-exams/{mockExam}/result', [MockExamController::class, 'result'])->name('mock-exams.result');
+    });
 
     // Proctoring ingest (student posts its own evidence) and playback (faculty
     // and chair read it). Both re-check authorisation inside the controller,
     // because captures are photographs of students and must never be reachable
-    // by anyone else.
+    // by anyone else. Not student-only for the same reason as /q/proctor above.
     Route::post('/mock-exams/proctor/{attempt}/event', [MockExamProctorController::class, 'event'])->name('mock-exams.proctor.event');
     Route::post('/mock-exams/proctor/{attempt}/heartbeat', [MockExamProctorController::class, 'heartbeat'])->name('mock-exams.proctor.heartbeat');
     Route::post('/mock-exams/proctor/{attempt}/capture', [MockExamProctorController::class, 'capture'])->name('mock-exams.proctor.capture');
     Route::get('/mock-exams/captures/{capture}', [MockExamProctorController::class, 'show'])->name('mock-exams.capture');
     Route::delete('/mock-exams/attempts/{attempt}/captures', [MockExamProctorController::class, 'destroyCaptures'])->name('mock-exams.captures.destroy');
+
+    Route::middleware('student')->group(function () {
     Route::get('/performance', [PerformanceController::class, 'index'])->name('performance');
     // Review Notes (personal study notes, real CRUD backed by the database)
     Route::get('/review-notes', [ReviewNoteController::class, 'index'])->name('review-notes');
@@ -391,4 +408,5 @@ Route::middleware('auth')->group(function () {
     Route::post('/settings/profile', [StudentSettingsController::class, 'update'])->name('settings.profile');
     Route::post('/settings/details', [StudentSettingsController::class, 'updateDetails'])->name('settings.details');
     Route::post('/settings/password', [StudentSettingsController::class, 'updatePassword'])->name('settings.password');
+    });
 });

@@ -132,6 +132,40 @@ class AuthenticationTest extends TestCase
         ];
     }
 
+    #[DataProvider('roleHomeRoutes')]
+    public function test_an_already_logged_in_user_who_revisits_login_is_bounced_to_their_own_dashboard(int $roleId, string $expectedRouteName): void
+    {
+        // Regression: Illuminate\Auth\Middleware\RedirectIfAuthenticated's
+        // default target is route('dashboard') - only the student area is
+        // registered under that bare name (routes/web.php), so a chair or
+        // faculty member who landed back on /login (e.g. the browser back
+        // button right after signing in) was bounced to the student
+        // dashboard instead of their own. bootstrap/app.php now overrides
+        // that redirect to mirror AuthController::homeFor().
+        $user = $this->user($roleId, 'revisit@example.com');
+
+        $this->actingAs($user)->get('/login')
+            ->assertRedirect(route($expectedRouteName));
+    }
+
+    public function test_a_chair_or_faculty_member_cannot_open_the_student_dashboard(): void
+    {
+        // Regression: routes/web.php's student-only block (dashboard, subjects,
+        // quizzes, etc.) only required 'auth' until StudentMiddleware was added
+        // - any signed-in chair or faculty account could open /dashboard
+        // directly (or land on it via an old browser-history entry) and it
+        // would render using their own id, silently zeroed out because they
+        // have no student_profiles row. That looked like "my account got
+        // swapped for a student's" when it was really a missing role check.
+        $chair = $this->user(Role::ADMIN, 'chairvisits@example.com');
+        $faculty = $this->user(Role::FACULTY, 'facultyvisits@example.com');
+
+        // assertSee also confirms the themed errors/403 view rendered
+        // (not a debug/Whoops page standing in for it).
+        $this->actingAs($chair)->get(route('dashboard'))->assertForbidden()->assertSee("don't have access");
+        $this->actingAs($faculty)->get(route('dashboard'))->assertForbidden()->assertSee("don't have access");
+    }
+
     public function test_login_fails_with_an_incorrect_password_without_revealing_which_field_was_wrong(): void
     {
         $user = $this->user(Role::STUDENT, 'student@example.com');

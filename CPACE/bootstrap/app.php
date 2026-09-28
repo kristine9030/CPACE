@@ -15,14 +15,27 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'faculty' => \App\Http\Middleware\FacultyMiddleware::class,
             'chair'   => \App\Http\Middleware\ChairMiddleware::class,
+            'student' => \App\Http\Middleware\StudentMiddleware::class,
             'alumni'  => \App\Http\Middleware\AlumniMiddleware::class,
             'api.auth' => \App\Http\Middleware\ApiAuthenticate::class,
+            'no-back-cache' => \App\Http\Middleware\PreventBackHistory::class,
         ]);
 
         // Gate freshly-imported students into first-login Account Setup.
         $middleware->web(append: [
             \App\Http\Middleware\EnsureAccountSetup::class,
         ]);
+
+        // The 'guest' middleware (RedirectIfAuthenticated) bounces an already
+        // logged-in user who lands on /login — e.g. the browser's back button
+        // after signing in — straight to route('dashboard') by default. That
+        // name only exists once, for the student area (routes/web.php), so
+        // without this override a signed-in chair or faculty member landing
+        // back on /login was sent to the student dashboard instead of their
+        // own. Mirrors AuthController::homeFor()'s per-role destination.
+        \Illuminate\Auth\Middleware\RedirectIfAuthenticated::redirectUsing(
+            fn ($request) => route($request->user()?->homeRouteName() ?? 'dashboard')
+        );
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
