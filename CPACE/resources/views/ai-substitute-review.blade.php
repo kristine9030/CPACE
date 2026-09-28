@@ -50,6 +50,16 @@
         .recent td { padding:10px 18px; border-bottom:1px solid #f8f8f8; vertical-align:top; }
         .recent tr:last-child td { border-bottom:none; }
         .st-approved { color:#047857; font-weight:600; } .st-rejected { color:var(--accent); font-weight:600; }
+        .shortlist { background:#fff; border-radius:12px; overflow:hidden; margin-bottom:22px; }
+        .shortlist h3 { font-size:13px; font-weight:700; color:#14283E; padding:14px 18px; border-bottom:1px solid #f3f3f3; display:flex; align-items:center; gap:8px; }
+        .short-subj { font-size:11px; font-weight:700; color:#7c3aed; background:#faf9ff; padding:8px 18px; border-bottom:1px solid #f3f3f3; letter-spacing:.3px; }
+        .short-row { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:12px 18px; border-bottom:1px solid #f8f8f8; flex-wrap:wrap; }
+        .short-row:last-child { border-bottom:none; }
+        .short-topic { font-size:12.5px; color:#333; }
+        .short-topic strong { color:#14283E; }
+        .short-meta { font-size:11px; color:#999; margin-top:2px; }
+        .btn-generate { background:#ede9fe; color:#7c3aed; }
+        .btn-generate:hover { background:#ddd6fe; }
         @media (max-width:768px) {
             .main { margin-left:0 !important; padding:16px !important; }
             .topbar { flex-wrap:wrap; }
@@ -90,6 +100,39 @@
         $diffLabel = ['easy' => 'Easy', 'moderate' => 'Medium', 'difficult' => 'Hard'];
         $reviewRoute = $isChair ? 'chair.ai-review' : 'faculty.test-bank.ai-review';
     @endphp
+
+    @if($shortlist->isNotEmpty())
+        <div class="shortlist">
+            <h3><i class="fas fa-hourglass-half" style="color:#7c3aed;"></i> Short of their TOS item count ({{ $shortlist->flatten(1)->count() }})</h3>
+            @foreach($shortlist as $subjectCode => $rows)
+                <div class="short-subj">{{ $subjectCode }}</div>
+                @foreach($rows as $row)
+                    @php $topic = $row['topic']; @endphp
+                    <div class="short-row">
+                        <div class="short-topic">
+                            @if($topic->parent)<span style="color:#999;">{{ $topic->parent->name }} ›</span> @endif
+                            {{ $topic->name }}
+                            <div class="short-meta">
+                                {{ $row['shortBy'] }} question(s) short
+                                @if($row['graceEndsAt'])
+                                    · grace period ends {{ $row['graceEndsAt']->format('M j, Y') }}
+                                @else
+                                    · not yet flagged
+                                @endif
+                            </div>
+                        </div>
+                        <form method="POST" action="{{ route($reviewRoute . '.generate', $topic->id) }}"
+                              data-confirm="AI will draft {{ min($row['shortBy'], config('curriculum.gap_fill_max_per_topic', 5)) }} question(s) for this topic right now, without waiting out the grace period. They land pending review, same as usual."
+                              data-confirm-title="Generate questions now?"
+                              data-confirm-ok="Yes, generate">
+                            @csrf
+                            <button class="btn btn-generate"><i class="fas fa-wand-magic-sparkles"></i> Generate now</button>
+                        </form>
+                    </div>
+                @endforeach
+            @endforeach
+        </div>
+    @endif
 
     @forelse($pending as $subjectCode => $questions)
         <div class="subj-head">{{ $subjectCode }} <span class="count">{{ $questions->count() }} pending</span></div>

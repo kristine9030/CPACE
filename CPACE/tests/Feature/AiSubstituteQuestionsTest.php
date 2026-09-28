@@ -236,6 +236,73 @@ class AiSubstituteQuestionsTest extends TestCase
             ->assertSee('What is the cash cut-off rule?');
     }
 
+    public function test_assigned_faculty_can_generate_now_before_the_grace_period_ends(): void
+    {
+        $faculty = $this->faculty($this->far);
+        $area = $this->area('Cash', 3, flaggedDaysAgo: 2); // well within the 14-day grace period
+
+        $this->actingAs($faculty)
+            ->post(route('faculty.test-bank.ai-review.generate', $area))
+            ->assertSessionHas('status');
+
+        $this->assertSame(3, $this->aiCalls, 'the button skips the grace-period wait entirely');
+        $drafts = Question::where('source', 'ai_substitute')->get();
+        $this->assertCount(3, $drafts);
+        foreach ($drafts as $draft) {
+            $this->assertFalse($draft->is_active);
+            $this->assertSame('pending', $draft->review_status);
+        }
+        $this->assertSame(1, $this->notificationsFor($faculty->id, 'AI substitute questions need review'));
+    }
+
+    public function test_generate_now_is_capped_at_max_per_topic_and_leaves_the_rest_short(): void
+    {
+        config(['curriculum.gap_fill_max_per_topic' => 2]);
+        $faculty = $this->faculty($this->far);
+        $area = $this->area('Cash', 5, flaggedDaysAgo: 1);
+
+        $this->actingAs($faculty)->post(route('faculty.test-bank.ai-review.generate', $area));
+
+        $this->assertSame(2, Question::where('source', 'ai_substitute')->count());
+    }
+
+    public function test_generate_now_on_a_topic_already_at_quota_drafts_nothing(): void
+    {
+        $faculty = $this->faculty($this->far);
+        $area = $this->area('Cash', 1);
+        $this->question($area, 'Already enough');
+
+        $this->actingAs($faculty)
+            ->post(route('faculty.test-bank.ai-review.generate', $area))
+            ->assertSessionHas('status');
+
+        $this->assertSame(0, $this->aiCalls);
+        $this->assertSame(0, Question::where('source', 'ai_substitute')->count());
+    }
+
+    public function test_faculty_not_assigned_to_the_subject_cannot_generate_now(): void
+    {
+        $other = $this->faculty($this->subject('AUD'));
+        $area = $this->area('Cash', 3, flaggedDaysAgo: 1);
+
+        $this->actingAs($other)
+            ->post(route('faculty.test-bank.ai-review.generate', $area))
+            ->assertSessionHas('warning');
+
+        $this->assertSame(0, $this->aiCalls);
+    }
+
+    public function test_the_chair_can_generate_now_and_the_shortlist_shows_on_the_review_page(): void
+    {
+        $this->faculty($this->far);
+        $this->area('Cash', 3, flaggedDaysAgo: 1);
+
+        $this->actingAs($this->chair())->get(route('chair.ai-review'))
+            ->assertOk()
+            ->assertSee('Cash')
+            ->assertSee('Generate now');
+    }
+
     // ── helpers ─────────────────────────────────────────────────────────────
 
     private function filler(): CurriculumGapFiller

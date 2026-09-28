@@ -112,6 +112,82 @@ class CurriculumGapFiller
     }
 
     /**
+     * Every topic currently short of its TOS item count, with how short and
+     * when its grace period ends — feeds the "Generate now" button and the
+     * review screen's at-a-glance list. Read-only: never touches
+     * gap_flagged_at/gap_warned_at, unlike run().
+     *
+     * @return Collection<int, array{topic: Topic, shortBy: int, graceEndsAt: ?Carbon}>
+     */
+    public function shortlist(): Collection
+    {
+        if (! Schema::hasColumn('topics', 'gap_flagged_at') || ! Schema::hasColumn('topics', 'tos_items')) {
+            return collect();
+        }
+
+        $topics = Topic::inActiveCurriculum()->with('subject')->where('is_active', true)->get()->keyBy('id');
+        $children = $topics->groupBy('parent_id');
+        $out = collect();
+
+        foreach ($topics as $topic) {
+            if ((int) $topic->tos_items <= 0 || $this->hasTargetedAncestor($topic, $topics)) {
+                continue;
+            }
+
+            $subtree = $this->subtree($topic, $children);
+            $counts = $this->questionCounts($subtree->pluck('id')->all());
+            $shortBy = (int) $topic->tos_items - $counts['live'] - $counts['pending'];
+
+            if ($shortBy <= 0) {
+                continue;
+            }
+
+            $out->push([
+                'topic' => $topic,
+                'shortBy' => $shortBy,
+                'graceEndsAt' => $topic->gap_flagged_at
+                    ? $topic->gap_flagged_at->copy()->addDays($this->graceDays())
+                    : null,
+            ]);
+        }
+
+        return $out;
+    }
+
+    /**
+     * Manually draft substitutes for one short topic right now, instead of
+     * waiting out the grace period — used by the "Generate now" button.
+     * Still capped at maxPerTopic() per call; the drafts land pending review
+     * exactly like a scheduled run's.
+     *
+     * @return array{drafted: int, failed: int, shortBy: int}
+     */
+    public function generateNow(Topic $topic): array
+    {
+        $topics = Topic::inActiveCurriculum()->with('subject')->where('is_active', true)->get()->keyBy('id');
+        $children = $topics->groupBy('parent_id');
+        $target = $topics->get($topic->id) ?? $topic->loadMissing('subject');
+
+        $subtree = $this->subtree($target, $children);
+        $counts = $this->questionCounts($subtree->pluck('id')->all());
+        $shortBy = (int) $target->tos_items - $counts['live'] - $counts['pending'];
+
+        if ($shortBy <= 0) {
+            return ['drafted' => 0, 'failed' => 0, 'shortBy' => 0];
+        }
+
+        [$drafted, $failed] = $this->draftSubstitutes($target, $subtree, $children, min($shortBy, $this->maxPerTopic()));
+
+        if ($drafted > 0) {
+            $this->notifyDrafted($target, $drafted);
+            $this->flushNotifications();
+            $this->audit($target, $drafted);
+        }
+
+        return ['drafted' => $drafted, 'failed' => $failed, 'shortBy' => $shortBy];
+    }
+
+    /**
      * Draft up to $count questions into the topic's subtree, spreading them
      * over the least-covered subtopics and the least-covered difficulty.
      *

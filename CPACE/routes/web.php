@@ -181,6 +181,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/ai-review', [AiSubstituteReviewController::class, 'index'])->name('ai-review');
         Route::post('/ai-review/{id}/approve', [AiSubstituteReviewController::class, 'approve'])->name('ai-review.approve');
         Route::post('/ai-review/{id}/reject', [AiSubstituteReviewController::class, 'reject'])->name('ai-review.reject');
+        Route::post('/ai-review/generate/{topic}', [AiSubstituteReviewController::class, 'generate'])->middleware('throttle:8,1')->name('ai-review.generate');
 
         // Announcements and internal messages
         Route::get('/communications', [CommunicationController::class, 'index'])->name('communications');
@@ -202,6 +203,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/test-bank/ai-review', [AiSubstituteReviewController::class, 'index'])->name('test-bank.ai-review');
         Route::post('/test-bank/ai-review/{id}/approve', [AiSubstituteReviewController::class, 'approve'])->name('test-bank.ai-review.approve');
         Route::post('/test-bank/ai-review/{id}/reject', [AiSubstituteReviewController::class, 'reject'])->name('test-bank.ai-review.reject');
+        Route::post('/test-bank/ai-review/generate/{topic}', [AiSubstituteReviewController::class, 'generate'])->middleware('throttle:8,1')->name('test-bank.ai-review.generate');
         Route::post('/test-bank/curriculum', [TestBankController::class, 'switchCurriculum'])->name('test-bank.curriculum');
         Route::get('/test-bank/create', [TestBankController::class, 'create'])->name('question.create');
         Route::post('/test-bank/ai-draft', [TestBankController::class, 'aiDraft'])->middleware('throttle:8,1')->name('question.ai-draft');
