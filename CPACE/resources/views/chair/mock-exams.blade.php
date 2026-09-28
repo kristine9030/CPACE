@@ -34,14 +34,10 @@
         </div>
     @endif
 
-    <div class="banner banner-info">
-        <i class="fas fa-users-viewfinder"></i>
-        <div>
-            There's no code to hand out — publishing opens the exam automatically to whichever year
-            levels and sections you (or the assigned faculty) choose. Once published it's locked and
-            can no longer be edited by anyone.
-        </div>
-    </div>
+    <x-hint icon="fa-users-viewfinder" title="Publishing opens an exam to its chosen year levels and sections, then locks it.">
+        There's no code to hand out. You or the assigned faculty pick who can take it.
+        Once published, no one can edit it.
+    </x-hint>
 
     <div class="subject-grid">
         @foreach($cards as $card)

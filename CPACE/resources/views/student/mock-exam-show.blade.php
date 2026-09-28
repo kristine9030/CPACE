@@ -90,24 +90,25 @@
         @elseif($window === 'open')
             <div class="card">
                 <div class="card-title"><i class="fas fa-shield-halved"></i> Before you start — what gets recorded</div>
-                <div class="card-sub">Read this carefully. Starting the exam means you agree to it.</div>
+                <div class="card-sub">Starting the exam means you agree to these rules.</div>
 
                 <ul class="rules">
-                    <li>Your <strong>camera</strong> is photographed periodically (about once every two minutes) for the whole exam.</li>
-                    <li>Your <strong>shared screen</strong> is captured every ten minutes or so.</li>
-                    <li>Your browser checks, <strong>on your own device</strong>, that exactly one face is in view and that you are
-                        facing the screen. Nothing is uploaded for this check; only a flagged moment is photographed.</li>
-                    <li>Switching tabs, leaving fullscreen, or an absent, extra or turned-away face is
-                        <strong>recorded and flagged</strong> to your faculty and the Program Chair.</li>
-                    <li>If your camera or screen sharing stops, the exam is <strong>locked</strong> until you share again. The timer keeps running.</li>
-                    <li>Copy and paste are blocked inside the exam.</li>
-                    <li>You must share your <strong>entire screen</strong> (not a window or tab) and use <strong>one monitor</strong>.</li>
-                    <li>If you finish with no flags, your recordings are <strong>deleted as soon as you submit</strong>, apart from your
-                        opening camera photo. Otherwise only the flagged frames are kept. Anything kept is deleted after
-                        {{ \App\Models\MockExamProctorCapture::RETENTION_DAYS }} days at most, and is visible only to your faculty and the Program Chair.</li>
-                    <li>If you close the tab without submitting, your saved answers are graded when your time runs out.</li>
-                    <li>Your browser will ask permission for the camera and for screen sharing — you must allow both to enter.</li>
+                    <li><strong>Camera</strong> photo about once a minute; <strong>screen</strong> capture about every 10 minutes.</li>
+                    <li>Share your <strong>entire screen</strong> and use <strong>one monitor</strong>.</li>
+                    <li>Switching tabs, leaving fullscreen, or face issues are <strong>flagged</strong> to your faculty and the Program Chair.</li>
+                    <li>If camera or screen sharing stops, the exam <strong>locks</strong> until you share again — the timer keeps running.</li>
+                    <li>Copy and paste are blocked.</li>
                 </ul>
+
+                <x-hint tone="neutral" icon="fa-user-shield" title="Privacy & recordings" style="margin-top:14px;">
+                    <ul>
+                        <li>The face check runs <strong>on your own device</strong> — nothing is uploaded for it; only a flagged moment is photographed.</li>
+                        <li>No flags? Your recordings are <strong>deleted when you submit</strong>, except your opening camera photo.</li>
+                        <li>Flagged? Only the flagged frames are kept, for {{ \App\Models\MockExamProctorCapture::RETENTION_DAYS }} days at most.</li>
+                        <li>Only your faculty and the Program Chair can see them.</li>
+                        <li>Close the tab without submitting and your saved answers are graded when time runs out.</li>
+                    </ul>
+                </x-hint>
 
                 <div style="margin-top:18px;">
                     <div class="perm" id="permCam">
@@ -131,9 +132,8 @@
                 <div class="banner banner-warn" style="margin-top:16px;">
                     <i class="fas fa-triangle-exclamation"></i>
                     <div>
-                        Once you start, the timer runs on the server. Closing the tab or losing power
-                        <strong>does not pause it</strong> — your answers are saved as you go, so reopen the
-                        exam and carry on.
+                        The timer <strong>never pauses</strong>, even if you close the tab. Answers save
+                        automatically — just reopen the exam to continue.
                     </div>
                 </div>
 

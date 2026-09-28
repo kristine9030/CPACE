@@ -98,8 +98,7 @@
             <div class="banner banner-info" style="margin-top:16px;">
                 <i class="fas fa-lightbulb"></i>
                 <div>
-                    These results feed your weak-area detection and review schedule, so your
-                    <a href="{{ route('calendar') }}">calendar</a> and adaptive quizzes will now target what you missed here.
+                    Your <a href="{{ route('calendar') }}">calendar</a> and adaptive quizzes will now target what you missed.
                 </div>
             </div>
         </div>

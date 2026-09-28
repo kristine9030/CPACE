@@ -218,9 +218,9 @@
             <div>
                 <i class="fas fa-book-bookmark" style="color:#b45309;"></i>
                 @if($showingDraft)
-                    You're preparing questions for the <strong>draft curriculum "{{ $draftCurriculum->label }}"</strong>. Students can't see these until the Program Chair publishes it.
+                    Viewing the <strong>draft curriculum "{{ $draftCurriculum->label }}"</strong> — hidden from students until published.
                 @else
-                    A new curriculum, <strong>"{{ $draftCurriculum->label }}"</strong>, is being prepared. You're viewing the <strong>current</strong> curriculum's questions.
+                    Viewing the <strong>current</strong> curriculum. A draft, <strong>"{{ $draftCurriculum->label }}"</strong>, is being prepared.
                 @endif
             </div>
             <input type="hidden" name="curriculum" value="{{ $showingDraft ? 'current' : 'draft' }}">
@@ -235,7 +235,7 @@
            style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:12px 16px;margin-bottom:16px;border-radius:12px;border:1px solid #ddd6fe;background:#f5f3ff;font-size:12px;color:#4c1d95;text-decoration:none;">
             <span><i class="fas fa-robot"></i>
                 <strong>{{ $aiPendingCount }} AI substitute question{{ $aiPendingCount === 1 ? '' : 's' }}</strong>
-                {{ $aiPendingCount === 1 ? 'was' : 'were' }} drafted for topics short of their TOS item count. Students can't see them until you review them.</span>
+                waiting for your review.</span>
             <span style="font-weight:600;">Review now <i class="fas fa-arrow-right"></i></span>
         </a>
     @endif

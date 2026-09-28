@@ -219,7 +219,7 @@
     <div class="analytics-layout">
         <div>
             <section class="card">
-                <div class="card-head"><span class="card-title">Subject-by-Subject Accuracy</span><span class="small-meta">Weighted class-level results</span></div>
+                <div class="card-head"><span class="card-title">Subject-by-Subject Accuracy<x-tip label="What vs pass means">“vs pass” is the gap between class accuracy and that subject's own passing threshold ({{ $report['subjects']->first()['threshold'] ?? 75 }}% by default). Negative means the class is below the mark.</x-tip></span><span class="small-meta">Weighted class-level results</span></div>
                 <div class="subject-row head"><span>Subject</span><span>Accuracy</span><span>Score</span><span>vs pass</span><span>Participation</span></div>
                 @forelse($report['subjects'] as $subject)
                     <div class="subject-row">
@@ -232,7 +232,6 @@
                         <div><div class="small-meta">{{ $subject['students'] }} students</div><div class="small-meta">{{ number_format($subject['attempts']) }} attempts</div></div>
                     </div>
                 @empty<div class="empty">No subjects are available.</div>@endforelse
-                <div class="method-note">“vs pass” is the distance between class accuracy and that subject's own passing threshold (currently {{ $report['subjects']->first()['threshold'] ?? 75 }}% by default). Negative means the cohort is below the mark for that subject.</div>
             </section>
 
             <section class="card" id="readiness-trend" style="margin-top:18px;">
@@ -306,13 +305,12 @@
 
         <div>
             <section class="card">
-                <div class="card-head"><span class="card-title">Readiness Bands</span></div>
+                <div class="card-head"><span class="card-title">Readiness Bands<x-tip label="How readiness is measured">Ready needs at least {{ \App\Services\ChairAnalyticsService::READY_ATTEMPTS }} completed items and {{ \App\Services\ChairAnalyticsService::READY_ACCURACY }}% accuracy — plus activity in at least {{ \App\Services\ChairAnalyticsService::READY_SUBJECTS }} subjects when viewing all subjects. Students need {{ \App\Services\ChairAnalyticsService::DEVELOPING_ATTEMPTS }} items to be counted at all.</x-tip></span></div>
                 <div class="bands">
                     <div class="band ready"><strong>{{ $report['readiness']['ready'] }}</strong><span>Ready</span></div>
                     <div class="band"><strong>{{ $report['readiness']['developing'] }}</strong><span>Developing</span></div>
                     <div class="band risk"><strong>{{ $report['readiness']['at_risk'] }}</strong><span>At risk</span></div>
                 </div>
-                <div class="method-note">Ready requires at least {{ \App\Services\ChairAnalyticsService::READY_ATTEMPTS }} completed items, {{ \App\Services\ChairAnalyticsService::READY_ACCURACY }}% accuracy, and—when viewing all subjects—activity in at least {{ \App\Services\ChairAnalyticsService::READY_SUBJECTS }} subjects. Students need {{ \App\Services\ChairAnalyticsService::DEVELOPING_ATTEMPTS }} items to be included in the measured class.</div>
             </section>
 
             @php
@@ -323,11 +321,10 @@
             @endphp
             <section class="card" id="pass-projection" style="margin-top:18px;">
                 <div class="card-head">
-                    <span class="card-title">Predicted Pass Rate</span>
+                    <span class="card-title">Predicted Pass Rate<x-tip label="How the projection works">Counts ready students fully and developing students at 50%. It gets more useful as students complete more practice.</x-tip></span>
                     <span style="font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;color:{{ $confidenceColor }};background:{{ $confidenceBg }};">{{ $confidenceLabel }}</span>
                 </div>
-                <div style="text-align:center;padding:12px 0 6px;"><div style="font-size:42px;font-weight:700;color:#222;">{{ $report['readiness']['pass_projection'] === null ? '—' : $report['readiness']['pass_projection'].'%' }}</div><div class="small-meta">Readiness-based class-level projection</div></div>
-                <div class="method-note"><strong>Planning estimate only.</strong> The projection counts ready students fully and developing students at 50%. It is not an official board-exam prediction and becomes more useful as students complete more practice.</div>
+                <div style="text-align:center;padding:12px 0 6px;"><div style="font-size:42px;font-weight:700;color:#222;">{{ $report['readiness']['pass_projection'] === null ? '—' : $report['readiness']['pass_projection'].'%' }}</div><div class="small-meta">Planning estimate — not an official board-exam prediction</div></div>
                 <div class="method-note">
                     <i class="fas fa-circle-info"></i>
                     Based on {{ $report['readiness']['eligible'] }} of {{ $report['readiness']['total_active'] }} active student{{ $report['readiness']['total_active'] === 1 ? '' : 's' }} ({{ $report['readiness']['coverage_percent'] }}% coverage)
@@ -354,7 +351,7 @@
             </section>
 
             <section class="card" style="margin-top:18px;">
-                <div class="card-head"><span class="card-title">Accuracy by Difficulty</span></div>
+                <div class="card-head"><span class="card-title">Accuracy by Difficulty<x-tip>Accuracy should fall as difficulty rises. If it doesn't, the test bank's difficulty labels need review.</x-tip></span></div>
                 <table class="viz-table">
                     <thead><tr><th>Difficulty</th><th class="num">Answered</th><th class="num">Accuracy</th></tr></thead>
                     <tbody>
@@ -363,7 +360,6 @@
                     @endforeach
                     </tbody>
                 </table>
-                <div class="method-note">Accuracy should fall as difficulty rises. If it does not, the difficulty labels in the test bank need review.</div>
             </section>
         </div>
     </div>
@@ -379,7 +375,7 @@
         <div class="viz-grid-layout">
             <div class="viz-card full">
                 <h4><i class="fas fa-bullseye"></i> Subject Accuracy vs Passing Threshold</h4>
-                <div class="viz-sub">Bar length is class accuracy; the vertical rule on each bar is that subject's own passing threshold.</div>
+                <div class="viz-sub">Bar = class accuracy · line = passing threshold.</div>
                 <div class="chart-canvas-wrap h-md"><canvas id="vizSubjectAccuracy"></canvas></div>
             </div>
 
@@ -391,13 +387,13 @@
 
             <div class="viz-card">
                 <h4><i class="fas fa-chart-simple"></i> Score Distribution</h4>
-                <div class="viz-sub">How the measured class is spread — an average alone hides a split cohort.</div>
+                <div class="viz-sub">How the measured class is spread.</div>
                 <div class="chart-canvas-wrap"><canvas id="vizDistribution"></canvas></div>
             </div>
 
             <div class="viz-card full">
                 <h4><i class="fas fa-chart-line"></i> Board Readiness &amp; Class Accuracy Trend</h4>
-                <div class="viz-sub">Both series are percentages on one axis, cumulative to the end of each week.</div>
+                <div class="viz-sub">Cumulative, week by week.</div>
                 <div class="chart-canvas-wrap h-md"><canvas id="vizTrendLine"></canvas></div>
             </div>
 
@@ -427,7 +423,7 @@
 
             <div class="viz-card full">
                 <h4><i class="fas fa-triangle-exclamation"></i> Weakest Topics</h4>
-                <div class="viz-sub">Topics under 60% class accuracy with at least {{ \App\Services\ChairAnalyticsService::TOPIC_MIN_ATTEMPTS }} recorded attempts — the remediation shortlist.</div>
+                <div class="viz-sub">Under 60% accuracy, {{ \App\Services\ChairAnalyticsService::TOPIC_MIN_ATTEMPTS }}+ attempts.</div>
                 <div class="chart-canvas-wrap h-xl"><canvas id="vizWeakTopics"></canvas></div>
             </div>
         </div>

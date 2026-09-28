@@ -271,7 +271,7 @@
 
                 <section class="doc-title">
                     <h2>Student Performance and Intervention Report</h2>
-                    <p>This report summarizes quiz activity, accuracy, weak topic concentration, and recommended interventions for students under the selected faculty subject scope.</p>
+                    <p>Quiz activity, accuracy, weak topics, and recommended interventions for the selected subjects.</p>
                 </section>
 
                 {{-- Executive summary (shared) --}}

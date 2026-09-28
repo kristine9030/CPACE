@@ -93,23 +93,19 @@
         </div>
     </div>
 
-    <div class="banner banner-info">
-        <i class="fas fa-camera"></i>
-        <div>
-            Snapshots refresh about every 15 seconds — this is a periodic capture, not a live video stream.
-            A student who revokes camera or screen sharing mid-exam is flagged immediately and locked out until they share again.
-        </div>
-    </div>
+    <x-hint icon="fa-camera" title="Snapshots refresh about every 15 seconds — not a live video.">
+        A student who stops sharing their camera or screen is flagged immediately and locked out until they share again.
+    </x-hint>
 
-    <div class="banner banner-info">
-        <i class="fas fa-hard-drive"></i>
-        <div>
-            <strong>Recordings stored for this exam: {{ $storage['count'] }} ({{ \App\Support\ProctorCaptureRetention::humanSize($storage['bytes']) }}).</strong>
-            Students with no flags keep only their opening camera photo (to show who sat the exam); everything else is deleted as
-            soon as they submit. Flagged students keep only the frames behind a flag. What is kept is removed automatically {{ \App\Models\MockExamProctorCapture::RETENTION_DAYS }} days after the exam,
-            or sooner with “Delete recordings” on a student's page. The flag timeline is always kept.
-        </div>
-    </div>
+    <x-hint tone="neutral" icon="fa-hard-drive">
+        <x-slot:title>Recordings stored: <strong>{{ $storage['count'] }}</strong> ({{ \App\Support\ProctorCaptureRetention::humanSize($storage['bytes']) }}) · auto-deleted after {{ \App\Models\MockExamProctorCapture::RETENTION_DAYS }} days</x-slot:title>
+        <ul>
+            <li>No flags: only the opening camera photo is kept (to show who sat the exam).</li>
+            <li>Flagged: only the frames behind a flag are kept.</li>
+            <li>Delete sooner with “Delete recordings” on a student's page.</li>
+            <li>The flag timeline is always kept.</li>
+        </ul>
+    </x-hint>
 
     <div class="kpis">
         <div class="stat-card">
@@ -152,23 +148,16 @@
     </div>
 
     <div class="card">
-        <div class="card-title"><i class="fas fa-users-viewfinder"></i> Students</div>
-        <div class="card-sub">
-            Highest risk first. The badge weighs each flag by how serious it is (losing the camera or screen counts more than
-            a glance away). It is a signal for you to review, not a verdict. Click a tile for the timeline and captures.
-        </div>
+        <div class="card-title"><i class="fas fa-users-viewfinder"></i> Students<x-tip label="How risk is ranked">The badge weighs each flag by how serious it is — losing the camera or screen counts more than a glance away. It's a signal to review, not a verdict.</x-tip></div>
+        <div class="card-sub">Highest risk first. Click a tile for the timeline and captures.</div>
         <div class="grid" id="grid" style="margin-top:16px;">
             <div class="empty" style="grid-column:1/-1;"><i class="fas fa-hourglass-half"></i><h3>Nobody has started yet</h3><p>Tiles appear as students enter the exam.</p></div>
         </div>
     </div>
 
     <div class="card">
-        <div class="card-title"><i class="fas fa-people-arrows"></i> Answer similarity</div>
-        <div class="card-sub">
-            Pairs of submitted students who chose the <strong>same wrong answer</strong> on far more questions than chance would
-            explain. Matching right answers means nothing; matching wrong ones is unusual. This is a signal, not proof: students
-            who studied from the same wrong source will match too.
-        </div>
+        <div class="card-title"><i class="fas fa-people-arrows"></i> Answer similarity<x-tip label="How similarity works">Matching right answers means nothing; matching wrong ones is unusual. It's a signal, not proof — students who studied from the same wrong source will match too.</x-tip></div>
+        <div class="card-sub">Pairs who chose the <strong>same wrong answer</strong> far more often than chance.</div>
         <div id="simBody" style="margin-top:12px;font-size:12.5px;color:var(--muted);">Checking…</div>
     </div>
 </main>

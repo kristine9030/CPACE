@@ -51,7 +51,7 @@
         <div class="meta">
             <div><i class="fas fa-file-pdf" style="color:#c0392b;"></i> <strong>{{ $batch->original_filename }}</strong></div>
             <div>Importing into <strong>{{ $version->label }}</strong> ({{ $version->status }}). Found <strong>{{ $subjects->count() }}</strong> subject(s), <strong>{{ $batch->items->count() }}</strong> headings.</div>
-            <div>Tick the subjects to import, untick any heading you don't want, and fix names if needed. An unticked heading's subtopics move up to the nearest ticked one.</div>
+            <div>Tick subjects to import · untick headings you don't want · fix names if needed.<x-tip>An unticked heading's subtopics move up to the nearest ticked one.</x-tip></div>
         </div>
         <a href="{{ route('chair.subjects', ['version' => $version->id]) }}" class="btn btn-ghost btn-sm"><i class="fas fa-arrow-left"></i> Back to curriculum</a>
     </div>
@@ -91,7 +91,7 @@
                 </div>
             </div>
             @if($existing > 0)
-                <div class="existing-note"><i class="fas fa-circle-info"></i> {{ $subject->code }} already has {{ $existing }} topic(s) in this curriculum, so it starts unticked. If you import it, topics with the same name under the same parent are reused, not duplicated.</div>
+                <div class="existing-note"><i class="fas fa-circle-info"></i> {{ $subject->code }} already has {{ $existing }} topic(s), so it starts unticked.<x-tip>If you import it, topics with the same name under the same parent are reused, not duplicated.</x-tip></div>
             @endif
             <div class="rows">
                 @foreach($items as $item)

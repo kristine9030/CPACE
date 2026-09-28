@@ -409,7 +409,7 @@
 
         <div class="card">
             <div class="card-head">
-                <span class="card-title">Subject Risk</span>
+                <span class="card-title">Subject Risk<x-tip label="How questions are flagged">A question is flagged for review when it's unused, below 40% accuracy, or above 95% accuracy after at least five student answers. These are review signals, not faculty grades.</x-tip></span>
                 <span style="font-size:10.5px;color:#aaa;">Highest risk first</span>
             </div>
             @php $riskMax = max(1, (int) $subjectRisk->max('active'), $avgActivePerSubject); @endphp
@@ -444,7 +444,6 @@
             @empty
                 <div class="empty"><div>No subjects available.</div></div>
             @endforelse
-            <div class="legend-note"><strong>Quality review:</strong> flags questions that are unused, below 40% accuracy, or above 95% accuracy after at least five student answers. These are review signals, not faculty grades.</div>
         </div>
     </div>
     </div><!-- /tab-overview -->

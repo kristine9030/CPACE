@@ -164,25 +164,25 @@
         <!-- How the new enrollment flow works -->
         <div class="flow-hero">
             <h2><i class="fas fa-wand-magic-sparkles" style="color:#ffd76a;"></i> Automated Enrollment</h2>
-            <p>No more one-by-one sign-ups. Drop in your class list and CPACE provisions every student a GSuite login with a one-time password — they finish their own setup on first login.</p>
+            <p>Upload your class list — every student gets a login automatically.</p>
             <div class="flow-steps">
                 <div class="flow-step">
                     <div class="fs-ic"><i class="fas fa-file-arrow-up"></i></div>
                     <div class="fs-n">Step 1</div>
                     <div class="fs-t">You upload the list</div>
-                    <div class="fs-d">Import a CSV, Excel, or Word class list of your students.</div>
+                    <div class="fs-d">CSV, Excel, or Word.</div>
                 </div>
                 <div class="flow-step">
                     <div class="fs-ic"><i class="fas fa-robot"></i></div>
                     <div class="fs-n">Step 2</div>
                     <div class="fs-t">System creates accounts</div>
-                    <div class="fs-d">GSuite emails are provisioned and a one-time password is sent straight to each student's inbox.</div>
+                    <div class="fs-d">A one-time password goes to each student's inbox.</div>
                 </div>
                 <div class="flow-step">
                     <div class="fs-ic"><i class="fas fa-user-gear"></i></div>
                     <div class="fs-n">Step 3</div>
                     <div class="fs-t">Students set themselves up</div>
-                    <div class="fs-d">On first login they change the password and personalize their review plan.</div>
+                    <div class="fs-d">They set a new password on first login.</div>
                 </div>
             </div>
         </div>
@@ -236,7 +236,7 @@
                 </ul>
                 <div class="gsuite-note">
                     <i class="fab fa-google"></i>
-                    <span>Accounts are tied to your institution's <b>Google Workspace (GSuite)</b>. A one-time password is generated per student and must be changed on first login.</span>
+                    <span>Uses your institution's <b>Google Workspace (GSuite)</b> accounts.</span>
                 </div>
             </div>
         </div>
@@ -279,7 +279,7 @@
 
                 <div class="cred-note">
                     <i class="fas fa-shield-halved"></i>
-                    <span>One-time passwords are never shown here — they go directly to each student's GSuite inbox. Students will be asked to set a new password when they first open CPACE.</span>
+                    <span>One-time passwords go straight to each student's inbox — never shown here.</span>
                 </div>
 
                 @if ($failedCreds->isNotEmpty())

@@ -17,21 +17,18 @@
     <div class="topbar">
         <div>
             <div class="page-title">Mock Exams</div>
-            <div class="page-sub">Build a full-length exam for one of your subjects, then send it to the Program Chair to review and publish.</div>
+            <div class="page-sub">Build an exam, then send it to the Program Chair to publish.</div>
         </div>
         <div class="topbar-right">
             @include('partials.topbar-actions')
         </div>
     </div>
 
-    <div class="banner banner-info">
-        <i class="fas fa-circle-info"></i>
-        <div>
-            One mock exam covers <strong>one subject only</strong> — subjects are never combined.
-            You can only build for subjects you're assigned to, and everyone assigned to a subject
-            can collaborate on the same exam.
-        </div>
-    </div>
+    <x-hint>
+        <x-slot:title>One mock exam = <strong>one subject</strong>.</x-slot:title>
+        Subjects are never combined. You can only build for subjects you're assigned to, and
+        everyone assigned to a subject can work on the same exam.
+    </x-hint>
 
     @if($cards->isEmpty())
         <div class="card empty">

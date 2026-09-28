@@ -71,23 +71,19 @@
         </div>
     </div>
 
-    <div class="banner banner-info">
-        <i class="fas fa-camera"></i>
-        <div>
-            Snapshots refresh about every 15 seconds. This is a periodic capture, not a live video stream.
-            A student who stops sharing their camera or screen is flagged immediately and locked out until they share again.
-        </div>
-    </div>
+    <x-hint icon="fa-camera" title="Snapshots refresh about every 15 seconds — not a live video.">
+        A student who stops sharing their camera or screen is flagged immediately and locked out until they share again.
+    </x-hint>
 
-    <div class="banner banner-info">
-        <i class="fas fa-hard-drive"></i>
-        <div>
-            <strong>Recordings stored for this quiz: {{ $storage['count'] }} ({{ \App\Support\ProctorCaptureRetention::humanSize($storage['bytes']) }}).</strong>
-            Students with no flags keep only their opening camera photo; everything else is deleted when they submit.
-            Flagged students keep only the frames behind a flag. What is kept is removed automatically
-            {{ \App\Models\QuizProctorCapture::RETENTION_DAYS }} days later, or sooner from a student's page. The flag timeline is always kept.
-        </div>
-    </div>
+    <x-hint tone="neutral" icon="fa-hard-drive">
+        <x-slot:title>Recordings stored: <strong>{{ $storage['count'] }}</strong> ({{ \App\Support\ProctorCaptureRetention::humanSize($storage['bytes']) }}) · auto-deleted after {{ \App\Models\QuizProctorCapture::RETENTION_DAYS }} days</x-slot:title>
+        <ul>
+            <li>No flags: only the opening camera photo is kept.</li>
+            <li>Flagged: only the frames behind a flag are kept.</li>
+            <li>Delete sooner from a student's page.</li>
+            <li>The flag timeline is always kept.</li>
+        </ul>
+    </x-hint>
 
     <div class="kpis">
         <div class="stat-card"><div class="stat-top"><div><div class="stat-lbl">Started</div><div class="stat-num" id="kpiStarted">0</div></div><div class="stat-icon si-orange"><i class="fas fa-person-running"></i></div></div></div>
@@ -97,11 +93,8 @@
     </div>
 
     <div class="card">
-        <div class="card-title"><i class="fas fa-users-viewfinder"></i> Students</div>
-        <div class="card-sub">
-            Highest risk first. The badge weighs each flag by how serious it is (losing the camera or screen counts more than
-            a glance away). It is a signal for you to review, not a verdict. Click a tile for the answers, flag timeline and captures.
-        </div>
+        <div class="card-title"><i class="fas fa-users-viewfinder"></i> Students<x-tip label="How risk is ranked">The badge weighs each flag by how serious it is — losing the camera or screen counts more than a glance away. It's a signal to review, not a verdict.</x-tip></div>
+        <div class="card-sub">Highest risk first. Click a tile for answers, timeline and captures.</div>
         <div class="grid" id="grid" style="margin-top:16px;">
             <div class="empty" style="grid-column:1/-1;"><i class="fas fa-hourglass-half"></i><h3>Nobody has started yet</h3><p>Tiles appear as students open the quiz.</p></div>
         </div>

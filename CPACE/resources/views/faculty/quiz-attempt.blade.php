@@ -95,20 +95,18 @@
 
     @if($quiz->monitor_enabled && $risk)
         @if($attempt->proctorEvents->contains('type', \App\Models\QuizProctorEvent::TYPE_FACE_CHECK_UNAVAILABLE))
-            <div class="banner">
-                <i class="fas fa-face-meh"></i>
-                <div>
-                    <strong>Face check did not run on this device.</strong>
-                    The in-browser face detector could not load, so this sitting has no "no face", "more than one face" or "looking away" flags. A clean face record here means nothing; rely on the camera frames and the other flags.
-                </div>
-            </div>
+            <x-hint tone="warn" icon="fa-face-meh">
+                <x-slot:title><strong>Face check did not run on this device.</strong></x-slot:title>
+                The face detector couldn't load, so there are no "no face", "more than one face" or "looking away" flags.
+                A clean face record means nothing here — rely on the camera frames and other flags.
+            </x-hint>
         @endif
         @if($attempt->flag_count > 0)
             <div class="banner">
                 <i class="fas fa-flag"></i>
                 <div>
                     <strong>{{ $risk['label'] }} — {{ $attempt->flag_count }} {{ \Illuminate\Support\Str::plural('flag', $attempt->flag_count) }} raised during this sitting.</strong>
-                    Flags are signals, not proof. Review the timeline and captures before drawing a conclusion.
+                    <x-tip label="About flags">Flags are signals, not proof — review the timeline and captures before drawing a conclusion.</x-tip>
                     <table>
                         @foreach($risk['rows'] as $row)
                             <tr><td>{{ $row['label'] }}</td><td>×{{ $row['count'] }}</td><td><strong>{{ $row['points'] }} pts</strong></td></tr>

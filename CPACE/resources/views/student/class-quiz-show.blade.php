@@ -94,14 +94,19 @@
                 <div class="instr" style="white-space:normal;background:#fdf2f2;border-color:#f5cdc9;color:#7a2a24;">
                     <strong style="color:#a32318;">This quiz is monitored</strong>
                     <ul class="rules" style="margin-bottom:0;">
-                        <li>Your <strong>camera</strong> is photographed periodically, and your <strong>entire screen</strong> is captured now and then.</li>
-                        <li>Your browser checks, <strong>on your own device</strong>, that exactly one face is in view and that you are facing the screen. Only a flagged moment is photographed.</li>
-                        <li>Switching tabs, leaving fullscreen, or an absent, extra or turned-away face is <strong>recorded and flagged</strong> to your instructor.</li>
-                        <li>If your camera or screen sharing stops, the quiz is <strong>locked</strong> until you share again. The timer keeps running.</li>
-                        <li>Copy and paste are blocked, and you must use <strong>one monitor</strong>.</li>
-                        <li>If you finish with no flags, your recordings are deleted as soon as you submit, apart from your opening camera photo. They are visible only to your instructor.</li>
+                        <li>Your <strong>camera</strong> and <strong>entire screen</strong> are captured periodically. Use <strong>one monitor</strong>.</li>
+                        <li>Switching tabs, leaving fullscreen, or face issues are <strong>flagged</strong> to your instructor.</li>
+                        <li>If camera or screen sharing stops, the quiz <strong>locks</strong> until you share again — the timer keeps running.</li>
+                        <li>Copy and paste are blocked.</li>
                     </ul>
                 </div>
+                <x-hint tone="neutral" icon="fa-user-shield" title="Privacy & recordings" style="margin-top:10px;">
+                    <ul>
+                        <li>The face check runs <strong>on your own device</strong>; only a flagged moment is photographed.</li>
+                        <li>No flags? Your recordings are <strong>deleted when you submit</strong>, except your opening camera photo.</li>
+                        <li>Only your instructor can see them.</li>
+                    </ul>
+                </x-hint>
                 <div class="perm" id="permCam"><div class="ic"><i class="fas fa-video"></i></div><div class="perm-body"><div class="perm-t">Camera</div><div class="perm-s" id="permCamMsg">Not granted yet</div></div><button type="button" id="grantCam">Allow</button></div>
                 <div class="perm" id="permScreen"><div class="ic"><i class="fas fa-display"></i></div><div class="perm-body"><div class="perm-t">Screen sharing</div><div class="perm-s" id="permScreenMsg">Not shared yet</div></div><button type="button" id="grantScreen">Share</button></div>
                 <label style="display:flex;gap:9px;align-items:flex-start;font-size:13px;margin:14px 0;cursor:pointer;">

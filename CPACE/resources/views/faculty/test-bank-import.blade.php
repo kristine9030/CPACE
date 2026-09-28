@@ -162,7 +162,7 @@
                 <div class="note">
                     <i class="fas fa-circle-info"></i>
                     <div>
-                        We try to read the file's own numbering and answers first. For messy files or photos (like a written computation problem), our AI reads it and drafts the question for you. Either way, <strong>nothing is saved to the Test Bank until you review and approve it</strong> on the next screen.
+                        <strong>Nothing is saved until you review and approve it</strong> on the next screen.
                     </div>
                 </div>
 
@@ -204,10 +204,10 @@ Explanation: The Balance Sheet reports assets, liabilities, and equity as of a s
             <div class="side-card">
                 <h3><i class="fas fa-route"></i> How it works</h3>
                 <ul class="step-list">
-                    <li><span class="step-num"></span><span class="step-text"><strong>Upload</strong> your file — a reviewer, a past exam, even a photo of a written problem.</span></li>
-                    <li><span class="step-num"></span><span class="step-text"><strong>We read it</strong> — numbering and answers first, then AI for anything messy or a photo.</span></li>
-                    <li><span class="step-num"></span><span class="step-text"><strong>You review</strong> every question found — edit, fix, or remove any of them.</span></li>
-                    <li><span class="step-num"></span><span class="step-text"><strong>You approve</strong> — only then do they get added to the Test Bank.</span></li>
+                    <li><span class="step-num"></span><span class="step-text"><strong>Upload</strong> a reviewer, past exam, or photo.</span></li>
+                    <li><span class="step-num"></span><span class="step-text"><strong>We read it</strong> — AI handles messy files and photos.</span></li>
+                    <li><span class="step-num"></span><span class="step-text"><strong>You review</strong> — edit or remove any question.</span></li>
+                    <li><span class="step-num"></span><span class="step-text"><strong>You approve</strong> — then it's added to the Test Bank.</span></li>
                 </ul>
             </div>
 
@@ -219,7 +219,7 @@ Explanation: The Balance Sheet reports assets, liabilities, and equity as of a s
                 </div>
                 <div class="tip-row">
                     <i class="fas fa-check-double"></i>
-                    <div class="tip-text">Include an explicit <strong>"Answer: A"</strong> line where you can — it's more reliable than us guessing.</div>
+                    <div class="tip-text">Add an <strong>"Answer: A"</strong> line where you can.</div>
                 </div>
                 <div class="tip-row">
                     <i class="fas fa-table"></i>
@@ -227,7 +227,7 @@ Explanation: The Balance Sheet reports assets, liabilities, and equity as of a s
                 </div>
                 <div class="tip-row">
                     <i class="fas fa-camera"></i>
-                    <div class="tip-text">For photos, make sure the text is in focus and well-lit — AI reads it, but clarity still helps.</div>
+                    <div class="tip-text">For photos, keep the text in focus and well-lit.</div>
                 </div>
             </div>
 

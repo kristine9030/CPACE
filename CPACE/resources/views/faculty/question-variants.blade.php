@@ -148,7 +148,7 @@
         <div>
             <div class="card">
                 <div class="card-title"><i class="fas fa-lock" style="color:var(--primary);"></i> Original Question (never changed)</div>
-                <div class="card-sub">This is the faculty&rsquo;s real question. Variants only change how it is shown &mdash; the correct answer stays the same.</div>
+                <div class="card-sub">Variants only reword it &mdash; the correct answer stays the same.</div>
                 <div class="orig-box">
                     <div class="orig-meta">
                         <span class="badge subj">{{ $subjectCode }}</span>
@@ -239,7 +239,7 @@
             <div class="card-sub">Click a word to drop it into your variant at the cursor.</div>
 
             <div class="info-note">
-                <i class="fas fa-circle-info"></i> Keep technical terms (FIFO, VAT, NRV&hellip;) and any &ldquo;NOT&rdquo; exactly as they are &mdash; only change the wording around them.
+                <i class="fas fa-circle-info"></i> Keep terms (FIFO, VAT, NRV&hellip;) and any &ldquo;NOT&rdquo; unchanged.
             </div>
 
             <div class="helper-scroll">

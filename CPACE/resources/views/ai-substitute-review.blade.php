@@ -25,8 +25,6 @@
         .btn-ghost { background:#fff; color:#555; border:1px solid #e0e0e0; }
         .btn-ghost:hover { background:#f5f5f5; }
 
-        .intro { background:#fff; border:1px solid #ede9fe; border-left:4px solid #7c3aed; border-radius:12px; padding:14px 18px; margin-bottom:18px; font-size:12.5px; color:#555; line-height:1.65; }
-        .intro strong { color:#1a1a1a; }
         .subj-head { font-size:13px; font-weight:700; color:#14283E; margin:22px 0 10px; display:flex; align-items:center; gap:8px; }
         .subj-head .count { font-size:11px; font-weight:600; color:#7c3aed; background:#ede9fe; padding:2px 9px; border-radius:20px; }
         .q-card { background:#fff; border-radius:12px; padding:16px 18px; margin-bottom:12px; box-shadow:0 1px 4px rgba(15,10,10,.06); }
@@ -81,11 +79,12 @@
         </div>
     </div>
 
-    <div class="intro">
-        When a topic has fewer questions than its <strong>TOS item count</strong> and the faculty's grace period of
-        <strong>{{ config('curriculum.gap_fill_grace_days') }} days</strong> passes, AI drafts the missing items.
-        They are <strong>hidden from students</strong> until approved here. Check each one against current standards before approving{{ $isChair ? '' : ' — or edit it in the Test Bank and publish it yourself' }}.
-    </div>
+    <x-hint tone="ai" icon="fa-wand-magic-sparkles">
+        <x-slot:title>Hidden from students until you <strong>approve</strong> them.</x-slot:title>
+        AI drafts the missing items when a topic stays below its TOS item count for
+        {{ config('curriculum.gap_fill_grace_days') }} days. Check each one against current standards before
+        approving{{ $isChair ? '' : ', or edit it in the Test Bank and publish it yourself' }}.
+    </x-hint>
 
     @php
         $diffLabel = ['easy' => 'Easy', 'moderate' => 'Medium', 'difficult' => 'Hard'];
