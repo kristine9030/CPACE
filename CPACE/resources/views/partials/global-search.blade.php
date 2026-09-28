@@ -1,9 +1,7 @@
 <style>
+/* Lives on <body> with fixed position so no header stacking context can bury it. */
 .gs-dropdown {
-    position: absolute;
-    top: calc(100% + 6px);
-    left: 0;
-    right: 0;
+    position: fixed;
     background: #fff;
     border: 1px solid #e2e8f0;
     border-radius: 12px;
@@ -92,6 +90,15 @@
         }
     }
 
+    function place() {
+        if (!activeDropdown || !activeWrap) return;
+        var r = activeWrap.getBoundingClientRect();
+        activeDropdown.style.top = (r.bottom + 6) + 'px';
+        activeDropdown.style.left = r.left + 'px';
+        activeDropdown.style.width = r.width + 'px';
+        activeDropdown.style.maxHeight = Math.max(160, Math.min(420, window.innerHeight - r.bottom - 16)) + 'px';
+    }
+
     function closeAll() {
         closeDropdown();
         activeInput = null;
@@ -100,16 +107,18 @@
     }
 
     function openDropdown(input, wrap) {
-        let dropdown = wrap.querySelector('.gs-dropdown');
+        let dropdown = input._gsDropdown;
         if (!dropdown) {
             dropdown = document.createElement('div');
             dropdown.className = 'gs-dropdown';
-            wrap.style.position = 'relative';
-            wrap.appendChild(dropdown);
+            document.body.appendChild(dropdown);
+            input._gsDropdown = dropdown;
         }
+        if (activeDropdown && activeDropdown !== dropdown) closeDropdown();
         activeInput = input;
         activeDropdown = dropdown;
         activeWrap = wrap;
+        place();
         return dropdown;
     }
 
@@ -117,6 +126,7 @@
         if (!activeDropdown || !activeInput) return;
         const dropdown = activeDropdown;
         dropdown.innerHTML = '<div class="gs-loading"><i class="fas fa-spinner fa-spin"></i> Searching...</div>';
+        place();
         dropdown.classList.add('open');
 
         fetch(searchUrl + '?q=' + encodeURIComponent(query), {
@@ -186,7 +196,11 @@
         if (!activeWrap) return;
         if (e.button !== 0) return;
         if (activeWrap.contains(e.target)) return;
+        if (activeDropdown && activeDropdown.contains(e.target)) return;
         closeAll();
     });
+
+    window.addEventListener('scroll', place, true);
+    window.addEventListener('resize', place);
 })();
 </script>
