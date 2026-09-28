@@ -148,6 +148,22 @@ class AuthenticationTest extends TestCase
             ->assertRedirect(route($expectedRouteName));
     }
 
+    public function test_a_chair_or_faculty_member_cannot_open_the_student_dashboard(): void
+    {
+        // Regression: routes/web.php's student-only block (dashboard, subjects,
+        // quizzes, etc.) only required 'auth' until StudentMiddleware was added
+        // - any signed-in chair or faculty account could open /dashboard
+        // directly (or land on it via an old browser-history entry) and it
+        // would render using their own id, silently zeroed out because they
+        // have no student_profiles row. That looked like "my account got
+        // swapped for a student's" when it was really a missing role check.
+        $chair = $this->user(Role::ADMIN, 'chairvisits@example.com');
+        $faculty = $this->user(Role::FACULTY, 'facultyvisits@example.com');
+
+        $this->actingAs($chair)->get(route('dashboard'))->assertForbidden();
+        $this->actingAs($faculty)->get(route('dashboard'))->assertForbidden();
+    }
+
     public function test_login_fails_with_an_incorrect_password_without_revealing_which_field_was_wrong(): void
     {
         $user = $this->user(Role::STUDENT, 'student@example.com');
