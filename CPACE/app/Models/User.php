@@ -214,6 +214,31 @@ class User extends Authenticatable
     }
 
     /**
+     * Named route for this user's own home/dashboard — the single source of
+     * truth for "where does this account belong", used by post-login
+     * redirects, the already-authenticated bounce off /login, and the
+     * themed error pages' "Go to my dashboard" link. Keeping this in one
+     * place is what StudentMiddleware/RedirectIfAuthenticated's fix was
+     * about: every one of those call sites used to compute it separately
+     * (or not at all), so it was easy for one of them to send a chair or
+     * faculty account into the student area by mistake.
+     */
+    public function homeRouteName(): string
+    {
+        if ($this->isChair()) {
+            return 'chair.dashboard';
+        }
+        if ($this->isFaculty()) {
+            return 'faculty.dashboard';
+        }
+        if ($this->isAlumni()) {
+            return 'community.index';
+        }
+
+        return 'dashboard';
+    }
+
+    /**
      * A student account the Program Chair has flagged as graduated. Unlike
      * legacy role-based alumni, this keeps role_id = STUDENT so the person
      * still logs into their one and only student account.

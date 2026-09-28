@@ -160,8 +160,10 @@ class AuthenticationTest extends TestCase
         $chair = $this->user(Role::ADMIN, 'chairvisits@example.com');
         $faculty = $this->user(Role::FACULTY, 'facultyvisits@example.com');
 
-        $this->actingAs($chair)->get(route('dashboard'))->assertForbidden();
-        $this->actingAs($faculty)->get(route('dashboard'))->assertForbidden();
+        // assertSee also confirms the themed errors/403 view rendered
+        // (not a debug/Whoops page standing in for it).
+        $this->actingAs($chair)->get(route('dashboard'))->assertForbidden()->assertSee("don't have access");
+        $this->actingAs($faculty)->get(route('dashboard'))->assertForbidden()->assertSee("don't have access");
     }
 
     public function test_login_fails_with_an_incorrect_password_without_revealing_which_field_was_wrong(): void

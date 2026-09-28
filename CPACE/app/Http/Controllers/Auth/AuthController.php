@@ -135,19 +135,7 @@ class AuthController extends Controller
      */
     protected function homeFor(User $user): string
     {
-        if ($user->isChair()) {
-            return route('chair.dashboard');
-        }
-
-        if ($user->isFaculty()) {
-            return route('faculty.dashboard');
-        }
-
-        if ($user->isAlumni()) {
-            return route('community.index');
-        }
-
-        return route('dashboard');
+        return route($user->homeRouteName());
     }
 
     // ── Social OAuth ─────────────────────────────────────────────────────────

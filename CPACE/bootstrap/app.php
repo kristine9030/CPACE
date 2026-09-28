@@ -33,21 +33,9 @@ return Application::configure(basePath: dirname(__DIR__))
         // without this override a signed-in chair or faculty member landing
         // back on /login was sent to the student dashboard instead of their
         // own. Mirrors AuthController::homeFor()'s per-role destination.
-        \Illuminate\Auth\Middleware\RedirectIfAuthenticated::redirectUsing(function ($request) {
-            $user = $request->user();
-
-            if ($user?->isChair()) {
-                return route('chair.dashboard');
-            }
-            if ($user?->isFaculty()) {
-                return route('faculty.dashboard');
-            }
-            if ($user?->isAlumni()) {
-                return route('community.index');
-            }
-
-            return route('dashboard');
-        });
+        \Illuminate\Auth\Middleware\RedirectIfAuthenticated::redirectUsing(
+            fn ($request) => route($request->user()?->homeRouteName() ?? 'dashboard')
+        );
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
