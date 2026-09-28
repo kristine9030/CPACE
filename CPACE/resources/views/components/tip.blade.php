@@ -27,6 +27,11 @@
                     opacity:0; transform:translateY(-4px); pointer-events:none; transition:opacity .12s, transform .12s; }
     #cx-tip-layer.show { opacity:1; transform:none; pointer-events:auto; }
     #cx-tip-layer strong, #cx-tip-layer b { color:#fff; }
+    #cx-tip-layer table { width:100%; border-collapse:collapse; margin-top:2px; }
+    #cx-tip-layer td { padding:3px 0; white-space:nowrap; }
+    #cx-tip-layer td:not(:first-child) { text-align:right; padding-left:14px; }
+    #cx-tip-layer tr.tip-total td { border-top:1px solid rgba(255,255,255,.18); padding-top:6px; }
+    #cx-tip-layer .tip-note { display:block; margin-top:8px; padding-top:8px; border-top:1px solid rgba(255,255,255,.18); color:#cbd2dc; }
 </style>
 <script>
 (function () {

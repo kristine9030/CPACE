@@ -31,8 +31,6 @@
         .summary span { font-size:11.5px; color:#999; }
         .banner { border-radius:12px; padding:14px 16px; font-size:13px; display:flex; gap:11px; align-items:flex-start; margin-bottom:18px; background:#fdeceb; border:1px solid #f5cdc9; color:#8d2b22; }
         .banner i { margin-top:2px; }
-        .banner table { margin-top:8px; font-size:12px; border-collapse:collapse; }
-        .banner td { padding:2px 18px 2px 0; }
         .split { display:grid; grid-template-columns:1fr 320px; gap:18px; align-items:start; }
         .shots { display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:12px; margin-top:14px; }
         .shot { border:1px solid #e3e5ea; border-radius:10px; overflow:hidden; background:#fff; }
@@ -106,12 +104,15 @@
                 <i class="fas fa-flag"></i>
                 <div>
                     <strong>{{ $risk['label'] }} — {{ $attempt->flag_count }} {{ \Illuminate\Support\Str::plural('flag', $attempt->flag_count) }} raised during this sitting.</strong>
-                    <x-tip label="About flags">Flags are signals, not proof — review the timeline and captures before drawing a conclusion.</x-tip>
-                    <table>
-                        @foreach($risk['rows'] as $row)
-                            <tr><td>{{ $row['label'] }}</td><td>×{{ $row['count'] }}</td><td><strong>{{ $row['points'] }} pts</strong></td></tr>
-                        @endforeach
-                    </table>
+                    <x-tip label="Risk breakdown">
+                        <table>
+                            @foreach($risk['rows'] as $row)
+                                <tr><td>{{ $row['label'] }}</td><td>×{{ $row['count'] }}</td><td><strong>{{ $row['points'] }} pts</strong></td></tr>
+                            @endforeach
+                            <tr class="tip-total"><td colspan="2">Weighted score (Medium from {{ \App\Support\ProctorRisk::MEDIUM_FROM }}, High from {{ \App\Support\ProctorRisk::HIGH_FROM }})</td><td><strong>{{ $risk['score'] }}</strong></td></tr>
+                        </table>
+                        <span class="tip-note">Flags are signals, not proof — review the timeline and captures before drawing a conclusion.</span>
+                    </x-tip>
                 </div>
             </div>
         @endif

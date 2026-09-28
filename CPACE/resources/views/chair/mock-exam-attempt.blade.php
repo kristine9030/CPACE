@@ -14,10 +14,6 @@
         .shots { display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:12px; }
         .shot { border:1px solid var(--line); border-radius:10px; overflow:hidden; background:#fff; }
         .shot.evt { border-color:var(--red); }
-        .risk-table { margin-top:10px; font-size:12px; border-collapse:collapse; }
-        .risk-table td { padding:3px 18px 3px 0; }
-        .risk-table .muted { opacity:.7; }
-        .risk-table .risk-total td { border-top:1px solid rgba(0,0,0,.15); padding-top:6px; }
         .shot-img { position:relative; }
         .shot-img .pick { position:absolute; top:7px; left:7px; width:18px; height:18px; cursor:pointer; accent-color:var(--primary); }
         .pick-bar { display:flex; align-items:center; gap:14px; margin-top:12px; padding:9px 12px; background:#f7f8fa;
@@ -101,17 +97,19 @@
             <i class="fas fa-flag"></i>
             <div>
                 <strong>{{ $risk['label'] }} — {{ $attempt->flag_count }} {{ Str::plural('flag', $attempt->flag_count) }} raised during this sitting.</strong>
-                <x-tip label="About flags">Flags are signals, not proof — review the timeline and captures before drawing a conclusion.</x-tip>
-                <table class="risk-table">
-                    @foreach($risk['rows'] as $row)
-                        <tr>
-                            <td>{{ $row['label'] }}</td>
-                            <td>×{{ $row['count'] }}@if($row['count'] > $row['counted']) <span class="muted">(first {{ $row['counted'] }} counted)</span>@endif</td>
-                            <td><strong>{{ $row['points'] }} pts</strong></td>
-                        </tr>
-                    @endforeach
-                    <tr class="risk-total"><td colspan="2">Weighted score (Medium from {{ \App\Support\ProctorRisk::MEDIUM_FROM }}, High from {{ \App\Support\ProctorRisk::HIGH_FROM }})</td><td><strong>{{ $risk['score'] }}</strong></td></tr>
-                </table>
+                <x-tip label="Risk breakdown">
+                    <table>
+                        @foreach($risk['rows'] as $row)
+                            <tr>
+                                <td>{{ $row['label'] }}</td>
+                                <td>×{{ $row['count'] }}@if($row['count'] > $row['counted']) <span style="opacity:.65;">(first {{ $row['counted'] }})</span>@endif</td>
+                                <td><strong>{{ $row['points'] }} pts</strong></td>
+                            </tr>
+                        @endforeach
+                        <tr class="tip-total"><td colspan="2">Weighted score (Medium from {{ \App\Support\ProctorRisk::MEDIUM_FROM }}, High from {{ \App\Support\ProctorRisk::HIGH_FROM }})</td><td><strong>{{ $risk['score'] }}</strong></td></tr>
+                    </table>
+                    <span class="tip-note">Flags are signals, not proof — review the timeline and captures before drawing a conclusion.</span>
+                </x-tip>
             </div>
         </div>
     @endif
