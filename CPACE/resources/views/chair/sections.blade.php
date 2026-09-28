@@ -175,14 +175,39 @@
     </div>
 
     <div class="card">
-        <div class="card-head"><span class="card-title">All Sections ({{ $totalSections }})</span></div>
+        <div class="card-head" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+            <span class="card-title">All Sections (<span id="sectionsShownCount">{{ $totalSections }}</span>)</span>
+            <div style="display:flex;gap:8px;">
+                @php
+                    // Only offer year levels that a section actually uses —
+                    // an unused year level (e.g. no 1st Year sections exist
+                    // yet) would just be a dead option in the dropdown.
+                    $usedYearLevels = $sectionsColl->pluck('year_level')->filter()->unique()->sort()->values();
+                    $hasUnsetYear = $sectionsColl->contains(fn ($s) => ! $s->year_level);
+                @endphp
+                <select id="sectionsYearFilter" onchange="filterSections()" style="padding:7px 10px;border:1px solid #e5e7eb;border-radius:8px;font:inherit;font-size:12.5px;">
+                    <option value="">All Year Levels</option>
+                    @foreach($usedYearLevels as $yl)
+                        <option value="{{ $yl }}">{{ \App\Models\Section::YEAR_LABELS[$yl] ?? $yl }}</option>
+                    @endforeach
+                    @if($hasUnsetYear)
+                        <option value="unset">Not set</option>
+                    @endif
+                </select>
+                <select id="sectionsStatusFilter" onchange="filterSections()" style="padding:7px 10px;border:1px solid #e5e7eb;border-radius:8px;font:inherit;font-size:12.5px;">
+                    <option value="">All Statuses</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                </select>
+            </div>
+        </div>
         <table>
             <thead>
                 <tr><th>Section</th><th>Year Level</th><th>Students</th><th>Faculty Assigned</th><th>Status</th><th style="text-align:right;">Actions</th></tr>
             </thead>
-            <tbody>
+            <tbody id="sectionsTbody">
             @forelse ($sections as $s)
-                <tr class="{{ $s->is_active ? '' : 'is-inactive' }}">
+                <tr class="{{ $s->is_active ? '' : 'is-inactive' }}" data-year="{{ $s->year_level }}" data-status="{{ $s->is_active ? 'active' : 'inactive' }}">
                     <td>
                         <div class="section-cell is-clickable" role="button" tabindex="0" title="View students in {{ $s->name }}"
                              onclick='openRoster(@json(["id" => $s->id, "name" => $s->name]))'
@@ -255,6 +280,7 @@
             @endforelse
             </tbody>
         </table>
+        <div class="empty" id="sectionsNoMatch" style="display:none;"><i class="fas fa-filter"></i><div>No sections match these filters.</div></div>
     </div>
 </main>
 
@@ -293,7 +319,18 @@
             <button type="button" class="roster-tab active" data-tab="members" onclick="rosterTab('members')">Students <span class="tab-count" id="membersCount">0</span></button>
             <button type="button" class="roster-tab" data-tab="add" onclick="rosterTab('add')">Add Students</button>
         </div>
-        <input type="search" class="roster-search" id="rosterSearch" placeholder="Search by name, email or student number…" oninput="renderRoster()">
+        {{-- Grid, not flex: input[type=search] collapses to its min-content
+             width (~26px) under flex-grow in this layout, so give the search
+             box an explicit fr track instead of relying on flex to size it. --}}
+        <div id="rosterFilterRow" style="display:grid;grid-template-columns:1fr auto auto;gap:8px;margin-bottom:10px;">
+            <input type="search" class="roster-search" id="rosterSearch" placeholder="Search by name, email or student number…" oninput="renderRoster()" style="margin-bottom:0;width:100%;min-width:0;">
+            <select id="rosterYearFilter" onchange="onRosterYearFilterChange()" style="display:none;padding:9px 10px;border:1px solid #e5e7eb;border-radius:9px;font:inherit;font-size:12.5px;">
+                <option value="">All Years</option>
+            </select>
+            <select id="rosterSectionFilter" onchange="renderRoster()" style="display:none;padding:9px 10px;border:1px solid #e5e7eb;border-radius:9px;font:inherit;font-size:12.5px;">
+                <option value="">All Sections</option>
+            </select>
+        </div>
         <div class="roster-list" id="rosterList"></div>
         <div class="roster-foot" id="rosterFoot" style="display:none;">
             <label style="font-size:12px;color:#666;cursor:pointer;"><input type="checkbox" id="rosterAll" onchange="toggleAllVisible(this.checked)"> Select all shown</label>
@@ -308,6 +345,7 @@
 <script>
 const roster = { section: null, tab: 'members', members: [], available: [], selected: new Set() };
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const YEAR_LABELS = @json(\App\Models\Section::YEAR_LABELS);
 
 async function openRoster(section) {
     roster.section = section; roster.selected = new Set(); roster.tab = 'members';
@@ -325,6 +363,7 @@ async function loadRoster() {
         if (!res.ok) throw new Error();
         const data = await res.json();
         roster.members = data.members; roster.available = data.available;
+        populateRosterFilters();
         renderRoster();
     } catch (e) {
         document.getElementById('rosterList').innerHTML = '<div class="roster-empty">Could not load students. Please try again.</div>';
@@ -334,16 +373,54 @@ function rosterTab(tab) {
     roster.tab = tab;
     document.querySelectorAll('.roster-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
     document.getElementById('rosterSearch').value = '';
+    document.getElementById('rosterYearFilter').value = '';
+    document.getElementById('rosterSectionFilter').value = '';
+    document.getElementById('rosterYearFilter').style.display = tab === 'add' ? '' : 'none';
+    document.getElementById('rosterSectionFilter').style.display = tab === 'add' ? '' : 'none';
     document.getElementById('rosterFoot').style.display = tab === 'add' ? 'flex' : 'none';
+    if (tab === 'add') populateRosterSectionOptions();
+    renderRoster();
+}
+
+// Only list year levels / sections that actually show up among the
+// students who can be added — an option nobody matches is just noise
+// (and a bare year filter is ambiguous when a year has 2+ sections).
+function populateRosterFilters() {
+    const yearSel = document.getElementById('rosterYearFilter');
+    const years = [...new Set(roster.available.map(s => s.year_level).filter(v => v != null))]
+        .sort((a, b) => a - b);
+    yearSel.innerHTML = '<option value="">All Years</option>'
+        + years.map(y => `<option value="${y}">${esc(YEAR_LABELS[y] ?? ('Year ' + y))}</option>`).join('');
+    populateRosterSectionOptions();
+}
+function populateRosterSectionOptions() {
+    const sectionSel = document.getElementById('rosterSectionFilter');
+    const prev = sectionSel.value;
+    const year = document.getElementById('rosterYearFilter').value;
+    const pool = roster.available.filter(s => !year || String(s.year_level ?? '') === year);
+    const sections = [...new Set(pool.map(s => s.section).filter(Boolean))].sort();
+    const hasNoSection = pool.some(s => !s.section);
+    sectionSel.innerHTML = '<option value="">All Sections</option>'
+        + sections.map(sec => `<option value="${esc(sec)}">${esc(sec)}</option>`).join('')
+        + (hasNoSection ? '<option value="__none__">No section</option>' : '');
+    // Keep the previous pick if it's still a valid option for the new year.
+    if ([...sectionSel.options].some(o => o.value === prev)) sectionSel.value = prev;
+}
+function onRosterYearFilterChange() {
+    populateRosterSectionOptions();
     renderRoster();
 }
 function renderRoster() {
     const q = document.getElementById('rosterSearch').value.trim().toLowerCase();
+    const year = document.getElementById('rosterYearFilter').value;
+    const sectionFilter = document.getElementById('rosterSectionFilter').value;
     const matches = s => !q || [s.name, s.email, s.student_number].some(v => (v ?? '').toLowerCase().includes(q));
+    const matchesYear = s => !year || String(s.year_level ?? '') === year;
+    const matchesSection = s => !sectionFilter || (sectionFilter === '__none__' ? !s.section : s.section === sectionFilter);
     document.getElementById('membersCount').textContent = roster.members.length;
     const list = document.getElementById('rosterList');
     const adding = roster.tab === 'add';
-    const rows = (adding ? roster.available : roster.members).filter(matches);
+    const rows = (adding ? roster.available : roster.members).filter(matches).filter(s => !adding || (matchesYear(s) && matchesSection(s)));
     document.getElementById('rosterSub').textContent = adding
         ? `Tick the students to place in ${roster.section.name}. Students already in another section will be moved.`
         : `${roster.members.length} student(s) currently in ${roster.section.name}.`;
@@ -353,7 +430,7 @@ function renderRoster() {
         list.innerHTML = rows.map(s => `
             <label class="roster-row">
                 <input type="checkbox" value="${s.id}" ${roster.selected.has(s.id) ? 'checked' : ''} onchange="toggleStudent(${s.id}, this.checked)">
-                <div class="r-body"><div class="r-name">${esc(s.name)}</div><div class="r-meta">${esc(s.student_number || 'No student no.')} · ${esc(s.email)}</div></div>
+                <div class="r-body"><div class="r-name">${esc(s.name)}</div><div class="r-meta">${esc(s.student_number || 'No student no.')} · ${esc(s.email)}${s.year_level ? ' · Y' + s.year_level : ''}</div></div>
                 ${s.section ? `<span class="r-tag">In ${esc(s.section)}</span>` : '<span class="r-tag" style="background:#e0f2fe;color:#0369a1;">No section</span>'}
             </label>`).join('');
     } else {
@@ -403,6 +480,21 @@ function openSection(section = null) {
     document.getElementById('sectionYear').value = section?.year_level ?? '';
     document.getElementById('sectionModal').classList.add('open');
 }
+function filterSections() {
+    const year = document.getElementById('sectionsYearFilter').value;
+    const status = document.getElementById('sectionsStatusFilter').value;
+    const rows = [...document.querySelectorAll('#sectionsTbody tr[data-status]')];
+    let shown = 0;
+    rows.forEach(row => {
+        const yearMatch = !year || (year === 'unset' ? row.dataset.year === '' : row.dataset.year === year);
+        const match = yearMatch && (!status || row.dataset.status === status);
+        row.style.display = match ? '' : 'none';
+        if (match) shown++;
+    });
+    document.getElementById('sectionsShownCount').textContent = shown;
+    document.getElementById('sectionsNoMatch').style.display = (rows.length > 0 && shown === 0) ? '' : 'none';
+}
+
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 document.querySelectorAll('.modal-overlay').forEach(modal => modal.addEventListener('click', event => { if (event.target === modal) modal.classList.remove('open'); }));
 document.addEventListener('keydown', event => { if (event.key === 'Escape') document.querySelectorAll('.modal-overlay.open').forEach(modal => modal.classList.remove('open')); });
