@@ -20,16 +20,17 @@
     .cx-tip-btn:hover, .cx-tip-btn[aria-expanded="true"] { color:#7B1D1D; background:rgba(123,29,29,.08); }
     .cx-tip-btn:focus-visible { outline:2px solid #7B1D1D; outline-offset:2px; }
     .cx-tip-src { display:none; }
-    #cx-tip-layer { position:fixed; z-index:99999; max-width:min(320px, calc(100vw - 24px));
+    #cx-tip-layer { position:fixed; z-index:99999; width:max-content; max-width:min(300px, calc(100vw - 24px));
                     background:#1f2937; color:#f9fafb; font:400 12.5px/1.55 'Poppins', system-ui, sans-serif;
                     text-transform:none; letter-spacing:normal; text-align:left; white-space:normal;
+                    overflow-wrap:break-word; box-sizing:border-box;
                     padding:10px 12px; border-radius:10px; box-shadow:0 12px 30px rgba(0,0,0,.25);
                     opacity:0; transform:translateY(-4px); pointer-events:none; transition:opacity .12s, transform .12s; }
     #cx-tip-layer.show { opacity:1; transform:none; pointer-events:auto; }
     #cx-tip-layer strong, #cx-tip-layer b { color:#fff; }
     #cx-tip-layer table { width:100%; border-collapse:collapse; margin-top:2px; }
-    #cx-tip-layer td { padding:3px 0; white-space:nowrap; }
-    #cx-tip-layer td:not(:first-child) { text-align:right; padding-left:14px; }
+    #cx-tip-layer td { padding:3px 0; overflow-wrap:break-word; }
+    #cx-tip-layer td:not(:first-child) { text-align:right; padding-left:10px; white-space:nowrap; width:1%; }
     #cx-tip-layer tr.tip-total td { border-top:1px solid rgba(255,255,255,.18); padding-top:6px; }
     #cx-tip-layer .tip-note { display:block; margin-top:8px; padding-top:8px; border-top:1px solid rgba(255,255,255,.18); color:#cbd2dc; }
 </style>
