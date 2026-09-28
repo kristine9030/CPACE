@@ -230,6 +230,16 @@
         </form>
     @endif
 
+    @if(($aiPendingCount ?? 0) > 0)
+        <a href="{{ route('faculty.test-bank.ai-review') }}"
+           style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:12px 16px;margin-bottom:16px;border-radius:12px;border:1px solid #ddd6fe;background:#f5f3ff;font-size:12px;color:#4c1d95;text-decoration:none;">
+            <span><i class="fas fa-robot"></i>
+                <strong>{{ $aiPendingCount }} AI substitute question{{ $aiPendingCount === 1 ? '' : 's' }}</strong>
+                {{ $aiPendingCount === 1 ? 'was' : 'were' }} drafted for topics short of their TOS item count. Students can't see them until you review them.</span>
+            <span style="font-weight:600;">Review now <i class="fas fa-arrow-right"></i></span>
+        </a>
+    @endif
+
     <!-- STATS -->
     @php
         $activePct = $stats['total'] > 0 ? round($stats['active'] / $stats['total'] * 100) : 0;

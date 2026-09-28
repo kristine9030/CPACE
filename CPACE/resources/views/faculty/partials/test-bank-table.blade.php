@@ -42,6 +42,10 @@
             <td>
                 @if($q->is_active)
                     <span class="status-pill sp-active"><i class="fas fa-circle" style="font-size:6px;"></i> Active</span>
+                @elseif($q->isPendingAiReview())
+                    <a href="{{ route('faculty.test-bank.ai-review') }}" class="status-pill" style="background:#ede9fe;color:#7c3aed;text-decoration:none;" title="Drafted by AI because this topic was short of its TOS item count. Hidden from students until approved."><i class="fas fa-robot" style="font-size:9px;"></i> AI · Needs review</a>
+                @elseif($q->source === 'ai_substitute' && $q->review_status === 'rejected')
+                    <span class="status-pill sp-draft" title="AI substitute rejected on review"><i class="fas fa-robot" style="font-size:9px;"></i> AI · Rejected</span>
                 @else
                     <span class="status-pill sp-draft"><i class="fas fa-circle" style="font-size:6px;"></i> Draft</span>
                 @endif

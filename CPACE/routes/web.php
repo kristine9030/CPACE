@@ -44,6 +44,7 @@ use App\Http\Controllers\CommunityResourceController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\Alumni\ProfileController as AlumniProfileController;
 use App\Http\Controllers\GlobalSearchController;
+use App\Http\Controllers\AiSubstituteReviewController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -176,6 +177,11 @@ Route::middleware('auth')->group(function () {
         Route::get('/mock-exams/{mockExam}/results', [MockExamReviewController::class, 'results'])->name('mock-exams.results');
         Route::get('/mock-exams/attempts/{attempt}', [MockExamReviewController::class, 'attempt'])->name('mock-exams.attempt');
 
+        // AI substitute questions drafted for topics short of their TOS count
+        Route::get('/ai-review', [AiSubstituteReviewController::class, 'index'])->name('ai-review');
+        Route::post('/ai-review/{id}/approve', [AiSubstituteReviewController::class, 'approve'])->name('ai-review.approve');
+        Route::post('/ai-review/{id}/reject', [AiSubstituteReviewController::class, 'reject'])->name('ai-review.reject');
+
         // Announcements and internal messages
         Route::get('/communications', [CommunicationController::class, 'index'])->name('communications');
         Route::post('/communications', [CommunicationController::class, 'store'])->name('communications.store');
@@ -192,6 +198,10 @@ Route::middleware('auth')->group(function () {
         Route::get('/dashboard/insights', [FacultyDashboardController::class, 'insights'])->name('dashboard.insights');
         Route::get('/test-bank', [TestBankController::class, 'index'])->name('test-bank');
         Route::get('/test-bank/export', [TestBankController::class, 'export'])->name('test-bank.export');
+        // AI substitute questions drafted for topics short of their TOS count
+        Route::get('/test-bank/ai-review', [AiSubstituteReviewController::class, 'index'])->name('test-bank.ai-review');
+        Route::post('/test-bank/ai-review/{id}/approve', [AiSubstituteReviewController::class, 'approve'])->name('test-bank.ai-review.approve');
+        Route::post('/test-bank/ai-review/{id}/reject', [AiSubstituteReviewController::class, 'reject'])->name('test-bank.ai-review.reject');
         Route::post('/test-bank/curriculum', [TestBankController::class, 'switchCurriculum'])->name('test-bank.curriculum');
         Route::get('/test-bank/create', [TestBankController::class, 'create'])->name('question.create');
         Route::post('/test-bank/ai-draft', [TestBankController::class, 'aiDraft'])->middleware('throttle:8,1')->name('question.ai-draft');

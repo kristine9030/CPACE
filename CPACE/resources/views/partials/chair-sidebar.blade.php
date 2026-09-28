@@ -390,6 +390,7 @@
         <li class="nav-label">Analytics</li>
         <li><a href="{{ route('chair.analytics.performance') }}" class="{{ $active === 'analytics-performance' ? 'active' : '' }}"><i class="fas fa-chart-line"></i><span>Class-Level Performance</span></a></li>
         <li><a href="{{ route('chair.analytics.test-bank-coverage') }}" class="{{ $active === 'analytics-coverage' ? 'active' : '' }}"><i class="fas fa-table-cells-large"></i><span>Test Bank Coverage</span></a></li>
+        <li><a href="{{ route('chair.ai-review') }}" class="{{ $active === 'ai-review' ? 'active' : '' }}"><i class="fas fa-robot"></i><span>AI Substitute Review</span></a></li>
     </ul>
 
     <div class="sidebar-footer">

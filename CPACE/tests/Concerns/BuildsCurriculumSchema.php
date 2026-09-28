@@ -144,17 +144,23 @@ trait BuildsCurriculumSchema
             $table->integer('sort_order')->default(0);
             $table->decimal('tos_weight', 5, 2)->nullable();
             $table->unsignedSmallInteger('tos_items')->nullable();
+            $table->dateTime('gap_flagged_at')->nullable();
+            $table->dateTime('gap_warned_at')->nullable();
             $table->boolean('is_active')->default(true);
         });
         Schema::create('questions', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('topic_id');
             $table->unsignedBigInteger('created_by')->nullable();
+            $table->string('source', 20)->default('faculty');
             $table->text('question_text');
             $table->string('question_type')->default('mcq');
             $table->string('difficulty')->default('moderate');
             $table->text('explanation')->nullable();
             $table->boolean('is_active')->default(true);
+            $table->string('review_status', 10)->nullable();
+            $table->unsignedBigInteger('reviewed_by')->nullable();
+            $table->dateTime('reviewed_at')->nullable();
             $table->timestamps();
         });
         Schema::create('question_choices', function (Blueprint $table) {

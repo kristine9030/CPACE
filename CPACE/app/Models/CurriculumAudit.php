@@ -19,6 +19,7 @@ class CurriculumAudit extends Model
     public const ACTION_TOPIC_REMOVED = 'topic_removed';
     public const ACTION_TOPICS_IMPORTED = 'topics_imported';
     public const ACTION_QUESTIONS_COPIED = 'questions_copied';
+    public const ACTION_AI_GAP_FILLED = 'ai_gap_filled';
 
     public $timestamps = false;
 
@@ -48,6 +49,7 @@ class CurriculumAudit extends Model
             self::ACTION_TOPIC_REMOVED => 'Removed a topic',
             self::ACTION_TOPICS_IMPORTED => 'Imported topics from a TOS',
             self::ACTION_QUESTIONS_COPIED => 'Copied Test Bank questions forward',
+            self::ACTION_AI_GAP_FILLED => 'AI drafted substitute questions for a short topic',
             default => ucfirst(str_replace('_', ' ', $this->action)),
         };
     }

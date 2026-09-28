@@ -6,19 +6,43 @@ use Illuminate\Database\Eloquent\Model;
 
 class Question extends Model
 {
+    public const SOURCE_FACULTY = 'faculty';
+    public const SOURCE_AI_SUBSTITUTE = 'ai_substitute';
+
+    public const REVIEW_PENDING = 'pending';
+    public const REVIEW_APPROVED = 'approved';
+    public const REVIEW_REJECTED = 'rejected';
+
     protected $fillable = [
         'topic_id',
         'created_by',
+        'source',
         'question_text',
         'question_type',
         'difficulty',
         'explanation',
         'is_active',
+        'review_status',
+        'reviewed_by',
+        'reviewed_at',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
+        'reviewed_at' => 'datetime',
     ];
+
+    /** An AI substitute question still waiting for the faculty or chair to approve it. */
+    public function isPendingAiReview(): bool
+    {
+        return $this->source === self::SOURCE_AI_SUBSTITUTE && $this->review_status === self::REVIEW_PENDING;
+    }
+
+    public function scopePendingAiReview($query)
+    {
+        return $query->where('questions.source', self::SOURCE_AI_SUBSTITUTE)
+            ->where('questions.review_status', self::REVIEW_PENDING);
+    }
 
     public function topic()
     {
@@ -43,5 +67,10 @@ class Question extends Model
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function reviewer()
+    {
+        return $this->belongsTo(User::class, 'reviewed_by');
     }
 }

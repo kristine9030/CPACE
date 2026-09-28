@@ -12,7 +12,7 @@ class Topic extends Model
 
     protected $fillable = [
         'subject_id', 'curriculum_version_id', 'parent_id', 'name', 'description', 'sort_order', 'is_active',
-        'tos_weight', 'tos_items',
+        'tos_weight', 'tos_items', 'gap_flagged_at', 'gap_warned_at',
     ];
 
     protected $casts = [
@@ -20,6 +20,8 @@ class Topic extends Model
         'is_active' => 'boolean',
         'tos_weight' => 'float',
         'tos_items' => 'integer',
+        'gap_flagged_at' => 'datetime',
+        'gap_warned_at' => 'datetime',
     ];
 
     public function subject()
