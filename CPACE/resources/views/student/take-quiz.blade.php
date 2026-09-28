@@ -138,6 +138,11 @@
             overflow-y:auto;
             -webkit-overflow-scrolling:touch;
             padding:20px 18px 24px;
+            /* No text selection inside the quiz body: this is what stops
+               Edge's "Copilot" text-selection popup (and any other browser
+               selection toolbar) from appearing over a highlighted
+               question/choice, since there's nothing left to select. */
+            -webkit-user-select:none; user-select:none;
         }
 
         /* Flag banner */
@@ -1810,6 +1815,13 @@ window.addEventListener('blur', function() {
 });
 window.addEventListener('focus', function() { clearTimeout(blurTimer); });
 document.addEventListener('contextmenu', e => e.preventDefault());
+// Belt-and-suspenders on top of the user-select:none CSS: if anything still
+// manages to select text (or a screen reader/older browser ignores that
+// CSS), block the selection itself and copy/cut, so there's never a live
+// selection for a browser's built-in "look this up / ask AI" popup to latch
+// onto.
+document.addEventListener('selectstart', e => e.preventDefault());
+['copy', 'cut'].forEach(evt => document.addEventListener(evt, e => e.preventDefault()));
 document.addEventListener('keydown', function(e) {
     const ctrl = e.ctrlKey || e.metaKey;
     if ((ctrl && ['t','w','n'].includes(e.key)) || e.key === 'F12') e.preventDefault();

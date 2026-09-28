@@ -26,7 +26,10 @@
         .cam-dot .d { width:9px; height:9px; border-radius:50%; background:var(--green); }
         .cam-dot.off .d { background:var(--red); }
 
-        .wrap { max-width:1180px; margin:0 auto; padding:22px; display:grid; grid-template-columns:1fr 220px; gap:20px; align-items:start; }
+        /* No text selection inside the exam: stops Edge's "Copilot" text-
+           selection popup (and any other browser selection toolbar) from
+           appearing over a highlighted question/choice. */
+        .wrap { max-width:1180px; margin:0 auto; padding:22px; display:grid; grid-template-columns:1fr 220px; gap:20px; align-items:start; -webkit-user-select:none; user-select:none; }
         .q-card { background:#fff; border:1px solid var(--line); border-radius:13px; padding:22px 24px; margin-bottom:14px; }
         .q-num { font-size:11.5px; font-weight:700; color:var(--primary); letter-spacing:.5px; text-transform:uppercase; }
         .q-text { font-size:14.5px; line-height:1.65; color:var(--ink); margin:8px 0 16px; }
@@ -580,6 +583,7 @@
         flag('paste_blocked', evt);
     }));
     document.addEventListener('contextmenu', e => e.preventDefault());
+    document.addEventListener('selectstart', e => e.preventDefault());
 
     window.addEventListener('beforeunload', e => {
         if (submitting) return;

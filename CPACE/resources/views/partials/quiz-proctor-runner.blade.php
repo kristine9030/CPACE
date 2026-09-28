@@ -312,6 +312,11 @@
         flag('paste_blocked', evt);
     }));
     document.addEventListener('contextmenu', e => e.preventDefault());
+    // Backs up the .wrap { user-select:none } in class-quiz-take.blade.php:
+    // if anything still manages to select text, block the selection itself
+    // so there's never a live selection for a browser's built-in "ask AI /
+    // look this up" popup (e.g. Edge Copilot) to latch onto.
+    document.addEventListener('selectstart', e => e.preventDefault());
 
     // Fullscreen needs a gesture, so it is requested on the first click.
     document.addEventListener('click', function once() {
