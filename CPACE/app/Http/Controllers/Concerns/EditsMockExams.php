@@ -8,6 +8,7 @@ use App\Models\MockExamItem;
 use App\Models\Question;
 use App\Models\Topic;
 use App\Models\User;
+use App\Support\BatchYear;
 use App\Support\MockExamAuditor;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -254,5 +255,29 @@ trait EditsMockExams
                 MockExamAuditor::describeItemChange($itemsBefore, count($items), $added, $removed)
             );
         }
+    }
+
+    /**
+     * Batch years to offer on the audience picker: every distinct batch a
+     * student is actually enrolled under, newest first, plus the current
+     * school year even if nobody's profile has it yet. Unlike sections there's
+     * no lookup table for batch years - they're free-form "2026-2027" labels
+     * on student_profiles - so this is derived rather than looked up.
+     */
+    protected function availableBatchYears(): array
+    {
+        if (! BatchYear::columnExists()) {
+            return [BatchYear::current()];
+        }
+
+        return DB::table('student_profiles')
+            ->whereNotNull('batch_year')
+            ->distinct()
+            ->pluck('batch_year')
+            ->push(BatchYear::current())
+            ->unique()
+            ->sortDesc()
+            ->values()
+            ->all();
     }
 }

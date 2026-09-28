@@ -174,7 +174,7 @@
         <div class="card" style="margin-bottom:18px;">
             <div class="card-title"><i class="fas fa-users-viewfinder"></i> Who can take this exam</div>
             <div class="card-sub">
-                Only the ticked year levels and sections will see it.<x-tip>There's no code to hand out. An assigned faculty member can change this too.</x-tip>
+                Only the ticked year levels, sections, and batch years will see it.<x-tip>There's no code to hand out. An assigned faculty member can change this too.</x-tip>
             </div>
             @error('audience')<div class="banner banner-danger" style="margin-top:10px;"><i class="fas fa-triangle-exclamation"></i><div>{{ $message }}</div></div>@enderror
 
@@ -186,6 +186,7 @@
                     @php
                         $pickedYears = collect(old('audience_years', $exam->audience_years ?? []))->map(fn ($y) => (int) $y)->all();
                         $pickedSections = old('audience_sections', $exam->audience_sections ?? []);
+                        $pickedBatchYears = old('audience_batch_years', $exam->audience_batch_years ?? []);
                     @endphp
                     <div style="font-size:12px;font-weight:600;margin-bottom:6px;">Year level</div>
                     <div style="display:flex;flex-wrap:wrap;gap:8px 14px;">
@@ -217,6 +218,18 @@
                                 </label>
                             @endforeach
                         </div>
+                        </div>
+                    @endif
+
+                    @if(!empty($batchYears))
+                        <div style="font-size:12px;font-weight:600;margin:14px 0 4px;">Batch year <span style="font-weight:400;color:var(--muted);">(optional — leave all unticked to admit every batch of the chosen years/sections)</span></div>
+                        <div style="display:flex;flex-wrap:wrap;gap:8px 14px;">
+                            @foreach($batchYears as $batchYear)
+                                <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+                                    <input type="checkbox" name="audience_batch_years[]" value="{{ $batchYear }}" {{ in_array($batchYear, (array) $pickedBatchYears, true) ? 'checked' : '' }}>
+                                    {{ $batchYear }}
+                                </label>
+                            @endforeach
                         </div>
                     @endif
 

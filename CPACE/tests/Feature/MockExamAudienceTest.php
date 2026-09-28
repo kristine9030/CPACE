@@ -84,6 +84,66 @@ class MockExamAudienceTest extends TestCase
         $this->actingAs($third)->post(route('mock-exams.start', $exam))->assertForbidden();
     }
 
+    public function test_batch_years_narrow_within_the_chosen_years(): void
+    {
+        $exam = $this->publishedFor(['audience_years' => [4], 'audience_batch_years' => ['2026-2027']]);
+
+        $this->actingAs($this->studentIn(4, 'BSA 4-A', 'old@example.com', '2025-2026'))
+            ->get(route('mock-exams.show', $exam))->assertForbidden();
+
+        $this->actingAs($this->studentIn(4, 'BSA 4-A', 'new@example.com', '2026-2027'))
+            ->get(route('mock-exams.show', $exam))->assertOk();
+    }
+
+    public function test_sections_and_batch_years_both_narrow_independently(): void
+    {
+        $exam = $this->publishedFor([
+            'audience_years' => [4],
+            'audience_sections' => ['BSA 4-A'],
+            'audience_batch_years' => ['2026-2027'],
+        ]);
+
+        // Right section, wrong batch.
+        $this->actingAs($this->studentIn(4, 'BSA 4-A', 'wrongbatch@example.com', '2025-2026'))
+            ->get(route('mock-exams.show', $exam))->assertForbidden();
+
+        // Right batch, wrong section.
+        $this->actingAs($this->studentIn(4, 'BSA 4-B', 'wrongsection@example.com', '2026-2027'))
+            ->get(route('mock-exams.show', $exam))->assertForbidden();
+
+        // Both match.
+        $this->actingAs($this->studentIn(4, 'BSA 4-A', 'match@example.com', '2026-2027'))
+            ->get(route('mock-exams.show', $exam))->assertOk();
+    }
+
+    public function test_the_chair_saves_the_batch_year_audience_and_it_is_audited(): void
+    {
+        $exam = $this->publishedFor([]);
+
+        $this->actingAs($this->makeChair())
+            ->put(route('chair.mock-exams.audience', $exam), [
+                'audience_years' => [4],
+                'audience_batch_years' => ['2026-2027'],
+            ])->assertRedirect();
+
+        $exam->refresh();
+        $this->assertSame(['2026-2027'], $exam->audience_batch_years);
+        $this->assertSame(1, MockExamAudit::where('exam_id', $exam->id)->where('action', MockExamAudit::ACTION_AUDIENCE)->count());
+    }
+
+    public function test_a_malformed_batch_year_label_is_rejected(): void
+    {
+        $exam = $this->publishedFor([]);
+
+        $this->actingAs($this->makeChair())
+            ->put(route('chair.mock-exams.audience', $exam), [
+                'audience_years' => [4],
+                'audience_batch_years' => ['not-a-batch'],
+            ])->assertSessionHasErrors('audience_batch_years.0');
+
+        $this->assertNull($exam->fresh()->audience_batch_years);
+    }
+
     public function test_an_exam_with_no_audience_recorded_stays_open_to_everyone(): void
     {
         $exam = $this->publishedFor([]);
@@ -165,10 +225,11 @@ class MockExamAudienceTest extends TestCase
 
     // ── helpers ──────────────────────────────────────────────────────────
 
-    private function studentIn(int $year, ?string $section, string $email): User
+    private function studentIn(int $year, ?string $section, string $email, ?string $batchYear = null): User
     {
         $student = $this->makeStudent($email);
-        DB::table('student_profiles')->where('user_id', $student->id)->update(['year_level' => $year, 'section' => $section]);
+        DB::table('student_profiles')->where('user_id', $student->id)
+            ->update(['year_level' => $year, 'section' => $section, 'batch_year' => $batchYear]);
 
         return $student;
     }

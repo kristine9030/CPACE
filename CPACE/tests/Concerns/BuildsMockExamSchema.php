@@ -92,6 +92,7 @@ trait BuildsMockExamSchema
             $table->unsignedBigInteger('user_id')->primary();
             $table->unsignedTinyInteger('year_level')->nullable();
             $table->string('section')->nullable();
+            $table->string('batch_year', 9)->nullable();
             $table->integer('total_points')->default(0);
             $table->integer('streak_days')->default(0);
             $table->boolean('is_alumni')->default(false);
@@ -217,6 +218,7 @@ trait BuildsMockExamSchema
             $table->unsignedInteger('version')->default(1);
             $table->json('audience_years')->nullable();
             $table->json('audience_sections')->nullable();
+            $table->json('audience_batch_years')->nullable();
             $table->timestamps();
         });
         Schema::create('mock_exam_topics', function (Blueprint $table) {

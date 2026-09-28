@@ -547,6 +547,7 @@ CREATE TABLE mock_exams (
     version                 INT UNSIGNED NOT NULL DEFAULT 1,  -- optimistic lock for collaborators
     audience_years          JSON NULL,                 -- year levels allowed to sit it; NULL = everyone
     audience_sections       JSON NULL,                 -- optional section names within those years
+    audience_batch_years    JSON NULL,                 -- optional enrollment batches ("2026-2027") within those years
     created_at              DATETIME NULL,
     updated_at              DATETIME NULL,
     INDEX idx_me_subject_sched (subject_id, scheduled_at),
