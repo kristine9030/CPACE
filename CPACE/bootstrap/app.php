@@ -24,6 +24,29 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: [
             \App\Http\Middleware\EnsureAccountSetup::class,
         ]);
+
+        // The 'guest' middleware (RedirectIfAuthenticated) bounces an already
+        // logged-in user who lands on /login — e.g. the browser's back button
+        // after signing in — straight to route('dashboard') by default. That
+        // name only exists once, for the student area (routes/web.php), so
+        // without this override a signed-in chair or faculty member landing
+        // back on /login was sent to the student dashboard instead of their
+        // own. Mirrors AuthController::homeFor()'s per-role destination.
+        \Illuminate\Auth\Middleware\RedirectIfAuthenticated::redirectUsing(function ($request) {
+            $user = $request->user();
+
+            if ($user?->isChair()) {
+                return route('chair.dashboard');
+            }
+            if ($user?->isFaculty()) {
+                return route('faculty.dashboard');
+            }
+            if ($user?->isAlumni()) {
+                return route('community.index');
+            }
+
+            return route('dashboard');
+        });
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

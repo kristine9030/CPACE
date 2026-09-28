@@ -132,6 +132,22 @@ class AuthenticationTest extends TestCase
         ];
     }
 
+    #[DataProvider('roleHomeRoutes')]
+    public function test_an_already_logged_in_user_who_revisits_login_is_bounced_to_their_own_dashboard(int $roleId, string $expectedRouteName): void
+    {
+        // Regression: Illuminate\Auth\Middleware\RedirectIfAuthenticated's
+        // default target is route('dashboard') - only the student area is
+        // registered under that bare name (routes/web.php), so a chair or
+        // faculty member who landed back on /login (e.g. the browser back
+        // button right after signing in) was bounced to the student
+        // dashboard instead of their own. bootstrap/app.php now overrides
+        // that redirect to mirror AuthController::homeFor().
+        $user = $this->user($roleId, 'revisit@example.com');
+
+        $this->actingAs($user)->get('/login')
+            ->assertRedirect(route($expectedRouteName));
+    }
+
     public function test_login_fails_with_an_incorrect_password_without_revealing_which_field_was_wrong(): void
     {
         $user = $this->user(Role::STUDENT, 'student@example.com');
