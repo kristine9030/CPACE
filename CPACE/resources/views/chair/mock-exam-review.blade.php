@@ -54,14 +54,10 @@
     </div>
 
     @if($readOnly)
-        <div class="banner banner-warn">
-            <i class="fas fa-lock"></i>
-            <div>
-                <strong>Published — locked.</strong>
-                Neither you nor the faculty can change this paper any more. That's deliberate: students
-                must all sit the identical exam. It's already visible to <strong>{{ $exam->audienceLabel() }}</strong>.
-            </div>
-        </div>
+        <x-hint tone="warn" icon="fa-lock">
+            <x-slot:title><strong>Published — locked.</strong> Visible to <strong>{{ $exam->audienceLabel() }}</strong>.</x-slot:title>
+            No one can edit it now, so every student sits the identical exam.
+        </x-hint>
     @endif
 
     @error('version')<div class="banner banner-warn"><i class="fas fa-users"></i><div>{{ $message }}</div></div>@enderror
@@ -178,8 +174,7 @@
         <div class="card" style="margin-bottom:18px;">
             <div class="card-title"><i class="fas fa-users-viewfinder"></i> Who can take this exam</div>
             <div class="card-sub">
-                There's no code to hand out — only the year levels (and sections) ticked here will
-                see this exam. This can also be changed by an assigned faculty member.
+                Only the ticked year levels and sections will see it.<x-tip>There's no code to hand out. An assigned faculty member can change this too.</x-tip>
             </div>
             @error('audience')<div class="banner banner-danger" style="margin-top:10px;"><i class="fas fa-triangle-exclamation"></i><div>{{ $message }}</div></div>@enderror
 

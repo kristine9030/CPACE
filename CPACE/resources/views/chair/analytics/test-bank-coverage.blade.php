@@ -283,7 +283,7 @@
                     </tbody>
                 </table>
             </div>
-            <div class="legend"><strong>Coverage rule:</strong> zero active questions is critical, 1–{{ $target - 1 }} is thin, and {{ $target }} or more is adequate. Coverage is measured per top-level curriculum area — a question written against a nested subtopic counts towards the area that contains it. Difficulty totals include both common naming styles (moderate/medium and difficult/hard).</div>
+            <div class="legend"><strong>Active questions:</strong> 0 = critical · 1–{{ $target - 1 }} = thin · {{ $target }}+ = adequate<x-tip label="How coverage is counted">Measured per top-level curriculum area — a question on a nested subtopic counts toward the area that contains it. Difficulty totals merge both naming styles (moderate/medium, difficult/hard).</x-tip></div>
         </section>
     </div>
 

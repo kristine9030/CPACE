@@ -82,24 +82,18 @@
     </div>
 
     @if($autoClosed)
-        <div class="banner banner-warn">
-            <i class="fas fa-clock-rotate-left"></i>
-            <div>
-                <strong>Closed automatically.</strong>
-                This student did not press Submit before their time ran out. The server graded the answers saved by autosave,
-                and any question they hadn't reached counts as unanswered.
-            </div>
-        </div>
+        <x-hint tone="warn" icon="fa-clock-rotate-left">
+            <x-slot:title><strong>Closed automatically</strong> — time ran out before Submit.</x-slot:title>
+            The server graded the autosaved answers. Questions they hadn't reached count as unanswered.
+        </x-hint>
     @endif
 
     @if($attempt->proctorEvents->contains('type', \App\Models\MockExamProctorEvent::TYPE_FACE_CHECK_UNAVAILABLE))
-        <div class="banner banner-warn">
-            <i class="fas fa-face-meh"></i>
-            <div>
-                <strong>Face check did not run on this device.</strong>
-                The in-browser face detector could not load, so this sitting has no "no face", "more than one face" or "looking away" flags. A clean face record here means nothing; rely on the camera frames and the other flags.
-            </div>
-        </div>
+        <x-hint tone="warn" icon="fa-face-meh">
+            <x-slot:title><strong>Face check did not run on this device.</strong></x-slot:title>
+            The face detector couldn't load, so there are no "no face", "more than one face" or "looking away" flags.
+            A clean face record means nothing here — rely on the camera frames and other flags.
+        </x-hint>
     @endif
 
     @if($attempt->flag_count > 0)
@@ -107,7 +101,7 @@
             <i class="fas fa-flag"></i>
             <div>
                 <strong>{{ $risk['label'] }} — {{ $attempt->flag_count }} {{ Str::plural('flag', $attempt->flag_count) }} raised during this sitting.</strong>
-                Flags are signals, not proof — review the timeline and captures before drawing a conclusion.
+                <x-tip label="About flags">Flags are signals, not proof — review the timeline and captures before drawing a conclusion.</x-tip>
                 <table class="risk-table">
                     @foreach($risk['rows'] as $row)
                         <tr>

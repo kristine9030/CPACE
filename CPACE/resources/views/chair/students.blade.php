@@ -600,9 +600,7 @@
     <div class="modal">
         <h3>Import Students from CSV</h3>
         <div class="modal-sub">
-            Upload multiple accounts at once. Required columns are first_name, last_name,
-            email, and password. Optional grouping columns are student_number, year_level,
-            section, and is_active.
+            Required: first_name, last_name, email, password.<x-tip label="Optional columns">Optional: student_number, year_level, section, is_active.</x-tip>
         </div>
         <form method="POST" action="{{ route('chair.students.import') }}" enctype="multipart/form-data"
               data-confirm="Every valid row in the file becomes a student account with its own one-time password. Rows with problems are skipped and reported."

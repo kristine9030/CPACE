@@ -74,8 +74,7 @@
                 <div class="lock-badge"><i class="fas fa-lock"></i></div>
                 <h2>Mock exams are for enrolled students</h2>
                 <p>
-                    Proctored, full-length simulations are built and scheduled by faculty for the current
-                    class — they close once you graduate to an alumni account.
+                    Mock exams close once your account becomes an alumni account.
                 </p>
                 <div class="lock-chip"><i class="fas fa-graduation-cap"></i> Alumni account</div>
 

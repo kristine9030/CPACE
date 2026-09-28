@@ -117,14 +117,10 @@
     </div>
 
     @if($readOnly)
-        <div class="banner banner-warn">
-            <i class="fas fa-lock"></i>
-            <div>
-                <strong>This exam is locked.</strong>
-                It has been published by the Program Chair, so its questions and schedule can no longer change —
-                that's what guarantees every student sits the same paper.
-            </div>
-        </div>
+        <x-hint tone="warn" icon="fa-lock">
+            <x-slot:title><strong>This exam is locked</strong> — published by the Program Chair.</x-slot:title>
+            Questions and schedule can no longer change, so every student sits the same paper.
+        </x-hint>
     @endif
 
     @if($exam->review_note)
@@ -160,7 +156,7 @@
                 <div class="step-panel on" data-panel="1">
                     <div class="card">
                         <div class="card-title"><i class="fas fa-book"></i> Subject</div>
-                        <div class="card-sub">A mock exam covers one subject only. This is fixed once the draft exists.</div>
+                        <div class="card-sub">Fixed once the draft exists.</div>
                         <div style="margin-top:16px;display:flex;align-items:center;gap:14px;">
                             <div class="sc-icon" style="margin:0;--sc-base:{{ $theme['base'] }};color:{{ $theme['base'] }};border-color:{{ $theme['pastel'] }};">
                                 <i class="fas {{ $icon }}"></i>
@@ -334,14 +330,11 @@
 
                         <div class="dt-preview" id="dtPreview" style="display:none;"></div>
 
-                        <div class="banner banner-info" style="margin:16px 0 0;">
-                            <i class="fas fa-shield-halved"></i>
-                            <div>
-                                Students must allow <strong>camera and screen sharing</strong> to enter. Alt-tabbing,
-                                leaving fullscreen or turning either off during the exam is flagged for you and the
-                                Program Chair.
-                            </div>
-                        </div>
+                        <x-hint icon="fa-shield-halved" style="margin:16px 0 0;">
+                            <x-slot:title>Proctored: <strong>camera and screen sharing</strong> required.</x-slot:title>
+                            Alt-tabbing, leaving fullscreen or turning either off during the exam is flagged
+                            for you and the Program Chair.
+                        </x-hint>
                     </div>
                 </div>
 
@@ -378,8 +371,7 @@
     <div class="card" style="margin-top:18px;">
         <div class="card-title"><i class="fas fa-users-viewfinder"></i> Who can take this exam</div>
         <div class="card-sub">
-            There's no code to hand out any more — only the year levels (and sections) ticked here
-            will see this exam once it's published. This can be changed later by you or the Program Chair.
+            Only the ticked year levels and sections will see it once published.<x-tip>There's no code to hand out. You or the Program Chair can change this later.</x-tip>
         </div>
         @error('audience')<div class="banner banner-danger" style="margin-top:10px;"><i class="fas fa-triangle-exclamation"></i><div>{{ $message }}</div></div>@enderror
 

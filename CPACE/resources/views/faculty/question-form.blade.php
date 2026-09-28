@@ -187,8 +187,8 @@
             <div>
                 <!-- AI DRAFT -->
                 <div class="card" style="border:1.5px dashed #ddd6fe; background:#faf8ff;">
-                    <div class="card-title"><i class="fas fa-wand-magic-sparkles" style="color:#7c3aed;"></i> Draft with AI</div>
-                    <p style="font-size:12px;color:#999;margin-bottom:12px;">Pick a Subject and Topic on the right first — the AI grounds the question in that topic and avoids repeating what's already in the bank. Everything it writes lands below for you to review and edit before saving.</p>
+                    <div class="card-title"><i class="fas fa-wand-magic-sparkles" style="color:#7c3aed;"></i> Draft with AI<x-tip label="How AI drafting works">The AI writes for the chosen topic and avoids repeating questions already in the bank. Its draft fills the form below for you to review before saving.</x-tip></div>
+                    <p style="font-size:12px;color:#999;margin-bottom:12px;">Pick a Subject and Topic on the right first.</p>
                     <div class="form-group">
                         <label>What should the question be about? <span style="font-size:11px;color:#aaa;">(optional)</span></label>
                         <textarea id="aiSeedIdea" placeholder="e.g. the lower of cost or NRV rule for inventory" style="min-height:60px;"></textarea>

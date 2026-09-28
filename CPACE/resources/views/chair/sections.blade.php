@@ -107,7 +107,7 @@
         <div class="topbar-left">
             <div>
                 <div class="page-title">Sections</div>
-                <div class="page-sub">The catalog of student sections and year levels used when restricting a faculty's subject assignment, and to break down analytics by cohort.</div>
+                <div class="page-sub">Student sections and year levels.<x-tip>Used to limit a faculty member's subject assignment and to break down analytics by cohort.</x-tip></div>
             </div>
         </div>
         <div class="topbar-right">

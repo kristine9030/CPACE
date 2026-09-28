@@ -203,9 +203,9 @@
                 @endif
             </div>
             @if($version->isDraft())
-                <div class="curr-note"><i class="fas fa-circle-info"></i> This is a <strong>draft</strong>. Students keep studying the current curriculum until you publish it. Add or import each subject's topics, then copy over the Test Bank questions that still apply.</div>
+                <div class="curr-note"><i class="fas fa-circle-info"></i> <strong>Draft</strong> — students won't see it until you publish.<x-tip label="How drafts work">Students keep studying the current curriculum until you publish. Add or import each subject's topics, then copy over the Test Bank questions that still apply.</x-tip></div>
             @elseif($version->isArchived())
-                <div class="curr-note muted"><i class="fas fa-lock"></i> This is an <strong>archived</strong> curriculum, kept as read-only history. Past quiz results and questions under it are preserved.</div>
+                <div class="curr-note muted"><i class="fas fa-lock"></i> <strong>Archived</strong> — read-only.<x-tip label="About archived curricula">Kept as history. Past quiz results and questions under it are preserved.</x-tip></div>
             @endif
         </div>
     @endif
@@ -356,12 +356,12 @@
 <div class="modal-overlay" id="tosModal">
     <div class="modal">
         <h3>Import Table of Specifications</h3>
-        <div class="modal-sub">Upload the official PRC LECPA Table of Specifications (PDF). Every subject found in it is read into an outline you review before anything is saved.</div>
+        <div class="modal-sub">Upload the official PRC TOS (PDF). You'll review everything before it's saved.</div>
         <form method="POST" action="{{ route('chair.curriculum.import.store') }}" enctype="multipart/form-data" data-loading="Reading the Table of Specifications...">
             @csrf
             <input type="hidden" name="curriculum_version_id" value="{{ $version->id }}">
             <div class="form-group"><label>TOS PDF</label><input type="file" name="file" accept="application/pdf,.pdf" required></div>
-            <div class="info-note"><i class="fas fa-circle-info"></i><span>Importing into <strong>{{ $version->label }}</strong>{{ $version->isDraft() ? ' (draft — students won\'t see it until you publish)' : ' (the current curriculum — students see new topics right away)' }}. Only the official PRC layout is supported for now.</span></div>
+            <div class="info-note"><i class="fas fa-circle-info"></i><span>Importing into <strong>{{ $version->label }}</strong>{{ $version->isDraft() ? ' (draft)' : ' — live, students see new topics right away' }}.</span></div>
             <div class="modal-actions"><button type="button" class="btn btn-ghost" onclick="closeModal('tosModal')">Cancel</button><button class="btn btn-primary"><i class="fas fa-magnifying-glass"></i> Read PDF</button></div>
         </form>
     </div>
@@ -372,7 +372,7 @@
 <div class="modal-overlay" id="curriculumModal">
     <div class="modal">
         <h3>Start a New Curriculum</h3>
-        <div class="modal-sub">Creates a blank draft. Students keep studying the current curriculum until you publish the draft; the current one then becomes read-only history.</div>
+        <div class="modal-sub">Creates a blank draft. Students won't see it until you publish.</div>
         <form method="POST" action="{{ route('chair.curriculum.store') }}"
               data-confirm="A blank draft curriculum will be created. Nothing students see changes until you publish it."
               data-confirm-title="Start a new curriculum?"
@@ -380,7 +380,7 @@
               data-confirm-icon="question">@csrf
             <div class="modal-grid">
                 <div class="form-group full"><label>Curriculum Name</label><input type="text" name="label" maxlength="80" required placeholder="e.g. CPALE TOS — Effective Oct 2027"></div>
-                <div class="form-group full"><label>First Batch Covered</label><input type="text" name="effective_from_batch" required pattern="\d{4}-\d{4}" value="{{ old('effective_from_batch', $suggestedBatch) }}" placeholder="e.g. {{ $suggestedBatch }}"><div class="hint">The school-year batch this curriculum starts with. It must come after the current curriculum's first batch; the current curriculum will be marked as covering batches up to the one before.</div></div>
+                <div class="form-group full"><label>First Batch Covered</label><input type="text" name="effective_from_batch" required pattern="\d{4}-\d{4}" value="{{ old('effective_from_batch', $suggestedBatch) }}" placeholder="e.g. {{ $suggestedBatch }}"><div class="hint">The first school-year batch that uses this curriculum.<x-tip>Must come after the current curriculum's first batch. The current curriculum will then cover batches up to the one before.</x-tip></div></div>
             </div>
             <div class="modal-actions"><button type="button" class="btn btn-ghost" onclick="closeModal('curriculumModal')">Cancel</button><button class="btn btn-primary"><i class="fas fa-plus"></i> Start Draft</button></div>
         </form>
@@ -396,7 +396,7 @@
 <div class="modal-overlay" id="curriculumEditModal">
     <div class="modal">
         <h3>Edit Draft Curriculum</h3>
-        <div class="modal-sub">You can change these until the draft is published. After that the batch range is locked, because students are assigned to it.</div>
+        <div class="modal-sub">Editable until you publish.</div>
         <form method="POST" action="{{ route('chair.curriculum.update', $version) }}"
               data-confirm="The draft's name and first batch will be updated."
               data-confirm-title="Save these details?"
@@ -409,7 +409,7 @@
                     <input type="text" name="effective_from_batch" required pattern="\d{4}-\d{4}" value="{{ old('effective_from_batch', $version->effective_from_batch) }}" placeholder="e.g. {{ $suggestedBatch }}">
                     <div class="hint">
                         @if($activeVersion?->effective_from_batch)
-                            Must be after <strong>{{ $activeVersion->effective_from_batch }}</strong>, the first batch of the current curriculum ("{{ $activeVersion->label }}"). Batches before this one keep the current curriculum.
+                            Must be after <strong>{{ $activeVersion->effective_from_batch }}</strong>.<x-tip>That's the first batch of the current curriculum ("{{ $activeVersion->label }}"). Batches before this one keep the current curriculum.</x-tip>
                         @else
                             Batches before this one keep the current curriculum.
                         @endif

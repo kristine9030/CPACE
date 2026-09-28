@@ -248,7 +248,7 @@
                     @if($locked)
                         <div class="notice">
                             <i class="fas fa-lock"></i>
-                            <div>Students have already answered this quiz, so its questions are locked to keep their scores meaningful. You can still change the title, deadline, and other settings.</div>
+                            <div><strong>Questions locked</strong> — students have already answered. You can still edit the title, deadline and settings.<x-tip label="Why it's locked">Changing questions after students answer would make their scores meaningless.</x-tip></div>
                         </div>
                     @endif
 
@@ -318,7 +318,7 @@
                         <label class="toggle"><input type="checkbox" name="show_results" value="1" {{ old('show_results', $quiz->show_results) ? 'checked' : '' }}><span class="toggle-slider"></span></label>
                     </div>
                     <div class="toggle-row">
-                        <div class="toggle-lbl">Monitor students<small>Students must share their camera and entire screen. Switching tabs, leaving fullscreen or an absent or extra face is flagged, and you can review snapshots on the Monitor page.</small></div>
+                        <div class="toggle-lbl">Monitor students<x-tip label="What monitoring does">Students must share their camera and entire screen. Switching tabs, leaving fullscreen, or an absent or extra face is flagged. Review snapshots on the Monitor page.</x-tip><small>Camera and screen sharing required.</small></div>
                         <label class="toggle"><input type="checkbox" name="monitor_enabled" value="1" {{ old('monitor_enabled', $quiz->monitor_enabled) ? 'checked' : '' }}><span class="toggle-slider"></span></label>
                     </div>
                 </div>

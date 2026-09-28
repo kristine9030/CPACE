@@ -138,7 +138,7 @@
                     <div class="field"><label for="message">Message</label><textarea id="message" name="message" maxlength="5000" required placeholder="Write your message here...">{{ old('message') }}</textarea></div>
                     <div class="field-row">
                         <div class="field"><label for="type">Message type</label><select id="type" name="type"><option value="announcement">Announcement</option><option value="reminder" {{ old('type') === 'reminder' ? 'selected' : '' }}>Reminder</option><option value="schedule_change" {{ old('type') === 'schedule_change' ? 'selected' : '' }}>Schedule change</option></select></div>
-                        <div class="field"><label for="priority">Priority</label><select id="priority" name="priority"><option value="normal">Normal</option><option value="high" {{ old('priority') === 'high' ? 'selected' : '' }}>High</option><option value="urgent" {{ old('priority') === 'urgent' ? 'selected' : '' }}>Urgent</option></select></div>
+                        <div class="field"><label for="priority">Priority<x-tip label="About priority">High and urgent messages stand out in the recipient's inbox.</x-tip></label><select id="priority" name="priority"><option value="normal">Normal</option><option value="high" {{ old('priority') === 'high' ? 'selected' : '' }}>High</option><option value="urgent" {{ old('priority') === 'urgent' ? 'selected' : '' }}>Urgent</option></select></div>
                     </div>
                     <div class="field"><label for="link">Internal link <span style="font-weight:400;color:#aaa">(optional)</span></label><input id="link" name="link" value="{{ old('link') }}" placeholder="/calendar"></div>
                     <div class="send-row"><div class="recipient-count"><strong id="recipientCount">{{ $audienceCount }}</strong> active {{ $isStudents ? 'student' : 'faculty member' }}<span id="recipientPlural">{{ $audienceCount === 1 ? '' : 's' }}</span></div><button class="btn btn-primary" type="submit" id="sendButton"><i class="fas fa-paper-plane"></i> Send Message</button></div>
@@ -147,10 +147,8 @@
                 <aside class="communication-card summary-card">
                     <div class="summary-icon"><i class="fas fa-bullhorn"></i></div>
                     <div class="card-heading">Delivery summary</div>
-                    <div class="card-sub">Messages appear immediately in each recipient's notification inbox.</div>
-                    <ul class="summary-list"><li><span>Audience</span><strong>{{ $isStudents ? 'Students' : 'Faculty' }}</strong></li><li><span>Delivery</span><strong>In-app notification</strong></li><li><span>Sender</span><strong>{{ Auth::user()->name }}</strong></li><li><span>Recipients</span><strong id="summaryCount">{{ $audienceCount }}</strong></li></ul>
-                    <div class="help-box"><i class="fas fa-circle-info"></i> High and urgent messages are visually emphasized in the recipient inbox. Only active accounts receive the message.</div>
-                </aside>
+                    <div class="card-sub">Delivered instantly to active accounts.</div>
+                    <ul class="summary-list"><li><span>Audience</span><strong>{{ $isStudents ? 'Students' : 'Faculty' }}</strong></li><li><span>Delivery</span><strong>In-app notification</strong></li><li><span>Sender</span><strong>{{ Auth::user()->name }}</strong></li><li><span>Recipients</span><strong id="summaryCount">{{ $audienceCount }}</strong></li></ul>                </aside>
             </div>
         </form>
 

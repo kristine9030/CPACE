@@ -1209,7 +1209,7 @@
                             <div class="lrt-icon"><i class="fas fa-tower-broadcast"></i></div>
                             <div class="lrt-body">
                                 <div class="lrt-title">Live Room <span class="lrt-badge">New</span></div>
-                                <div class="lrt-desc">Four AI candidates take the quiz alongside you &mdash; and they are <strong>meant to beat you</strong>. They read your pace and stay a step ahead, so you have to push to climb the room. Never affects your score.</div>
+                                <div class="lrt-desc">Race four AI rivals built to <strong>stay a step ahead</strong>. Never affects your score.</div>
                             </div>
                             <div class="lrt-switch"><span></span></div>
                         </div>

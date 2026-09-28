@@ -181,7 +181,7 @@
             @unless ($editMode)
                 <div class="hint" style="margin-top:10px;">
                     <i class="fas fa-circle-info"></i>
-                    A one-time password will be generated automatically and emailed directly to the student — it is never shown to you.
+                    A one-time password will be emailed to the student automatically.<x-tip>It goes straight to the student's inbox and is never shown to you.</x-tip>
                 </div>
             @endunless
         </div>
@@ -282,8 +282,7 @@
                         <label for="isAlumni">Mark as Alumni (graduated)</label>
                     </div>
                     <div class="toggle-hint">
-                        Keeps this same login — the student still signs in as before, but gains access to the
-                        Resource Library (to share materials with current students) and Mock Exams becomes locked.
+                        Same login. Unlocks the Resource Library; locks Mock Exams.<x-tip>Alumni keep signing in as before and can share materials with current students in the Resource Library.</x-tip>
                     </div>
                     <div class="form-grid three toggle-fields">
                         <div class="form-group">
@@ -311,8 +310,7 @@
                         <label for="isShifted">Shifted out of the BSA program</label>
                     </div>
                     <div class="toggle-hint">
-                        Immediately locks this account out. The student will be blocked at login and shown the
-                        reason you enter below.
+                        Locks this account out immediately. They'll see the reason below at login.
                     </div>
                     <div class="toggle-fields" style="display: {{ $isShiftedChecked ? 'block' : 'none' }};">
                         <label style="display:block; font-size:12px; font-weight:600; margin-bottom:6px;">Reason for shifting</label>

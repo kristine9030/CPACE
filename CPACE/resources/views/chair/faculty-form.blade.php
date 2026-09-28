@@ -83,13 +83,13 @@
 
         @unless ($editMode)
             <div class="card">
-                <div class="hint"><i class="fas fa-circle-info"></i> A one-time password will be generated automatically and emailed directly to the faculty member — it is never shown to you.</div>
+                <div class="hint"><i class="fas fa-circle-info"></i> A one-time password will be emailed to them automatically.<x-tip>It goes straight to the faculty member's inbox and is never shown to you.</x-tip></div>
             </div>
         @endunless
 
         <div class="card">
             <div class="card-head"><span class="card-title"><i class="fas fa-layer-group" style="color:var(--primary);"></i> Assigned Subjects</span></div>
-            <p class="hint" style="margin:-6px 0 14px;">Tick a subject, then optionally limit it to specific sections instead of the whole subject.</p>
+            <p class="hint" style="margin:-6px 0 14px;">Tick a subject. Optionally limit it to specific sections.</p>
             @include('chair.partials.subject-section-fields', [
                 'subjects' => $subjects,
                 'sections' => $sections,
