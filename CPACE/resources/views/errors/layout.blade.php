@@ -15,6 +15,7 @@
             --ink: #14283E;
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { height: 100%; }
         body {
             font-family: 'Poppins', sans-serif;
             min-height: 100vh;
@@ -22,50 +23,107 @@
             align-items: center;
             justify-content: center;
             padding: 24px;
-            background: radial-gradient(circle at 20% 20%, var(--maroon-bright) 0%, var(--maroon-dark) 55%, #2b0b0b 100%);
+            position: relative;
+            overflow: hidden;
+            background: radial-gradient(circle at 18% 15%, var(--maroon-bright) 0%, var(--maroon-dark) 48%, #22090a 100%);
         }
+
+        /* ── Decorative backdrop: soft rings + the status code ghosted huge,
+             echoing the circle motif used on the dashboard's hero banner ── */
+        .bg-ring {
+            position: absolute;
+            border-radius: 50%;
+            border: 1px solid rgba(255, 255, 255, .09);
+            pointer-events: none;
+        }
+        .bg-ring.r1 { width: 620px; height: 620px; top: -180px; right: -160px; }
+        .bg-ring.r2 { width: 420px; height: 420px; bottom: -160px; left: -120px; }
+        .bg-ring.r3 { width: 260px; height: 260px; bottom: 8%; right: 8%; border-color: rgba(255,255,255,.06); }
+        .bg-code {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -52%);
+            font-size: min(38vw, 460px);
+            font-weight: 800;
+            color: rgba(255, 255, 255, .05);
+            letter-spacing: -6px;
+            pointer-events: none;
+            user-select: none;
+            white-space: nowrap;
+        }
+
         .card {
+            position: relative;
+            z-index: 1;
             background: #fff;
-            border-radius: 20px;
-            padding: 44px 38px 38px;
+            border-radius: 24px;
+            padding: 40px 38px 36px;
             max-width: 440px;
             width: 100%;
             text-align: center;
-            box-shadow: 0 30px 70px rgba(0, 0, 0, .35);
+            box-shadow: 0 40px 90px rgba(0, 0, 0, .4), 0 1px 0 rgba(255,255,255,.06) inset;
+            animation: rise .5s cubic-bezier(.22,.61,.36,1);
         }
-        .logo {
-            width: 56px;
-            height: 56px;
-            border-radius: 16px;
-            background: linear-gradient(145deg, var(--maroon-bright), var(--maroon-dark));
+        @keyframes rise {
+            from { opacity: 0; transform: translateY(18px) scale(.98); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .brand {
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: 0 auto 20px;
-            box-shadow: 0 10px 24px rgba(123, 29, 29, .28);
+            gap: 9px;
+            margin-bottom: 26px;
         }
-        .logo img { width: 32px; height: 32px; object-fit: contain; }
+        .brand img { width: 26px; height: 26px; object-fit: contain; }
+        .brand span {
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            color: var(--ink);
+            text-transform: uppercase;
+        }
+
         .icon-badge {
-            width: 74px;
-            height: 74px;
+            width: 84px;
+            height: 84px;
             border-radius: 50%;
-            background: #fdf1f1;
+            background: radial-gradient(circle at 35% 30%, #fff, #fdf1f1);
+            border: 1px solid #fbe3e3;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: 0 auto 22px;
+            margin: 0 auto 24px;
+            position: relative;
+            box-shadow: 0 12px 28px rgba(123, 29, 29, .16);
         }
-        .icon-badge i { font-size: 30px; color: var(--maroon); }
+        .icon-badge::before {
+            content: '';
+            position: absolute;
+            inset: -8px;
+            border-radius: 50%;
+            border: 1.5px dashed #f3c9c9;
+            animation: spin 22s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .icon-badge i { font-size: 32px; color: var(--maroon); }
+
         .code {
-            font-size: 15px;
+            display: inline-block;
+            font-size: 12px;
             font-weight: 700;
             letter-spacing: 2px;
             color: var(--maroon);
             text-transform: uppercase;
-            margin-bottom: 6px;
+            background: #fdf1f1;
+            padding: 5px 14px;
+            border-radius: 20px;
+            margin-bottom: 14px;
         }
         .heading {
-            font-size: 21px;
+            font-size: 22px;
             font-weight: 700;
             color: var(--ink);
             margin-bottom: 10px;
@@ -74,28 +132,34 @@
         .message {
             font-size: 13.5px;
             color: #6b7280;
-            line-height: 1.65;
-            margin-bottom: 30px;
+            line-height: 1.7;
+            margin-bottom: 32px;
         }
         .actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
         .btn {
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            padding: 11px 22px;
-            border-radius: 10px;
+            padding: 12px 24px;
+            border-radius: 11px;
             font-size: 13px;
             font-weight: 600;
             font-family: 'Poppins', sans-serif;
             text-decoration: none;
             border: none;
             cursor: pointer;
-            transition: all .2s;
+            transition: transform .15s ease, filter .15s ease, background .15s ease;
         }
-        .btn-primary { background: var(--maroon); color: #fff; }
-        .btn-primary:hover { background: var(--maroon-dark); }
+        .btn:active { transform: translateY(1px); }
+        .btn-primary { background: linear-gradient(135deg, var(--maroon-bright), var(--maroon-dark)); color: #fff; box-shadow: 0 10px 22px rgba(123, 29, 29, .3); }
+        .btn-primary:hover { filter: brightness(1.07); transform: translateY(-1px); }
         .btn-ghost { background: #f4f5f7; color: #444; }
-        .btn-ghost:hover { background: #ebebee; }
+        .btn-ghost:hover { background: #ebebee; transform: translateY(-1px); }
+
+        @media (max-width: 420px) {
+            .card { padding: 32px 24px 28px; border-radius: 20px; }
+            .heading { font-size: 19px; }
+        }
     </style>
 </head>
 @php
@@ -109,9 +173,15 @@
     $errorHomeLabel = auth()->check() ? 'Go to my dashboard' : 'Go to login';
 @endphp
 <body>
+    <div class="bg-ring r1"></div>
+    <div class="bg-ring r2"></div>
+    <div class="bg-ring r3"></div>
+    <div class="bg-code">@yield('code')</div>
+
     <div class="card">
-        <div class="logo">
+        <div class="brand">
             <img src="{{ asset('images/logo-icon.png') }}" alt="CPACE">
+            <span>CPACE</span>
         </div>
         <div class="icon-badge"><i class="fas @yield('icon', 'fa-triangle-exclamation')"></i></div>
         <div class="code">Error @yield('code')</div>
