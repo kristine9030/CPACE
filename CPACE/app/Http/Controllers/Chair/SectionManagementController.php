@@ -85,7 +85,7 @@ class SectionManagementController extends Controller
     {
         $rows = $this->enrolledStudents()
             ->select('users.id', 'users.first_name', 'users.last_name', 'users.email',
-                'student_profiles.student_number', 'student_profiles.section')
+                'student_profiles.student_number', 'student_profiles.section', 'student_profiles.year_level')
             ->orderBy('users.last_name')->orderBy('users.first_name')
             ->get()
             ->map(fn ($r) => [
@@ -94,6 +94,7 @@ class SectionManagementController extends Controller
                 'email' => $r->email,
                 'student_number' => $r->student_number,
                 'section' => $r->section,
+                'year_level' => $r->year_level,
             ]);
 
         return response()->json([
