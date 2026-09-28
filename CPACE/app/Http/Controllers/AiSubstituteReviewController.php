@@ -3,8 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Question;
+use App\Models\Topic;
 use App\Models\User;
+use App\Services\CurriculumGapFiller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -16,7 +19,7 @@ use Illuminate\Support\Facades\DB;
  */
 class AiSubstituteReviewController extends Controller
 {
-    public function index()
+    public function index(CurriculumGapFiller $filler)
     {
         $user = Auth::user();
 
@@ -35,12 +38,38 @@ class AiSubstituteReviewController extends Controller
             ->limit(15)
             ->get();
 
+        $shortlist = $this->scopedShortlist($user, $filler->shortlist())
+            ->sortBy(fn ($row) => $row['topic']->name)
+            ->groupBy(fn ($row) => $row['topic']->subject->code ?? '—');
+
         return view('ai-substitute-review', [
             'pending' => $pending,
             'pendingCount' => $pending->flatten()->count(),
             'recent' => $recent,
+            'shortlist' => $shortlist,
             'isChair' => $user->isChair(),
         ]);
+    }
+
+    /** Manually draft substitutes for one short topic now, skipping the grace-period wait. */
+    public function generate(Request $request, Topic $topic, CurriculumGapFiller $filler)
+    {
+        $user = Auth::user();
+
+        if (! $user->isChair() && ! $user->assignedSubjects()->where('subjects.id', $topic->subject_id)->exists()) {
+            return back()->with('warning', "You're not assigned to this subject, so you can't generate questions for it.");
+        }
+
+        $result = $filler->generateNow($topic);
+
+        if ($result['shortBy'] === 0) {
+            return back()->with('status', "\"{$topic->name}\" already meets its TOS item count.");
+        }
+        if ($result['drafted'] === 0) {
+            return back()->with('warning', 'The AI could not draft questions right now — try again shortly.');
+        }
+
+        return back()->with('status', "Drafted {$result['drafted']} question(s) for \"{$topic->name}\" — review them below.");
     }
 
     public function approve(int $id)
@@ -94,5 +123,17 @@ class AiSubstituteReviewController extends Controller
         }
 
         return $query->whereHas('topic', fn ($t) => $t->whereIn('subject_id', $user->assignedSubjects()->pluck('subjects.id')));
+    }
+
+    /** Same chair-sees-all / faculty-sees-assigned split, for the shortlist() collection. */
+    private function scopedShortlist(User $user, Collection $shortlist): Collection
+    {
+        if ($user->isChair()) {
+            return $shortlist;
+        }
+
+        $subjectIds = $user->assignedSubjects()->pluck('subjects.id')->all();
+
+        return $shortlist->filter(fn ($row) => in_array($row['topic']->subject_id, $subjectIds));
     }
 }
