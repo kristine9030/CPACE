@@ -349,7 +349,7 @@
         setTimeout(() => { grab('camera', 'start'); grab('screen', 'start'); }, 2500);
         // Routine frames are sparse and deleted at submit for a clean sitting;
         // the frames that matter are the ones taken on a flag.
-        setInterval(() => grab('camera', 'interval'), 120000);
+        setInterval(() => grab('camera', 'interval'), 60000);
         setInterval(() => grab('screen', 'interval'), 600000);
         loadFaceDetector();
     }
