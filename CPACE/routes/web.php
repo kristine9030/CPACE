@@ -74,7 +74,7 @@ Route::middleware('guest')->group(function () {
     Route::post('/reset-password', [AuthController::class, 'resetPassword'])->name('password.update');
 });
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'no-back-cache'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
     // First-login onboarding flow (change one-time password + build study plan)

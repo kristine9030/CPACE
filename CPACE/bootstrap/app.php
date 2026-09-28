@@ -17,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'chair'   => \App\Http\Middleware\ChairMiddleware::class,
             'alumni'  => \App\Http\Middleware\AlumniMiddleware::class,
             'api.auth' => \App\Http\Middleware\ApiAuthenticate::class,
+            'no-back-cache' => \App\Http\Middleware\PreventBackHistory::class,
         ]);
 
         // Gate freshly-imported students into first-login Account Setup.
