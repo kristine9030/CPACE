@@ -404,7 +404,7 @@
     </form>
     <div class="card">
         <div class="card-head">
-            <span class="card-title">Student Roster ({{ $students->total() }})</span>
+            <span class="card-title">Student List ({{ $students->total() }})</span>
             <div style="display:flex;gap:7px;align-items:center;">
                 <span id="bulkSelectedCount" class="student-meta" style="display:none;"></span>
                 <button type="button" id="bulkAlumniBtn" class="btn btn-outline btn-sm" style="display:none;">

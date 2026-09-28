@@ -367,7 +367,7 @@
     <div class="report-grid">
         <div class="card">
             <div class="card-head">
-                <span class="card-title">Faculty Roster</span>
+                <span class="card-title">Faculty List</span>
                 <span style="font-size:10.5px;color:#aaa;">Sorted by what needs attention first, not by output</span>
             </div>
             <div class="report-table-wrap">
