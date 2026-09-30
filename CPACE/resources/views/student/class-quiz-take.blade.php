@@ -12,7 +12,7 @@
         :root { --primary:#7B1D1D; --primary-light:#f5e8e8; --accent:#c0392b; }
         * { margin:0; padding:0; box-sizing:border-box; }
         body { font-family:'Poppins',sans-serif; background:#f4f5f7; color:#1f2430; }
-        .top { position:sticky; top:0; z-index:50; background:var(--primary); color:#fff; padding:14px 20px; box-shadow:0 4px 16px rgba(0,0,0,.15); }
+        .top { position:sticky; top:0; z-index:50; color:#fff; padding:14px 20px; box-shadow:0 4px 16px rgba(0,0,0,.15); }
         .top-in { max-width:820px; margin:0 auto; display:flex; align-items:center; gap:14px; }
         .top-title { flex:1; min-width:0; }
         .top-title b { display:block; font-size:15px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -48,11 +48,13 @@
         .btn:hover { background:#6a1818; }
         .btn:disabled { opacity:.6; cursor:wait; }
     </style>
+    @include('partials.quiz-brand-header')
 </head>
 <body>
 
-<div class="top">
+<div class="top quiz-brand">
     <div class="top-in">
+        @include('partials.quiz-brand-header', ['logo' => true])
         <div class="top-title">
             <b>{{ $quiz->title }}</b>
             <span>{{ $quiz->subject?->code ?? 'Class quiz' }} · {{ $items->count() }} questions · {{ $items->sum('points') }} points</span>

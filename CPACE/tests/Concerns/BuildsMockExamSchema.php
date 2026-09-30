@@ -44,6 +44,7 @@ trait BuildsMockExamSchema
             $table->string('password');
             $table->boolean('is_active')->default(true);
             $table->timestamp('setup_completed_at')->nullable();
+            $table->dateTime('mock_exam_notice_seen_at')->nullable();
             $table->string('profile_photo')->nullable();
             $table->string('avatar_color')->nullable();
             $table->rememberToken();

@@ -5,10 +5,11 @@
         <div class="card-title">Answer similarity <x-tip>Pairs who chose the same wrong answer…</x-tip></div>
 
     label: accessible name of the button (default "What is this?").
+    icon:  Font Awesome icon class for the button (default "fa-circle-info").
     The bubble is drawn in a single body-level layer so card overflow/transforms
     never clip it; Esc or a tap elsewhere closes it.
 --}}
-@props(['label' => 'What is this?'])
+@props(['label' => 'What is this?', 'icon' => 'fa-circle-info'])
 @php($tipId = 'cx-tip-' . \Illuminate\Support\Str::random(8))
 
 @once
@@ -92,4 +93,4 @@
 </script>
 @endonce
 
-<button type="button" {{ $attributes->class('cx-tip-btn') }} aria-label="{{ $label }}" aria-expanded="false" aria-describedby="{{ $tipId }}"><i class="fas fa-circle-info" aria-hidden="true"></i></button><span class="cx-tip-src" id="{{ $tipId }}">{{ $slot }}</span>
+<button type="button" {{ $attributes->class('cx-tip-btn') }} aria-label="{{ $label }}" aria-expanded="false" aria-describedby="{{ $tipId }}"><i class="fas {{ $icon }}" aria-hidden="true"></i></button><span class="cx-tip-src" id="{{ $tipId }}">{{ $slot }}</span>

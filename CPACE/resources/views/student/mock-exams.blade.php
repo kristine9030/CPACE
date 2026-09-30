@@ -55,6 +55,24 @@
         .lock-feature .lf-text { text-align:left; }
         .lock-feature .lf-title { font-size:12.5px; font-weight:700; color:var(--ink); }
         .lock-feature .lf-sub { font-size:11px; color:var(--muted); margin-top:1px; }
+
+        /* Muted folder: no exam open yet, so it reads as switched off. */
+        .subject-card.is-muted { cursor:not-allowed; filter:grayscale(1); opacity:.6; }
+        .subject-card.is-muted:hover { transform:none; box-shadow:0 1px 3px rgba(0,0,0,.05); }
+        .subject-card.is-muted .sc-foot { color:var(--muted); }
+
+        /* One-time explainer above the folders. */
+        .muted-notice {
+            display:flex; align-items:center; gap:16px; margin-top:18px; padding:16px 18px;
+            background:#fff; border:1px solid var(--line); border-left:4px solid var(--primary); border-radius:14px;
+            box-shadow:0 2px 6px rgba(15,10,10,.06); transition:opacity .25s, transform .25s;
+        }
+        .muted-notice.is-leaving { opacity:0; transform:translateY(-6px); }
+        .mn-icon { width:40px; height:40px; border-radius:11px; flex-shrink:0; display:grid; place-items:center;
+                   background:var(--primary-light); color:var(--primary); font-size:16px; }
+        .mn-text { flex:1; min-width:0; font-size:12.5px; color:var(--muted); line-height:1.55; }
+        .mn-text strong { display:block; font-size:13.5px; color:var(--ink); margin-bottom:2px; }
+        @media (max-width:640px) { .muted-notice { flex-direction:column; align-items:flex-start; } }
     </style>
 </head>
 <body>
@@ -106,9 +124,52 @@
                     <p>Once your faculty or Program Chair publishes one for your year and section, it appears here in folders by subject.</p>
                 </div>
             @else
+                @if($showMutedNotice)
+                    {{-- One-time explainer; "Yes, got it" stamps the account so it never returns. --}}
+                    <div class="muted-notice" id="mutedNotice" role="status">
+                        <div class="mn-icon"><i class="fas fa-lock"></i></div>
+                        <div class="mn-text">
+                            <strong>Folders stay locked until an exam opens</strong>
+                            <span>A subject folder is muted while none of its mock exams is open. When the scheduled window starts, the folder lights up and you can go in. The date under each locked folder shows when its next exam opens.</span>
+                        </div>
+                        <form method="POST" action="{{ route('mock-exams.notice.dismiss') }}" id="mutedNoticeForm">
+                            @csrf
+                            <button type="submit" class="btn btn-primary"><i class="fas fa-check"></i> Yes, got it</button>
+                        </form>
+                    </div>
+                @endif
+
                 <div style="margin:22px 0 14px;font-size:13px;font-weight:700;color:var(--ink);">Your exams</div>
                 <div class="subject-grid">
                     @foreach($folders as $folder)
+                        @if($folder['open'] === 0)
+                        {{-- Muted: nothing to sit yet, so the folder can't be entered. --}}
+                        <div class="subject-card is-muted" aria-disabled="true" title="Locked until one of its exams opens"
+                             style="--sc-base:{{ $folder['theme']['base'] }}; --sc-dark:{{ $folder['theme']['dark'] }};">
+                            <div class="sc-banner">
+                                <i class="fas fa-folder sc-illus"></i>
+                                <div class="sc-code">{{ $folder['subject']->code }}</div>
+                                <div class="sc-name">{{ $folder['subject']->name }}</div>
+                            </div>
+                            <div class="sc-icon"><i class="fas fa-lock"></i></div>
+                            <div class="sc-body">
+                                <div class="sc-stats">
+                                    <span><strong>{{ $folder['total'] }}</strong> {{ Str::plural('exam', $folder['total']) }}</span>
+                                    @if($folder['done'] > 0)<span>{{ $folder['done'] }} done</span>@endif
+                                </div>
+                                <div style="margin-top:10px;font-size:12px;color:var(--muted);">
+                                    @if($folder['next_upcoming'])
+                                        <i class="fas fa-calendar-day"></i>
+                                        Opens {{ $folder['next_upcoming']->scheduled_at?->format('M j, Y · g:i A') }}
+                                    @else
+                                        <i class="fas fa-circle-minus"></i> No exam scheduled to open
+                                    @endif
+                                </div>
+                            </div>
+                            <div class="sc-foot"><i class="fas fa-lock"></i> Locked until an exam opens</div>
+                        </div>
+                        @continue
+                        @endif
                         <a class="subject-card" href="{{ route('mock-exams.subject', $folder['subject']->id) }}"
                            style="--sc-base:{{ $folder['theme']['base'] }}; --sc-dark:{{ $folder['theme']['dark'] }};">
                             <div class="sc-banner">
@@ -148,6 +209,27 @@
         profileBtn.addEventListener('click', e => { e.stopPropagation(); profileDrop.classList.toggle('active'); });
         document.addEventListener('click', () => profileDrop.classList.remove('active'));
         profileDrop.addEventListener('click', e => e.stopPropagation());
+    }
+
+    // "Yes, got it": record it without a reload, then fade the notice out.
+    // Without JS the form still posts and the page reloads without it.
+    const noticeForm = document.getElementById('mutedNoticeForm');
+    if (noticeForm) {
+        noticeForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const notice = document.getElementById('mutedNotice');
+            noticeForm.querySelector('button').disabled = true;
+            fetch(noticeForm.action, {
+                method: 'POST',
+                headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': noticeForm.querySelector('[name=_token]').value },
+            })
+                .then((res) => {
+                    if (!res.ok) { throw new Error(res.status); }
+                    notice.classList.add('is-leaving');
+                    setTimeout(() => notice.remove(), 260);
+                })
+                .catch(() => noticeForm.submit());
+        });
     }
 </script>
 </body>

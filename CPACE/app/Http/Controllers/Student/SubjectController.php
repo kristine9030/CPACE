@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Student;
 
+use App\Http\Controllers\Concerns\SubjectTheme;
 use App\Http\Controllers\Controller;
 use App\Models\Material;
 use App\Models\Subject;
@@ -13,6 +14,8 @@ use Illuminate\Support\Facades\DB;
 
 class SubjectController extends Controller
 {
+    use SubjectTheme;
+
     /**
      * Subjects grid — live counts for topics, questions and weak topics.
      */
@@ -118,8 +121,13 @@ class SubjectController extends Controller
         $overallCorrect = (int) ($overallTotals->correct ?? 0);
         $overallAccuracy = $overallAttempts > 0 ? (int) round($overallCorrect / $overallAttempts * 100) : null;
 
+        // Same per-subject colour and icon as the Class Quizzes header.
+        $theme = self::theme($subject->code);
+        $subjectIcon = self::subjectIcon($subject->code);
+
         return view('student.subject-topics', compact(
-            'subject', 'topics', 'topicTree', 'overallAttempts', 'overallCorrect', 'overallAccuracy'
+            'subject', 'topics', 'topicTree', 'overallAttempts', 'overallCorrect', 'overallAccuracy',
+            'theme', 'subjectIcon'
         ));
     }
 

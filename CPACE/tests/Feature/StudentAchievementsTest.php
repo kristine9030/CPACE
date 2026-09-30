@@ -19,7 +19,7 @@ use Tests\TestCase;
 class StudentAchievementsTest extends TestCase
 {
     private const TABLES = [
-        'performance_records', 'quiz_answers', 'quiz_sessions', 'questions',
+        'performance_records', 'quiz_answers', 'quiz_sessions', 'questions', 'topics', 'subjects',
         'notifications', 'messages', 'conversation_participants', 'conversations', 'student_profiles', 'users',
     ];
 
@@ -71,6 +71,16 @@ class StudentAchievementsTest extends TestCase
             $table->unsignedBigInteger('user_id')->primary();
             $table->date('exam_target_date')->nullable();
         });
+        Schema::create('subjects', function (Blueprint $table) {
+            $table->id();
+            $table->string('code');
+            $table->string('name');
+            $table->boolean('is_active')->default(true);
+        });
+        Schema::create('topics', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('subject_id');
+        });
         Schema::create('questions', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('topic_id')->nullable();
@@ -80,6 +90,7 @@ class StudentAchievementsTest extends TestCase
             $table->unsignedBigInteger('student_id');
             $table->string('session_type')->default('testing');
             $table->boolean('is_practice_room')->default(false);
+            $table->unsignedBigInteger('subject_id')->nullable();
             $table->string('mode')->default('adaptive');
             $table->integer('total_items')->default(0);
             $table->integer('correct_answers')->default(0);
@@ -91,6 +102,7 @@ class StudentAchievementsTest extends TestCase
             $table->id();
             $table->unsignedBigInteger('session_id');
             $table->unsignedBigInteger('question_id');
+            $table->boolean('is_correct')->default(false);
             $table->timestamp('answered_at')->nullable();
         });
         Schema::create('performance_records', function (Blueprint $table) {
@@ -139,6 +151,49 @@ class StudentAchievementsTest extends TestCase
         });
     }
 
+    public function test_subject_standings_rank_each_subject_separately_and_anonymise_others(): void
+    {
+        $far = DB::table('subjects')->insertGetId(['code' => 'FAR', 'name' => 'Financial Accounting']);
+        $tax = DB::table('subjects')->insertGetId(['code' => 'TAX', 'name' => 'Taxation']);
+
+        $me = $this->student('me@example.com');
+        $rival = $this->student('rival@example.com');
+        $gone = $this->student('gone@example.com', active: false);
+
+        // FAR: a single-subject quiz credits its session totals.
+        $this->completedSession($me->id, 8, $far, 10);
+        $this->completedSession($rival->id, 12, $far, 20);
+        $this->completedSession($gone->id, 50, $far, 50);
+
+        // TAX: only reachable through a mixed quiz, credited per answer.
+        $taxTopic = DB::table('topics')->insertGetId(['subject_id' => $tax]);
+        $question = DB::table('questions')->insertGetId(['topic_id' => $taxTopic]);
+        $mixed = DB::table('quiz_sessions')->insertGetId([
+            'student_id' => $me->id, 'session_type' => 'testing', 'mode' => 'adaptive',
+            'total_items' => 2, 'correct_answers' => 1, 'completed_at' => now(),
+        ]);
+        DB::table('quiz_answers')->insert([
+            ['session_id' => $mixed, 'question_id' => $question, 'is_correct' => true, 'answered_at' => now()],
+            ['session_id' => $mixed, 'question_id' => $question, 'is_correct' => false, 'answered_at' => now()],
+        ]);
+
+        $response = $this->actingAs($me)->get(route('achievements'));
+
+        $response->assertOk();
+        $response->assertViewHas('subjectBoards', function ($boards) {
+            $byCode = collect($boards)->keyBy('code');
+            $farBoard = $byCode['FAR'];
+            $taxBoard = $byCode['TAX'];
+
+            return $farBoard['me']['rank'] === 2 && $farBoard['me']['total'] === 2   // deactivated excluded
+                && $farBoard['me']['accuracy'] === 80
+                && $farBoard['rows'][0]['name'] !== 'Test Student'                  // the rival is anonymised
+                && $farBoard['rows'][1]['is_me'] === true
+                && $taxBoard['me']['rank'] === 1 && $taxBoard['me']['correct'] === 1
+                && $taxBoard['me']['accuracy'] === 50;
+        });
+    }
+
     private function student(string $email, bool $active = true): User
     {
         $student = User::create([
@@ -155,13 +210,14 @@ class StudentAchievementsTest extends TestCase
         return $student;
     }
 
-    private function completedSession(int $studentId, int $correctAnswers): void
+    private function completedSession(int $studentId, int $correctAnswers, ?int $subjectId = null, ?int $totalItems = null): void
     {
         DB::table('quiz_sessions')->insert([
             'student_id' => $studentId,
             'session_type' => 'testing',
+            'subject_id' => $subjectId,
             'mode' => 'adaptive',
-            'total_items' => $correctAnswers,
+            'total_items' => $totalItems ?? $correctAnswers,
             'correct_answers' => $correctAnswers,
             'completed_at' => now(),
         ]);

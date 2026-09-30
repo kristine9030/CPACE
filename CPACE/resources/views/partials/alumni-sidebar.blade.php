@@ -226,7 +226,10 @@
         <li class="nav-label">Account</li>
         <li><a href="{{ route('alumni.profile') }}" class="{{ $active === 'profile' ? 'active' : '' }}"><i class="fas fa-id-card"></i><span>My Profile</span></a></li>
         <li><a href="{{ route('notifications.index') }}" class="{{ $active === 'notifications' ? 'active' : '' }}"><i class="fas fa-bell"></i><span>Notifications{{ $unreadNotifications ? ' ('.$unreadNotifications.')' : '' }}</span></a></li>
+        <li><a href="{{ route('help.index') }}" class="{{ $active === 'help' ? 'active' : '' }}"><i class="fas fa-circle-question"></i><span>Help &amp; Support</span></a></li>
     </ul>
+
+    @include('partials.sidebar-institution')
 
     <div class="sidebar-footer">
         <div class="user-menu" id="userMenu">

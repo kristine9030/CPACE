@@ -45,6 +45,7 @@ class AchievementController extends Controller
             'streak'       => $data['streak'],
             'standing'     => $this->achievements->standing($data['earned_count'], $data['total_count']),
             'leaderboard'  => $leaderboard,
+            'subjectBoards' => $this->achievements->subjectLeaderboards($studentId),
             'daysToExam'   => $daysToExam,
         ]);
     }

@@ -141,6 +141,41 @@ class MockExamViewSmokeTest extends TestCase
             ->assertDontSee('Start exam');
     }
 
+    public function test_a_folder_is_muted_until_one_of_its_exams_opens(): void
+    {
+        $upcoming = $this->exam(MockExam::STATUS_PUBLISHED, now()->addDays(3), withEvent: true);
+        $this->register($upcoming);
+
+        $this->actingAs($this->student)->get(route('mock-exams'))
+            ->assertOk()
+            ->assertSee('Locked until an exam opens')
+            ->assertDontSee(route('mock-exams.subject', $this->subjectId), false);
+
+        $open = $this->exam(MockExam::STATUS_PUBLISHED, now()->subMinutes(10), withEvent: true);
+        $this->register($open);
+
+        $this->actingAs($this->student)->get(route('mock-exams'))
+            ->assertOk()
+            ->assertDontSee('Locked until an exam opens')
+            ->assertSee(route('mock-exams.subject', $this->subjectId), false);
+    }
+
+    public function test_the_muted_folder_notice_goes_away_for_good_once_acknowledged(): void
+    {
+        $exam = $this->exam(MockExam::STATUS_PUBLISHED, now()->addDays(3), withEvent: true);
+        $this->register($exam);
+
+        $this->actingAs($this->student)->get(route('mock-exams'))
+            ->assertSee('Folders stay locked until an exam opens');
+
+        $this->actingAs($this->student)->postJson(route('mock-exams.notice.dismiss'))->assertNoContent();
+        $this->assertNotNull($this->student->fresh()->mock_exam_notice_seen_at);
+
+        $this->actingAs($this->student->fresh())->get(route('mock-exams'))
+            ->assertOk()
+            ->assertDontSee('Folders stay locked until an exam opens');
+    }
+
     // ── helpers ──────────────────────────────────────────────────────────
 
     private function exam(string $status, $sitting, bool $withEvent = false): MockExam

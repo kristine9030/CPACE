@@ -466,10 +466,14 @@ class ChairAnalyticsService
             ->get();
 
         return collect(range($weeks - 1, 0))->map(function ($offset) use ($sessions, $subjectId) {
-            $cutoff = now()->startOfWeek()->subWeeks($offset)->endOfWeek();
+            $weekStart = now()->startOfWeek()->subWeeks($offset);
+            $cutoff = $weekStart->copy()->endOfWeek();
             $upToDate = $sessions->filter(fn ($session) => Carbon::parse($session->completed_at)->lte($cutoff));
-            $items = (int) $upToDate->sum('total_items');
-            $correct = (int) $upToDate->sum('correct_answers');
+            // Class accuracy is per week (only that week's quizzes), so the
+            // line moves with current results; readiness below stays cumulative.
+            $thisWeek = $upToDate->filter(fn ($session) => Carbon::parse($session->completed_at)->gte($weekStart));
+            $items = (int) $thisWeek->sum('total_items');
+            $correct = (int) $thisWeek->sum('correct_answers');
 
             $eligible = $upToDate
                 ->groupBy('student_id')
@@ -495,8 +499,10 @@ class ChairAnalyticsService
                 'rate' => $eligible->count() ? (int) round($ready / $eligible->count() * 100) : 0,
                 'eligible' => $eligible->count(),
                 'ready' => $ready,
-                // Cumulative class accuracy on the same axis (both are percentages).
-                'accuracy' => $items ? (int) round($correct / $items * 100) : 0,
+                // That week's class accuracy on the same axis; null (a gap in
+                // the line) when nobody took a quiz that week.
+                'accuracy' => $items ? (int) round($correct / $items * 100) : null,
+                'answered' => $items,
             ];
         });
     }

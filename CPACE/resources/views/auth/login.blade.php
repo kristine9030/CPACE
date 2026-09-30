@@ -94,65 +94,70 @@
         .left-section {
             position: relative;
             color: #fff;
-            padding: 52px 44px;
+            padding: 40px 42px 30px;
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            background: linear-gradient(150deg, #7B1D1D 0%, #3A1010 48%, #130707 100%);
+            isolation: isolate;
+            background:
+                radial-gradient(ellipse 80% 55% at 0% 0%, rgba(193,58,58,.45), transparent 60%),
+                radial-gradient(ellipse 70% 60% at 100% 100%, rgba(123,29,29,.55), transparent 65%),
+                linear-gradient(160deg, #5c1515 0%, #2a0b0b 55%, #120505 100%);
         }
 
+        /* Fine grid that fades out toward the lower right. */
         .left-section::before {
             content: '';
             position: absolute;
             inset: 0;
-            background:
-                radial-gradient(ellipse 60% 50% at 15% 85%, rgba(161,38,38,.35), transparent 62%),
-                radial-gradient(ellipse 55% 45% at 90% 10%, rgba(192,57,43,.28), transparent 58%);
+            z-index: -1;
+            background-image:
+                linear-gradient(rgba(255,255,255,.045) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,.045) 1px, transparent 1px);
+            background-size: 36px 36px;
+            -webkit-mask-image: radial-gradient(ellipse 90% 70% at 20% 10%, #000 10%, transparent 75%);
+                    mask-image: radial-gradient(ellipse 90% 70% at 20% 10%, #000 10%, transparent 75%);
             pointer-events: none;
         }
 
+        /* Soft moving light behind the headline. */
         .left-section::after {
             content: '';
             position: absolute;
-            inset: 0;
-            background-image: radial-gradient(rgba(255,255,255,.10) 1.5px, transparent 1.6px);
-            background-size: 19px 19px;
-            -webkit-mask-image: radial-gradient(ellipse at bottom left, #000 15%, transparent 72%);
-                    mask-image: radial-gradient(ellipse at bottom left, #000 15%, transparent 72%);
+            z-index: -1;
+            width: 420px; height: 420px;
+            left: -120px; top: 22%;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(239,198,198,.16), transparent 65%);
+            filter: blur(10px);
+            animation: glowDrift 14s ease-in-out infinite alternate;
+            pointer-events: none;
+        }
+        @keyframes glowDrift { to { transform: translate(60px, -40px); } }
+
+        /* Batangas State University seal as a large, quiet watermark. */
+        .panel-watermark {
+            position: absolute;
+            z-index: -1;
+            right: -118px;
+            bottom: -96px;
+            width: 400px;
+            height: 400px;
+            background: url("{{ asset('images/logo bsu (3).png') }}") center / contain no-repeat;
+            filter: grayscale(1) contrast(1.15);
+            opacity: .07;
+            mix-blend-mode: screen;
+            transform: rotate(-12deg);
             pointer-events: none;
         }
 
-        .left-section > * {
-            position: relative;
-            z-index: 2;
-        }
-
-        /* ── Card ornamentation ───────────────────────────────── */
-        /* Campus cut-out, lifted and dropped to a whisper so it reads as
-           texture rather than a photo. */
-        .panel-photo {
-            position: absolute; right: -20%; bottom: -12%; width: 148%;
-            aspect-ratio: 1920 / 1080; opacity: .1; z-index: 0;
-            background: url("{{ asset('images/overaly.png') }}") no-repeat;
-            background-size: 100% 100%;
-            filter: grayscale(1) brightness(1.7) contrast(.9);
-            -webkit-mask-image: linear-gradient(to bottom, transparent 22%, #000 58%);
-                    mask-image: linear-gradient(to bottom, transparent 22%, #000 58%);
-        }
-
-        /* The skewed bars that run down the landing hero, scaled to the panel. */
-        .panel-slash { position: absolute; z-index: 1; transform: skewX(-19deg); border-radius: 6px; }
-        .ps-1 { top: -14%; right: 5%;   width: 58px; height: 58%; background: linear-gradient(180deg, rgba(161,38,38,.6), rgba(161,38,38,0)); }
-        .ps-2 { top: -14%; right: 17%;  width: 15px; height: 44%; background: linear-gradient(180deg, rgba(255,255,255,.11), rgba(255,255,255,0)); }
-        .ps-3 { bottom: -16%; left: -7%; width: 44px; height: 36%; background: linear-gradient(0deg, rgba(161,38,38,.5), rgba(161,38,38,0)); }
-
-        /* Hairline down the seam between the two halves. */
+        /* Thin light line down the seam between the two halves. */
         .card-seam {
             position: absolute; top: 0; bottom: 0; left: 51.2%;
-            width: 3px; z-index: 4; pointer-events: none;
+            width: 1px; z-index: 4; pointer-events: none;
             background: linear-gradient(180deg,
-                rgba(161,38,38,0) 0%, var(--maroon-bright) 26%,
-                var(--maroon-bright) 74%, rgba(161,38,38,0) 100%);
+                rgba(161,38,38,0) 0%, rgba(161,38,38,.55) 30%,
+                rgba(161,38,38,.55) 70%, rgba(161,38,38,0) 100%);
         }
 
         /* Quiet ornaments on the form side, same set the landing page uses. */
@@ -170,42 +175,35 @@
 
         .rd-1 { right: 10px; bottom: 14px; width: 170px; height: 100px; }
         .rd-2 { right: 26px; top: 26px;    width: 84px;  height: 84px; }
-        .panel-tile {
-            position: absolute; z-index: 1; left: 44px; top: 33%;
-            width: 66px; height: 66px; transform: rotate(20deg);
-            border: 1.5px solid rgba(255,255,255,.14); border-radius: 15px;
-        }
-        .panel-ring {
-            position: absolute; z-index: 1; right: 46px; top: 25%;
-            width: 78px; height: 78px; border-radius: 50%;
-            border: 1.5px dashed rgba(255,255,255,.13);
-            animation: cardSpin 46s linear infinite;
-        }
 
         @media (prefers-reduced-motion: reduce) { .rdeco-ring { animation: none; } }
 
+        /* ── Brand row ── */
         .logo {
             display: flex;
             align-items: center;
-            gap: 12px;
-            margin-bottom: auto;
+            gap: 13px;
         }
 
-        .logo-circle {
-            width: 52px;
-            height: 52px;
-            border-radius: 50%;
-            background: transparent;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        .logo-mark {
+            width: 50px;
+            height: 50px;
+            border-radius: 14px;
+            display: grid;
+            place-items: center;
             flex-shrink: 0;
+            background: linear-gradient(145deg, rgba(255,255,255,.16), rgba(255,255,255,.04));
+            border: 1px solid rgba(255,255,255,.18);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,.18), 0 10px 24px rgba(0,0,0,.28);
+            backdrop-filter: blur(8px);
         }
 
-        .logo-circle img {
+        /* The crest is maroon on transparent; render it white on the dark panel. */
+        .logo-mark img {
             width: 32px;
             height: 32px;
             object-fit: contain;
+            filter: brightness(0) invert(1);
         }
 
         .wordmark { font-weight: 800; letter-spacing: -.035em; line-height: 1; }
@@ -213,79 +211,169 @@
         .wordmark .w-b { color: var(--ink); }
         .wordmark.on-dark .w-a, .wordmark.on-dark .w-b { color: #fff; }
 
-        .logo-text h1 { font-size: 22px; }
+        .logo-text h1 { font-size: 23px; }
 
         .logo-text p {
             font-size: 11.5px;
-            font-weight: 300;
+            font-weight: 400;
             font-style: italic;
-            opacity: .8;
+            color: rgba(255,255,255,.66);
+            margin-top: 4px;
         }
 
+        /* ── Headline ── */
         .hero-content {
-            margin: 40px 0 32px;
+            margin: auto 0 26px;
+            padding-top: 36px;
         }
 
         .hero-badge {
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            padding: 6px 14px;
+            padding: 6px 13px 6px 10px;
             border-radius: 999px;
-            background: rgba(255, 255, 255, .10);
-            border: 1px solid rgba(255, 255, 255, .16);
-            font-size: 11.5px;
-            font-weight: 500;
-            letter-spacing: .3px;
-            margin-bottom: 20px;
+            background: rgba(255, 255, 255, .08);
+            border: 1px solid rgba(255, 255, 255, .14);
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: .6px;
+            text-transform: uppercase;
+            color: rgba(255,255,255,.88);
+            margin-bottom: 18px;
         }
 
         .hero-badge .dot {
             width: 7px;
             height: 7px;
             border-radius: 50%;
-            background: var(--rose);
-            box-shadow: 0 0 0 4px rgba(239, 198, 198, .2);
+            background: #5ee0a0;
+            box-shadow: 0 0 0 4px rgba(94, 224, 160, .18);
+            animation: livePulse 2.4s ease-in-out infinite;
         }
+        @keyframes livePulse { 50% { box-shadow: 0 0 0 7px rgba(94, 224, 160, 0); } }
 
         .hero-content h2 {
-            font-size: 31px;
-            font-weight: 700;
-            line-height: 1.28;
-            letter-spacing: -.022em;
+            font-size: 33px;
+            font-weight: 800;
+            line-height: 1.16;
+            letter-spacing: -.03em;
             margin-bottom: 14px;
         }
 
-        .hero-content h2 span { color: var(--rose); }
+        .hero-content h2 span {
+            background: linear-gradient(90deg, #ffd9d9 0%, #f3a6a6 55%, #ffd9d9 100%);
+            -webkit-background-clip: text;
+                    background-clip: text;
+            color: transparent;
+        }
 
         .hero-content p {
             font-size: 13.5px;
             line-height: 1.7;
-            opacity: .85;
-            max-width: 340px;
+            color: rgba(255,255,255,.72);
+            max-width: 360px;
         }
+
+        /* ── Feature list (glass card) ── */
+        .hero-features {
+            list-style: none;
+            display: grid;
+            gap: 2px;
+            padding: 8px;
+            border-radius: 16px;
+            background: linear-gradient(145deg, rgba(255,255,255,.09), rgba(255,255,255,.03));
+            border: 1px solid rgba(255,255,255,.12);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,.08);
+            backdrop-filter: blur(10px);
+            margin-bottom: 20px;
+        }
+
+        .hero-features li {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 9px 10px;
+            border-radius: 11px;
+            transition: background .2s;
+        }
+        .hero-features li:hover { background: rgba(255,255,255,.06); }
+
+        .hero-features .f-ico {
+            width: 34px;
+            height: 34px;
+            flex-shrink: 0;
+            border-radius: 10px;
+            display: grid;
+            place-items: center;
+            font-size: 14px;
+            color: #ffd9d9;
+            background: rgba(161,38,38,.45);
+            border: 1px solid rgba(255,255,255,.1);
+        }
+
+        .hero-features strong { display: block; font-size: 13px; font-weight: 700; }
+        .hero-features small { display: block; font-size: 11.5px; color: rgba(255,255,255,.6); margin-top: 1px; }
 
         .hero-subjects {
             display: flex;
             flex-wrap: wrap;
-            gap: 8px;
+            gap: 7px;
         }
 
         .hero-subjects span {
-            padding: 6px 12px;
-            border-radius: 8px;
-            background: rgba(255, 255, 255, .08);
-            border: 1px solid rgba(255, 255, 255, .12);
-            font-size: 11px;
-            font-weight: 600;
-            letter-spacing: .4px;
+            padding: 5px 11px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, .06);
+            border: 1px solid rgba(255, 255, 255, .13);
+            font-size: 10.5px;
+            font-weight: 700;
+            letter-spacing: .8px;
+            color: rgba(255,255,255,.85);
             transition: background .18s, border-color .18s, transform .18s;
         }
         .hero-subjects span:hover {
             background: rgba(255, 255, 255, .14);
-            border-color: rgba(255, 255, 255, .24);
+            border-color: rgba(255, 255, 255, .28);
             transform: translateY(-2px);
         }
+
+        /* ── Institution footer ── */
+        .panel-institution {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 26px;
+            padding-top: 18px;
+            border-top: 1px solid rgba(255,255,255,.1);
+        }
+
+        .panel-institution img {
+            width: 36px;
+            height: 36px;
+            flex-shrink: 0;
+            border-radius: 50%;
+            filter: drop-shadow(0 4px 10px rgba(0,0,0,.35));
+        }
+
+        .panel-institution strong {
+            display: block;
+            font-size: 11.5px;
+            font-weight: 700;
+            letter-spacing: .3px;
+        }
+
+        .panel-institution span {
+            display: block;
+            font-size: 10.5px;
+            color: rgba(255,255,255,.58);
+            margin-top: 2px;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .left-section::after, .hero-badge .dot { animation: none; }
+        }
+
 
         /* ── Right / form panel ── */
         .right-section-wrap {
@@ -713,16 +801,11 @@
 
         <!-- Left / Brand Section -->
         <div class="left-section">
-            <span class="panel-photo" aria-hidden="true"></span>
-            <span class="panel-slash ps-1" aria-hidden="true"></span>
-            <span class="panel-slash ps-2" aria-hidden="true"></span>
-            <span class="panel-slash ps-3" aria-hidden="true"></span>
-            <span class="panel-tile" aria-hidden="true"></span>
-            <span class="panel-ring" aria-hidden="true"></span>
+            <span class="panel-watermark" aria-hidden="true"></span>
 
             <div class="logo">
-                <div class="logo-circle">
-                    <img src="{{ asset('images/logo-icon.png') }}" alt="CPAce">
+                <div class="logo-mark">
+                    <img src="{{ asset('images/cpace-crest.png') }}" alt="CPAce">
                 </div>
                 <div class="logo-text">
                     <h1 class="wordmark on-dark"><span class="w-a">CPA</span><span class="w-b">ce</span></h1>
@@ -736,13 +819,36 @@
                 <p>Structured syllabus coverage, adaptive quizzes, and progress tracking across all six CPALE subjects — all in one place.</p>
             </div>
 
-            <div class="hero-subjects">
+            <ul class="hero-features">
+                <li>
+                    <span class="f-ico"><i class="fas fa-bolt"></i></span>
+                    <span><strong>Adaptive practice</strong><small>Quizzes that focus on your weak topics</small></span>
+                </li>
+                <li>
+                    <span class="f-ico"><i class="fas fa-user-shield"></i></span>
+                    <span><strong>Proctored mock exams</strong><small>Timed board-style simulations</small></span>
+                </li>
+                <li>
+                    <span class="f-ico"><i class="fas fa-chart-line"></i></span>
+                    <span><strong>Readiness analytics</strong><small>See where you stand, subject by subject</small></span>
+                </li>
+            </ul>
+
+            <div class="hero-subjects" aria-label="CPALE subjects">
                 <span>FAR</span>
                 <span>AFAR</span>
                 <span>MS</span>
                 <span>AUD</span>
                 <span>TAX</span>
                 <span>RFBT</span>
+            </div>
+
+            <div class="panel-institution">
+                <img src="{{ asset('images/logo bsu (3).png') }}" alt="Batangas State University seal">
+                <div>
+                    <strong>Batangas State University</strong>
+                    <span>The National Engineering University · ARASOF-Nasugbu</span>
+                </div>
             </div>
         </div>
 
@@ -753,7 +859,7 @@
                 <span class="rdeco rdeco-dots rd-1" aria-hidden="true"></span>
 
                 <div class="mobile-brand">
-                    <img src="{{ asset('images/logo-icon.png') }}" alt="">
+                    <img src="{{ asset('images/cpace-crest.png') }}" alt="">
                     <span class="wordmark" style="font-size:26px"><span class="w-a">CPA</span><span class="w-b">ce</span></span>
                 </div>
 

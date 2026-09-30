@@ -9,20 +9,21 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     @include('partials.mock-exam-styles')
+    @include('partials.quiz-brand-header')
     <style>
         /* The runner deliberately has no sidebar: fewer exits, fewer accidents. */
         body { background:#eef0f4; }
-        .exam-bar { position:sticky; top:0; z-index:500; background:#fff; border-bottom:1px solid var(--line);
-                    padding:12px 22px; display:flex; align-items:center; gap:18px; flex-wrap:wrap;
-                    box-shadow:0 2px 10px -6px rgba(0,0,0,.25); }
-        .exam-bar .t { font-size:14px; font-weight:700; color:var(--ink); }
-        .exam-bar .s { font-size:11.5px; color:var(--muted); }
+        .exam-bar { position:sticky; top:0; z-index:500;
+                    padding:12px 22px; display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+                    box-shadow:0 4px 16px rgba(0,0,0,.15); }
+        .exam-bar .t { font-size:14px; font-weight:700; color:#fff; }
+        .exam-bar .s { font-size:11.5px; color:rgba(255,255,255,.75); }
         .timer { margin-left:auto; font-family:'Montserrat',monospace; font-size:22px; font-weight:700;
-                 color:var(--ink); background:#f4f5f7; padding:7px 15px; border-radius:10px; }
+                 color:#fff; background:rgba(255,255,255,.16); padding:7px 15px; border-radius:10px; }
         .timer.warn { background:#fdf0d8; color:var(--amber); }
         .timer.danger { background:#fdeceb; color:var(--red); animation:pulse 1.2s infinite; }
         @keyframes pulse { 50% { opacity:.55; } }
-        .cam-dot { display:flex; align-items:center; gap:7px; font-size:11.5px; color:var(--muted); }
+        .cam-dot { display:flex; align-items:center; gap:7px; font-size:11.5px; color:rgba(255,255,255,.85); }
         .cam-dot .d { width:9px; height:9px; border-radius:50%; background:var(--green); }
         .cam-dot.off .d { background:var(--red); }
 
@@ -57,7 +58,8 @@
     </style>
 </head>
 <body>
-<div class="exam-bar">
+<div class="exam-bar quiz-brand">
+    @include('partials.quiz-brand-header', ['logo' => true])
     <div>
         <div class="t">{{ $exam->title }}</div>
         <div class="s">{{ $subject->code }} · {{ $items->count() }} questions · answers save automatically</div>

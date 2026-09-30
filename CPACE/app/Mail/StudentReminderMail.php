@@ -27,6 +27,6 @@ class StudentReminderMail extends Mailable
     public function build()
     {
         return $this->subject($this->subjectLine)
-            ->markdown('emails.student-reminder');
+            ->view('emails.student-reminder');
     }
 }

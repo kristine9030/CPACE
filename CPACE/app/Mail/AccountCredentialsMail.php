@@ -27,7 +27,7 @@ class AccountCredentialsMail extends Mailable
 
     public function build()
     {
-        return $this->subject($this->isReissue ? 'Your CPACE one-time password was reset' : 'Your CPACE account is ready')
+        return $this->subject($this->isReissue ? 'Your CPAce one-time password was reset' : 'Your CPAce account is ready')
             ->view('emails.account-credentials');
     }
 }

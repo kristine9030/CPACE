@@ -176,7 +176,7 @@
                     @elseif(!Auth::user()->isChair())
                         <a href="#" class="js-open-profile-modal"><i class="fas fa-user"></i> Profile Settings</a>
                     @endif
-                    <a href="#"><i class="fas fa-question-circle"></i> Help &amp; Support</a>
+                    <a href="{{ route('help.index') }}"><i class="fas fa-question-circle"></i> Help &amp; Support</a>
                     <form method="POST" action="{{ route('logout') }}"
                           data-confirm="You will be signed out of CPACE and returned to the login page."
                           data-confirm-title="Log out of CPACE?"
