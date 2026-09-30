@@ -24,30 +24,44 @@ on:
 jobs:
   playwright:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: CPACE/e2e
     steps:
       - uses: actions/checkout@v4
 
+      - name: Check staging is configured
+        id: staging
+        run: |
+          if [ -n "${{ secrets.CPACE_APP_URL }}" ] && [ -n "${{ secrets.CPACE_TEST_REPORTS_TOKEN }}" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Skipping — CPACE_APP_URL/CPACE_TEST_REPORTS_TOKEN aren't set yet. Nothing to fail here until staging exists (see DEPLOYMENT-STAGING.md)."
+          fi
+
       - uses: actions/setup-node@v4
+        if: steps.staging.outputs.configured == 'true'
         with:
           node-version: 20
           cache: 'npm'
           cache-dependency-path: CPACE/e2e/package-lock.json
 
       - run: npm ci
+        if: steps.staging.outputs.configured == 'true'
+        working-directory: CPACE/e2e
+
       - run: npx playwright install --with-deps
+        if: steps.staging.outputs.configured == 'true'
+        working-directory: CPACE/e2e
 
       - name: Run Playwright tests
+        if: steps.staging.outputs.configured == 'true'
+        working-directory: CPACE/e2e
         run: npx playwright test --reporter=json > ../../playwright-report.json
         continue-on-error: true
         env:
           BASE_URL: ${{ secrets.CPACE_APP_URL }}
 
       - name: Upload result to CPACE
-        if: always()
-        working-directory: .
+        if: steps.staging.outputs.configured == 'true'
         run: |
           curl -sf -X POST "${{ secrets.CPACE_APP_URL }}/api/test-reports" \
             -H "Authorization: Bearer ${{ secrets.CPACE_TEST_REPORTS_TOKEN }}" \
