@@ -8,6 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     @include('partials.chart-kit')
+    @include('partials.chart-filter-styles')
     <style>
         :root { --primary:#7B1D1D; --primary-hover:#6a1818; --primary-light:#f5e8e8; --accent:#c0392b; --green:#10b981; --blue:#3b82f6; --orange:#f59e0b; }
         * { margin:0; padding:0; box-sizing:border-box; }
@@ -25,61 +26,30 @@
         .btn-ghost { background:white; color:#555; border:1px solid #e0e0e0; }
         .btn-ghost:hover { background:#f5f5f5; }
         .btn-sm { padding:6px 12px; font-size:12px; }
-        .card { background:white; border-radius:14px; padding:22px; border:1px solid #eee; }
-        .card-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; gap:12px; }
-        .card-title { font-size:14px; font-weight:600; color:#1a1a1a; }
-        .empty { text-align:center; padding:40px 20px; color:#aaa; }
 
-        /* Tabs */
-        .tab-bar { display:flex; gap:0; background:white; border-radius:12px; padding:4px; border:1px solid #eee; width:fit-content; flex-shrink:0; }
+        /* Charts / Tables switch — both views follow the same filters. */
+        .tab-bar { display:flex; gap:0; background:white; border-radius:12px; padding:4px; border:1px solid #eee; width:fit-content; margin-bottom:16px; }
         .tab-btn { padding:9px 22px; border-radius:9px; font-size:13px; font-weight:600; font-family:'Poppins',sans-serif; cursor:pointer; border:none; background:transparent; color:#888; transition:all .2s; display:flex; align-items:center; gap:7px; }
         .tab-btn:hover { color:#555; background:#f8f8fa; }
         .tab-btn.active { background:var(--primary); color:white; box-shadow:0 2px 8px rgba(123,29,29,0.25); }
-        .tab-btn i { font-size:13px; }
         .tab-panel { display:none; }
         .tab-panel.active { display:block; }
 
-        /* ── Tabs + their filter share one row, tabs pinned left and the
-           filter pinned right, so the row reads as one scoped view instead
-           of two stacked, unrelated-looking controls. ── */
-        .tab-filter-row { display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; margin-bottom:18px; }
+        #tab-charts .chart-grid { align-items:start; }
+        .is-loading .chart-grid, .is-loading .table-card { opacity:.55; pointer-events:none; transition:opacity .2s; }
+        .confidence { display:inline-block; font-size:10px; font-weight:700; padding:2px 9px; border-radius:20px; margin-left:6px; vertical-align:middle; }
+        .confidence.high { color:#047857; background:#e7f6ef; }
+        .confidence.medium { color:#b45309; background:#fef3c7; }
+        .confidence.low { color:#b91c1c; background:#fde8e8; }
 
-        /* ── Filter bar — no card wrapper: the controls sit straight on the
-           page so the row is one control tall instead of a padded panel.
-           Labels run inline beside their select rather than stacked above,
-           which is what the base stylesheet's block-level <label> and
-           full-width <select> would otherwise force. ── */
-        .filter-card { margin:0; padding:0; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
-        .filter-field { display:flex; align-items:center; gap:7px; }
-        .filter-card label { font-size:10px; font-weight:700; color:#8a8a94; text-transform:uppercase; letter-spacing:.4px; margin:0; white-space:nowrap; }
-        .filter-card select { width:auto; min-width:175px; padding:7px 10px; border:1.5px solid #e2e2e6; border-radius:8px; font:12px Poppins,sans-serif; color:#333; background:#fff; cursor:pointer; transition:border-color .15s; }
-        .filter-card select:hover { border-color:#c7c7cf; }
-        .filter-card select:focus { outline:none; border-color:var(--primary); box-shadow:0 0 0 3px rgba(123,29,29,.08); }
-        .analytics-layout { display:grid; grid-template-columns:minmax(0,1.3fr) minmax(310px,.7fr); gap:18px; }
-        /* ── KPI cards — same treatment as the other chair pages: a
-           pronounced shadow so the headline row lifts off the page, a bold
-           dark title, and a dashed-border context line that reads the number
-           (against the pass mark, the cohort, or the sample it rests on)
-           rather than just restating its label. ── */
-        .metric-row { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin-bottom:18px; }
-        .metric {
-            background:#fff; border:1px solid #eee; border-radius:12px; padding:17px 18px;
-            display:flex; flex-direction:column; height:100%;
-            box-shadow:0 4px 10px rgba(10,5,5,.14), 0 16px 32px -8px rgba(10,5,5,.34);
-            transition:transform .18s ease, box-shadow .18s ease;
-        }
-        .metric:hover {
-            transform:translateY(-2px);
-            box-shadow:0 6px 14px rgba(10,5,5,.18), 0 22px 40px -8px rgba(10,5,5,.4);
-        }
-        .metric-label { font-size:12.5px; font-weight:700; color:#1a1a1a; letter-spacing:-.01em; }
-        .metric-value { font-size:27px; font-weight:700; color:#1a1a1a; line-height:1; margin-top:8px; flex:1; }
-        .metric-note {
-            font-size:10px; color:#999; margin-top:13px;
-            padding-top:10px; border-top:1px dashed #eee; line-height:1.45;
-        }
-        .metric-note strong { color:#1a1a1a; font-weight:700; }
-        .subject-row { display:grid; grid-template-columns:minmax(185px,1fr) minmax(160px,1.3fr) 72px 78px 90px; gap:13px; align-items:center; padding:13px 0; border-top:1px solid #f3f3f3; }
+        /* Tables view */
+        .table-card { background:#fff; border-radius:14px; padding:20px 22px; margin-bottom:16px; box-shadow:0 2px 6px rgba(15,10,10,.08), 0 10px 22px -10px rgba(15,10,10,.22); }
+        .table-card h3 { font-size:14px; font-weight:700; color:#1a1a1a; display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:12px; }
+        .table-card h3 small { font-size:10px; font-weight:500; color:#aaa; }
+        .table-pair { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+        .table-pair .table-card { margin-bottom:0; }
+        .table-scroll { overflow-x:auto; }
+        .subject-row { display:grid; grid-template-columns:minmax(185px,1fr) minmax(160px,1.3fr) 72px 78px 110px; gap:13px; align-items:center; padding:12px 0; border-top:1px solid #f3f3f3; }
         .subject-row.head { border:0; padding-top:0; font-size:9.5px; color:#aaa; text-transform:uppercase; letter-spacing:.3px; }
         .subject-name { font-size:11px; color:#555; margin-left:7px; }
         .bar { height:7px; border-radius:5px; background:#f0f1f3; overflow:hidden; }
@@ -88,581 +58,812 @@
         .delta { font-size:11px; font-weight:700; }
         .delta.up { color:#047857; } .delta.down { color:#b91c1c; } .delta.na { color:#bbb; font-weight:500; }
         .small-meta { font-size:9.5px; color:#aaa; }
-        .trend-chart { height:190px; display:flex; align-items:end; gap:10px; padding:18px 6px 0; border-bottom:1px solid #eee; }
-        .trend-col { flex:1; min-width:25px; height:100%; display:flex; flex-direction:column; justify-content:end; align-items:center; gap:5px; }
-        .trend-value { font-size:9px; font-weight:600; color:#777; }
-        .trend-bar { width:min(32px,70%); min-height:2px; background:linear-gradient(180deg,var(--accent),#f49a9a); border-radius:6px 6px 0 0; }
-        .trend-label { font-size:8.5px; color:#999; white-space:nowrap; }
-        .bands { display:grid; grid-template-columns:repeat(3,1fr); gap:9px; margin-top:15px; }
-        .band { padding:12px; border-radius:10px; text-align:center; background:#f8f8fa; }
-        .band strong { display:block; font-size:20px; color:#222; }
-        .band span { font-size:9px; color:#888; }
-        .band.ready { background:#ecfdf5; } .band.ready strong { color:#047857; }
-        .band.risk { background:#fef2f2; } .band.risk strong { color:#b91c1c; }
-        .method-note { font-size:10px; line-height:1.7; color:#888; background:#f8f8fa; border-radius:10px; padding:12px 14px; margin-top:14px; }
-        .cohort-strip { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin-bottom:18px; }
-        .cohort { background:#fff; border:1px solid #eee; border-radius:12px; padding:13px 15px; }
-        .cohort-num { font-size:19px; font-weight:700; color:#222; }
-        .cohort-lbl { font-size:9.5px; color:#999; font-weight:600; margin-top:3px; }
+        .table-empty { text-align:center; padding:26px 10px; color:#aaa; font-size:12px; }
+        .method-note { font-size:10px; line-height:1.7; color:#888; background:#f8f8fa; border-radius:10px; padding:12px 14px; }
 
-        @media(max-width:1050px) { .analytics-layout{grid-template-columns:1fr}.metric-row{grid-template-columns:repeat(2,1fr)}.cohort-strip{grid-template-columns:repeat(2,1fr)} }
-        @media(max-width:640px) { .metric-row{grid-template-columns:1fr}.cohort-strip{grid-template-columns:1fr}.subject-row{grid-template-columns:1fr 65px}.subject-row .bar,.subject-row .small-meta,.subject-row .delta,.subject-row.head{display:none}.tab-filter-row{flex-direction:column;align-items:stretch}.tab-bar{width:100%}.filter-card{width:100%}.filter-field{width:100%}.filter-card select{flex:1;width:auto;min-width:0} }
+        /* Leaderboard */
+        .lb-head { display:flex; justify-content:space-between; align-items:flex-start; gap:14px; flex-wrap:wrap; margin-bottom:16px; }
+        .lb-scope { font-size:11px; color:#999; }
+        .lb-sort { display:flex; gap:4px; background:#f4f5f7; border-radius:10px; padding:3px; }
+        .lb-sort button { display:flex; align-items:center; gap:6px; padding:7px 12px; border:none; border-radius:8px; background:none; color:#777; font:600 11.5px 'Poppins',sans-serif; cursor:pointer; }
+        .lb-sort button.active { background:#fff; color:var(--primary); box-shadow:0 1px 3px rgba(0,0,0,.1); }
+        .lb-podium { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; margin-bottom:16px; }
+        .lb-podium:empty { display:none; }
+        .lb-top { display:flex; align-items:center; gap:12px; padding:14px; border-radius:12px; border:1px solid #f1e3e3; background:linear-gradient(135deg,#fff,#fdf6f6); text-decoration:none; color:inherit; }
+        .lb-top:hover { border-color:#e3c4c4; }
+        .lb-medal { width:34px; height:34px; border-radius:50%; display:grid; place-items:center; font-size:14px; color:#fff; flex:none; }
+        .lb-medal.r1 { background:#d4a017; } .lb-medal.r2 { background:#9ca3af; } .lb-medal.r3 { background:#b87333; }
+        .lb-top-name { font-size:13px; font-weight:700; color:#1a1a1a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .lb-top-meta { font-size:10.5px; color:#999; }
+        .lb-top-score { margin-left:auto; text-align:right; font-size:18px; font-weight:700; color:var(--primary); line-height:1.1; }
+        .lb-top-score small { display:block; font-size:9.5px; font-weight:500; color:#aaa; }
+        .lb-table td { vertical-align:middle; }
+        .lb-rank { font-weight:700; color:#1a1a1a; text-align:center; }
+        .lb-student { display:flex; align-items:center; gap:10px; min-width:0; text-decoration:none; color:inherit; }
+        .lb-av { width:30px; height:30px; border-radius:50%; background:var(--primary); color:#fff; display:grid; place-items:center; font-size:10.5px; font-weight:700; flex:none; }
+        .lb-name { font-size:12px; font-weight:600; color:#1a1a1a; }
+        .lb-student:hover .lb-name { color:var(--primary); text-decoration:underline; }
+        .lb-sub { font-size:10px; color:#aaa; }
+        .lb-foot { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:12px; font-size:11px; color:#999; }
+        .lb-foot .btn[hidden] { display:none; }
+        /* Per-subject standing: rank chip over that subject's accuracy. */
+        .lb-table th.lb-subj, .lb-table td.lb-subj { text-align:center; padding-left:4px; padding-right:4px; }
+        .lb-table th.lb-subj { color:#7a7a7a; }
+        .lb-srank { display:inline-block; min-width:32px; padding:2px 6px; border-radius:6px; font-size:11px; font-weight:700; background:#f3f4f6; color:#555; }
+        .lb-srank.s1 { background:var(--primary); color:#fff; }
+        .lb-srank.s2 { background:#e3c4c4; color:#5f1515; }
+        .lb-srank.s3 { background:#f5e8e8; color:#7B1D1D; }
+        .lb-sacc { display:block; font-size:9.5px; color:#aaa; margin-top:2px; }
+        .lb-snone { color:#d4d4d4; }
+        .lb-top-best { font-size:10px; font-weight:600; color:var(--primary); margin-top:2px; }
+
+        @media (max-width: 1050px) { .table-pair { grid-template-columns:1fr; } .lb-podium { grid-template-columns:1fr; } }
+        @media (max-width: 640px) {
+            .tab-bar { width:100%; }
+            .tab-btn { flex:1; justify-content:center; }
+            .subject-row { grid-template-columns:1fr 65px; }
+            .subject-row .bar, .subject-row .small-meta, .subject-row .delta, .subject-row.head { display:none; }
+        }
     </style>
 </head>
 <body>
 @include('partials.chair-sidebar', ['active' => 'analytics-performance'])
-<main class="main">
+<main class="main" id="page">
     <div class="topbar">
-        <div class="topbar-left"><div><div class="page-title">Class-Level Performance</div><div class="page-sub">Aggregated accuracy and board readiness for all active students.</div></div></div>
+        <div class="topbar-left"><div><div class="page-title">Class-Level Performance</div><div class="page-sub">Accuracy, board readiness and practice across the class — every figure follows the filters below.</div></div></div>
         <div class="topbar-right">@include('partials.topbar-actions')</div>
     </div>
 
-    {{-- Tabs on the left, the filter that scopes both of them on the right —
-         same row, so the row reads as "view: [tabs] scoped by: [filter]"
-         instead of two stacked, unrelated-looking controls. --}}
-    <div class="tab-filter-row">
-        <div class="tab-bar" role="tablist">
-            <button class="tab-btn active" role="tab" aria-selected="true" onclick="switchTab('overview', this)"><i class="fas fa-table-columns"></i> Overview</button>
-            <button class="tab-btn" role="tab" aria-selected="false" onclick="switchTab('visualization', this)"><i class="fas fa-chart-line"></i> Visualization</button>
+    {{-- Filters redraw everything below in place and are mirrored into the
+         URL, so a filtered view can be bookmarked or shared. --}}
+    <section class="dash-filters" aria-label="Filters">
+        <div class="filter-label"><i class="fas fa-filter"></i> Filters</div>
+
+        <div class="filter-field">
+            <button type="button" class="filter-trigger" id="rangeTrigger" aria-haspopup="dialog" aria-expanded="false" aria-controls="rangePop">
+                <span class="filter-ico"><i class="far fa-calendar"></i></span>
+                <span class="filter-text"><span class="filter-cap">Date Range</span><span class="filter-val" id="rangeLabel">&nbsp;</span></span>
+                <i class="fas fa-chevron-down filter-chev"></i>
+            </button>
+            <div class="range-pop" id="rangePop" role="dialog" aria-label="Choose a date range" hidden>
+                <div class="range-presets">
+                    <button type="button" data-preset="7">Last 7 days</button>
+                    <button type="button" data-preset="30">Last 30 days</button>
+                    <button type="button" data-preset="90">Last 90 days</button>
+                    <button type="button" data-preset="365">Last 12 months</button>
+                    <button type="button" data-preset="this-month">This month</button>
+                    <button type="button" data-preset="last-month">Last month</button>
+                </div>
+                <div class="range-custom">
+                    <label>From <input type="date" id="rangeFrom"></label>
+                    <label>To <input type="date" id="rangeTo"></label>
+                </div>
+                <div class="range-error" id="rangeError" role="alert"></div>
+                <div class="range-actions">
+                    <button type="button" class="btn btn-ghost btn-sm" id="rangeCancel">Cancel</button>
+                    <button type="button" class="btn btn-primary btn-sm" id="rangeApply">Apply</button>
+                </div>
+            </div>
         </div>
 
-        <form class="filter-card" method="GET">
-            <div class="filter-field">
-                <label for="subject">Subject</label>
-                <select name="subject" id="subject">
-                    <option value="">All CPALE subjects</option>
-                    @foreach($subjects as $subject)<option value="{{ $subject->id }}" @selected($selectedSubject === $subject->id)>{{ $subject->code }} — {{ $subject->name }}</option>@endforeach
+        <label class="filter-field">
+            <span class="filter-ico"><i class="fas fa-book-open"></i></span>
+            <span class="filter-text">
+                <span class="filter-cap">Subject</span>
+                <select id="filterSubject" aria-label="Subject">
+                    <option value="">All Subjects</option>
+                    @foreach($subjects as $s)
+                        <option value="{{ $s->id }}" @selected($filters['subject'] === $s->id)>{{ $s->code }} — {{ $s->name }}</option>
+                    @endforeach
                 </select>
-            </div>
-            <div class="filter-field">
-                <label for="section">Section</label>
-                <select name="section" id="section">
-                    <option value="">All sections</option>
-                    @foreach($sections as $sec)<option value="{{ $sec->name }}" @selected($selectedSection === $sec->name)>{{ $sec->name }}{{ $sec->year_level ? ' — '.(\App\Models\Section::YEAR_LABELS[$sec->year_level] ?? '') : '' }}</option>@endforeach
+            </span>
+            <i class="fas fa-chevron-down filter-chev"></i>
+        </label>
+
+        <label class="filter-field">
+            <span class="filter-ico"><i class="fas fa-users"></i></span>
+            <span class="filter-text">
+                <span class="filter-cap">Section</span>
+                <select id="filterSection" aria-label="Section">
+                    <option value="">All Sections</option>
+                    @foreach($sectionOptions->groupBy(fn ($sec) => $sec->year_level ? (\App\Models\Section::YEAR_LABELS[$sec->year_level] ?? 'Year '.$sec->year_level) : 'No year level') as $yearLabel => $group)
+                        <optgroup label="{{ $yearLabel }}">
+                            @foreach($group as $sec)
+                                <option value="{{ $sec->name }}" @selected($filters['section'] === $sec->name)>{{ $sec->name }}</option>
+                            @endforeach
+                        </optgroup>
+                    @endforeach
                 </select>
-            </div>
-            <button class="btn btn-primary btn-sm" type="submit"><i class="fas fa-filter"></i> Apply</button>
-            @if($selectedSubject || $selectedSection)<a class="btn btn-ghost btn-sm" href="{{ route('chair.analytics.performance') }}">Clear</a>@endif
-        </form>
-    </div>
+            </span>
+            <i class="fas fa-chevron-down filter-chev"></i>
+        </label>
+
+        <span class="filter-status" id="filterStatus" aria-live="polite"></span>
+        <button type="button" class="filter-reset" id="filterReset"><i class="fas fa-rotate"></i> Reset Filters</button>
+    </section>
 
     @php
-        $cohort = $report['cohort'];
-        $readiness = $report['readiness'];
-
-        // Context figures for the KPI cards — each number gets a line that
-        // reads it (against the pass mark, the cohort, or the sample it rests
-        // on) instead of a static caption that only restates the label.
-        $accuracy = $report['overall_accuracy'];
-        $accuracyGap = $accuracy === null ? null : $accuracy - 75;
-        $participation = $cohort['enrolled'] > 0
-            ? (int) round($report['participating_students'] / $cohort['enrolled'] * 100)
-            : 0;
-        $attemptsPerStudent = $report['participating_students'] > 0
-            ? (int) round($report['total_attempts'] / $report['participating_students'])
-            : 0;
-        $minAttempts = \App\Services\ChairAnalyticsService::DEVELOPING_ATTEMPTS;
-        $confidenceColour = match ($readiness['confidence']) {
-            'high' => '#047857',
-            'medium' => '#b45309',
-            default => 'var(--accent)',
-        };
-
-        $metrics = [
-            [
-                'Class-Level Accuracy',
-                $accuracy === null ? '—' : $accuracy.'%',
-                $accuracy === null
-                    ? 'No attempts recorded in this scope yet.'
-                    : ($accuracyGap >= 0
-                        ? '<strong style="color:#047857;">'.$accuracyGap.' pts</strong> above the 75% pass mark.'
-                        : '<strong style="color:var(--accent);">'.abs($accuracyGap).' pts</strong> below the 75% pass mark.'),
-            ],
-            [
-                'Participating Students',
-                $report['participating_students'],
-                $cohort['enrolled'] > 0
-                    ? '<strong>'.$participation.'%</strong> of '.$cohort['enrolled'].' enrolled have practised.'
-                    : 'No enrolled students in this scope.',
-            ],
-            [
-                'Total Attempts',
-                number_format($report['total_attempts']),
-                $attemptsPerStudent > 0
-                    ? '<strong>'.number_format($attemptsPerStudent).' attempts</strong> per practising student.'
-                    : 'No attempts recorded in this scope yet.',
-            ],
-            [
-                'Board Ready',
-                $readiness['readiness_rate'] === null ? '—' : $readiness['readiness_rate'].'%',
-                $readiness['eligible'] > 0
-                    ? '<strong>'.$readiness['ready'].' of '.$readiness['eligible'].'</strong> measured · <strong style="color:'.$confidenceColour.';">'.$readiness['confidence'].'</strong> confidence.'
-                    : '<strong>No read yet</strong> — needs '.$minAttempts.'+ attempts per student.',
-            ],
-        ];
+        $k = $report['kpis'];
+        $confidenceLabel = ['high' => 'High confidence', 'medium' => 'Medium confidence', 'low' => 'Low confidence'][$k['confidence']];
     @endphp
+    {{-- Headline figures. Rendered here for the first paint; the script below
+         rewrites them whenever a filter changes. --}}
+    <section class="chart-grid kpi-grid" aria-label="Headline figures">
+        <article class="chart-card kpi-card">
+            <div class="chart-card-head">
+                <span class="chart-card-icon"><i class="fas fa-bullseye"></i></span>
+                <span class="chart-card-title">Class Accuracy</span>
+            </div>
+            <div class="chart-card-value" id="kpiAccuracy">{{ $k['accuracy'] === null ? '—' : $k['accuracy'].'%' }}</div>
+            <div class="chart-card-note" id="noteAccuracy">&nbsp;</div>
+            <div class="kpi-foot" id="footAccuracy">&nbsp;</div>
+        </article>
+        <article class="chart-card kpi-card">
+            <div class="chart-card-head">
+                <span class="chart-card-icon"><i class="fas fa-user-graduate"></i></span>
+                <span class="chart-card-title">Students Practising</span>
+            </div>
+            <div class="chart-card-value" id="kpiParticipating">{{ $k['participating'] }}<span class="kpi-of">/ {{ $k['enrolled'] }}</span></div>
+            <div class="chart-card-note" id="noteParticipating">&nbsp;</div>
+            <div class="kpi-foot" id="footParticipating">&nbsp;</div>
+        </article>
+        <article class="chart-card kpi-card">
+            <div class="chart-card-head">
+                <span class="chart-card-icon"><i class="fas fa-medal"></i></span>
+                <span class="chart-card-title">Board Ready<x-tip label="How readiness is measured">Ready needs at least {{ \App\Services\ChairAnalyticsService::READY_ATTEMPTS }} completed items and {{ \App\Services\ChairAnalyticsService::READY_ACCURACY }}% accuracy — plus activity in at least {{ \App\Services\ChairAnalyticsService::READY_SUBJECTS }} subjects when viewing all subjects. Students need {{ \App\Services\ChairAnalyticsService::DEVELOPING_ATTEMPTS }} items to be measured at all.</x-tip></span>
+            </div>
+            <div class="chart-card-value" id="kpiReady">{{ $k['readiness_rate'] === null ? '—' : $k['readiness_rate'].'%' }}</div>
+            <div class="chart-card-note" id="noteReady">{{ $k['ready'] }} of {{ $k['eligible'] }} measured students ready</div>
+            <div class="kpi-foot" id="footReady">&nbsp;</div>
+        </article>
+        <article class="chart-card kpi-card" id="pass-projection">
+            <div class="chart-card-head">
+                <span class="chart-card-icon"><i class="fas fa-graduation-cap"></i></span>
+                <span class="chart-card-title">Predicted Pass Rate<x-tip label="How the projection works">Counts ready students fully and developing students at 50%. It gets more useful as students complete more practice. A planning estimate, not an official board-exam prediction.</x-tip></span>
+            </div>
+            <div class="chart-card-value" id="kpiProjection">{{ $k['pass_projection'] === null ? '—' : $k['pass_projection'].'%' }}<span class="confidence {{ $k['confidence'] }}" id="kpiConfidence">{{ $confidenceLabel }}</span></div>
+            <div class="chart-card-note" id="noteProjection">&nbsp;</div>
+            <div class="kpi-foot" id="footProjection">Based on {{ $k['eligible'] }} of {{ $k['enrolled'] }} active students ({{ $k['coverage'] }}% coverage)</div>
+        </article>
+    </section>
 
-    <div id="tab-overview" class="tab-panel active">
-    <div class="metric-row">
-        @foreach($metrics as [$label, $value, $note])
-            <div class="metric"><div class="metric-label">{{ $label }}</div><div class="metric-value">{{ $value }}</div><div class="metric-note">{!! $note !!}</div></div>
-        @endforeach
+    <div class="tab-bar" role="tablist">
+        <button class="tab-btn active" role="tab" aria-selected="true" onclick="switchTab('charts', this)"><i class="fas fa-chart-line"></i> Charts</button>
+        <button class="tab-btn" role="tab" aria-selected="false" onclick="switchTab('tables', this)"><i class="fas fa-table"></i> Tables</button>
+        <button class="tab-btn" role="tab" aria-selected="false" onclick="switchTab('leaderboard', this)"><i class="fas fa-trophy"></i> Leaderboard</button>
     </div>
 
-    <div class="cohort-strip">
-        <div class="cohort"><div class="cohort-num">{{ $cohort['enrolled'] }}</div><div class="cohort-lbl">Enrolled students</div></div>
-        <div class="cohort"><div class="cohort-num">{{ $cohort['practising'] }}</div><div class="cohort-lbl">Practised in last 7 days</div></div>
-        <div class="cohort"><div class="cohort-num">{{ $cohort['never_practised'] }}</div><div class="cohort-lbl">Never practised</div></div>
-        <div class="cohort"><div class="cohort-num">{{ $cohort['alumni'] }} / {{ $cohort['shifted'] }}</div><div class="cohort-lbl">Alumni / shifted out</div></div>
+    <div id="tab-charts" class="tab-panel active">
+        <section class="chart-grid cols-2" aria-label="Charts">
+            <article class="chart-card span-2" id="readiness-trend">
+                <div class="chart-card-head">
+                    <span class="chart-card-icon"><i class="fas fa-chart-line"></i></span>
+                    <span class="chart-card-title">Board Readiness Rate vs. Class Accuracy</span>
+                </div>
+                <div class="chart-card-note" id="noteTrend">&nbsp;</div>
+                <div class="chart-canvas-wrap tall">
+                    <canvas id="chartTrend" role="img" aria-label="Cumulative board readiness rate and per-period class accuracy over the selected range"></canvas>
+                    <div class="viz-empty chart-empty" id="emptyTrend" hidden>No quiz activity yet.</div>
+                </div>
+                <div class="chart-card-cap">Readiness rate: share of measured students (20+ questions) who have 50+ questions at 75%+ accuracy across 3+ subjects, counted from the start. Class accuracy: % of questions answered correctly within each period.</div>
+            </article>
+
+            <article class="chart-card">
+                <div class="chart-card-head">
+                    <span class="chart-card-icon"><i class="fas fa-book-open"></i></span>
+                    <span class="chart-card-title">Subject Accuracy vs Passing Mark</span>
+                </div>
+                <div class="chart-card-note">Bars are class accuracy; the dark rule is each subject's passing mark.</div>
+                <div class="chart-canvas-wrap tall">
+                    <canvas id="chartSubjects" role="img" aria-label="Class accuracy per subject against its passing mark"></canvas>
+                    <div class="viz-empty chart-empty" id="emptySubjects" hidden>No quiz activity in this range.</div>
+                </div>
+                <div class="chart-card-cap">Quizzes completed within the range</div>
+            </article>
+
+            <article class="chart-card">
+                <div class="chart-card-head">
+                    <span class="chart-card-icon"><i class="fas fa-people-group"></i></span>
+                    <span class="chart-card-title">Accuracy by Section</span>
+                </div>
+                <div class="chart-card-note" id="noteSections">&nbsp;</div>
+                <div class="chart-canvas-wrap tall">
+                    <canvas id="chartSections" role="img" aria-label="Class accuracy per section"></canvas>
+                    <div class="viz-empty chart-empty" id="emptySections" hidden>No section has quiz activity in this range.</div>
+                </div>
+                <div class="chart-card-cap">Shows every section — the selected one is highlighted</div>
+            </article>
+
+            <article class="chart-card">
+                <div class="chart-card-head">
+                    <span class="chart-card-icon"><i class="fas fa-chart-simple"></i></span>
+                    <span class="chart-card-title">Score Distribution</span>
+                </div>
+                <div class="chart-card-note">How the measured class is spread, not just its average.</div>
+                <div class="chart-canvas-wrap tall">
+                    <canvas id="chartDistribution" role="img" aria-label="Measured students by accuracy band"></canvas>
+                    <div class="viz-empty chart-empty" id="emptyDistribution" hidden>No student has enough attempts to be measured yet.</div>
+                </div>
+                <div class="chart-card-cap">Measured students, as of the range end</div>
+            </article>
+
+            <article class="chart-card">
+                <div class="chart-card-head">
+                    <span class="chart-card-icon"><i class="fas fa-users"></i></span>
+                    <span class="chart-card-title">Students Practising</span>
+                </div>
+                <div class="chart-card-note" id="noteEngagement">&nbsp;</div>
+                <div class="chart-canvas-wrap tall">
+                    <canvas id="chartEngagement" role="img" aria-label="Distinct students completing a quiz per period"></canvas>
+                    <div class="viz-empty chart-empty" id="emptyEngagement" hidden>No quiz activity in this range.</div>
+                </div>
+                <div class="chart-card-cap">Distinct students completing a quiz in each period</div>
+            </article>
+
+            <article class="chart-card">
+                <div class="chart-card-head">
+                    <span class="chart-card-icon"><i class="fas fa-gauge-high"></i></span>
+                    <span class="chart-card-title">Accuracy by Difficulty<x-tip>Accuracy should fall as difficulty rises. If it doesn't, the test bank's difficulty labels need review.</x-tip></span>
+                </div>
+                <div class="chart-card-note">A calibration check on the test bank, not a student metric.</div>
+                <div class="chart-canvas-wrap tall">
+                    <canvas id="chartDifficulty" role="img" aria-label="Class accuracy by question difficulty"></canvas>
+                    <div class="viz-empty chart-empty" id="emptyDifficulty" hidden>No answers recorded in this range.</div>
+                </div>
+                <div class="chart-card-cap">Answers in quizzes completed within the range</div>
+            </article>
+
+            <article class="chart-card">
+                <div class="chart-card-head">
+                    <span class="chart-card-icon"><i class="fas fa-triangle-exclamation"></i></span>
+                    <span class="chart-card-title">Weakest Topics</span>
+                </div>
+                <div class="chart-card-note">Under 60% class accuracy, with {{ \App\Services\ChairAnalyticsService::TOPIC_MIN_ATTEMPTS }}+ answers in the range.</div>
+                <div class="chart-canvas-wrap" id="weakWrap" style="height:320px;">
+                    <canvas id="chartWeak" role="img" aria-label="Weakest topics by class accuracy"></canvas>
+                    <div class="viz-empty chart-empty" id="emptyWeak" hidden>No topic is below 60% (among topics with {{ \App\Services\ChairAnalyticsService::TOPIC_MIN_ATTEMPTS }}+ answers).</div>
+                </div>
+            </article>
+        </section>
     </div>
 
-    <div class="analytics-layout">
-        <div>
-            <section class="card">
-                <div class="card-head"><span class="card-title">Subject-by-Subject Accuracy<x-tip label="What vs pass means">“vs pass” is the gap between class accuracy and that subject's own passing threshold ({{ $report['subjects']->first()['threshold'] ?? 75 }}% by default). Negative means the class is below the mark.</x-tip></span><span class="small-meta">Weighted class-level results</span></div>
-                <div class="subject-row head"><span>Subject</span><span>Accuracy</span><span>Score</span><span>vs pass</span><span>Participation</span></div>
-                @forelse($report['subjects'] as $subject)
-                    <div class="subject-row">
-                        <div><span class="subj-badge b-{{ strtolower($subject['code']) }}">{{ $subject['code'] }}</span><span class="subject-name">{{ $subject['name'] }}</span></div>
-                        <div class="bar"><span style="width:{{ $subject['accuracy'] ?? 0 }}%"></span></div>
-                        <div class="accuracy">{{ $subject['accuracy'] === null ? '—' : $subject['accuracy'].'%' }}</div>
-                        <div class="delta {{ $subject['gap_to_threshold'] === null ? 'na' : ($subject['gap_to_threshold'] >= 0 ? 'up' : 'down') }}">
-                            {{ $subject['gap_to_threshold'] === null ? '—' : ($subject['gap_to_threshold'] > 0 ? '+' : '').$subject['gap_to_threshold'].' pts' }}
-                        </div>
-                        <div><div class="small-meta">{{ $subject['students'] }} students</div><div class="small-meta">{{ number_format($subject['attempts']) }} attempts</div></div>
-                    </div>
-                @empty<div class="empty">No subjects are available.</div>@endforelse
-            </section>
+    <div id="tab-tables" class="tab-panel">
+        <section class="table-card">
+            <h3>Subject-by-Subject Accuracy <small>Within the selected range</small></h3>
+            <div class="table-scroll">
+                <div class="subject-row head"><span>Subject</span><span>Accuracy</span><span>Score</span><span>vs pass</span><span>Practice</span></div>
+                <div id="tableSubjects"></div>
+            </div>
+        </section>
 
-            <section class="card" id="readiness-trend" style="margin-top:18px;">
-                <div class="card-head"><span class="card-title">Board Readiness Trend</span><span class="small-meta">Cumulative, ending each week</span></div>
-                <div class="trend-chart" role="img" aria-label="Eight-week readiness trend">
-                    @foreach($report['trend'] as $point)
-                        <div class="trend-col" title="{{ $point['ready'] }} of {{ $point['eligible'] }} measured students">
-                            <span class="trend-value">{{ $point['rate'] }}%</span>
-                            <span class="trend-bar" style="height:{{ max(2, $point['rate']) }}%"></span>
-                            <span class="trend-label">{{ $point['label'] }}</span>
-                        </div>
-                    @endforeach
-                </div>
-            </section>
-
-            <section class="card" style="margin-top:18px;">
-                <div class="card-head"><span class="card-title">Weekly Engagement</span><span class="small-meta">Not cumulative — the leading indicator</span></div>
+        <section class="table-card">
+            <h3>Practice per Period <small id="tableEngagementNote"></small></h3>
+            <div class="table-scroll">
                 <table class="viz-table">
-                    <thead><tr><th>Week of</th><th class="num">Active students</th><th class="num">Quizzes</th><th class="num">Items</th><th class="num">Accuracy</th><th class="num">Hours</th></tr></thead>
-                    <tbody>
-                    @foreach($report['engagement'] as $week)
-                        <tr>
-                            <td>{{ $week['label'] }}</td>
-                            <td class="num">{{ $week['active_students'] }}</td>
-                            <td class="num">{{ $week['quizzes'] }}</td>
-                            <td class="num">{{ number_format($week['items']) }}</td>
-                            <td class="num">{{ $week['accuracy'] === null ? '—' : $week['accuracy'].'%' }}</td>
-                            <td class="num">{{ $week['hours'] }}</td>
-                        </tr>
-                    @endforeach
-                    </tbody>
+                    <thead><tr><th>Period starting</th><th class="num">Students</th><th class="num">Quizzes</th><th class="num">Items</th><th class="num">Accuracy</th><th class="num">Board ready*</th><th class="num">Hours</th></tr></thead>
+                    <tbody id="tableEngagement"></tbody>
+                </table>
+            </div>
+            <div class="small-meta" style="margin-top:8px;">* Cumulative to the end of each period, like the readiness line in the chart above.</div>
+        </section>
+
+        <div class="table-pair" style="margin-bottom:16px;">
+            <section class="table-card">
+                <h3>Accuracy by Section <small>Every active section</small></h3>
+                <table class="viz-table">
+                    <thead><tr><th>Section</th><th class="num">Accuracy</th><th class="num">Students</th><th class="num">Items</th></tr></thead>
+                    <tbody id="tableSections"></tbody>
                 </table>
             </section>
-
-            <section class="card" style="margin-top:18px;">
-                <div class="card-head"><span class="card-title">Weakest Topics</span><span class="small-meta">Under 60% accuracy, {{ \App\Services\ChairAnalyticsService::TOPIC_MIN_ATTEMPTS }}+ attempts</span></div>
+            <section class="table-card">
+                <h3>Accuracy by Difficulty <small>Should fall as difficulty rises</small></h3>
                 <table class="viz-table">
-                    <thead><tr><th>Topic</th><th>Subject</th><th class="num">Accuracy</th><th class="num">Attempts</th><th class="num">Students</th></tr></thead>
-                    <tbody>
-                    @forelse($report['weak_topics'] as $topic)
-                        <tr>
-                            <td>{{ $topic['name'] }}</td>
-                            <td>{{ $topic['subject_code'] }}</td>
-                            <td class="num"><strong>{{ $topic['accuracy'] }}%</strong></td>
-                            <td class="num">{{ number_format($topic['attempts']) }}</td>
-                            <td class="num">{{ $topic['students'] }}</td>
-                        </tr>
-                    @empty<tr><td colspan="5"><div class="empty">No topic is below 60% class accuracy (among topics with {{ \App\Services\ChairAnalyticsService::TOPIC_MIN_ATTEMPTS }}+ recorded attempts).</div></td></tr>@endforelse
-                    </tbody>
-                </table>
-            </section>
-
-            <section class="card" style="margin-top:18px;">
-                <div class="card-head"><span class="card-title">Strongest Topics</span><span class="small-meta">75%+ accuracy, {{ \App\Services\ChairAnalyticsService::TOPIC_MIN_ATTEMPTS }}+ attempts</span></div>
-                <table class="viz-table">
-                    <thead><tr><th>Topic</th><th>Subject</th><th class="num">Accuracy</th><th class="num">Attempts</th><th class="num">Students</th></tr></thead>
-                    <tbody>
-                    @forelse($report['strong_topics'] as $topic)
-                        <tr>
-                            <td>{{ $topic['name'] }}</td>
-                            <td>{{ $topic['subject_code'] }}</td>
-                            <td class="num"><strong>{{ $topic['accuracy'] }}%</strong></td>
-                            <td class="num">{{ number_format($topic['attempts']) }}</td>
-                            <td class="num">{{ $topic['students'] }}</td>
-                        </tr>
-                    @empty<tr><td colspan="5"><div class="empty">No topic has reached 75% class accuracy yet.</div></td></tr>@endforelse
-                    </tbody>
+                    <thead><tr><th>Difficulty</th><th class="num">Answers</th><th class="num">Accuracy</th></tr></thead>
+                    <tbody id="tableDifficulty"></tbody>
                 </table>
             </section>
         </div>
 
-        <div>
-            <section class="card">
-                <div class="card-head"><span class="card-title">Readiness Bands<x-tip label="How readiness is measured">Ready needs at least {{ \App\Services\ChairAnalyticsService::READY_ATTEMPTS }} completed items and {{ \App\Services\ChairAnalyticsService::READY_ACCURACY }}% accuracy — plus activity in at least {{ \App\Services\ChairAnalyticsService::READY_SUBJECTS }} subjects when viewing all subjects. Students need {{ \App\Services\ChairAnalyticsService::DEVELOPING_ATTEMPTS }} items to be counted at all.</x-tip></span></div>
-                <div class="bands">
-                    <div class="band ready"><strong>{{ $report['readiness']['ready'] }}</strong><span>Ready</span></div>
-                    <div class="band"><strong>{{ $report['readiness']['developing'] }}</strong><span>Developing</span></div>
-                    <div class="band risk"><strong>{{ $report['readiness']['at_risk'] }}</strong><span>At risk</span></div>
-                </div>
-            </section>
-
-            @php
-                $confidence = $report['readiness']['confidence'];
-                $confidenceLabel = ['high' => 'High confidence', 'medium' => 'Medium confidence', 'low' => 'Low confidence'][$confidence];
-                $confidenceColor = ['high' => '#047857', 'medium' => '#b45309', 'low' => '#b91c1c'][$confidence];
-                $confidenceBg = ['high' => '#e7f6ef', 'medium' => '#fef3c7', 'low' => '#fde8e8'][$confidence];
-            @endphp
-            <section class="card" id="pass-projection" style="margin-top:18px;">
-                <div class="card-head">
-                    <span class="card-title">Predicted Pass Rate<x-tip label="How the projection works">Counts ready students fully and developing students at 50%. It gets more useful as students complete more practice.</x-tip></span>
-                    <span style="font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;color:{{ $confidenceColor }};background:{{ $confidenceBg }};">{{ $confidenceLabel }}</span>
-                </div>
-                <div style="text-align:center;padding:12px 0 6px;"><div style="font-size:42px;font-weight:700;color:#222;">{{ $report['readiness']['pass_projection'] === null ? '—' : $report['readiness']['pass_projection'].'%' }}</div><div class="small-meta">Planning estimate — not an official board-exam prediction</div></div>
-                <div class="method-note">
-                    <i class="fas fa-circle-info"></i>
-                    Based on {{ $report['readiness']['eligible'] }} of {{ $report['readiness']['total_active'] }} active student{{ $report['readiness']['total_active'] === 1 ? '' : 's' }} ({{ $report['readiness']['coverage_percent'] }}% coverage)
-                    — {{ $report['readiness']['ready'] }} ready, {{ $report['readiness']['developing'] }} developing, {{ $report['readiness']['at_risk'] }} at-risk.
-                    @if($report['readiness']['insufficient'] > 0)
-                        {{ $report['readiness']['insufficient'] }} student{{ $report['readiness']['insufficient'] === 1 ? '' : 's' }} {{ $report['readiness']['insufficient'] === 1 ? "hasn't" : "haven't" }} done enough items yet to count.
-                    @endif
-                    @if($confidence === 'low')
-                        Treat this number as a rough placeholder until more students build up a history.
-                    @endif
-                </div>
-            </section>
-
-            <section class="card" style="margin-top:18px;">
-                <div class="card-head"><span class="card-title">Score Distribution</span></div>
+        <div class="table-pair">
+            <section class="table-card">
+                <h3>Weakest Topics <small>Under 60%</small></h3>
                 <table class="viz-table">
-                    <thead><tr><th>Accuracy band</th><th class="num">Students</th></tr></thead>
-                    <tbody>
-                    @foreach($report['distribution'] as $band)
-                        <tr><td>{{ $band['label'] }}</td><td class="num">{{ $band['students'] }}</td></tr>
-                    @endforeach
-                    </tbody>
+                    <thead><tr><th>Topic</th><th>Subject</th><th class="num">Accuracy</th><th class="num">Answers</th><th class="num">Students</th></tr></thead>
+                    <tbody id="tableWeak"></tbody>
                 </table>
             </section>
-
-            <section class="card" style="margin-top:18px;">
-                <div class="card-head"><span class="card-title">Accuracy by Difficulty<x-tip>Accuracy should fall as difficulty rises. If it doesn't, the test bank's difficulty labels need review.</x-tip></span></div>
+            <section class="table-card">
+                <h3>Strongest Topics <small>75% and above</small></h3>
                 <table class="viz-table">
-                    <thead><tr><th>Difficulty</th><th class="num">Answered</th><th class="num">Accuracy</th></tr></thead>
-                    <tbody>
-                    @foreach($report['difficulty'] as $level)
-                        <tr><td>{{ $level['label'] }}</td><td class="num">{{ number_format($level['answered']) }}</td><td class="num">{{ $level['accuracy'] === null ? '—' : $level['accuracy'].'%' }}</td></tr>
-                    @endforeach
-                    </tbody>
+                    <thead><tr><th>Topic</th><th>Subject</th><th class="num">Accuracy</th><th class="num">Answers</th><th class="num">Students</th></tr></thead>
+                    <tbody id="tableStrong"></tbody>
                 </table>
             </section>
+        </div>
+
+        <div class="method-note" style="margin-top:16px;">
+            <i class="fas fa-circle-info"></i>
+            Accuracy and practice count quizzes completed within the date range. Readiness, the score distribution and the pass projection are cumulative as of the range end, since a student's standing is built from everything they have practised.
         </div>
     </div>
-    </div><!-- /tab-overview -->
 
-    <div id="tab-visualization" class="tab-panel">
-        <div class="metric-row">
-            @foreach($metrics as [$label, $value, $note])
-                <div class="metric"><div class="metric-label">{{ $label }}</div><div class="metric-value">{{ $value }}</div><div class="metric-note">{!! $note !!}</div></div>
-            @endforeach
-        </div>
-
-        <div class="viz-grid-layout">
-            <div class="viz-card full">
-                <h4><i class="fas fa-bullseye"></i> Subject Accuracy vs Passing Threshold</h4>
-                <div class="viz-sub">Bar = class accuracy · line = passing threshold.</div>
-                <div class="chart-canvas-wrap h-md"><canvas id="vizSubjectAccuracy"></canvas></div>
+    <div id="tab-leaderboard" class="tab-panel">
+        <section class="table-card">
+            <div class="lb-head">
+                <div>
+                    <h3 style="margin-bottom:2px;">Student Leaderboard</h3>
+                    <div class="lb-scope" id="lbScope">&nbsp;</div>
+                </div>
+                {{-- Ranking rule. "Correct answers" matches the students' own
+                     leaderboard; "Accuracy" only ranks students with enough
+                     items for the percentage to mean something. --}}
+                <div class="lb-sort" role="radiogroup" aria-label="Rank students by">
+                    <button type="button" class="active" data-sort="correct" role="radio" aria-checked="true"><i class="fas fa-check-double"></i> Most correct answers</button>
+                    <button type="button" data-sort="accuracy" role="radio" aria-checked="false"><i class="fas fa-bullseye"></i> Highest accuracy</button>
+                </div>
             </div>
-
-            <div class="viz-card">
-                <h4><i class="fas fa-chart-pie"></i> Readiness Bands</h4>
-                <div class="viz-sub">Measured students only ({{ \App\Services\ChairAnalyticsService::DEVELOPING_ATTEMPTS }}+ completed items).</div>
-                <div class="chart-canvas-wrap"><canvas id="vizReadinessDonut"></canvas></div>
+            <div class="lb-podium" id="lbPodium"></div>
+            <div class="table-scroll">
+                <table class="viz-table lb-table">
+                    <thead id="lbHead"></thead>
+                    <tbody id="lbBody"></tbody>
+                </table>
             </div>
-
-            <div class="viz-card">
-                <h4><i class="fas fa-chart-simple"></i> Score Distribution</h4>
-                <div class="viz-sub">How the measured class is spread.</div>
-                <div class="chart-canvas-wrap"><canvas id="vizDistribution"></canvas></div>
+            <div class="lb-foot">
+                <span id="lbCount"></span>
+                <button type="button" class="btn btn-ghost btn-sm" id="lbMore" hidden>Show all</button>
             </div>
-
-            <div class="viz-card full">
-                <h4><i class="fas fa-chart-line"></i> Board Readiness &amp; Class Accuracy Trend</h4>
-                <div class="viz-sub">Cumulative, week by week.</div>
-                <div class="chart-canvas-wrap h-md"><canvas id="vizTrendLine"></canvas></div>
-            </div>
-
-            <div class="viz-card">
-                <h4><i class="fas fa-users"></i> Students Practising Each Week</h4>
-                <div class="viz-sub">Distinct students who completed at least one quiz that week.</div>
-                <div class="chart-canvas-wrap"><canvas id="vizActiveStudents"></canvas></div>
-            </div>
-
-            <div class="viz-card">
-                <h4><i class="fas fa-list-check"></i> Practice Volume Each Week</h4>
-                <div class="viz-sub">Items answered in completed quizzes.</div>
-                <div class="chart-canvas-wrap"><canvas id="vizVolume"></canvas></div>
-            </div>
-
-            <div class="viz-card">
-                <h4><i class="fas fa-gauge-high"></i> Accuracy by Difficulty</h4>
-                <div class="viz-sub">A calibration check on the test bank, not a student metric.</div>
-                <div class="chart-canvas-wrap"><canvas id="vizDifficulty"></canvas></div>
-            </div>
-
-            <div class="viz-card">
-                <h4><i class="fas fa-layer-group"></i> Practice Attempts by Subject</h4>
-                <div class="viz-sub">Where the cohort is actually spending its practice.</div>
-                <div class="chart-canvas-wrap"><canvas id="vizAttemptsBar"></canvas></div>
-            </div>
-
-            <div class="viz-card full">
-                <h4><i class="fas fa-triangle-exclamation"></i> Weakest Topics</h4>
-                <div class="viz-sub">Under 60% accuracy, {{ \App\Services\ChairAnalyticsService::TOPIC_MIN_ATTEMPTS }}+ attempts.</div>
-                <div class="chart-canvas-wrap h-xl"><canvas id="vizWeakTopics"></canvas></div>
-            </div>
-        </div>
-
-        <div class="method-note" style="margin-top:16px;">Every value plotted here is also listed as a table on the <strong>Overview</strong> tab.</div>
-    </div><!-- /tab-visualization -->
+        </section>
+    </div>
 </main>
 
 <script>
 (function () {
     const P = Viz.palette;
+    const ENDPOINT = @json(route('chair.analytics.performance.data'));
+    const DEFAULTS = @json($defaults);
+    const MAX_DAYS = 366;
+    const PASS_MARK = 75;
 
-    const subjects     = @json($report['subjects']->values());
-    const trend        = @json($report['trend']->values());
-    const engagement   = @json($report['engagement']->values());
-    const distribution = @json($report['distribution']->values());
-    const difficulty   = @json($report['difficulty']->values());
-    const weakTopics   = @json($report['weak_topics']->values());
-    const readiness    = @json($report['readiness']);
+    let filters = @json($filters);
+    let inflight = null;
 
-    const pluck = (rows, key) => rows.map((row) => row[key]);
+    const $ = (id) => document.getElementById(id);
+    const pct = (v) => (v === null || v === undefined ? '—' : v + '%');
+    const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const plural = (n, word, many) => `${Number(n).toLocaleString()} ${n === 1 ? word : (many || word + 's')}`;
+    const allNull = (values) => values.every((v) => v === null || v === undefined);
+    const toggleEmpty = (id, empty) => { $(id).hidden = !empty; };
 
-    /* ── Subject accuracy vs each subject's passing threshold ───────────── */
-    Viz.chart('vizSubjectAccuracy', {
-        type: 'bar',
-        data: {
-            labels: pluck(subjects, 'code'),
-            datasets: [Viz.bar({
-                label: 'Class accuracy',
-                // null, not 0 — a subject nobody has attempted must leave a gap.
-                // Drawn as 0 it was indistinguishable from a subject the class
-                // genuinely scored 0% on, and the difference only showed on hover.
-                data: subjects.map((s) => s.accuracy),
-                backgroundColor: P.s1,
-                maxBarThickness: 22,
-            })],
-        },
-        options: {
-            indexAxis: 'y',
-            layout: { padding: { right: 46 } },
-            scales: { x: Viz.percentAxis(), y: Viz.catAxis() },
-            plugins: {
-                legend: { display: false },
-                tooltip: { callbacks: { label: (c) => {
-                    const s = subjects[c.dataIndex];
-                    return s.accuracy === null
-                        ? 'No attempts recorded'
-                        : s.accuracy + '% accuracy · passing mark ' + s.threshold + '% · ' + s.attempts.toLocaleString() + ' attempts';
-                } } },
+    // Dates travel as local Y-m-d strings; never through toISOString(),
+    // which would shift them a day for anyone east of UTC.
+    const iso = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    const parse = (s) => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+    const pretty = (s) => parse(s).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    const daysBetween = (a, b) => Math.round((parse(b) - parse(a)) / 86400000) + 1;
+
+    function presetRange(key) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        if (key === 'this-month') { return [iso(new Date(today.getFullYear(), today.getMonth(), 1)), iso(today)]; }
+        if (key === 'last-month') { return [iso(new Date(today.getFullYear(), today.getMonth() - 1, 1)), iso(new Date(today.getFullYear(), today.getMonth(), 0))]; }
+        const from = new Date(today);
+        from.setDate(from.getDate() - (Number(key) - 1));
+        return [iso(from), iso(today)];
+    }
+
+    const signed = (n, unit) => `<span class="${n > 0 ? 'up' : 'down'}">${n > 0 ? '+' : ''}${n}${unit}</span>`;
+    const tickAxis = (limit) => Viz.catAxis({ ticks: { color: P.ink, padding: 6, maxRotation: 0, autoSkip: true, maxTicksLimit: limit } });
+    // ── Headline figures ──
+    function renderKpis(k, range) {
+        const vsPrev = `vs the previous ${plural(range.days, 'day')}`;
+
+        $('kpiAccuracy').textContent = pct(k.accuracy);
+        if (k.accuracy === null) {
+            $('noteAccuracy').textContent = 'No quiz activity in this range';
+            $('footAccuracy').textContent = 'Nothing to compare yet';
+        } else {
+            const gap = k.accuracy - PASS_MARK;
+            $('noteAccuracy').innerHTML = gap >= 0
+                ? `<span class="up">${gap} pts above</span> the ${PASS_MARK}% pass mark`
+                : `<span class="down">${Math.abs(gap)} pts below</span> the ${PASS_MARK}% pass mark`;
+            $('footAccuracy').innerHTML = k.accuracy_change === null
+                ? 'No activity in the period before to compare'
+                : (k.accuracy_change === 0 ? `No change ${vsPrev}` : `${signed(k.accuracy_change, ' pts')} ${vsPrev}`);
+        }
+
+        $('kpiParticipating').innerHTML = `${k.participating}<span class="kpi-of">/ ${k.enrolled}</span>`;
+        const share = k.enrolled ? Math.round(k.participating / k.enrolled * 100) : 0;
+        $('noteParticipating').textContent = `${share}% of active students completed a quiz`;
+        $('footParticipating').innerHTML = `<strong>${plural(k.quizzes, 'quiz', 'quizzes')}</strong> · <strong>${plural(k.items, 'item')}</strong> answered`;
+
+        $('kpiReady').textContent = pct(k.readiness_rate);
+        $('noteReady').innerHTML = k.eligible
+            ? `<strong>${k.ready} of ${k.eligible}</strong> measured students ready`
+            : 'No measured students yet';
+        const notMeasured = Math.max(0, k.enrolled - k.eligible);
+        $('footReady').innerHTML = `${k.developing} developing · ${k.at_risk} at risk · <strong>${notMeasured}</strong> not yet measured`;
+
+        const conf = { high: 'High confidence', medium: 'Medium confidence', low: 'Low confidence' }[k.confidence];
+        $('kpiProjection').innerHTML = `${pct(k.pass_projection)}<span class="confidence ${k.confidence}">${conf}</span>`;
+        $('noteProjection').textContent = k.confidence === 'low'
+            ? 'Treat as a rough placeholder until more students are measured'
+            : 'Planning estimate, not an official board-exam prediction';
+        $('footProjection').textContent = `Based on ${k.eligible} of ${plural(k.enrolled, 'active student')} (${k.coverage}% coverage)`;
+    }
+
+    // ── Charts ──
+    function renderCharts(r) {
+        const range = r.range;
+        const last = r.trend[r.trend.length - 1];
+        $('noteTrend').textContent = last && last.eligible
+            ? `${last.ready} of ${plural(last.eligible, 'measured student')} ready by ${pretty(range.to)}`
+            : 'No measured students yet';
+        toggleEmpty('emptyTrend', allNull(r.trend.map((p) => p.accuracy)));
+        const dots = r.trend.length > 16 ? 0 : 3;
+        Viz.chart('chartTrend', {
+            type: 'line',
+            data: {
+                labels: r.trend.map((p) => p.label),
+                datasets: [
+                    Viz.line({ label: 'Readiness rate (cumulative)', data: r.trend.map((p) => p.readiness), borderColor: P.s1, pointBackgroundColor: P.s1, backgroundColor: 'rgba(163,43,43,.08)', fill: true, spanGaps: true, pointRadius: dots }),
+                    // Dashed with its own point shape: the two lines can sit on
+                    // the same values for weeks and would otherwise hide each other.
+                    Viz.line({ label: 'Class accuracy (per period)', data: r.trend.map((p) => p.accuracy), borderColor: P.s2, pointBackgroundColor: P.s2, backgroundColor: 'transparent', borderDash: [6, 4], pointStyle: 'rectRot', spanGaps: true, pointRadius: dots }),
+                ],
             },
-        },
-        plugins: [
-            Viz.referenceMarks(pluck(subjects, 'threshold'), P.ink),
-            Viz.endLabels((v) => v + '%'),
-        ],
-    });
-
-    /* ── Readiness bands (status colours, always labelled) ──────────────── */
-    Viz.chart('vizReadinessDonut', {
-        type: 'doughnut',
-        data: {
-            labels: ['Ready', 'Developing', 'At risk'],
-            datasets: [{
-                data: [readiness.ready, readiness.developing, readiness.at_risk],
-                backgroundColor: [P.good, P.warn, P.crit],
-                borderWidth: 2, borderColor: P.surface,
-            }],
-        },
-        options: {
-            cutout: '58%',
-            plugins: {
-                legend: { position: 'bottom' },
-                tooltip: { callbacks: { label: (c) => {
-                    const total = readiness.eligible || 1;
-                    return c.label + ': ' + c.raw + ' student' + (c.raw === 1 ? '' : 's')
-                        + ' (' + Math.round(c.raw / total * 100) + '%)';
-                } } },
+            options: {
+                interaction: { mode: 'index', intersect: false },
+                scales: { y: Viz.percentAxis(), x: tickAxis(10) },
+                plugins: {
+                    legend: { position: 'bottom' },
+                    tooltip: { callbacks: {
+                        label: (c) => `${c.dataset.label}: ${c.raw === null ? '—' : c.raw + '%'}`,
+                        afterBody: (items) => { const p = r.trend[items[0].dataIndex]; return [`${p.ready} of ${plural(p.eligible, 'measured student')} ready`, `${(p.answered || 0).toLocaleString()} questions answered this period`]; },
+                    } },
+                },
             },
-        },
-    });
+        });
 
-    /* ── Score distribution ─────────────────────────────────────────────── */
-    Viz.chart('vizDistribution', {
-        type: 'bar',
-        data: {
-            labels: pluck(distribution, 'label'),
-            datasets: [Viz.bar({ label: 'Students', data: pluck(distribution, 'students'), backgroundColor: P.s1 })],
-        },
-        options: {
-            scales: { y: Viz.countAxis({ title: { display: true, text: 'Students', color: P.muted } }), x: Viz.catAxis() },
-            plugins: {
-                legend: { display: false },
-                tooltip: { callbacks: { label: (c) => c.raw + ' student' + (c.raw === 1 ? '' : 's') + ' in ' + c.label } },
-            },
-        },
-    });
-
-    /* ── Readiness + accuracy trend (two percentage series, one axis) ───── */
-    Viz.chart('vizTrendLine', {
-        type: 'line',
-        data: {
-            labels: pluck(trend, 'label'),
-            datasets: [
-                Viz.line({ label: 'Board readiness', data: pluck(trend, 'rate'), borderColor: P.s1, backgroundColor: 'rgba(163,43,43,.08)', pointBackgroundColor: P.s1, fill: true }),
-                // Dashed, with a distinct point shape: the two series can sit on
-                // identical values for weeks at a time (both read 33% across the
-                // whole window right now), and as two solid lines the second was
-                // drawn exactly under the first — the chart looked like it had
-                // one series. The dash stays visible through the overlap.
-                Viz.line({ label: 'Class accuracy', data: pluck(trend, 'accuracy'), borderColor: P.s2, backgroundColor: 'transparent', pointBackgroundColor: P.s2, borderDash: [6, 4], pointStyle: 'rectRot', pointRadius: 5 }),
-            ],
-        },
-        options: {
-            interaction: { mode: 'index', intersect: false },
-            scales: { y: Viz.percentAxis(), x: Viz.catAxis() },
-            plugins: {
-                legend: { position: 'bottom' },
-                tooltip: { callbacks: { afterBody: (items) => {
-                    const point = trend[items[0].dataIndex];
-                    return point.ready + ' of ' + point.eligible + ' measured students ready';
-                } } },
-            },
-        },
-    });
-
-    /* ── Weekly active students ─────────────────────────────────────────────
-       Bars, not a filled line. These are discrete headcounts per week and the
-       series is sparse (weeks with nobody practising sit at 0). A line
-       interpolates straight through those zeros, implying a gradual fall and
-       recovery that never happened, and the fill shaded area over weeks with
-       no activity at all. Bars also match Practice Volume beside it, which
-       buckets by the same weeks. ── */
-    Viz.chart('vizActiveStudents', {
-        type: 'bar',
-        data: {
-            labels: pluck(engagement, 'label'),
-            datasets: [Viz.bar({ label: 'Active students', data: pluck(engagement, 'active_students'), backgroundColor: P.s2 })],
-        },
-        options: {
-            interaction: { mode: 'index', intersect: false },
-            scales: { y: Viz.countAxis({ title: { display: true, text: 'Students', color: P.muted } }), x: Viz.catAxis() },
-            plugins: {
-                legend: { display: false },
-                tooltip: { callbacks: { afterBody: (items) => {
-                    const week = engagement[items[0].dataIndex];
-                    return week.quizzes + ' quizzes · ' + week.items.toLocaleString() + ' items · ' + week.hours + ' h';
-                } } },
-            },
-        },
-    });
-
-    /* ── Weekly practice volume ─────────────────────────────────────────── */
-    Viz.chart('vizVolume', {
-        type: 'bar',
-        data: {
-            labels: pluck(engagement, 'label'),
-            datasets: [Viz.bar({ label: 'Items answered', data: pluck(engagement, 'items'), backgroundColor: P.s1 })],
-        },
-        options: {
-            scales: { y: Viz.countAxis(), x: Viz.catAxis() },
-            plugins: {
-                legend: { display: false },
-                tooltip: { callbacks: { label: (c) => c.raw.toLocaleString() + ' items answered' } },
-            },
-        },
-    });
-
-    /* ── Accuracy by difficulty (ordered bands → ordinal ramp) ──────────── */
-    Viz.chart('vizDifficulty', {
-        type: 'bar',
-        data: {
-            labels: pluck(difficulty, 'label'),
-            datasets: [Viz.bar({
-                label: 'Accuracy',
-                // null, not 0 — an unanswered band leaves a gap instead of
-                // posing as a band the class scored 0% on.
-                data: difficulty.map((d) => d.accuracy),
-                backgroundColor: P.ordinal,
-            })],
-        },
-        options: {
-            scales: { y: Viz.percentAxis(), x: Viz.catAxis() },
-            plugins: {
-                legend: { display: false },
-                tooltip: { callbacks: { label: (c) => {
-                    const level = difficulty[c.dataIndex];
-                    return level.accuracy === null
-                        ? 'Not answered yet'
-                        : level.accuracy + '% correct across ' + level.answered.toLocaleString() + ' answers';
-                } } },
-            },
-        },
-    });
-
-    /* ── Attempts by subject ────────────────────────────────────────────── */
-    Viz.chart('vizAttemptsBar', {
-        type: 'bar',
-        data: {
-            labels: pluck(subjects, 'code'),
-            datasets: [Viz.bar({ label: 'Attempts', data: pluck(subjects, 'attempts'), backgroundColor: P.s1 })],
-        },
-        options: {
-            scales: { y: Viz.countAxis(), x: Viz.catAxis() },
-            plugins: {
-                legend: { display: false },
-                tooltip: { callbacks: { label: (c) => {
-                    const s = subjects[c.dataIndex];
-                    return s.attempts.toLocaleString() + ' attempts by ' + s.students + ' student' + (s.students === 1 ? '' : 's');
-                } } },
-            },
-        },
-    });
-
-    /* ── Weakest topics ─────────────────────────────────────────────────── */
-    if (weakTopics.length) {
-        Viz.chart('vizWeakTopics', {
+        // Subject accuracy vs its own passing mark (horizontal).
+        const subjects = r.by_subject;
+        toggleEmpty('emptySubjects', allNull(subjects.map((s) => s.accuracy)));
+        Viz.chart('chartSubjects', {
             type: 'bar',
             data: {
-                labels: weakTopics.map((t) => t.subject_code + ' · ' + t.name),
-                datasets: [Viz.bar({ label: 'Accuracy', data: pluck(weakTopics, 'accuracy'), backgroundColor: P.s1, maxBarThickness: 18 })],
+                labels: subjects.map((s) => s.code),
+                datasets: [Viz.bar({
+                    label: 'Class accuracy',
+                    // null, not 0: an unattempted subject must leave a gap.
+                    data: subjects.map((s) => s.accuracy),
+                    backgroundColor: subjects.map((s) => (s.accuracy !== null && s.accuracy >= s.threshold ? P.s1 : 'rgba(163,43,43,.55)')),
+                    maxBarThickness: 20,
+                })],
             },
             options: {
                 indexAxis: 'y',
-                layout: { padding: { right: 46 } },
-                scales: { x: Viz.percentAxis(), y: Viz.catAxis({ ticks: { color: P.ink, padding: 6, font: { size: 10 } } }) },
+                layout: { padding: { right: 40 } },
+                scales: { x: Viz.percentAxis(), y: Viz.catAxis() },
                 plugins: {
                     legend: { display: false },
                     tooltip: { callbacks: { label: (c) => {
-                        const t = weakTopics[c.dataIndex];
-                        return t.accuracy + '% across ' + t.attempts.toLocaleString() + ' attempts by ' + t.students + ' student' + (t.students === 1 ? '' : 's');
+                        const s = subjects[c.dataIndex];
+                        return s.accuracy === null ? 'No attempts in range' : `${s.accuracy}% · passing ${s.threshold}% · ${plural(s.items, 'item')}`;
+                    } } },
+                },
+            },
+            plugins: [Viz.referenceMarks(subjects.map((s) => s.threshold), P.ink), Viz.endLabels((v) => v + '%')],
+        });
+
+        // Section comparison — all sections, the selected one highlighted.
+        const secs = r.by_section;
+        $('noteSections').textContent = filters.section ? `${filters.section} vs the other sections` : `${plural(secs.length, 'active section')} compared`;
+        toggleEmpty('emptySections', allNull(secs.map((s) => s.accuracy)));
+        Viz.chart('chartSections', {
+            type: 'bar',
+            data: {
+                labels: secs.map((s) => s.section),
+                datasets: [Viz.bar({ label: 'Class accuracy', data: secs.map((s) => s.accuracy), backgroundColor: secs.map((s) => (!filters.section || s.section === filters.section ? P.s1 : 'rgba(163,43,43,.28)')), maxBarThickness: 20 })],
+            },
+            options: {
+                indexAxis: 'y',
+                layout: { padding: { right: 40 } },
+                scales: { x: Viz.percentAxis(), y: Viz.catAxis() },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { callbacks: { label: (c) => {
+                        const s = secs[c.dataIndex];
+                        return s.accuracy === null ? 'No activity in range' : `${s.accuracy}% · ${plural(s.students, 'student')} · ${plural(s.items, 'item')}`;
                     } } },
                 },
             },
             plugins: [Viz.endLabels((v) => v + '%')],
         });
-    } else {
-        document.getElementById('vizWeakTopics').outerHTML =
-            '<div class="viz-empty">No topic has reached {{ \App\Services\ChairAnalyticsService::TOPIC_MIN_ATTEMPTS }} recorded attempts yet.</div>';
+
+        // Score distribution.
+        const dist = r.distribution;
+        toggleEmpty('emptyDistribution', dist.every((d) => d.students === 0));
+        Viz.chart('chartDistribution', {
+            type: 'bar',
+            data: { labels: dist.map((d) => d.label), datasets: [Viz.bar({ label: 'Students', data: dist.map((d) => d.students), backgroundColor: P.s1 })] },
+            options: { scales: { y: Viz.countAxis(), x: Viz.catAxis() }, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => plural(c.raw, 'student') } } } },
+        });
+
+        // Students practising, per period.
+        const eng = r.engagement;
+        const noActivity = eng.every((e) => e.quizzes === 0);
+        const peak = eng.reduce((max, e) => Math.max(max, e.students), 0);
+        $('noteEngagement').textContent = `Peak of ${plural(peak, 'student')} in a ${range.bucket}`;
+        toggleEmpty('emptyEngagement', noActivity);
+        Viz.chart('chartEngagement', {
+            type: 'bar',
+            data: { labels: eng.map((e) => e.label), datasets: [Viz.bar({ label: 'Students', data: eng.map((e) => e.students), backgroundColor: P.s1 })] },
+            options: {
+                scales: { y: Viz.countAxis(), x: tickAxis(8) },
+                plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => { const e = eng[c.dataIndex]; return `${plural(e.students, 'student')} · ${plural(e.quizzes, 'quiz', 'quizzes')} · ${plural(e.items, 'item')}`; } } } },
+            },
+        });
+        // Accuracy by difficulty (ordered → ordinal ramp).
+        const diff = r.difficulty;
+        toggleEmpty('emptyDifficulty', diff.every((d) => d.answered === 0));
+        Viz.chart('chartDifficulty', {
+            type: 'bar',
+            data: { labels: diff.map((d) => d.label), datasets: [Viz.bar({ label: 'Accuracy', data: diff.map((d) => d.accuracy), backgroundColor: P.ordinal })] },
+            options: {
+                scales: { y: Viz.percentAxis(), x: Viz.catAxis() },
+                plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => { const d = diff[c.dataIndex]; return d.accuracy === null ? 'Not answered yet' : `${d.accuracy}% correct across ${plural(d.answered, 'answer')}`; } } } },
+            },
+        });
+
+        // Weakest topics (horizontal); the card grows with the list.
+        const weak = r.weak_topics;
+        toggleEmpty('emptyWeak', weak.length === 0);
+        $('weakWrap').style.height = Math.max(160, weak.length * 30 + 40) + 'px';
+        Viz.chart('chartWeak', {
+            type: 'bar',
+            data: { labels: weak.map((t) => `${t.subject_code} · ${t.name}`), datasets: [Viz.bar({ label: 'Accuracy', data: weak.map((t) => t.accuracy), backgroundColor: P.s1, maxBarThickness: 18, minBarLength: 2 })] },
+            options: {
+                indexAxis: 'y',
+                layout: { padding: { right: 40 } },
+                // Long topic names are shortened on the axis (they were being
+                // clipped at the card edge); the tooltip keeps the full name.
+                scales: { x: Viz.percentAxis(), y: Viz.catAxis({ ticks: { color: P.ink, padding: 6, font: { size: 10 }, callback(v) { const s = this.getLabelForValue(v); return s.length > 38 ? s.slice(0, 37) + '…' : s; } } }) },
+                plugins: { legend: { display: false }, tooltip: { callbacks: { title: (items) => items[0].label, label: (c) => { const t = weak[c.dataIndex]; return `${t.accuracy}% across ${plural(t.attempts, 'answer')} by ${plural(t.students, 'student')}`; } } } },
+            },
+            plugins: [Viz.endLabels((v) => v + '%')],
+        });
     }
+
+    // ── Tables ──
+    function topicRows(topics, emptyText) {
+        return topics.length
+            ? topics.map((t) => `<tr><td>${esc(t.name)}</td><td>${esc(t.subject_code)}</td><td class="num"><strong>${t.accuracy}%</strong></td><td class="num">${t.attempts.toLocaleString()}</td><td class="num">${t.students}</td></tr>`).join('')
+            : `<tr><td colspan="5"><div class="table-empty">${emptyText}</div></td></tr>`;
+    }
+
+    function renderTables(r) {
+        $('tableSubjects').innerHTML = r.by_subject.map((s) => `
+            <div class="subject-row">
+                <div><span class="subj-badge b-${esc(s.code.toLowerCase())}">${esc(s.code)}</span><span class="subject-name">${esc(s.name)}</span></div>
+                <div class="bar"><span style="width:${s.accuracy ?? 0}%"></span></div>
+                <div class="accuracy">${pct(s.accuracy)}</div>
+                <div class="delta ${s.gap === null ? 'na' : (s.gap >= 0 ? 'up' : 'down')}">${s.gap === null ? '—' : (s.gap > 0 ? '+' : '') + s.gap + ' pts'}</div>
+                <div><div class="small-meta">${plural(s.students, 'student')}</div><div class="small-meta">${plural(s.items, 'item')}</div></div>
+            </div>`).join('') || '<div class="table-empty">No subjects are available.</div>';
+
+        $('tableEngagementNote').textContent = `One row per ${r.range.bucket}`;
+        // Engagement and trend share the same period buckets, row for row.
+        $('tableEngagement').innerHTML = r.engagement.map((e, i) => `
+            <tr><td>${esc(e.label)}</td><td class="num">${e.students}</td><td class="num">${e.quizzes}</td><td class="num">${e.items.toLocaleString()}</td><td class="num">${pct(e.accuracy)}</td><td class="num">${pct(r.trend[i] ? r.trend[i].readiness : null)}</td><td class="num">${e.hours}</td></tr>`).join('');
+
+        $('tableSections').innerHTML = r.by_section.map((s) => `
+            <tr${filters.section === s.section ? ' style="background:#fef2f2;"' : ''}><td>${esc(s.section)}</td><td class="num"><strong>${pct(s.accuracy)}</strong></td><td class="num">${s.students}</td><td class="num">${s.items.toLocaleString()}</td></tr>`).join('')
+            || '<tr><td colspan="4"><div class="table-empty">No active sections.</div></td></tr>';
+
+        $('tableDifficulty').innerHTML = r.difficulty.map((d) => `
+            <tr><td>${esc(d.label)}</td><td class="num">${d.answered.toLocaleString()}</td><td class="num"><strong>${pct(d.accuracy)}</strong></td></tr>`).join('');
+
+        $('tableWeak').innerHTML = topicRows(r.weak_topics, 'No topic is below 60% class accuracy.');
+        $('tableStrong').innerHTML = topicRows(r.strong_topics, 'No topic has reached 75% class accuracy yet.');
+    }
+
+    // ── Leaderboard ──
+    // Accuracy ranking needs the same floor a student needs to be measured at
+    // all; below it one lucky 3/3 quiz would top the board.
+    const LB_MIN_ITEMS = {{ \App\Services\ChairAnalyticsService::DEVELOPING_ATTEMPTS }};
+    const LB_PAGE = 20;
+    const MEDALS = ['r1', 'r2', 'r3'];
+    let lbRows = [];
+    let lbSubjects = [];
+    let lbSort = 'correct';
+    let lbShowAll = false;
+
+    function renderLeaderboard(rows, range, subjects) {
+        lbRows = rows;
+        // Per-subject columns only mean something across several subjects;
+        // with one subject selected they would just repeat the overall rank.
+        lbSubjects = subjects.length > 1 ? subjects : [];
+        lbShowAll = false;
+        const subject = filters.subject ? $('filterSubject').selectedOptions[0].textContent.trim() : 'All subjects';
+        $('lbScope').textContent = [subject, filters.section || 'All sections', `${pretty(range.from)} – ${pretty(range.to)}`].join(' · ');
+        drawLeaderboard();
+    }
+
+    function drawLeaderboard() {
+        const byAccuracy = lbSort === 'accuracy';
+        const ranked = byAccuracy
+            ? lbRows.filter((s) => s.items >= LB_MIN_ITEMS)
+                .slice()
+                .sort((a, b) => b.accuracy - a.accuracy || b.items - a.items || a.id - b.id)
+            : lbRows;
+        const score = (s) => (byAccuracy ? `${s.accuracy}%` : s.correct.toLocaleString());
+        const scoreNote = (s) => (byAccuracy ? `of ${plural(s.items, 'item')}` : 'correct answers');
+        // Mixed-subject quizzes carry no subject, so a count of 0 is left out.
+        const sub = (s) => [s.section, s.subjects ? plural(s.subjects, 'subject') : null].filter(Boolean).map(esc).join(' · ');
+        const standing = (s, code) => (s.standings || {})[code];
+        const topIn = (s) => lbSubjects.filter((code) => standing(s, code)?.rank === 1);
+        const subjectCell = (s, code) => {
+            const st = standing(s, code);
+            if (!st) { return `<td class="lb-subj"><span class="lb-snone" title="${esc(code)}: no quizzes in this range">—</span></td>`; }
+            const tip = `${code}: #${st.rank} of ${st.of} · ${plural(st.correct, 'correct answer')} · ${pct(st.accuracy)} accuracy`;
+            return `<td class="lb-subj" title="${esc(tip)}"><span class="lb-srank ${st.rank <= 3 ? 's' + st.rank : ''}">#${st.rank}</span><span class="lb-sacc">${pct(st.accuracy)}</span></td>`;
+        };
+
+        $('lbHead').innerHTML = '<tr><th style="width:52px;">Rank</th><th>Student</th><th class="num">Correct</th><th class="num">Items</th><th class="num">Accuracy</th>'
+            + lbSubjects.map((code) => `<th class="lb-subj" title="Standing in ${esc(code)}">${esc(code)}</th>`).join('')
+            + '<th class="num">Quizzes</th><th class="num">Last active</th></tr>';
+
+        $('lbPodium').innerHTML = ranked.slice(0, 3).map((s, i) => `
+            <a class="lb-top" href="${esc(s.url)}">
+                <span class="lb-medal ${MEDALS[i]}"><i class="fas fa-trophy"></i></span>
+                <span style="min-width:0;">
+                    <div class="lb-top-name">${esc(s.name)}</div>
+                    <div class="lb-top-meta">#${i + 1} · ${sub(s)}</div>
+                    ${topIn(s).length ? `<div class="lb-top-best"><i class="fas fa-crown"></i> #1 in ${esc(topIn(s).join(', '))}</div>` : ''}
+                </span>
+                <span class="lb-top-score">${score(s)}<small>${scoreNote(s)}</small></span>
+            </a>`).join('');
+
+        const shown = lbShowAll ? ranked : ranked.slice(0, LB_PAGE);
+        $('lbBody').innerHTML = shown.length
+            ? shown.map((s, i) => `
+                <tr>
+                    <td class="lb-rank">${i + 1}</td>
+                    <td>
+                        <a class="lb-student" href="${esc(s.url)}">
+                            <span class="lb-av">${esc(s.initials)}</span>
+                            <span style="min-width:0;"><div class="lb-name">${esc(s.name)}</div><div class="lb-sub">${sub(s)}</div></span>
+                        </a>
+                    </td>
+                    <td class="num"><strong>${s.correct.toLocaleString()}</strong></td>
+                    <td class="num">${s.items.toLocaleString()}</td>
+                    <td class="num">${pct(s.accuracy)}</td>
+                    ${lbSubjects.map((code) => subjectCell(s, code)).join('')}
+                    <td class="num">${s.quizzes}</td>
+                    <td class="num">${esc(s.last_active)}</td>
+                </tr>`).join('')
+            : `<tr><td colspan="${7 + lbSubjects.length}"><div class="table-empty">${byAccuracy
+                ? `No student answered ${LB_MIN_ITEMS}+ items in this range yet.`
+                : 'No student completed a quiz in this range.'} Try a longer date range, e.g. Last 90 days or Last 12 months.</div></td></tr>`;
+
+        $('lbCount').textContent = ranked.length
+            ? `Showing ${shown.length} of ${plural(ranked.length, 'ranked student')}` + (byAccuracy ? ` · only students with ${LB_MIN_ITEMS}+ items` : '')
+            : '';
+        $('lbMore').hidden = lbShowAll || ranked.length <= LB_PAGE;
+    }
+
+    document.querySelectorAll('.lb-sort button').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            lbSort = btn.dataset.sort;
+            lbShowAll = false;
+            document.querySelectorAll('.lb-sort button').forEach((b) => {
+                const on = b === btn;
+                b.classList.toggle('active', on);
+                b.setAttribute('aria-checked', on ? 'true' : 'false');
+            });
+            drawLeaderboard();
+        });
+    });
+    $('lbMore').addEventListener('click', () => { lbShowAll = true; drawLeaderboard(); });
+
+    function render(r) {
+        renderKpis(r.kpis, r.range);
+        renderCharts(r);
+        renderTables(r);
+        renderLeaderboard(r.leaderboard, r.range, r.leaderboard_subjects);
+    }
+
+    // ── Filters ──
+    const rangePop = $('rangePop');
+    const rangeTrigger = $('rangeTrigger');
+
+    function syncControls() {
+        $('rangeLabel').textContent = pretty(filters.from) + ' – ' + pretty(filters.to);
+        $('filterSubject').value = filters.subject ?? '';
+        $('filterSection').value = filters.section ?? '';
+        document.querySelectorAll('.range-presets button').forEach((b) => {
+            const [from, to] = presetRange(b.dataset.preset);
+            b.classList.toggle('active', from === filters.from && to === filters.to);
+        });
+    }
+
+    function syncUrl() {
+        const params = new URLSearchParams();
+        if (!(filters.from === DEFAULTS.from && filters.to === DEFAULTS.to)) { params.set('from', filters.from); params.set('to', filters.to); }
+        if (filters.subject) { params.set('subject', filters.subject); }
+        if (filters.section) { params.set('section', filters.section); }
+        const qs = params.toString();
+        history.replaceState(null, '', location.pathname + (qs ? '?' + qs : '') + location.hash);
+    }
+
+    function load() {
+        if (inflight) { inflight.abort(); }
+        const controller = inflight = new AbortController();
+        const params = new URLSearchParams({ from: filters.from, to: filters.to });
+        if (filters.subject) { params.set('subject', filters.subject); }
+        if (filters.section) { params.set('section', filters.section); }
+
+        $('page').classList.add('is-loading');
+        $('filterStatus').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating…';
+        syncControls();
+        syncUrl();
+
+        fetch(ENDPOINT + '?' + params.toString(), { headers: { 'Accept': 'application/json' }, signal: controller.signal })
+            .then((res) => { if (!res.ok) { throw new Error(res.status); } return res.json(); })
+            .then((data) => {
+                // The server normalises bad input (a swapped or too-long range),
+                // so adopt what it actually used.
+                filters = data.filters;
+                syncControls();
+                syncUrl();
+                render(data.report);
+                $('filterStatus').textContent = '';
+            })
+            .catch((err) => {
+                if (err.name === 'AbortError') { return; }
+                $('filterStatus').innerHTML = '<i class="fas fa-triangle-exclamation" style="color:#b91c1c;"></i> Could not update — try again.';
+            })
+            .finally(() => { if (inflight === controller) { $('page').classList.remove('is-loading'); } });
+    }
+
+    function openRange(open) {
+        rangePop.hidden = !open;
+        rangeTrigger.setAttribute('aria-expanded', open ? 'true' : 'false');
+        if (open) {
+            $('rangeFrom').value = filters.from;
+            $('rangeTo').value = filters.to;
+            $('rangeError').textContent = '';
+        }
+    }
+
+    rangeTrigger.addEventListener('click', () => openRange(rangePop.hidden));
+    $('rangeCancel').addEventListener('click', () => { openRange(false); rangeTrigger.focus(); });
+    document.addEventListener('click', (e) => {
+        if (!rangePop.hidden && !rangePop.contains(e.target) && !rangeTrigger.contains(e.target)) { openRange(false); }
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !rangePop.hidden) { openRange(false); rangeTrigger.focus(); }
+    });
+    document.querySelectorAll('.range-presets button').forEach((b) => {
+        b.addEventListener('click', () => { [filters.from, filters.to] = presetRange(b.dataset.preset); openRange(false); load(); });
+    });
+    $('rangeApply').addEventListener('click', () => {
+        const from = $('rangeFrom').value;
+        const to = $('rangeTo').value;
+        if (!from || !to) { $('rangeError').textContent = 'Pick both a start and an end date.'; return; }
+        if (from > to) { $('rangeError').textContent = 'The start date must be on or before the end date.'; return; }
+        if (daysBetween(from, to) > MAX_DAYS) { $('rangeError').textContent = 'Pick a range of one year or less.'; return; }
+        filters.from = from;
+        filters.to = to;
+        openRange(false);
+        load();
+    });
+    $('filterSubject').addEventListener('change', (e) => { filters.subject = e.target.value ? Number(e.target.value) : null; load(); });
+    $('filterSection').addEventListener('change', (e) => { filters.section = e.target.value || null; load(); });
+    $('filterReset').addEventListener('click', () => { filters = Object.assign({}, DEFAULTS); load(); });
+
+    syncControls();
+    render(@json($report));
 })();
 </script>
 

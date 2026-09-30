@@ -447,6 +447,37 @@
         .date-range-menu button.active { color: var(--primary); font-weight: 600; }
         .date-range-menu button .fa-check { color: var(--primary); font-size: 11px; }
 
+        /* Customizable filter: quick ranges + custom window + subject */
+        .date-range-menu { min-width: 280px; cursor: default; }
+        .drm-label { padding: 10px 14px 4px; font-size: 10.5px; font-weight: 700; letter-spacing: .6px; text-transform: uppercase; color: var(--ink-3); }
+        .drm-custom { border-top: 1px solid var(--line); padding: 2px 14px 14px; }
+        .drm-custom .drm-label { padding-left: 0; padding-right: 0; }
+        .drm-dates { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .drm-custom label { display: flex; flex-direction: column; gap: 4px; font-size: 11.5px; font-weight: 600; color: var(--ink-2); }
+        .drm-custom input, .drm-custom select {
+            width: 100%; padding: 8px 9px; border: 1px solid var(--line); border-radius: 8px;
+            font-family: 'Poppins', sans-serif; font-size: 12.5px; color: var(--ink); background: #fff; outline: none;
+        }
+        .drm-custom input:focus, .drm-custom select:focus { border-color: var(--primary); }
+        .drm-subject { margin-top: 10px; }
+        .drm-error { margin-top: 8px; font-size: 11.5px; color: #c0392b; }
+        .drm-error[hidden] { display: none; }
+        .drm-actions { display: flex; gap: 8px; margin-top: 12px; }
+        .date-range-menu .drm-actions button {
+            flex: 1; justify-content: center; border: 1px solid var(--line); border-radius: 8px;
+            padding: 9px 10px; font-weight: 600;
+        }
+        .date-range-menu .drm-actions .drm-apply { background: var(--primary); border-color: var(--primary); color: #fff; }
+        .date-range-menu .drm-actions .drm-apply:hover { background: var(--primary-hover); }
+        .date-range-menu .drm-actions .drm-apply .fa-check { color: #fff; }
+        .date-range .filter-subject { font-size: 11px; font-weight: 700; color: var(--primary); background: var(--primary-light); padding: 2px 8px; border-radius: 999px; }
+        .date-range.loading .fa-calendar { animation: spin .8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .chart-summary { display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: center; margin-top: 12px; margin-left: 40px; font-size: 12px; color: var(--ink-3); }
+        .chart-summary strong { color: var(--ink); font-weight: 600; }
+        .chart-summary .cs-empty { color: var(--ink-3); font-style: italic; }
+
         /* ─── CARD BASE ─── */
         .card {
             background: white;
@@ -827,66 +858,94 @@
         /* ─── EXAM COUNTDOWN CARD ─── */
         .exam-card {
             border-radius: 20px;
-            padding: 24px;
+            padding: 20px;
             position: relative;
             overflow: hidden;
-            color: white;
-            background: linear-gradient(145deg, #c0392b 0%, #7B1D1D 100%);
+            isolation: isolate;
+            color: #fff;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             text-align: center;
             min-height: 230px;
+            background:
+                radial-gradient(ellipse 80% 60% at 100% 0%, rgba(255, 255, 255, 0.14), transparent 60%),
+                radial-gradient(ellipse 70% 60% at 0% 100%, rgba(192, 57, 43, 0.55), transparent 65%),
+                linear-gradient(155deg, #8f2520 0%, #5c1414 55%, #2a0909 100%);
+            box-shadow: 0 14px 30px -14px rgba(90, 20, 20, 0.6);
         }
-
-        .exam-card .exam-bg {
+        /* Faint grid that fades toward the bottom. */
+        .exam-card::before {
+            content: '';
             position: absolute;
             inset: 0;
-            pointer-events: none;
-            overflow: hidden;
+            z-index: -1;
+            background-image:
+                linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px);
+            background-size: 22px 22px;
+            -webkit-mask-image: linear-gradient(180deg, #000 0%, transparent 70%);
+                    mask-image: linear-gradient(180deg, #000 0%, transparent 70%);
         }
 
-        .exam-card .flag {
-            position: absolute;
+        .exam-flag {
+            width: 34px;
+            height: 34px;
+            margin-bottom: 10px;
+            border-radius: 11px;
+            display: grid;
+            place-items: center;
+            background: rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            color: #ffd76a;
             font-size: 13px;
-            color: #fff;
-            text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
         }
 
         .exam-kicker {
-            font-size: 15px;
+            font-size: 13.5px;
             font-weight: 600;
-            color: rgba(255, 255, 255, 0.92);
-            position: relative;
-            z-index: 1;
             line-height: 1.4;
+            color: rgba(255, 255, 255, 0.9);
         }
 
         .exam-days {
-            font-size: 72px;
-            font-weight: 700;
-            line-height: 1.05;
-            position: relative;
-            z-index: 1;
-            text-shadow: 0 2px 12px rgba(0,0,0,0.2);
+            margin-top: 14px;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 76px;
+            font-weight: 800;
+            line-height: 1;
+            letter-spacing: -3px;
+            background: linear-gradient(180deg, #ffffff 35%, #ffd2cc 100%);
+            -webkit-background-clip: text;
+                    background-clip: text;
+            color: transparent;
+            filter: drop-shadow(0 6px 18px rgba(0, 0, 0, 0.25));
         }
 
         .exam-days-lbl {
-            font-size: 15px;
-            font-weight: 500;
-            color: rgba(255, 255, 255, 0.9);
-            position: relative;
-            z-index: 1;
-            margin-bottom: 4px;
+            margin-top: 4px;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.7);
         }
 
         .exam-date {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 16px;
+            padding: 6px 12px;
+            border-radius: 10px;
+            background: rgba(0, 0, 0, 0.22);
             font-size: 12px;
-            color: rgba(255, 255, 255, 0.8);
-            position: relative;
-            z-index: 1;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.88);
         }
+        .exam-date i { font-size: 11px; opacity: .8; }
 
         /* ─── PERFORMANCE BY SUBJECT ─── */
         .subject-row {
@@ -1267,10 +1326,34 @@
                     <i class="fas fa-calendar"></i>
                     <span id="dateRangeText">{{ $chartSeries['monthly']['range'] }}</span>
                     <i class="fas fa-chevron-down"></i>
-                    <div class="date-range-menu" id="dateRangeMenu">
+                    <div class="date-range-menu" id="dateRangeMenu" role="dialog" aria-label="Filter your performance">
+                        <div class="drm-label">Quick ranges</div>
                         <button type="button" data-range="daily">Last 7 Days <i class="fas fa-check" style="visibility:hidden;"></i></button>
+                        <button type="button" data-range="30d">Last 30 Days <i class="fas fa-check" style="visibility:hidden;"></i></button>
                         <button type="button" data-range="weekly">Last 8 Weeks <i class="fas fa-check" style="visibility:hidden;"></i></button>
                         <button type="button" data-range="monthly" class="active">Last 6 Months <i class="fas fa-check"></i></button>
+                        <button type="button" data-range="12m">Last 12 Months <i class="fas fa-check" style="visibility:hidden;"></i></button>
+
+                        <div class="drm-custom">
+                            <div class="drm-label">Custom range</div>
+                            <div class="drm-dates">
+                                <label>From<input type="date" id="rangeFrom" max="{{ now()->toDateString() }}" min="{{ now()->subYears(3)->toDateString() }}"></label>
+                                <label>To<input type="date" id="rangeTo" max="{{ now()->toDateString() }}" min="{{ now()->subYears(3)->toDateString() }}"></label>
+                            </div>
+                            <label class="drm-subject">Subject
+                                <select id="rangeSubject">
+                                    <option value="">All subjects</option>
+                                    @foreach($filterSubjects as $fs)
+                                        <option value="{{ $fs->id }}">{{ $fs->code }} — {{ $fs->name }}</option>
+                                    @endforeach
+                                </select>
+                            </label>
+                            <div class="drm-error" id="rangeError" hidden></div>
+                            <div class="drm-actions">
+                                <button type="button" class="drm-reset" id="rangeReset">Reset</button>
+                                <button type="button" class="drm-apply" id="rangeApply"><i class="fas fa-check"></i> Apply</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1418,9 +1501,9 @@
                 <!-- ACCURACY OVER TIME -->
                 <div class="card">
                     <div class="card-head">
-                        <span class="card-title">Accuracy Over Time
+                        <span class="card-title">Your Score Trend
                             <span class="info-tip inline" tabindex="0"><i class="fas fa-circle-info"></i>
-                                <span class="info-tip-pop">Your accuracy trend, bucketed by day, week, or month. Days with no quizzes carry the last known accuracy forward so the line stays continuous.</span>
+                                <span class="info-tip-pop">Shows the percentage of questions you got right, day by day, week by week, or month by month. A rising line means your scores are improving. If you didn't take a quiz in a period, the line stays at your last score.</span>
                             </span>
                         </span>
                         <select class="chart-select" id="chartGranularity">
@@ -1463,6 +1546,7 @@
                             <span>{{ $label }}</span>
                         @endforeach
                     </div>
+                    <div class="chart-summary" id="chartSummary" aria-live="polite"></div>
                 </div>
 
                 <!-- STUDY DISTRIBUTION -->
@@ -1506,21 +1590,12 @@
 
                 <!-- EXAM COUNTDOWN -->
                 <div class="exam-card">
-                    <div class="exam-bg">
-                        <svg width="100%" height="100%" viewBox="0 0 300 240" preserveAspectRatio="none">
-                            <circle cx="260" cy="40" r="70" fill="rgba(255,255,255,0.06)"/>
-                            <circle cx="30" cy="200" r="55" fill="rgba(255,255,255,0.05)"/>
-                            <circle cx="200" cy="190" r="40" fill="rgba(255,255,255,0.04)"/>
-                            <ellipse cx="150" cy="30" rx="90" ry="35" fill="rgba(255,255,255,0.03)" transform="rotate(-12 150 30)"/>
-                            <path d="M0,200 Q75,160 150,190 T300,170 V240 H0 Z" fill="rgba(0,0,0,0.08)"/>
-                        </svg>
-                    </div>
-                    <i class="fas fa-flag flag" style="top:22%;right:30%;"></i>
+                    <span class="exam-flag"><i class="fas fa-flag"></i></span>
                     <div class="exam-kicker">CPA Licensure Exam<br>is in</div>
                     @if($daysToExam !== null)
                         <div class="exam-days">{{ $daysToExam }}</div>
                         <div class="exam-days-lbl">{{ \Illuminate\Support\Str::plural('day', $daysToExam) }}</div>
-                        <div class="exam-date">{{ \Illuminate\Support\Carbon::parse($examDate)->format('M j, Y') }}</div>
+                        <div class="exam-date"><i class="far fa-calendar"></i> {{ \Illuminate\Support\Carbon::parse($examDate)->format('M j, Y') }}</div>
                     @else
                         <div class="exam-days">—</div>
                         <div class="exam-days-lbl">days</div>
@@ -1540,11 +1615,12 @@
                             </span>
                         </span>
                     </div>
-                    @php $subjColors = ['#c0392b', '#3b7ddd', '#e8910b', '#8e44ad', '#21a366', '#d4589e']; @endphp
+                    {{-- Monochromatic red: one shade per subject, same order (and so
+                         the same shade per subject) as the Study Distribution donut. --}}
                     @foreach($subjectAccuracy as $si => $subj)
                         <div class="subject-row" title="{{ $subj->name }}: {{ $subj->correct }}/{{ $subj->attempts }} correct &middot; passing mark {{ $subj->passing_threshold }}%">
                             <span class="code">{{ $subj->code }}</span>
-                            <div class="track"><span class="fill" style="width:{{ $subj->accuracy }}%;background:{{ $subjColors[$si % count($subjColors)] }};"></span></div>
+                            <div class="track"><span class="fill" style="width:{{ $subj->accuracy }}%;background:{{ $redShades[$si % count($redShades)] }};"></span></div>
                             <span class="val">{{ $subj->accuracy }}%</span>
                         </div>
                     @endforeach
@@ -1597,15 +1673,6 @@
                             <div class="mini-value">None yet</div>
                             <div class="mini-sub">Reach 75% over 5+ attempts</div>
                         @endif
-                    </div>
-                    <div class="mini-card" style="grid-column:1 / -1;">
-                        <span class="info-tip" tabindex="0"><i class="fas fa-circle-info"></i>
-                            <span class="info-tip-pop">Weekly study-time goal of {{ $goalTarget }} hrs. You've logged {{ $goalHours }} hrs this week.</span>
-                        </span>
-                        <div class="mini-head"><i class="fas fa-bullseye amber"></i><span>Goal Progress</span></div>
-                        <div class="mini-value">{{ $goalHours }} <small style="font-size:11px;color:var(--ink-3);font-weight:500;">/ {{ $goalTarget }} hrs</small></div>
-                        <div class="mini-bar"><span style="width:{{ $goalPct }}%"></span></div>
-                        <div class="mini-sub" style="text-align:right;">{{ $goalPct }}%</div>
                     </div>
                 </div>
             </div>
@@ -1746,17 +1813,38 @@
                 });
             }
 
-            // Accuracy Over Time — Daily / Weekly / Monthly granularity. The SVG
-            // geometry and the dot/label overlay are rebuilt from the raw series
-            // so the dropdown switches the curve without a reload.
+            // ── Your Score Trend (accuracy over time): customizable filter ────────────────────
+            // Quick ranges, a custom From–To window and a subject, at a chosen
+            // granularity. The three original quick ranges (all subjects) are
+            // embedded in the page; everything else is fetched as JSON. The
+            // student's last choice is remembered on this device.
             const chartSeries = @json($chartSeries);
+            const seriesUrl   = @json(route('performance.series'));
+            const FILTER_KEY  = 'cpace-perf-filter';
+            const PRESET_LABELS = { daily: 'Last 7 Days', '30d': 'Last 30 Days', weekly: 'Last 8 Weeks', monthly: 'Last 6 Months', '12m': 'Last 12 Months' };
+            const GRAN_PRESET   = { daily: 'daily', weekly: 'weekly', monthly: 'monthly' };
+
             const chartEls = {
                 line:    document.getElementById('chartLine'),
                 area:    document.getElementById('chartArea'),
                 overlay: document.getElementById('chartOverlay'),
                 xAxis:   document.getElementById('chartXAxis'),
                 range:   document.getElementById('dateRangeText'),
+                summary: document.getElementById('chartSummary'),
             };
+            const granularity   = document.getElementById('chartGranularity');
+            const dateRangeBtn  = document.getElementById('dateRangeBtn');
+            const dateRangeMenu = document.getElementById('dateRangeMenu');
+            const fromInput     = document.getElementById('rangeFrom');
+            const toInput       = document.getElementById('rangeTo');
+            const subjectSelect = document.getElementById('rangeSubject');
+            const rangeError    = document.getElementById('rangeError');
+
+            // Current filter. preset = a quick-range key, or null for custom.
+            let filter = { preset: 'monthly', from: null, to: null, subject: '', granularity: 'auto' };
+            let requestSeq = 0;
+
+            const esc = s => { const d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; };
 
             function renderPerfChart(series) {
                 if (!series || !chartEls.line) return;
@@ -1769,7 +1857,7 @@
                 const n = acc.length;
 
                 const pts = acc.map((v, i) => {
-                    const x = n > 1 ? +(i * (W / (n - 1))).toFixed(1) : 0;
+                    const x = n > 1 ? +(i * (W / (n - 1))).toFixed(1) : W / 2;
                     const y = +(bottom - (v / 100) * (bottom - top)).toFixed(1);
                     return [x, y];
                 });
@@ -1779,44 +1867,126 @@
                     'M' + pts.map(p => p.join(',')).join(' L') +
                     ` L${pts[n - 1][0]},${bottom} L${pts[0][0]},${bottom} Z`);
 
+                // Long ranges (e.g. 30 days) would crowd the chart, so only every
+                // step-th point gets a % label and an axis label.
+                const step = Math.max(1, Math.ceil(n / 8));
+                const showAt = i => i % step === 0 || i === n - 1;
+
                 // Dots + % labels live in an HTML overlay (not the SVG) so they
                 // don't stretch when the chart resizes.
                 chartEls.overlay.innerHTML = pts.map(([x, y], i) => {
                     const lx = Math.min(96, Math.max(3, x / W * 100));
                     const ly = y / 230 * 100;
                     const lblTop = Math.max(6, ly - 5);
-                    return `<div class="pt-dot" style="left:${lx}%;top:${ly}%"></div>` +
-                           `<div class="pt-lbl" style="left:${lx}%;top:${lblTop}%">${acc[i]}%</div>`;
+                    const hasData = series.values[i] !== null;
+                    const dot = `<div class="pt-dot" style="left:${lx}%;top:${ly}%;${n > 16 ? 'width:7px;height:7px;' : ''}${hasData ? '' : 'opacity:.35;'}"></div>`;
+                    return dot + (showAt(i) && hasData ? `<div class="pt-lbl" style="left:${lx}%;top:${lblTop}%">${acc[i]}%</div>` : '');
                 }).join('');
 
-                chartEls.xAxis.innerHTML = series.labels.map(l => `<span>${l}</span>`).join('');
-                if (chartEls.range) chartEls.range.textContent = series.range;
+                chartEls.xAxis.innerHTML = series.labels.map((l, i) => `<span>${showAt(i) ? esc(l) : ''}</span>`).join('');
+
+                // Chip text: range, plus the subject when one is chosen.
+                if (chartEls.range) {
+                    const opt = filter.subject && subjectSelect ? subjectSelect.selectedOptions[0] : null;
+                    chartEls.range.innerHTML = esc(series.range) +
+                        (opt ? ' <span class="filter-subject">' + esc(opt.textContent.split(' — ')[0]) + '</span>' : '');
+                }
+
+                if (chartEls.summary) {
+                    const s = series.summary;
+                    chartEls.summary.innerHTML = s
+                        ? (s.attempted > 0
+                            ? `<span><strong>${s.quizzes}</strong> ${s.quizzes === 1 ? 'quiz' : 'quizzes'}</span>` +
+                              `<span><strong>${s.attempted.toLocaleString()}</strong> questions</span>` +
+                              `<span><strong>${s.accuracy}%</strong> accuracy</span>`
+                            : '<span class="cs-empty">No quizzes in this range' + (filter.subject ? ' for this subject' : '') + ' yet.</span>')
+                        : '';
+                }
+
+                if (granularity && series.granularity) granularity.value = series.granularity;
             }
 
-            renderPerfChart(chartSeries.monthly);
-
-            const granularity = document.getElementById('chartGranularity');
-            if (granularity) {
-                granularity.addEventListener('change', function () {
-                    renderPerfChart(chartSeries[this.value]);
-                    syncDateRangeMenu(this.value);
-                });
-            }
-
-            // Date range chip in the toolbar — same three windows as the
-            // Accuracy Over Time granularity selector, kept in sync with it
-            // so there is a single source of truth for "which window am I
-            // looking at".
-            const dateRangeBtn  = document.getElementById('dateRangeBtn');
-            const dateRangeMenu = document.getElementById('dateRangeMenu');
-
-            function syncDateRangeMenu(value) {
-                if (granularity) granularity.value = value;
+            function syncMenu() {
                 if (!dateRangeMenu) return;
-                dateRangeMenu.querySelectorAll('button').forEach(btn => {
-                    const active = btn.dataset.range === value;
+                dateRangeMenu.querySelectorAll('button[data-range]').forEach(btn => {
+                    const active = btn.dataset.range === filter.preset;
                     btn.classList.toggle('active', active);
                     btn.querySelector('.fa-check').style.visibility = active ? 'visible' : 'hidden';
+                });
+                if (subjectSelect) subjectSelect.value = filter.subject || '';
+                if (fromInput) fromInput.value = filter.from || '';
+                if (toInput) toInput.value = filter.to || '';
+            }
+
+            function save() {
+                try { localStorage.setItem(FILTER_KEY, JSON.stringify(filter)); } catch (e) {}
+            }
+
+            // Apply the current filter: embedded data when it is one of the
+            // original windows with every subject, otherwise ask the server.
+            function applyFilter() {
+                syncMenu();
+                save();
+
+                const embedded = filter.preset && chartSeries[filter.preset] && !filter.subject
+                    && (filter.granularity === 'auto' || filter.granularity === GRAN_PRESET[filter.preset]);
+                if (embedded) {
+                    const s = chartSeries[filter.preset];
+                    renderPerfChart(Object.assign({ granularity: GRAN_PRESET[filter.preset] }, s));
+                    // Embedded presets carry no summary; fetch it quietly.
+                }
+
+                const params = new URLSearchParams();
+                if (filter.preset) params.set('preset', filter.preset);
+                else { params.set('from', filter.from); params.set('to', filter.to); }
+                if (filter.subject) params.set('subject_id', filter.subject);
+                params.set('granularity', filter.granularity || 'auto');
+
+                const seq = ++requestSeq;
+                if (!embedded && dateRangeBtn) dateRangeBtn.classList.add('loading');
+                fetch(seriesUrl + '?' + params.toString(), { headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } })
+                    .then(r => r.ok ? r.json() : Promise.reject(r))
+                    .then(series => {
+                        if (seq !== requestSeq) return;       // a newer filter won
+                        if (!series || !Array.isArray(series.values)) return Promise.reject(series);
+                        if (!filter.preset) { filter.from = series.from; filter.to = series.to; syncMenu(); }
+                        renderPerfChart(series);
+                    })
+                    .catch(() => {
+                        if (seq !== requestSeq || embedded) return;
+                        if (window.CPACE && CPACE.toast) CPACE.toast('Could not load that range. Please try again.', 'error');
+                    })
+                    .finally(() => { if (seq === requestSeq && dateRangeBtn) dateRangeBtn.classList.remove('loading'); });
+            }
+
+            function closeMenu() {
+                if (!dateRangeMenu) return;
+                dateRangeMenu.classList.remove('active');
+                dateRangeBtn.classList.remove('open');
+                if (rangeError) rangeError.hidden = true;
+            }
+
+            // Restore the student's last filter on this device.
+            try {
+                const saved = JSON.parse(localStorage.getItem(FILTER_KEY) || 'null');
+                if (saved && (saved.preset in PRESET_LABELS || (saved.from && saved.to))) {
+                    filter = Object.assign(filter, saved);
+                    if (filter.preset && !(filter.preset in PRESET_LABELS)) filter.preset = 'monthly';
+                }
+            } catch (e) {}
+            applyFilter();
+
+            if (granularity) {
+                granularity.addEventListener('change', function () {
+                    // With every subject and a matching original window, keep the
+                    // old behaviour: Daily/Weekly/Monthly jump to that window.
+                    if (filter.preset && !filter.subject && GRAN_PRESET[filter.preset] && GRAN_PRESET[this.value]) {
+                        filter.preset = this.value;
+                        filter.granularity = 'auto';
+                    } else {
+                        filter.granularity = this.value;
+                    }
+                    applyFilter();
                 });
             }
 
@@ -1826,21 +1996,47 @@
                     dateRangeMenu.classList.toggle('active');
                     dateRangeBtn.classList.toggle('open', dateRangeMenu.classList.contains('active'));
                 });
-                dateRangeMenu.querySelectorAll('button').forEach(btn => {
-                    btn.addEventListener('click', function (e) {
-                        e.stopPropagation();
-                        const value = this.dataset.range;
-                        renderPerfChart(chartSeries[value]);
-                        syncDateRangeMenu(value);
-                        dateRangeMenu.classList.remove('active');
-                        dateRangeBtn.classList.remove('open');
+                // Clicks inside the menu (inputs, selects) must not close it.
+                dateRangeMenu.addEventListener('click', e => e.stopPropagation());
+                dateRangeMenu.addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Escape') closeMenu(); });
+
+                dateRangeMenu.querySelectorAll('button[data-range]').forEach(btn => {
+                    btn.addEventListener('click', function () {
+                        filter.preset = this.dataset.range;
+                        filter.from = filter.to = null;
+                        filter.granularity = 'auto';
+                        filter.subject = subjectSelect ? subjectSelect.value : '';
+                        applyFilter();
+                        closeMenu();
                     });
                 });
-                document.addEventListener('click', function () {
-                    dateRangeMenu.classList.remove('active');
-                    dateRangeBtn.classList.remove('open');
+
+                document.getElementById('rangeApply').addEventListener('click', function () {
+                    const from = fromInput.value, to = toInput.value;
+                    const subject = subjectSelect.value;
+                    // Only a subject change: keep the current range.
+                    if (!from && !to) {
+                        filter.subject = subject;
+                        applyFilter();
+                        closeMenu();
+                        return;
+                    }
+                    if (!from || !to) { rangeError.textContent = 'Pick both a From and a To date.'; rangeError.hidden = false; return; }
+                    if (from > to) { rangeError.textContent = 'The From date must be on or before the To date.'; rangeError.hidden = false; return; }
+                    filter = { preset: null, from, to, subject, granularity: 'auto' };
+                    applyFilter();
+                    closeMenu();
                 });
+
+                document.getElementById('rangeReset').addEventListener('click', function () {
+                    filter = { preset: 'monthly', from: null, to: null, subject: '', granularity: 'auto' };
+                    applyFilter();
+                    closeMenu();
+                });
+
+                document.addEventListener('click', closeMenu);
                 dateRangeBtn.addEventListener('keydown', function (e) {
+                    if (e.target !== dateRangeBtn) return;
                     if (e.key === 'Enter' || e.key === ' ') {
                         e.preventDefault();
                         dateRangeBtn.click();

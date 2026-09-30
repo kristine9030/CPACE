@@ -27,7 +27,12 @@
             --container:  1320px;
         }
 
-        html { scroll-behavior: smooth; overflow-x: hidden; }
+        /* scroll-padding-top parks every #anchor target just below the fixed
+           navbar instead of underneath it, so a nav click locks the section
+           flush to the bar. 74px is the bar's scrolled height, which is what
+           it always is by the time the scroll lands. One declaration covers
+           every anchor on the page - nav, hero buttons and footer links. */
+        html { scroll-behavior: smooth; overflow-x: hidden; scroll-padding-top: 74px; }
         body {
             font-family: 'Montserrat', ui-sans-serif, system-ui, sans-serif;
             color: var(--body);
@@ -93,7 +98,18 @@
             transition: box-shadow .25s ease, height .25s ease;
         }
         header.nav.scrolled { box-shadow: 0 2px 18px rgba(20,32,48,.06); height: 74px; }
-        .nav-inner { display: flex; align-items: center; width: 100%; }
+        /* The bar alone runs full-bleed so Get Started sits hard right against
+           the viewport edge instead of stopping at the 1320px column. The left
+           padding re-creates that column's inner edge, so the wordmark stays
+           aligned with the copy below it. Measured in % (of the fixed header,
+           which excludes the scrollbar) rather than vw, or the scrollbar would
+           throw the wordmark ~8px out of line with the hero. */
+        .nav-inner {
+            display: flex; align-items: center; width: 100%;
+            max-width: none;
+            padding-left: max(32px, calc((100% - var(--container)) / 2 + 32px));
+            padding-right: 32px;
+        }
         .nav-brand { margin-right: 48px; display: flex; align-items: center; }
         .nav-brand img { height: 47px; width: auto; object-fit: contain; transition: height .25s ease; }
         header.nav.scrolled .nav-brand img { height: 41px; }
@@ -121,18 +137,29 @@
             background: #fff; border-bottom: 1px solid var(--line);
             padding: 14px 28px 20px; display: none; flex-direction: column;
             box-shadow: 0 14px 30px rgba(20,30,45,.1);
+            transition: top .25s ease;
         }
+        /* The bar shrinks to 74px once scrolled; the panel hangs off it and
+           has to follow, or a white gap opens between the two. */
+        header.nav.scrolled ~ .mobile-menu { top: 74px; }
         .mobile-menu.open { display: flex; }
         .mobile-menu a {
             font-size: .85rem; font-weight: 500; color: var(--navy);
             padding: .75rem 0; border-bottom: 1px solid var(--line);
         }
         .mobile-menu a:last-child { border: none; color: var(--red); font-weight: 600; }
+        .mobile-menu a.active { color: var(--red); font-weight: 600; }
 
         /* ─── HERO ────────────────────────────────────────────── */
+        /* Full-screen, but capped in px at the 1080px design height so the
+           section scales as ONE unit with the px-sized copy under browser
+           zoom. Left uncapped, zooming out grows the hero with the CSS
+           viewport while the copy and the photo stay put, opening a void
+           above the building. 1080px is a floor, not a ceiling: taller
+           content still grows the section normally. */
         .hero {
             position: relative; background: #fff; overflow: hidden;
-            min-height: 100vh; min-height: 100svh;
+            min-height: 100vh; min-height: min(100svh, 1080px);
             display: flex; align-items: center;
             padding: 118px 0 72px;
         }
@@ -140,9 +167,23 @@
         /* The source image is already desaturated and already fades to white
            on its left side, so it is laid in full-bleed with no filter or
            gradient of our own on top of it. */
+        /* The photo is pinned to the same centred --container column the copy
+           sits in, in the same px units, so browser zoom scales it with the
+           text instead of against it: sized off the viewport alone it kept
+           growing past the 1320px column as the CSS viewport grew on zoom-out.
+           1613px is the width it resolves to at the 1920px design viewport, so
+           the desktop composition is unchanged and the cap only bites on a
+           monitor (or a zoom level) wider than that.
+           The svh term keeps it inside the hero on a short wide screen; the
+           floors in the media queries keep it a real backdrop on a phone.
+           Both layers must keep identical geometry or the cut-out stops
+           registering with the plate beneath it. */
         .hero-photo, .hero-photo-fg {
             position: absolute; z-index: 0;
-            bottom: 0; left: 9.3%; width: 84%;
+            bottom: 0;
+            left: calc(50% + 25px);
+            width: 84%;
+            width: min(84%, 1613px, calc(96svh * 16 / 9));
             aspect-ratio: 1920 / 1080;
             background-size: 100% 100%;
             background-repeat: no-repeat;
@@ -159,12 +200,15 @@
             background-image: url("{{ asset('images/landing page.png') }}");
             mix-blend-mode: multiply;
             filter: brightness(1.06) contrast(.94);
+            transform: translateX(-50%);
         }
         /* Cut-out of the same frame (transparent sky) laid over the plate so
            the building reads clearly instead of washing out. */
         .hero-photo-fg {
             background-image: url("{{ asset('images/overaly.png') }}");
-            transform: translate(1.042%, -2.222%);
+            /* The -50% is the centring; the 1.042% / -2.222% is the cut-out's
+               own registration offset against the plate and must survive it. */
+            transform: translate(calc(1.042% - 50%), -2.222%);
             z-index: 2;
         }
         /* The cut-out tops out at ~87% alpha, so the red shapes behind it bled
@@ -495,23 +539,21 @@
         }
         .foot-top {
             position: relative; display: grid;
-            grid-template-columns: 1.7fr 1fr 1fr 1.4fr;
+            grid-template-columns: 1.6fr 1fr 1fr 1.7fr;
             gap: 48px; padding-bottom: 52px;
         }
 
         .foot-brand .wordmark { font-size: 1.6rem; }
         .foot-brand p {
             font-size: .74rem; line-height: 1.8; color: rgba(255,255,255,.6);
-            margin: 16px 0 22px; max-width: 300px;
+            margin: 16px 0 20px; max-width: 300px;
         }
-        .foot-social { display: flex; gap: 8px; }
-        .foot-social a {
-            width: 30px; height: 30px; border-radius: 7px; background: rgba(255,255,255,.07);
-            border: 1px solid rgba(255,255,255,.09);
-            color: rgba(255,255,255,.7); display: grid; place-items: center;
-            font-size: .72rem; transition: background .18s, color .18s, transform .18s;
-        }
-        .foot-social a:hover { background: var(--red); color: #fff; border-color: var(--red); transform: translateY(-2px); }
+        /* Support details live under the brand now that the social row is gone,
+           so a visitor has somewhere to write to without hunting the columns. */
+        .foot-contact { font-size: .72rem; line-height: 1.9; color: rgba(255,255,255,.55); }
+        .foot-contact a { color: rgba(255,255,255,.75); transition: color .18s; }
+        .foot-contact a:hover { color: #fff; }
+        .foot-contact i { width: 16px; color: var(--red-bright); font-size: .72rem; }
 
         .foot-col h5 {
             font-size: .74rem; font-weight: 600; color: #fff;
@@ -528,17 +570,77 @@
         }
         .foot-col a:hover { color: #fff; padding-left: 4px; }
 
-        .foot-uni { display: flex; gap: 12px; margin-bottom: 16px; }
-        .foot-uni img {
-            width: 38px; height: 38px; flex: 0 0 auto; object-fit: contain;
-            background: #fff; border-radius: 50%; padding: 4px;
+        /* The university is the system's owner and accreditor, so it is given a
+           card of its own rather than reading as one more list item. */
+        .foot-uni {
+            display: flex; gap: 14px; align-items: center;
+            padding: 15px 16px; margin-bottom: 15px; border-radius: 12px;
+            background: rgba(255,255,255,.045);
+            border: 1px solid rgba(255,255,255,.10);
         }
-        .foot-uni strong { display: block; font-size: .74rem; font-weight: 600; color: #fff; }
-        .foot-uni span { display: block; font-size: .68rem; line-height: 1.55; color: rgba(255,255,255,.55); margin-top: 3px; }
+        .foot-uni img {
+            width: 56px; height: 56px; flex: 0 0 auto; object-fit: contain;
+        }
+        .foot-uni strong {
+            display: block; font-size: .82rem; font-weight: 700;
+            color: #fff; line-height: 1.3; letter-spacing: -.01em;
+        }
+        .foot-uni .uni-tag {
+            display: block; margin-top: 5px;
+            font-size: .58rem; font-weight: 700; letter-spacing: .1em;
+            text-transform: uppercase; color: var(--red-bright);
+        }
+        .foot-uni .uni-campus {
+            display: block; font-size: .7rem; font-weight: 600;
+            color: rgba(255,255,255,.78); margin-top: 6px;
+        }
         .foot-meta { font-size: .7rem; line-height: 1.75; color: rgba(255,255,255,.55); }
         .foot-meta a { color: rgba(255,255,255,.72); transition: color .18s; }
         .foot-meta a:hover { color: #fff; }
         .foot-meta i { width: 15px; color: var(--red-bright); font-size: .7rem; }
+
+        /* Two disclosures a deployed build genuinely needs: what is done with
+           the proctoring captures, and that a CPALE review tool is not the PRC.
+           Given a heading and the columns' own rule so it reads as a section of
+           the footer rather than fine print dropped at the bottom. */
+        /* Folded away by default: a <details> so the keyboard, screen readers
+           and find-in-page all work with no JS of our own. */
+        .foot-disclose {
+            position: relative;
+            border-top: 1px solid rgba(255,255,255,.07);
+        }
+        .foot-disclose > summary {
+            list-style: none; cursor: pointer;
+            display: flex; align-items: center; justify-content: space-between; gap: 14px;
+            padding: 18px 0;
+            font-size: .72rem; font-weight: 600; color: rgba(255,255,255,.68);
+            transition: color .18s;
+        }
+        .foot-disclose > summary::-webkit-details-marker { display: none; }
+        .foot-disclose > summary:hover,
+        .foot-disclose[open] > summary { color: #fff; }
+        .foot-disclose summary .lead { color: var(--red-bright); margin-right: 9px; }
+        .foot-disclose .chev {
+            font-size: .64rem; color: rgba(255,255,255,.42);
+            transition: transform .22s ease, color .18s;
+        }
+        .foot-disclose[open] .chev { transform: rotate(180deg); color: rgba(255,255,255,.7); }
+
+        .foot-note {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 20px 48px;
+            padding-bottom: 26px;
+            animation: discloseIn .24s ease both;
+        }
+        @keyframes discloseIn { from { opacity: 0; transform: translateY(-5px); } }
+        .foot-note h6 {
+            display: flex; align-items: center; gap: 8px;
+            font-size: .68rem; font-weight: 600; color: rgba(255,255,255,.82);
+            margin-bottom: 7px;
+        }
+        .foot-note h6 i { color: var(--red-bright); font-size: .7rem; }
+        .foot-note p { font-size: .66rem; line-height: 1.85; color: rgba(255,255,255,.42); }
+        .foot-note a { color: rgba(255,255,255,.62); text-decoration: underline; text-underline-offset: 2px; }
+        .foot-note a:hover { color: #fff; }
 
         .foot-bottom {
             position: relative;
@@ -547,6 +649,68 @@
             padding: 20px 0 22px;
             border-top: 1px solid rgba(255,255,255,.07);
             font-size: .68rem; color: rgba(255,255,255,.45);
+        }
+        .foot-legal { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+        .foot-legal a { color: rgba(255,255,255,.55); transition: color .18s; }
+        .foot-legal a:hover { color: #fff; }
+
+        /* ─── REPORT AN ISSUE ─────────────────────────────────── */
+        .rpt-back {
+            position: fixed; inset: 0; z-index: 400;
+            background: rgba(12,18,26,.62); backdrop-filter: blur(3px);
+            display: none; align-items: center; justify-content: center;
+            padding: 24px; overflow-y: auto;
+        }
+        .rpt-back.open { display: flex; }
+        .rpt-modal {
+            position: relative; width: 100%; max-width: 520px;
+            background: #fff; border-radius: 16px; padding: 30px 30px 26px;
+            box-shadow: 0 30px 80px rgba(12,18,26,.32);
+            animation: rptIn .22s ease both;
+        }
+        @keyframes rptIn { from { opacity: 0; transform: translateY(14px) scale(.985); } }
+        .rpt-modal h3 { font-size: 1.05rem; font-weight: 700; color: var(--navy); letter-spacing: -.02em; }
+        .rpt-modal .rpt-lead { font-size: .76rem; line-height: 1.7; color: var(--body); margin: 8px 0 20px; }
+        .rpt-close {
+            position: absolute; top: 16px; right: 16px;
+            width: 30px; height: 30px; border-radius: 8px; border: none;
+            background: var(--soft); color: var(--body); cursor: pointer;
+            display: grid; place-items: center; font-size: .78rem;
+            transition: background .18s, color .18s;
+        }
+        .rpt-close:hover { background: var(--red-pale); color: var(--red); }
+
+        .rpt-field { margin-bottom: 14px; }
+        .rpt-field label {
+            display: block; font-size: .7rem; font-weight: 600;
+            color: var(--navy); margin-bottom: 6px;
+        }
+        .rpt-field input, .rpt-field select, .rpt-field textarea {
+            width: 100%; font-family: inherit; font-size: .78rem; color: var(--ink);
+            padding: .62rem .8rem; border: 1px solid var(--line); border-radius: 9px;
+            background: #fff; transition: border-color .18s, box-shadow .18s;
+        }
+        .rpt-field textarea { resize: vertical; min-height: 104px; line-height: 1.65; }
+        .rpt-field input:focus, .rpt-field select:focus, .rpt-field textarea:focus {
+            outline: none; border-color: var(--red);
+            box-shadow: 0 0 0 3px rgba(123,29,29,.10);
+        }
+        .rpt-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        /* Honeypot: off-screen rather than display:none, which some bots skip. */
+        .rpt-hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+        .rpt-err { font-size: .68rem; color: var(--red); margin-top: 5px; display: none; }
+        .rpt-err.show { display: block; }
+        .rpt-actions { display: flex; align-items: center; gap: 12px; margin-top: 18px; }
+        .rpt-actions .btn[disabled] { opacity: .6; pointer-events: none; }
+        .rpt-note { font-size: .66rem; line-height: 1.6; color: var(--muted); margin-top: 14px; }
+        .rpt-ok { display: none; text-align: center; padding: 14px 0 6px; }
+        .rpt-ok.show { display: block; }
+        .rpt-ok i { font-size: 2rem; color: #21a366; }
+        .rpt-ok p { font-size: .82rem; color: var(--navy); font-weight: 600; margin-top: 14px; }
+        .rpt-ok span { display: block; font-size: .72rem; color: var(--body); margin-top: 7px; }
+        @media (max-width: 560px) {
+            .rpt-modal { padding: 26px 20px 22px; }
+            .rpt-row { grid-template-columns: 1fr; }
         }
 
         /* Grid and flex children default to min-width:auto, which lets a wide
@@ -611,6 +775,7 @@
         .reveal.visible { opacity: 1; transform: none; }
         @media (prefers-reduced-motion: reduce) {
             .reveal { opacity: 1; transform: none; transition: none; }
+            .foot-note { animation: none; }
             html { scroll-behavior: auto; }
         }
 
@@ -618,7 +783,15 @@
         @media (max-width: 1080px) {
             .why-grid, .how-grid, .features-grid, .impact-grid, .stories-grid { grid-template-columns: 1fr; gap: 42px; }
             .why-right { border-left: none; padding-left: 0; }
-            .hero-photo, .hero-photo-fg { left: 4%; width: 92%; }
+            /* Dead centre from here down (the viewport is now narrower than the
+               1320px column, so there is nothing to align to) and the floor may
+               run the photo wider than the viewport without pushing the
+               building off one side. */
+            .hero-photo, .hero-photo-fg {
+                left: 50%;
+                width: 92%;
+                width: min(max(92%, calc(52svh * 16 / 9)), calc(88svh * 16 / 9));
+            }
             .hero-photo { opacity: .55; }
             .hero-photo-fg { opacity: .7; }
         }
@@ -626,7 +799,10 @@
             .nav-links { display: none; }
             .burger { display: flex; }
             .hero { padding: 122px 0 64px; }
-            .hero-photo, .hero-photo-fg { left: 0; width: 100%; }
+            .hero-photo, .hero-photo-fg {
+                width: 100%;
+                width: min(max(100%, calc(46svh * 16 / 9)), calc(78svh * 16 / 9));
+            }
             .hero-photo { opacity: .3; }
             .hero-photo-fg { opacity: .42; }
             .hero-slashes .hs-1 { top: -8%; right: -16%; width: 42%; height: 26%; }
@@ -640,13 +816,19 @@
             .car-btn.prev { left: 6px; } .car-btn.next { right: 6px; }
             .cta-inner { justify-content: center; text-align: center; }
             .foot-top { grid-template-columns: 1fr 1fr; gap: 38px; }
+            .foot-note { grid-template-columns: 1fr; gap: 22px; }
         }
         @media (max-width: 560px) {
             .container { padding: 0 20px; }
+            .nav-inner { padding-left: 20px; padding-right: 20px; }
             .nav-brand img { height: 34px; }
             .nav-actions .btn { padding: .62rem 1.15rem; font-size: .72rem; }
             .feat-grid { grid-template-columns: 1fr; gap: 28px; }
             .stat-row { grid-template-columns: 1fr 1fr; }
+            .hero-photo, .hero-photo-fg {
+                width: 112%;
+                width: min(max(112%, calc(50svh * 16 / 9)), calc(82svh * 16 / 9));
+            }
             .hero-mini { gap: 18px; }
             .mock { grid-template-columns: 1fr; }
             .mock-side { display: none; }
@@ -1083,6 +1265,21 @@
 </section>
 
 <!-- ══ FOOTER ══ -->
+@php
+    /* ─────────────────────────────────────────────────────────────────
+       DEPLOYMENT: fill these five in and the whole footer wires itself
+       up. Anything left as '#' renders as plain text instead of a dead
+       link, so an unfilled slot cannot ship as a broken anchor.
+       ───────────────────────────────────────────────────────────────── */
+    $site = [
+        'privacy'  => '#',                        // Privacy Notice page
+        'terms'    => '#',                        // Terms of Use page
+        'bsu'      => '#',                        // https://batstate-u.edu.ph
+        'campus'   => '#',                        // ARASOF-Nasugbu campus page
+        'email'    => 'accountancy@bsu.edu.ph',   // support inbox
+    ];
+    $captureDays = \App\Models\MockExamProctorCapture::RETENTION_DAYS;
+@endphp
 <footer id="contact">
     <div class="container foot-top">
 
@@ -1093,11 +1290,11 @@
                 students — personalized practice, performance analytics, and intelligent
                 review scheduling in one place.
             </p>
-            <div class="foot-social">
-                <a href="#" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
-                <a href="#" aria-label="X"><i class="fab fa-x-twitter"></i></a>
-                <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
-            </div>
+            <p class="foot-contact">
+                <i class="fas fa-envelope"></i>
+                <a href="mailto:{{ $site['email'] }}">{{ $site['email'] }}</a><br>
+                <i class="fas fa-location-dot"></i> Nasugbu, Batangas, Philippines
+            </p>
         </div>
 
         <div class="foot-col">
@@ -1115,31 +1312,155 @@
             <ul>
                 <li><a href="{{ route('login') }}">Log in</a></li>
                 <li><a href="{{ route('forgot-password') }}">Forgot password</a></li>
-                <li><a href="mailto:accountancy@bsu.edu.ph?subject=CPAce%20—%20Report%20an%20issue">Report an issue</a></li>
+                <li><a href="#report" data-report-open>Report an issue</a></li>
             </ul>
         </div>
 
         <div class="foot-col">
             <h5>Institution</h5>
             <div class="foot-uni">
-                <img src="{{ asset('images/logo-icon.png') }}" alt="">
+                <img src="{{ asset('images/logo-bsu.png') }}" alt="Batangas State University seal">
                 <div>
                     <strong>Batangas State University</strong>
-                    <span>ARASOF-Nasugbu Campus<br>Nasugbu, Batangas, Philippines</span>
+                    <span class="uni-tag">The National Engineering University</span>
+                    <span class="uni-campus">ARASOF-Nasugbu Campus</span>
                 </div>
             </div>
             <p class="foot-meta">
-                <i class="fas fa-building-columns"></i> Department of Accountancy<br>
-                <i class="fas fa-envelope"></i> <a href="mailto:accountancy@bsu.edu.ph">accountancy@bsu.edu.ph</a>
+                <i class="fas fa-location-dot"></i> Nasugbu, Batangas, Philippines<br>
+                @if ($site['bsu'] !== '#')
+                    <i class="fas fa-up-right-from-square"></i>
+                    <a href="{{ $site['bsu'] }}" target="_blank" rel="noopener">batstate-u.edu.ph</a><br>
+                @endif
+                @if ($site['campus'] !== '#')
+                    <i class="fas fa-up-right-from-square"></i>
+                    <a href="{{ $site['campus'] }}" target="_blank" rel="noopener">ARASOF-Nasugbu Campus</a>
+                @endif
             </p>
         </div>
     </div>
 
+    {{-- Disclosures a deployed build needs: the proctoring captures are
+         personal data, and a CPALE reviewer must not read as PRC-affiliated. --}}
+    <div class="container">
+      <details class="foot-disclose">
+        <summary>
+            <span><i class="fas fa-shield-halved lead"></i>Data Privacy &amp; Disclosure</span>
+            <i class="fas fa-chevron-down chev" aria-hidden="true"></i>
+        </summary>
+
+        <div class="foot-note">
+            <div>
+                <h6><i class="fas fa-shield-halved"></i> Data Privacy Act of 2012 (RA 10173)</h6>
+                <p>
+                    CPAce processes personal data — including camera images captured during
+                    proctored quizzes and mock examinations. Captures are taken only with the
+                    student's consent, are visible only to the assigned faculty and the Program
+                    Chair, and are deleted automatically within {{ $captureDays }} days.
+                    @if ($site['privacy'] !== '#')
+                        See the <a href="{{ $site['privacy'] }}">Privacy Notice</a> for the full details.
+                    @endif
+                </p>
+            </div>
+
+            <div>
+                <h6><i class="fas fa-circle-info"></i> Academic Disclaimer</h6>
+                <p>
+                    CPAce is an academic capstone project of Batangas State University — The
+                    National Engineering University, ARASOF-Nasugbu Campus. It is not affiliated
+                    with, endorsed by, or connected to the Professional Regulation Commission or
+                    the Board of Accountancy. Practice results do not predict or guarantee
+                    licensure examination outcomes.
+                </p>
+            </div>
+        </div>
+      </details>
+    </div>
+
     <div class="container foot-bottom">
         <span>&copy; {{ date('Y') }} CPAce. All rights reserved.</span>
+        <nav class="foot-legal">
+            @if ($site['privacy'] !== '#')<a href="{{ $site['privacy'] }}">Privacy Notice</a>@endif
+            @if ($site['terms'] !== '#')<a href="{{ $site['terms'] }}">Terms of Use</a>@endif
+        </nav>
         <span>Version 1.0.0 &middot; Capstone Project &middot; BSU ARASOF-Nasugbu</span>
     </div>
 </footer>
+
+<!-- ══ REPORT AN ISSUE ══ -->
+<div class="rpt-back" id="reportBack" role="dialog" aria-modal="true" aria-labelledby="reportTitle">
+    <div class="rpt-modal">
+        <button type="button" class="rpt-close" data-report-close aria-label="Close">
+            <i class="fas fa-xmark"></i>
+        </button>
+
+        {{-- The form posts for real, so it still works with JS off; the script
+             below intercepts it to submit in place and keep the visitor here. --}}
+        <form id="reportForm" method="POST" action="{{ route('report-issue.store') }}" novalidate>
+            @csrf
+            <input type="hidden" name="page_url" id="reportPageUrl" value="">
+            <div class="rpt-hp" aria-hidden="true">
+                <label>Website<input type="text" name="website" tabindex="-1" autocomplete="off"></label>
+            </div>
+
+            <h3 id="reportTitle">Report an issue</h3>
+            <p class="rpt-lead">
+                Tell us what went wrong and we'll look into it. If it's about your account,
+                use the email address the account is registered under.
+            </p>
+
+            <div class="rpt-row">
+                <div class="rpt-field">
+                    <label for="rptName">Your name</label>
+                    <input type="text" id="rptName" name="name" maxlength="120" required
+                           value="{{ auth()->check() ? auth()->user()->first_name . ' ' . auth()->user()->last_name : '' }}">
+                    <p class="rpt-err" data-err="name"></p>
+                </div>
+                <div class="rpt-field">
+                    <label for="rptEmail">Email</label>
+                    <input type="email" id="rptEmail" name="email" maxlength="160" required
+                           value="{{ auth()->check() ? auth()->user()->email : '' }}">
+                    <p class="rpt-err" data-err="email"></p>
+                </div>
+            </div>
+
+            <div class="rpt-field">
+                <label for="rptCategory">What kind of issue?</label>
+                <select id="rptCategory" name="category" required>
+                    @foreach (\App\Models\IssueReport::CATEGORIES as $key => $label)
+                        <option value="{{ $key }}">{{ $label }}</option>
+                    @endforeach
+                </select>
+                <p class="rpt-err" data-err="category"></p>
+            </div>
+
+            <div class="rpt-field">
+                <label for="rptMessage">What happened?</label>
+                <textarea id="rptMessage" name="message" maxlength="3000" required
+                          placeholder="What were you doing, what did you expect, and what happened instead?"></textarea>
+                <p class="rpt-err" data-err="message"></p>
+            </div>
+
+            <div class="rpt-actions">
+                <button type="submit" class="btn btn-red btn-pill" id="reportSubmit">
+                    Send report <i class="fas fa-paper-plane"></i>
+                </button>
+                <button type="button" class="btn btn-outline btn-pill" data-report-close>Cancel</button>
+            </div>
+
+            <p class="rpt-note">
+                We record the page you were on and your browser version to help reproduce the
+                problem. Your report is kept only for as long as it takes to resolve it.
+            </p>
+        </form>
+
+        <div class="rpt-ok" id="reportOk">
+            <i class="fas fa-circle-check"></i>
+            <p id="reportOkMsg">Thanks — your report has been sent.</p>
+            <span>We'll follow up by email if we need more detail.</span>
+        </div>
+    </div>
+</div>
 
 <script>
     // Navbar shadow on scroll
@@ -1153,17 +1474,123 @@
         document.getElementById('mobileMenu').classList.toggle('open');
     }
 
-    // Active nav link on scroll
-    const navLinks = [...document.querySelectorAll('#navLinks a')];
-    const sections = navLinks
-        .map(a => document.querySelector(a.getAttribute('href')))
+    // Active nav link on scroll. The trip line sits just under the navbar so
+    // the highlight flips at the moment a section locks to the bar, matching
+    // html{scroll-padding-top}. The mobile menu is included so both menus
+    // always agree on where you are.
+    const NAV_OFFSET = 78;
+    const navLinks = [...document.querySelectorAll('#navLinks a, #mobileMenu a')];
+    const sections = [...new Set(navLinks.map(a => a.getAttribute('href')))]
+        .filter(h => h && h.length > 1 && h.startsWith('#'))
+        .map(h => document.querySelector(h))
         .filter(Boolean);
 
-    window.addEventListener('scroll', () => {
-        const y = window.scrollY + 140;
+    function syncActiveLink() {
+        const y = window.scrollY + NAV_OFFSET;
         let current = sections[0];
         sections.forEach(s => { if (s.offsetTop <= y) current = s; });
+
+        // The footer is shorter than the viewport, so its top can never cross
+        // the trip line - at the very bottom of the page the last link wins.
+        if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2) {
+            current = sections[sections.length - 1];
+        }
+
         navLinks.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + current.id));
+    }
+
+    window.addEventListener('scroll', syncActiveLink, { passive: true });
+    window.addEventListener('resize', syncActiveLink);
+    syncActiveLink();
+
+    // ── Report an issue ──────────────────────────────────────────────────
+    // The form posts normally without JS; this only upgrades it to submit in
+    // place so the visitor is not bounced off the page to see a flash message.
+    const rptBack   = document.getElementById('reportBack');
+    const rptForm   = document.getElementById('reportForm');
+    const rptOk     = document.getElementById('reportOk');
+    const rptSubmit = document.getElementById('reportSubmit');
+    let   rptOpener = null;
+
+    function openReport(e) {
+        if (e) e.preventDefault();
+        rptOpener = document.activeElement;
+        document.getElementById('reportPageUrl').value = window.location.href;
+        rptBack.classList.add('open');
+        document.body.style.overflow = 'hidden';
+        // Skip straight to the first empty field: signed-in visitors already
+        // have their name and email filled in for them.
+        const first = [...rptForm.querySelectorAll('input[required], textarea')].find(i => !i.value);
+        (first || rptForm.querySelector('#rptName')).focus();
+    }
+
+    function closeReport() {
+        rptBack.classList.remove('open');
+        document.body.style.overflow = '';
+        if (rptOpener) rptOpener.focus();
+    }
+
+    document.querySelectorAll('[data-report-open]').forEach(a => a.addEventListener('click', openReport));
+    document.querySelectorAll('[data-report-close]').forEach(b => b.addEventListener('click', closeReport));
+    rptBack.addEventListener('click', e => { if (e.target === rptBack) closeReport(); });
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && rptBack.classList.contains('open')) closeReport();
+    });
+
+    function clearErrors() {
+        rptForm.querySelectorAll('.rpt-err').forEach(p => { p.textContent = ''; p.classList.remove('show'); });
+    }
+
+    rptForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        clearErrors();
+        rptSubmit.disabled = true;
+        rptSubmit.innerHTML = 'Sending…';
+
+        try {
+            const res = await fetch(rptForm.action, {
+                method: 'POST',
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                body: new FormData(rptForm),
+            });
+
+            if (res.status === 422) {
+                const { errors } = await res.json();
+                Object.entries(errors || {}).forEach(([field, msgs]) => {
+                    const p = rptForm.querySelector(`[data-err="${field}"]`);
+                    if (p) { p.textContent = msgs[0]; p.classList.add('show'); }
+                });
+                return;
+            }
+
+            if (res.status === 429) {
+                const p = rptForm.querySelector('[data-err="message"]');
+                p.textContent = 'Too many reports sent just now. Please try again in a minute.';
+                p.classList.add('show');
+                return;
+            }
+
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+
+            const data = await res.json();
+            document.getElementById('reportOkMsg').textContent = data.message;
+            rptForm.style.display = 'none';
+            rptOk.classList.add('show');
+            setTimeout(() => {
+                closeReport();
+                // Put the form back so a second report can be filed this visit.
+                rptForm.reset();
+                rptForm.style.display = '';
+                rptOk.classList.remove('show');
+            }, 2600);
+        } catch (err) {
+            const p = rptForm.querySelector('[data-err="message"]');
+            p.textContent = 'Could not send the report. Please check your connection and try again.';
+            p.classList.add('show');
+        } finally {
+            rptSubmit.disabled = false;
+            rptSubmit.innerHTML = 'Send report <i class="fas fa-paper-plane"></i>';
+        }
     });
 
     // Testimonial carousel

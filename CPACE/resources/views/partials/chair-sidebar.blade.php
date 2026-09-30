@@ -391,7 +391,13 @@
         <li><a href="{{ route('chair.analytics.performance') }}" class="{{ $active === 'analytics-performance' ? 'active' : '' }}"><i class="fas fa-chart-line"></i><span>Class-Level Performance</span></a></li>
         <li><a href="{{ route('chair.analytics.test-bank-coverage') }}" class="{{ $active === 'analytics-coverage' ? 'active' : '' }}"><i class="fas fa-table-cells-large"></i><span>Test Bank Coverage</span></a></li>
         <li><a href="{{ route('chair.ai-review') }}" class="{{ $active === 'ai-review' ? 'active' : '' }}"><i class="fas fa-robot"></i><span>AI Substitute Review</span></a></li>
+
+        <li class="nav-label">Support</li>
+        <li><a href="{{ route('chair.support.index') }}" class="{{ $active === 'support' ? 'active' : '' }}"><i class="fas fa-life-ring"></i><span>Support Inbox</span></a></li>
+        <li><a href="{{ route('help.index') }}" class="{{ $active === 'help' ? 'active' : '' }}"><i class="fas fa-circle-question"></i><span>Help &amp; Support</span></a></li>
     </ul>
+
+    @include('partials.sidebar-institution')
 
     <div class="sidebar-footer">
         <div class="user-menu" id="userMenu">

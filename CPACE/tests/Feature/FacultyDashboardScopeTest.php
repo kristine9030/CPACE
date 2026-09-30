@@ -255,6 +255,66 @@ class FacultyDashboardScopeTest extends TestCase
             && $band['developing'] === 1);
     }
 
+    public function test_the_subject_filter_narrows_to_one_assigned_subject_and_ignores_others(): void
+    {
+        $faculty = $this->faculty();
+        $farId = DB::table('subjects')->insertGetId(['code' => 'FAR', 'name' => 'Financial Accounting', 'created_at' => now(), 'updated_at' => now()]);
+        $audId = DB::table('subjects')->insertGetId(['code' => 'AUD', 'name' => 'Auditing', 'created_at' => now(), 'updated_at' => now()]);
+        $taxId = DB::table('subjects')->insertGetId(['code' => 'TAX', 'name' => 'Taxation', 'created_at' => now(), 'updated_at' => now()]);
+        DB::table('faculty_subjects')->insert([
+            ['faculty_id' => $faculty->id, 'subject_id' => $farId, 'assigned_at' => now()],
+            ['faculty_id' => $faculty->id, 'subject_id' => $audId, 'assigned_at' => now()],
+        ]);
+        foreach (['far' => $farId, 'aud' => $audId] as $key => $subjectId) {
+            DB::table('quiz_sessions')->insert([
+                'student_id' => $this->student("$key@example.com")->id, 'subject_id' => $subjectId, 'session_type' => 'testing',
+                'total_items' => 10, 'correct_answers' => 7, 'started_at' => now(), 'completed_at' => now(),
+            ]);
+        }
+
+        $this->actingAs($faculty)->get(route('faculty.dashboard'))
+            ->assertViewHas('stats', fn ($stats) => $stats['active_students'] === 2);
+
+        $this->actingAs($faculty)->get(route('faculty.dashboard', ['subject' => $farId]))
+            ->assertViewHas('filters', fn ($filters) => $filters['subject'] === $farId)
+            ->assertViewHas('stats', fn ($stats) => $stats['active_students'] === 1);
+
+        // A subject this faculty member is not assigned is dropped, not honoured.
+        $this->actingAs($faculty)->get(route('faculty.dashboard', ['subject' => $taxId]))
+            ->assertViewHas('filters', fn ($filters) => $filters['subject'] === null)
+            ->assertViewHas('stats', fn ($stats) => $stats['active_students'] === 2);
+    }
+
+    public function test_the_section_and_date_filters_narrow_the_student_figures(): void
+    {
+        $faculty = $this->faculty();
+        $farId = DB::table('subjects')->insertGetId(['code' => 'FAR', 'name' => 'Financial Accounting', 'created_at' => now(), 'updated_at' => now()]);
+        DB::table('faculty_subjects')->insert(['faculty_id' => $faculty->id, 'subject_id' => $farId, 'assigned_at' => now()]);
+        DB::table('sections')->insert([
+            ['name' => 'BSA-3A', 'is_active' => true, 'created_at' => now(), 'updated_at' => now()],
+            ['name' => 'BSA-3B', 'is_active' => true, 'created_at' => now(), 'updated_at' => now()],
+        ]);
+        $recentA = $this->student('recent-a@example.com', 'BSA-3A');
+        $recentB = $this->student('recent-b@example.com', 'BSA-3B');
+        $olderA = $this->student('older-a@example.com', 'BSA-3A');
+        foreach ([[$recentA, now()], [$recentB, now()], [$olderA, now()->subDays(60)]] as [$student, $at]) {
+            DB::table('quiz_sessions')->insert([
+                'student_id' => $student->id, 'subject_id' => $farId, 'session_type' => 'testing',
+                'total_items' => 10, 'correct_answers' => 7, 'started_at' => $at, 'completed_at' => $at,
+            ]);
+        }
+
+        // Default window is the last 30 days: the 60-day-old quiz is outside it.
+        $this->actingAs($faculty)->get(route('faculty.dashboard'))
+            ->assertViewHas('stats', fn ($stats) => $stats['active_students'] === 2);
+
+        $this->actingAs($faculty)->get(route('faculty.dashboard', ['section' => 'BSA-3A']))
+            ->assertViewHas('stats', fn ($stats) => $stats['active_students'] === 1);
+
+        $this->actingAs($faculty)->get(route('faculty.dashboard', ['section' => 'BSA-3A', 'from' => now()->subDays(89)->toDateString(), 'to' => now()->toDateString()]))
+            ->assertViewHas('stats', fn ($stats) => $stats['active_students'] === 2);
+    }
+
     private function faculty(): User
     {
         return User::create([

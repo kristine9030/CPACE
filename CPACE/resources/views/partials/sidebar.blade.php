@@ -412,7 +412,10 @@
 
         <li class="nav-label">Account</li>
         <li><a href="{{ route('settings') }}" class="{{ $active === 'settings' ? 'active' : '' }}"><i class="fas fa-cog"></i><span>Settings</span></a></li>
+        <li><a href="{{ route('help.index') }}" class="{{ $active === 'help' ? 'active' : '' }}"><i class="fas fa-circle-question"></i><span>Help &amp; Support</span></a></li>
     </ul>
+
+    @include('partials.sidebar-institution')
 
     <div class="sidebar-footer">
         <div class="user-menu" id="userMenu">

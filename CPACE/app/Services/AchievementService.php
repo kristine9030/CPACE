@@ -460,6 +460,106 @@ class AchievementService
     }
 
     /**
+     * All-time standings per subject: where the student ranks among every
+     * active student who has answered that subject's questions, plus the
+     * board itself (top 10, with the student's own row appended if lower).
+     *
+     * Ranked by correct answers in the subject (same currency as the overall
+     * board), ties broken by accuracy. A quiz tied to one subject credits its
+     * session totals to that subject, exactly like the overall board; a mixed
+     * quiz (no subject_id) credits each subject for its own questions via the
+     * answer log. Training and practice rooms are excluded as everywhere else.
+     *
+     * @return array<int, array{id: int, code: string, name: string, me: array, rows: array}>
+     */
+    public function subjectLeaderboards(int $meId): array
+    {
+        $subjects = DB::table('subjects')
+            ->where('is_active', true)
+            ->orderBy('id')
+            ->get(['id', 'code', 'name']);
+
+        $base = fn () => DB::table('quiz_sessions as qs')
+            ->join('users as u', 'u.id', '=', 'qs.student_id')
+            ->where('u.role_id', Role::STUDENT)
+            ->where('u.is_active', true)
+            ->where('qs.session_type', '!=', 'training')->where('qs.is_practice_room', false)
+            ->whereNotNull('qs.completed_at');
+
+        $single = $base()
+            ->whereNotNull('qs.subject_id')
+            ->groupBy('qs.subject_id', 'qs.student_id', 'u.first_name', 'u.last_name')
+            ->get([
+                'qs.subject_id', 'qs.student_id', 'u.first_name', 'u.last_name',
+                DB::raw('COALESCE(SUM(qs.correct_answers),0) as score'),
+                DB::raw('COALESCE(SUM(qs.total_items),0) as attempted'),
+            ]);
+
+        $mixed = $base()
+            ->whereNull('qs.subject_id')
+            ->join('quiz_answers as qa', 'qa.session_id', '=', 'qs.id')
+            ->join('questions as q', 'q.id', '=', 'qa.question_id')
+            ->join('topics as t', 't.id', '=', 'q.topic_id')
+            ->groupBy('t.subject_id', 'qs.student_id', 'u.first_name', 'u.last_name')
+            ->get([
+                't.subject_id', 'qs.student_id', 'u.first_name', 'u.last_name',
+                DB::raw('SUM(CASE WHEN qa.is_correct = 1 THEN 1 ELSE 0 END) as score'),
+                DB::raw('COUNT(*) as attempted'),
+            ]);
+
+        // Merge the two sources into one row per (subject, student).
+        $scores = [];
+        foreach ($single->concat($mixed) as $r) {
+            $key = $r->subject_id . ':' . $r->student_id;
+            if (! isset($scores[$key])) {
+                $scores[$key] = (object) [
+                    'subject_id' => (int) $r->subject_id, 'student_id' => (int) $r->student_id,
+                    'first_name' => $r->first_name, 'last_name' => $r->last_name,
+                    'score' => 0, 'attempted' => 0,
+                ];
+            }
+            $scores[$key]->score     += (int) $r->score;
+            $scores[$key]->attempted += (int) $r->attempted;
+        }
+        $scores = collect($scores)->groupBy('subject_id');
+
+        return $subjects->map(function ($subject) use ($scores, $meId) {
+            $rows = collect($scores->get($subject->id, []))
+                ->filter(fn ($r) => (int) $r->score > 0)
+                ->sort(function ($a, $b) {
+                    return [(int) $b->score, $b->score / max(1, $b->attempted), (int) $a->student_id]
+                       <=> [(int) $a->score, $a->score / max(1, $a->attempted), (int) $b->student_id];
+                })
+                ->values();
+
+            $rank = $this->meRank($rows, $meId);
+            $mine = $rank ? $rows[$rank - 1] : null;
+
+            // Their own numbers even when they're unranked (answered but none right).
+            $mineAny = $mine ?? collect($scores->get($subject->id, []))->firstWhere('student_id', $meId);
+            $attempted = (int) ($mineAny->attempted ?? 0);
+            $correct   = (int) ($mineAny->score ?? 0);
+
+            return [
+                'id'   => (int) $subject->id,
+                'code' => $subject->code,
+                'name' => $subject->name,
+                'me'   => [
+                    'rank'      => $rank,
+                    'total'     => $rows->count(),
+                    'correct'   => $correct,
+                    'attempted' => $attempted,
+                    'accuracy'  => $attempted > 0 ? (int) round($correct / $attempted * 100) : null,
+                    'top_pct'   => $rank && $rows->count() >= self::PERCENTILE_MIN_POOL
+                        ? max(1, (int) round($rank / $rows->count() * 100))
+                        : null,
+                ],
+                'rows' => $this->display($rows, $meId, 10),
+            ];
+        })->values()->all();
+    }
+
+    /**
      * Ranked student list for a [from, to) window (null = unbounded).
      */
     private function ranked(?Carbon $from, ?Carbon $to): Collection
@@ -500,10 +600,10 @@ class AchievementService
     }
 
     /**
-     * Turn a ranked list into the rows the panel renders: the top 7, plus the
-     * student's own row when they fall outside the top 7.
+     * Turn a ranked list into the rows the panel renders: the top $limit, plus
+     * the student's own row when they fall outside it.
      */
-    private function display(Collection $rows, int $meId): array
+    private function display(Collection $rows, int $meId, int $limit = 7): array
     {
         $shaped = $rows->values()->map(function ($r, $i) use ($meId) {
             $isMe = (int) $r->student_id === $meId;
@@ -517,7 +617,7 @@ class AchievementService
             ];
         });
 
-        $top = $shaped->take(7)->values();
+        $top = $shaped->take($limit)->values();
 
         $meRow = $shaped->firstWhere('is_me', true);
         if ($meRow && ! $top->contains(fn ($r) => $r['is_me'])) {

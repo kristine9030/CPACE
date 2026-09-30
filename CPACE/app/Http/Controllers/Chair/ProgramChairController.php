@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Chair;
 
 use App\Http\Controllers\Concerns\GeneratesOneTimePassword;
+use App\Http\Controllers\Concerns\ReadsChartFilters;
 use App\Http\Controllers\Controller;
 
 use App\Mail\AccountCredentialsMail;
@@ -10,8 +11,8 @@ use App\Models\Role;
 use App\Models\Section;
 use App\Models\Subject;
 use App\Models\User;
-use App\Services\WeaknessDetector;
 use App\Services\ChairAnalyticsService;
+use App\Services\ChairDashboardService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -24,30 +25,46 @@ use Illuminate\Validation\Rule;
 class ProgramChairController extends Controller
 {
     use GeneratesOneTimePassword;
+    use ReadsChartFilters;
 
-    private const INACTIVITY_DAYS = 7;
 
     /** How far back the top KPI cards look to show a "vs 30 days ago" comparison. */
     private const KPI_COMPARISON_DAYS = 30;
 
+    /** A student counts as "practising" with a completed quiz in this many days. */
+    private const PRACTISE_WINDOW_DAYS = 7;
+
     /**
      * Program Chair overview: faculty count, subject coverage, assignments.
      */
-    public function dashboard(ChairAnalyticsService $analytics)
+    public function dashboard(Request $request, ChairAnalyticsService $analytics, ChairDashboardService $dashboard)
     {
         $subjects = Subject::withCount('faculty')->orderBy('id')->get();
-        $atRiskStudents = $this->atRiskStudents();
+        $atRiskStudents = $dashboard->atRiskStudents();
+        $facultyWorkload = $analytics->facultyWorkload();
+        $activeStudents = User::where('role_id', Role::STUDENT)->where('is_active', true)->pluck('id');
 
+        // Headline row: the four numbers a chair should act on first. Each
+        // opens the tab that holds its detail.
         $stats = [
-            'faculty'    => User::where('role_id', Role::FACULTY)->count(),
-            'subjects'   => $subjects->count(),
-            'assigned'   => DB::table('faculty_subjects')->distinct('subject_id')->count('subject_id'),
-            'unassigned' => $subjects->where('faculty_count', 0)->count(),
+            'students'           => $activeStudents->count(),
+            'practising'         => $this->studentsPractising($activeStudents, now()->subDays(self::PRACTISE_WINDOW_DAYS)),
+            'at_risk'            => $atRiskStudents->count(),
+            'at_risk_high'       => $atRiskStudents->where('priority', 'high')->count(),
+            'at_risk_inactive'   => $atRiskStudents->filter(fn ($s) => in_array('No learning activity', $s['reasons'], true))->count(),
+            'faculty'            => $facultyWorkload->count(),
+            'faculty_attention'  => $facultyWorkload->where('flag', '!=', 'ok')->count(),
+            'faculty_idle'       => $facultyWorkload->where('flag', 'idle')->count(),
+            'faculty_overloaded' => $facultyWorkload->where('flag', 'overloaded')->count(),
+            'faculty_unassigned' => $facultyWorkload->where('flag', 'unassigned')->count(),
+            'subjects'           => $subjects->count(),
+            'assigned'           => DB::table('faculty_subjects')->distinct('subject_id')->count('subject_id'),
+            'uncovered'          => $subjects->where('faculty_count', 0)->pluck('code'),
         ];
 
         return view('chair.dashboard', [
             'stats'    => $stats,
-            'kpiDeltas' => $this->kpiComparisons($stats),
+            'kpiDeltas' => $this->kpiComparisons($stats, $activeStudents),
             'subjects' => $subjects,
             'faculty'  => User::where('role_id', Role::FACULTY)
                 ->with('assignedSubjects')
@@ -56,113 +73,90 @@ class ProgramChairController extends Controller
                 ->get(),
             'atRiskStudents' => $atRiskStudents,
             'recommendedActions' => $analytics->recommendedActions($atRiskStudents),
-            'analytics' => $analytics->dashboardSummary(),
-            'facultyWorkload' => $analytics->facultyWorkload(),
+            // Only the Performance tab's cohort table still reads this; the
+            // rest of the old summary is superseded by the filtered charts.
+            'analytics' => $this->cohortBreakdown($analytics),
+            'facultyWorkload' => $facultyWorkload,
+            // When each inactive faculty member was last reminded (Faculty tab).
+            'facultyReminders' => FacultyReminderController::lastReminderAt($facultyWorkload->where('flag', 'idle')->pluck('id')),
+            'chartFilters' => $filters = $this->chartFilters($request),
+            'chartDefaults' => $this->chartFilters(new Request()),
+            // Overview is the tab most visits land on; the other tabs fetch
+            // their own data the first time they are opened.
+            'charts' => $this->charts($dashboard, $filters, ['overview']),
+            'sectionOptions' => Section::where('is_active', true)->orderBy('year_level')->orderBy('name')->get(['name', 'year_level']),
         ]);
     }
 
     /**
-     * "Vs 30 days ago" deltas for the KPI cards where a trend is actually
-     * meaningful: faculty headcount and subject coverage. "CPALE Subjects"
-     * is a fixed curriculum count and "Unassigned" is just the inverse of
-     * coverage, so neither gets its own comparison badge.
+     * JSON for the Overview tab's chart cards — called whenever the chair
+     * changes the date range, subject or section filter.
      */
-    private function kpiComparisons(array $stats): array
+    public function dashboardData(Request $request, ChairDashboardService $dashboard)
+    {
+        $filters = $this->chartFilters($request);
+        // One tab at a time: each tab keeps its own filters on the page.
+        $tab = in_array($request->query('tab'), ChairDashboardService::TABS, true) ? $request->query('tab') : null;
+
+        return response()->json([
+            'filters' => $filters,
+            'charts' => $this->charts($dashboard, $filters, $tab ? [$tab] : null),
+        ]);
+    }
+
+    /** Per-year and per-section rows for the Performance tab's cohort table. */
+    private function cohortBreakdown(ChairAnalyticsService $analytics): array
+    {
+        $breakdown = $analytics->sectionBreakdown();
+
+        return ['by_section' => $breakdown['sections'], 'by_year' => $breakdown['years']];
+    }
+
+    private function charts(ChairDashboardService $dashboard, array $filters, ?array $tabs = null): array
+    {
+        return $dashboard->charts(
+            Carbon::parse($filters['from']),
+            Carbon::parse($filters['to']),
+            $filters['subject'],
+            $filters['section'],
+            $filters['priority'],
+            $filters['reason'],
+            $tabs,
+        );
+    }
+
+    /**
+     * Comparison badges for the headline cards where a trend means something:
+     * practising students (this week vs the week before) and subject coverage
+     * (vs 30 days ago).
+     */
+    private function kpiComparisons(array $stats, $activeStudents): array
     {
         $cutoff = now()->subDays(self::KPI_COMPARISON_DAYS);
-
-        $facultyThen = User::where('role_id', Role::FACULTY)->where('created_at', '<=', $cutoff)->count();
         $assignedThen = DB::table('faculty_subjects')
             ->where('assigned_at', '<=', $cutoff)
             ->distinct('subject_id')
             ->count('subject_id');
 
+        $weekAgo = now()->subDays(self::PRACTISE_WINDOW_DAYS);
+        $practisingBefore = $this->studentsPractising($activeStudents, $weekAgo->copy()->subDays(self::PRACTISE_WINDOW_DAYS), $weekAgo);
+
         return [
-            'faculty'  => $stats['faculty'] - $facultyThen,
-            'assigned' => $stats['assigned'] - $assignedThen,
+            'practising' => $stats['practising'] - $practisingBefore,
+            'assigned'   => $stats['assigned'] - $assignedThen,
         ];
     }
 
-    /**
-     * System-wide intervention list. The readiness rule matches the faculty
-     * performance page; inactivity is based on the latest quiz/login activity.
-     */
-    private function atRiskStudents()
+    /** Distinct active students who completed any quiz in [$from, $to). */
+    private function studentsPractising($studentIds, \DateTimeInterface $from, ?\DateTimeInterface $to = null): int
     {
-        $quizActivity = DB::table('quiz_sessions')
-            ->where('session_type', '!=', 'training')->where('is_practice_room', false)
+        return DB::table('quiz_sessions')
+            ->whereIn('student_id', $studentIds)
             ->whereNotNull('completed_at')
-            ->groupBy('student_id')
-            ->select(
-                'student_id',
-                DB::raw('COALESCE(SUM(total_items), 0) as attempted'),
-                DB::raw('COALESCE(SUM(correct_answers), 0) as correct'),
-                DB::raw('COUNT(*) as quizzes'),
-                DB::raw('MAX(completed_at) as last_quiz_at')
-            )
-            ->get()
-            ->keyBy('student_id');
-
-        return User::where('role_id', Role::STUDENT)
-            ->where('is_active', true)
-            ->orderBy('first_name')
-            ->get()
-            ->map(function (User $student) use ($quizActivity) {
-                $activity = $quizActivity->get($student->id);
-                $attempted = (int) ($activity->attempted ?? 0);
-                $correct = (int) ($activity->correct ?? 0);
-                $score = $attempted > 0 ? (int) round($correct / $attempted * 100) : null;
-
-                $dates = collect([
-                    $activity?->last_quiz_at,
-                    $student->last_login_at,
-                    $student->created_at,
-                ])->filter()->map(fn ($date) => Carbon::parse($date));
-
-                $lastActive = $dates->sortDesc()->first();
-                $daysIdle = $lastActive ? (int) $lastActive->diffInDays(now()) : self::INACTIVITY_DAYS;
-                $lowReadiness = $attempted >= WeaknessDetector::MIN_ATTEMPTS
-                    && $score < (int) (WeaknessDetector::ACCURACY_THRESHOLD * 100);
-                $inactive = $daysIdle >= self::INACTIVITY_DAYS;
-
-                if (! $lowReadiness && ! $inactive) {
-                    return null;
-                }
-
-                $reasons = [];
-                if ($lowReadiness) {
-                    $reasons[] = 'Low readiness';
-                }
-                if ($inactive) {
-                    $reasons[] = $attempted === 0 ? 'No learning activity' : 'Inactive';
-                }
-
-                $name = $student->name;
-                $initials = strtoupper(substr($student->first_name, 0, 1).substr($student->last_name, 0, 1));
-                $isHigh = ($lowReadiness && $inactive) || ($score !== null && $score < 45) || $daysIdle >= 14;
-
-                return [
-                    'id'          => $student->id,
-                    'name'        => $name,
-                    'email'       => $student->email,
-                    'initials'    => $initials,
-                    'score'       => $score,
-                    'attempted'   => $attempted,
-                    'quizzes'     => (int) ($activity->quizzes ?? 0),
-                    'last_active' => $lastActive,
-                    'days_idle'   => $daysIdle,
-                    'reasons'     => $reasons,
-                    'priority'    => $isHigh ? 'high' : 'watch',
-                ];
-            })
-            ->filter()
-            ->sort(function (array $a, array $b) {
-                $aRank = [$a['priority'] === 'high' ? 0 : 1, $a['score'] ?? -1, -$a['days_idle']];
-                $bRank = [$b['priority'] === 'high' ? 0 : 1, $b['score'] ?? -1, -$b['days_idle']];
-
-                return $aRank <=> $bRank;
-            })
-            ->values();
+            ->where('completed_at', '>=', $from)
+            ->when($to, fn ($query) => $query->where('completed_at', '<', $to))
+            ->distinct()
+            ->count('student_id');
     }
 
     /**

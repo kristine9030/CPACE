@@ -379,7 +379,7 @@
                 <div class="dropdown-menu" id="profileDropdown">
                     <a href="#" class="js-open-profile-modal"><i class="fas fa-user"></i> Profile Settings</a>
                     <a href="#"><i class="fas fa-chart-line"></i> My Progress</a>
-                    <a href="#"><i class="fas fa-question-circle"></i> Help &amp; Support</a>
+                    <a href="{{ route('help.index') }}"><i class="fas fa-question-circle"></i> Help &amp; Support</a>
                     <form method="POST" action="{{ route('logout') }}"
                           data-confirm="You will be signed out of CPACE and returned to the login page."
                           data-confirm-title="Log out of CPACE?"
@@ -435,7 +435,7 @@
                 </div>
                 <div class="theme-choices">
                     <div class="theme-choice" data-theme="light" id="choiceLight">
-                        <div class="tc-preview tc-light">
+                        <div class="tc-preview tc-light" data-dm-skip>
                             <div class="tc-side"></div>
                             <div class="tc-body">
                                 <div class="tc-line short"></div>
@@ -445,7 +445,7 @@
                         <div class="tc-label"><span><i class="fas fa-sun" style="opacity:1;color:var(--gray-700);margin-right:6px;"></i>Light</span> <i class="fas fa-check-circle"></i></div>
                     </div>
                     <div class="theme-choice" data-theme="dark" id="choiceDark">
-                        <div class="tc-preview tc-dark">
+                        <div class="tc-preview tc-dark" data-dm-skip>
                             <div class="tc-side"></div>
                             <div class="tc-body">
                                 <div class="tc-line short"></div>

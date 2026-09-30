@@ -6,12 +6,20 @@ use App\Http\Controllers\Controller;
 
 use App\Services\StreakService;
 use App\Services\WeaknessDetector;
+use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class PerformanceController extends Controller
 {
+    /**
+     * Monochromatic red scale for the per-subject charts (Performance by
+     * Subject, Study Distribution), dark to light, one shade per subject.
+     */
+    private const RED_SHADES = ['#5c1414', '#7B1D1D', '#a32a24', '#c0392b', '#e06a5c', '#f0a097'];
+
     public function __construct(private WeaknessDetector $weakness) {}
 
     /**
@@ -260,11 +268,6 @@ class PerformanceController extends Controller
         $consistencyDelta = (int) round(($activeThis - $activePrev) / 7 * 100);
         $streakDelta      = $activeThis - $activePrev;
 
-        // Weekly study-hours goal.
-        $goalTarget = 25;
-        $goalHours  = round($thisWeek['duration'] / 3600, 1);
-        $goalPct    = min(100, (int) round($goalHours / $goalTarget * 100));
-
         $weakestTopic = $weaknesses->first();
 
         // ── Unread notifications (header bell) ─────────────────────────────
@@ -277,6 +280,9 @@ class PerformanceController extends Controller
         $byTopic     = $topicStats->sortByDesc('accuracy')->values();
         $byQuizType  = $this->byQuizType($studentId);
         $byTime      = $this->byTime($sessions);
+
+        // Subjects offered in the Your Score Trend filter.
+        $filterSubjects = DB::table('subjects')->where('is_active', true)->orderBy('id')->get(['id', 'code', 'name']);
 
         return view('student.performance', compact(
             'stats',
@@ -305,15 +311,13 @@ class PerformanceController extends Controller
             'consistencyPct',
             'consistencyDelta',
             'streakDelta',
-            'goalTarget',
-            'goalHours',
-            'goalPct',
             'weakestTopic',
             'unreadNotifications',
             'byTopic',
             'byQuizType',
-            'byTime'
-        ));
+            'byTime',
+            'filterSubjects'
+        ) + ['redShades' => self::RED_SHADES]);
     }
 
     /**
@@ -511,56 +515,178 @@ class PerformanceController extends Controller
      */
     private function accuracySeries(callable $sessions, Carbon $now): array
     {
-        // Accuracy over a single [start, end) window.
-        $bucket = function (Carbon $start, Carbon $end) use ($sessions) {
-            $att = (int) $sessions()->whereBetween('started_at', [$start, $end])->sum('total_items');
-            $cor = (int) $sessions()->whereBetween('started_at', [$start, $end])->sum('correct_answers');
+        $out = [];
+        foreach (['daily', 'weekly', 'monthly'] as $preset) {
+            [$start, $end, $granularity] = $this->presetWindow($preset, $now);
+            $out[$preset] = $this->buildSeries($sessions, $start, $end, $granularity, null);
+        }
 
-            return [
-                'attempted' => $att,
-                'accuracy'  => $att > 0 ? (int) round($cor / $att * 100) : null,
-            ];
+        return $out;
+    }
+
+    /**
+     * JSON for the customizable Your Score Trend chart filter: a quick range
+     * (preset) or a custom From–To window, optionally narrowed to one subject,
+     * at an explicit or automatic granularity.
+     */
+    public function series(Request $request)
+    {
+        $data = $request->validate([
+            'preset'      => ['nullable', Rule::in(array_keys(self::PRESETS))],
+            'from'        => ['nullable', 'required_without:preset', 'date', 'before_or_equal:to'],
+            'to'          => ['nullable', 'required_without:preset', 'date', 'before_or_equal:today'],
+            'granularity' => ['nullable', Rule::in(['auto', 'daily', 'weekly', 'monthly'])],
+            'subject_id'  => ['nullable', 'integer', 'exists:subjects,id'],
+        ]);
+
+        $studentId = Auth::id();
+        $now = Carbon::now();
+
+        if (! empty($data['preset'])) {
+            [$start, $end, $granularity] = $this->presetWindow($data['preset'], $now);
+        } else {
+            $start = Carbon::parse($data['from'])->startOfDay();
+            $end   = Carbon::parse($data['to'])->endOfDay();
+            // Cap how far back a custom range reaches so a typo can't scan decades.
+            $floor = $now->copy()->subYears(3)->startOfDay();
+            if ($start->lt($floor)) {
+                $start = $floor;
+            }
+            $granularity = null;
+        }
+
+        $requested = $data['granularity'] ?? 'auto';
+        if ($requested !== 'auto') {
+            $granularity = $requested;
+        }
+        $granularity = $this->fitGranularity($granularity ?? 'auto', $start, $end);
+
+        $sessions = fn () => DB::table('quiz_sessions')
+            ->where('student_id', $studentId)
+            ->where('session_type', '!=', 'training')->where('is_practice_room', false)
+            ->whereNotNull('completed_at');
+
+        return response()->json(
+            $this->buildSeries($sessions, $start, $end, $granularity, $data['subject_id'] ?? null)
+        );
+    }
+
+    /** Quick ranges offered in the filter: key => [label, granularity]. */
+    private const PRESETS = [
+        'daily'   => ['Last 7 Days',   'daily'],
+        '30d'     => ['Last 30 Days',  'daily'],
+        'weekly'  => ['Last 8 Weeks',  'weekly'],
+        'monthly' => ['Last 6 Months', 'monthly'],
+        '12m'     => ['Last 12 Months', 'monthly'],
+    ];
+
+    /** @return array{0: Carbon, 1: Carbon, 2: string} [start, end, granularity] */
+    private function presetWindow(string $preset, Carbon $now): array
+    {
+        $end = $now->copy()->endOfDay();
+
+        return match ($preset) {
+            'daily'   => [$now->copy()->subDays(6)->startOfDay(), $end, 'daily'],
+            '30d'     => [$now->copy()->subDays(29)->startOfDay(), $end, 'daily'],
+            'weekly'  => [$now->copy()->subWeeks(7)->startOfWeek(), $end, 'weekly'],
+            '12m'     => [$now->copy()->subMonths(11)->startOfMonth(), $end, 'monthly'],
+            default   => [$now->copy()->subMonths(5)->startOfMonth(), $end, 'monthly'],
+        };
+    }
+
+    /**
+     * Pick a granularity that keeps the chart readable: 'auto' chooses by the
+     * window's length, and an explicit choice is stepped up when it would
+     * produce too many points (e.g. daily over a whole year).
+     */
+    private function fitGranularity(string $granularity, Carbon $start, Carbon $end): string
+    {
+        $days = $start->diffInDays($end) + 1;
+
+        if ($granularity === 'auto') {
+            $granularity = $days <= 31 ? 'daily' : ($days <= 182 ? 'weekly' : 'monthly');
+        }
+        if ($granularity === 'daily' && $days > 92) {
+            $granularity = 'weekly';
+        }
+        if ($granularity === 'weekly' && $days > 7 * 104) {
+            $granularity = 'monthly';
+        }
+
+        return $granularity;
+    }
+
+    /**
+     * Bucket the student's sessions in [start, end] by day, week or month.
+     * One query for the whole window, then grouped in PHP. When a subject is
+     * given, only quizzes tied to that subject count (mixed quizzes have no
+     * single subject and are left out).
+     */
+    private function buildSeries(callable $sessions, Carbon $start, Carbon $end, string $granularity, ?int $subjectId): array
+    {
+        $rows = $sessions()
+            ->whereBetween('started_at', [$start, $end])
+            ->when($subjectId, fn ($q) => $q->where('subject_id', $subjectId))
+            ->get(['started_at', 'total_items', 'correct_answers']);
+
+        $spansYears = $start->year !== $end->year;
+        $keyOf = fn (Carbon $d) => match ($granularity) {
+            'daily'  => $d->format('Y-m-d'),
+            'weekly' => $d->copy()->startOfWeek()->format('Y-m-d'),
+            default  => $d->format('Y-m'),
         };
 
-        // Turn a list of buckets into the {labels, values, has_data, range} the
-        // view embeds as JSON.
-        $pack = function (array $buckets, string $range): array {
-            return [
-                'labels'   => array_column($buckets, 'label'),
-                'values'   => array_column($buckets, 'accuracy'),
-                'has_data' => collect($buckets)->contains(fn ($b) => $b['attempted'] > 0),
-                'range'    => $range,
-            ];
+        // Every bucket in the window, in order, so empty ones still appear.
+        $buckets = [];
+        $cursor = match ($granularity) {
+            'daily'  => $start->copy()->startOfDay(),
+            'weekly' => $start->copy()->startOfWeek(),
+            default  => $start->copy()->startOfMonth(),
         };
-
-        // Daily — last 7 days.
-        $daily = [];
-        $dailyStart = $now->copy()->subDays(6)->startOfDay();
-        for ($i = 6; $i >= 0; $i--) {
-            $d = $now->copy()->subDays($i)->startOfDay();
-            $daily[] = ['label' => $d->format('M j')] + $bucket($d, $d->copy()->addDay());
+        while ($cursor->lte($end)) {
+            $label = match ($granularity) {
+                'monthly' => $cursor->format($spansYears ? "M 'y" : 'M'),
+                default   => $cursor->format($spansYears ? "M j, 'y" : 'M j'),
+            };
+            $buckets[$keyOf($cursor)] = ['label' => $label, 'attempted' => 0, 'correct' => 0];
+            match ($granularity) {
+                'daily'  => $cursor->addDay(),
+                'weekly' => $cursor->addWeek(),
+                default  => $cursor->addMonthNoOverflow(),
+            };
         }
 
-        // Weekly — last 8 weeks (label = the week's Monday).
-        $weekly = [];
-        $weeklyStart = $now->copy()->subWeeks(7)->startOfWeek();
-        for ($i = 7; $i >= 0; $i--) {
-            $start = $now->copy()->subWeeks($i)->startOfWeek();
-            $weekly[] = ['label' => $start->format('M j')] + $bucket($start, $start->copy()->addWeek());
+        $attempted = 0;
+        $correct = 0;
+        foreach ($rows as $r) {
+            $key = $keyOf(Carbon::parse($r->started_at));
+            if (! isset($buckets[$key])) {
+                continue;
+            }
+            $buckets[$key]['attempted'] += (int) $r->total_items;
+            $buckets[$key]['correct']   += (int) $r->correct_answers;
+            $attempted += (int) $r->total_items;
+            $correct   += (int) $r->correct_answers;
         }
 
-        // Monthly — last 6 months.
-        $monthly = [];
-        $monthlyStart = $now->copy()->subMonths(5)->startOfMonth();
-        for ($i = 5; $i >= 0; $i--) {
-            $start = $now->copy()->subMonths($i)->startOfMonth();
-            $monthly[] = ['label' => $start->format('M')] + $bucket($start, $start->copy()->addMonth());
-        }
+        $range = $granularity === 'monthly'
+            ? $start->format('M Y') . ' – ' . $end->format('M Y')
+            : $start->format($spansYears ? 'M j, Y' : 'M j') . ' – ' . $end->format('M j, Y');
 
         return [
-            'daily'   => $pack($daily,   $dailyStart->format('M j') . ' – ' . $now->format('M j, Y')),
-            'weekly'  => $pack($weekly,  $weeklyStart->format('M j') . ' – ' . $now->format('M j, Y')),
-            'monthly' => $pack($monthly, $monthlyStart->format('M Y') . ' – ' . $now->format('M Y')),
+            'labels'      => array_column($buckets, 'label'),
+            'values'      => array_map(fn ($b) => $b['attempted'] > 0 ? (int) round($b['correct'] / $b['attempted'] * 100) : null, array_values($buckets)),
+            'has_data'    => $attempted > 0,
+            'range'       => $range,
+            'granularity' => $granularity,
+            'from'        => $start->toDateString(),
+            'to'          => $end->toDateString(),
+            'summary'     => [
+                'attempted' => $attempted,
+                'correct'   => $correct,
+                'accuracy'  => $attempted > 0 ? (int) round($correct / $attempted * 100) : null,
+                'quizzes'   => $rows->count(),
+            ],
         ];
     }
 
@@ -808,16 +934,20 @@ class PerformanceController extends Controller
      */
     private function studyDistribution(callable $sessions, float $totalHours): array
     {
-        $palette = ['#c0392b', '#3b7ddd', '#e8910b', '#8e44ad', '#21a366', '#d4589e'];
+        $palette = self::RED_SHADES;
+
+        // Shade by the subject's position among all subjects (by id), so each
+        // subject has the same shade here as in Performance by Subject.
+        $position = DB::table('subjects')->orderBy('id')->pluck('id')->flip();
 
         $slices = $sessions()
             ->join('subjects', 'subjects.id', '=', 'quiz_sessions.subject_id')
             ->groupBy('subjects.id', 'subjects.code')
             ->orderBy('subjects.id')
-            ->select('subjects.code', DB::raw('COALESCE(SUM(quiz_sessions.duration_secs),0) secs'))
+            ->select('subjects.id', 'subjects.code', DB::raw('COALESCE(SUM(quiz_sessions.duration_secs),0) secs'))
             ->get()
-            ->map(function ($r, $i) use ($palette) {
-                $r->color = $palette[$i % count($palette)];
+            ->map(function ($r) use ($palette, $position) {
+                $r->color = $palette[($position[$r->id] ?? 0) % count($palette)];
                 return $r;
             })
             ->filter(fn ($r) => (int) $r->secs > 0)

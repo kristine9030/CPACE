@@ -44,6 +44,9 @@ use App\Http\Controllers\CommunityResourceController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\Alumni\ProfileController as AlumniProfileController;
 use App\Http\Controllers\GlobalSearchController;
+use App\Http\Controllers\IssueReportController;
+use App\Http\Controllers\HelpCenterController;
+use App\Http\Controllers\Chair\SupportInboxController;
 use App\Http\Controllers\AiSubstituteReviewController;
 
 Route::get('/', function () {
@@ -61,6 +64,13 @@ Route::get('/auth/microsoft/callback', [AuthController::class, 'handleMicrosoftC
 Route::get('/materials/{material}/file', [MaterialFileController::class, 'show'])->name('materials.file');
 
 Route::get('/community/resources/{resource}/file', [CommunityResourceController::class, 'file'])->name('community.resources.file');
+
+// "Report an issue" from the landing page footer. Public by design - someone
+// locked out of their account is exactly who needs it - so it is rate limited
+// and the controller carries a honeypot.
+Route::post('/report-issue', [IssueReportController::class, 'store'])
+    ->middleware('throttle:5,1')
+    ->name('report-issue.store');
 
 // Authentication Routes
 Route::middleware('guest')->group(function () {
@@ -88,13 +98,21 @@ Route::middleware(['auth', 'no-back-cache'])->group(function () {
     Route::post('/notifications/read-all', [NotificationController::class, 'readAll'])->name('notifications.read-all');
     Route::post('/notifications/{id}/read', [NotificationController::class, 'read'])->name('notifications.read');
 
+    // Help & Support - every role. Tickets are visible to their requester and the Program Chair.
+    Route::get('/help', [HelpCenterController::class, 'index'])->name('help.index');
+    Route::post('/help/tickets', [HelpCenterController::class, 'store'])->middleware('throttle:6,1')->name('help.tickets.store');
+    Route::get('/help/tickets/{report}', [HelpCenterController::class, 'show'])->name('help.tickets.show');
+    Route::post('/help/tickets/{report}/replies', [HelpCenterController::class, 'reply'])->middleware('throttle:20,1')->name('help.tickets.reply');
+
     // Program Chair Routes (Admin role)
     Route::prefix('chair')->name('chair.')->middleware('chair')->group(function () {
         Route::get('/dashboard', [ProgramChairController::class, 'dashboard'])->name('dashboard');
+        Route::get('/dashboard/data', [ProgramChairController::class, 'dashboardData'])->name('dashboard.data');
 
         // System-wide student performance and test-bank analytics
         Route::prefix('analytics')->name('analytics.')->group(function () {
             Route::get('/performance', [AnalyticsController::class, 'performance'])->name('performance');
+            Route::get('/performance/data', [AnalyticsController::class, 'performanceData'])->name('performance.data');
             Route::get('/eligible-students', [AnalyticsController::class, 'eligibleStudents'])->name('eligible-students');
             Route::get('/test-bank-coverage', [AnalyticsController::class, 'testBankCoverage'])->name('test-bank-coverage');
         });
@@ -128,6 +146,7 @@ Route::middleware(['auth', 'no-back-cache'])->group(function () {
         Route::post('/faculty/{id}/assign', [ProgramChairController::class, 'assignSubjects'])->name('faculty.assign');
         Route::post('/faculty/{id}/toggle', [ProgramChairController::class, 'toggleFaculty'])->name('faculty.toggle');
         Route::post('/faculty/{id}/regenerate-otp', [ProgramChairController::class, 'regenerateFacultyOtp'])->name('faculty.regenerate-otp');
+        Route::post('/faculty/{id}/remind', [\App\Http\Controllers\Chair\FacultyReminderController::class, 'store'])->middleware('throttle:20,1')->name('faculty.remind');
         Route::get('/faculty-performance', [FacultyOversightController::class, 'performance'])->name('faculty.performance');
         Route::get('/faculty/{id}/activity', [FacultyOversightController::class, 'activity'])->name('faculty.activity');
 
@@ -183,6 +202,10 @@ Route::middleware(['auth', 'no-back-cache'])->group(function () {
         Route::post('/ai-review/{id}/reject', [AiSubstituteReviewController::class, 'reject'])->name('ai-review.reject');
         Route::post('/ai-review/generate/{topic}', [AiSubstituteReviewController::class, 'generate'])->middleware('throttle:8,1')->name('ai-review.generate');
 
+        // Help & Support triage - threads are answered on help.tickets.show
+        Route::get('/support', [SupportInboxController::class, 'index'])->name('support.index');
+        Route::patch('/support/{report}/status', [SupportInboxController::class, 'updateStatus'])->name('support.status');
+
         // Announcements and internal messages
         Route::get('/communications', [CommunicationController::class, 'index'])->name('communications');
         Route::post('/communications', [CommunicationController::class, 'store'])->name('communications.store');
@@ -196,7 +219,6 @@ Route::middleware(['auth', 'no-back-cache'])->group(function () {
         Route::post('/account-setup', [FacultyAccountSetupController::class, 'store'])->name('account-setup.store');
 
         Route::get('/dashboard', [FacultyDashboardController::class, 'index'])->name('dashboard');
-        Route::get('/dashboard/insights', [FacultyDashboardController::class, 'insights'])->name('dashboard.insights');
         Route::get('/test-bank', [TestBankController::class, 'index'])->name('test-bank');
         Route::get('/test-bank/export', [TestBankController::class, 'export'])->name('test-bank.export');
         // AI substitute questions drafted for topics short of their TOS count
@@ -365,6 +387,7 @@ Route::middleware(['auth', 'no-back-cache'])->group(function () {
     // sitting then opens only inside its own scheduled window.
     Route::get('/mock-exams', [MockExamController::class, 'index'])->name('mock-exams');
     Route::get('/mock-exams/subject/{subject}', [MockExamController::class, 'subject'])->name('mock-exams.subject');
+    Route::post('/mock-exams/notice/dismiss', [MockExamController::class, 'dismissNotice'])->name('mock-exams.notice.dismiss');
     Route::get('/mock-exams/{mockExam}', [MockExamController::class, 'show'])->name('mock-exams.show');
     Route::post('/mock-exams/{mockExam}/start', [MockExamController::class, 'start'])->name('mock-exams.start');
     Route::get('/mock-exams/{mockExam}/take', [MockExamController::class, 'take'])->name('mock-exams.take');
@@ -385,6 +408,7 @@ Route::middleware(['auth', 'no-back-cache'])->group(function () {
 
     Route::middleware('student')->group(function () {
     Route::get('/performance', [PerformanceController::class, 'index'])->name('performance');
+    Route::get('/performance/series', [PerformanceController::class, 'series'])->name('performance.series');
     // Review Notes (personal study notes, real CRUD backed by the database)
     Route::get('/review-notes', [ReviewNoteController::class, 'index'])->name('review-notes');
     Route::post('/review-notes', [ReviewNoteController::class, 'store'])->name('review-notes.store');

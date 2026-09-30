@@ -281,14 +281,26 @@
             gap: 20px;
         }
 
+        /* Same title treatment as the other student pages (see Resources). */
         .header-title {
             font-size: 30px;
             font-weight: 700;
             color: #14283E;
             font-family: 'Montserrat', sans-serif;
-            display: flex;
-            align-items: center;
-            gap: 12px;
+            margin-bottom: 6px;
+            padding-bottom: 10px;
+            position: relative;
+        }
+
+        .header-title::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            bottom: 0;
+            width: 46px;
+            height: 3px;
+            border-radius: 2px;
+            background: linear-gradient(90deg, #c0392b, #7B1D1D);
         }
 
         .header-title .title-doodle {
@@ -1613,6 +1625,110 @@
             color: #ffd76a;
         }
 
+        /* Leaderboard scope tabs: Overall + one per subject */
+        .lb-tabs {
+            display: flex;
+            gap: 6px;
+            overflow-x: auto;
+            margin: -6px 0 8px;
+            padding-bottom: 4px;
+            scrollbar-width: none;
+        }
+        .lb-tabs::-webkit-scrollbar { display: none; }
+        .lb-tab {
+            flex-shrink: 0;
+            padding: 6px 13px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.22);
+            background: rgba(255, 255, 255, 0.08);
+            color: rgba(255, 255, 255, 0.82);
+            font-family: 'Poppins', sans-serif;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background .15s, color .15s;
+        }
+        .lb-tab:hover { background: rgba(255, 255, 255, 0.16); color: #fff; }
+        .lb-tab.active { background: #fff; border-color: #fff; color: #7B1D1D; }
+        .lb-tab:focus-visible { outline: 2px solid #ffd76a; outline-offset: 2px; }
+        .lb-scope { font-size: 12px; color: rgba(255, 255, 255, 0.68); min-height: 18px; }
+
+        /* Stepped podium: 2nd — 1st — 3rd standing on their blocks */
+        .lb-card .podium {
+            display: grid;
+            grid-template-columns: 1fr 1.15fr 1fr;
+            align-items: end;
+            gap: 10px;
+            padding: 30px 0 0;
+            margin-bottom: 8px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+        }
+        .pod { text-align: center; min-width: 0; }
+        .pod-av {
+            position: relative;
+            margin: 0 auto;
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 15px;
+            color: #fff;
+            background: #b4a3a3;
+        }
+        .pod.p1 .pod-av { width: 64px; height: 64px; font-size: 18px; box-shadow: 0 0 0 3px #7B1D1D, 0 0 0 5px #f4b740; }
+        .pod.p2 .pod-av { box-shadow: 0 0 0 3px #7B1D1D, 0 0 0 5px #c9ced6; }
+        .pod.p3 .pod-av { box-shadow: 0 0 0 3px #7B1D1D, 0 0 0 5px #e3a57a; }
+        .pod.me .pod-av { background: #fff; color: #7B1D1D; }
+        .pod-crown {
+            position: absolute;
+            top: -24px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #f4b740;
+            font-size: 17px;
+        }
+        .pod-name {
+            margin-top: 9px;
+            font-size: 12.5px;
+            font-weight: 600;
+            color: #fff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .pod.me .pod-name { color: #ffd76a; font-weight: 700; }
+        .pod-score { font-size: 11px; color: rgba(255, 255, 255, 0.65); }
+        .pod-step {
+            margin-top: 8px;
+            border-radius: 12px 12px 0 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 17px;
+            font-weight: 800;
+        }
+        .pod.p1 .pod-step { height: 68px; background: linear-gradient(180deg, #fde68a, #fef3c7); color: #92400e; }
+        .pod.p2 .pod-step { height: 48px; background: linear-gradient(180deg, #e5e7eb, #f3f4f6); color: #374151; }
+        .pod.p3 .pod-step { height: 34px; background: linear-gradient(180deg, #f6c9a8, #fbe7dc); color: #9a4a1f; }
+
+        .lb-me {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 14px;
+            padding: 12px 14px;
+            border-radius: 12px;
+            background: rgba(0, 0, 0, 0.22);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            font-size: 12.5px;
+            color: rgba(255, 255, 255, 0.9);
+        }
+        .lb-me i { color: #ffd76a; }
+        .lb-me strong { color: #fff; }
         /* EXAM COUNTDOWN CARD */
         .exam-card {
             background: linear-gradient(150deg, #fdf1f1, #fbe3e3);
@@ -1792,15 +1908,8 @@
             <!-- HEADER -->
             <div class="header">
                 <div class="header-left">
-                    <img src="{{ asset('images/12.png') }}" alt="" class="title-trophy">
                     <div>
-                        <div class="header-title">
-                            Achievements
-                            <i class="fas fa-arrow-trend-up title-doodle"></i>
-                        </div>
-                        <svg class="title-underline" width="170" height="10" viewBox="0 0 170 10" fill="none">
-                            <path d="M2 7 Q 45 1 85 5 T 168 4" stroke="#c0392b" stroke-width="3" stroke-linecap="round" fill="none"/>
-                        </svg>
+                        <div class="header-title">Achievements</div>
                         <div class="header-subtitle">Celebrate your progress and compete with others.</div>
                     </div>
                 </div>
@@ -1823,7 +1932,7 @@
                             <div class="dropdown-menu" id="profileDropdown">
                                 <a href="#" class="js-open-profile-modal"><i class="fas fa-user"></i> Profile Settings</a>
                                 <a href="#"><i class="fas fa-chart-line"></i> My Progress</a>
-                                <a href="#"><i class="fas fa-question-circle"></i> Help &amp; Support</a>
+                                <a href="{{ route('help.index') }}"><i class="fas fa-question-circle"></i> Help &amp; Support</a>
                                 <form method="POST" action="{{ route('logout') }}"
                           data-confirm="You will be signed out of CPACE and returned to the login page."
                           data-confirm-title="Log out of CPACE?"
@@ -2070,12 +2179,21 @@
                                 Leaderboard
                                 <i class="fas fa-arrow-trend-up title-doodle"></i>
                             </div>
-                            <select class="leaderboard-select" id="leaderboardPeriod">
+                            <select class="leaderboard-select" id="leaderboardPeriod" aria-label="Period">
                                 <option value="month">This Month</option>
                                 <option value="week">This Week</option>
                                 <option value="all">All Time</option>
                             </select>
                         </div>
+
+                        {{-- Overall, or one board per subject --}}
+                        <div class="lb-tabs" role="tablist" aria-label="Leaderboard scope">
+                            <button type="button" class="lb-tab active" data-board="overall" role="tab" aria-selected="true">Overall</button>
+                            @foreach($subjectBoards as $sb)
+                                <button type="button" class="lb-tab" data-board="{{ $sb['id'] }}" role="tab" aria-selected="false" title="{{ $sb['name'] }}">{{ $sb['code'] }}</button>
+                            @endforeach
+                        </div>
+                        <div class="lb-scope" id="lbScope"></div>
 
                         <div class="podium" id="leaderboardPodium"></div>
 
@@ -2084,8 +2202,10 @@
                         </div>
 
                         <div class="leaderboard-empty" id="leaderboardEmpty" style="display:none; text-align:center; color:rgba(255,255,255,0.75); font-size:13px; padding:24px 0;">
-                            No quiz activity in this period yet.
+                            <span id="leaderboardEmptyText">No quiz activity in this period yet.</span>
                         </div>
+
+                        <div class="lb-me" id="lbMe" style="display:none;"></div>
 
                         <div class="lb-motivation">
                             <img src="{{ asset('images/14.png') }}" alt="" class="lb-motivation-art">
@@ -2123,6 +2243,7 @@
                         <div class="quote-author">&mdash; Future CPA</div>
                         <i class="fas fa-seedling quote-plant"></i>
                     </div>
+
                 </div>
             </div>
         </main>
@@ -2146,78 +2267,121 @@
 
         // Badges are now a Vue app (see the #badgesApp script near the end of the page).
 
-        // ── Leaderboard (real data, switchable by period) ──────────────
+        // ── Leaderboard: Overall (by period) or one subject (all-time) ─
         const leaderboardData = @json($leaderboard);
+        const subjectBoards   = @json($subjectBoards);
         const lbBody   = document.getElementById('leaderboardBody');
         const lbPodium = document.getElementById('leaderboardPodium');
         const lbEmpty  = document.getElementById('leaderboardEmpty');
+        const lbEmptyT = document.getElementById('leaderboardEmptyText');
         const lbSelect = document.getElementById('leaderboardPeriod');
+        const lbScope  = document.getElementById('lbScope');
+        const lbMe     = document.getElementById('lbMe');
+        const PERIODS  = { month: 'This month', week: 'This week', all: 'All time' };
+
+        let lbBoard = 'overall';
 
         function escapeHtml(s) {
             const d = document.createElement('div');
-            d.textContent = s;
+            d.textContent = s == null ? '' : String(s);
             return d.innerHTML;
         }
 
         function initials(name) {
-            return name.split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join('');
+            return String(name).split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join('');
         }
 
+        // Top 3 standing on stepped blocks, ordered 2nd — 1st — 3rd.
         function renderPodium(rows) {
             const top = {};
             rows.forEach(r => { if (r.rank <= 3) top[r.rank] = r; });
 
-            // Podium order: 2nd — 1st — 3rd
-            const slots = [
-                { rank: 2, cls: 'second' },
-                { rank: 1, cls: 'first' },
-                { rank: 3, cls: 'third' },
-            ];
-
-            lbPodium.innerHTML = slots.map(slot => {
-                const r = top[slot.rank];
-                if (!r) return '';
-                const crown = slot.rank === 1 ? '<i class="fas fa-crown podium-crown"></i>' : '';
-                return '<div class="podium-col ' + slot.cls + '">' +
-                           '<div class="podium-avatar">' + crown + escapeHtml(initials(r.name)) +
-                               '<div class="podium-rank">' + slot.rank + '</div>' +
+            lbPodium.innerHTML = [2, 1, 3].map(n => {
+                const r = top[n];
+                if (!r) return '<div></div>';
+                return '<div class="pod p' + n + (r.is_me ? ' me' : '') + '">' +
+                           '<div class="pod-av">' +
+                               (n === 1 ? '<i class="fas fa-crown pod-crown" aria-hidden="true"></i>' : '') +
+                               escapeHtml(r.initials || initials(r.name)) +
                            '</div>' +
+                           '<div class="pod-name">' + escapeHtml(r.is_me ? 'You' : r.name) + '</div>' +
+                           '<div class="pod-score">' + Number(r.score).toLocaleString() + ' correct</div>' +
+                           '<div class="pod-step">' + n + '</div>' +
                        '</div>';
             }).join('');
-            lbPodium.style.display = Object.keys(top).length ? 'flex' : 'none';
+            lbPodium.style.display = top[1] ? 'grid' : 'none';
         }
 
-        function renderLeaderboard(period) {
-            const rows = leaderboardData[period] || [];
+        function renderRows(rows) {
+            // The podium already shows 1–3; the list picks up from 4th.
+            lbBody.innerHTML = rows.filter(r => r.rank > 3).map(r => {
+                const rankCell = '<div class="lb-rank-circle rn">' + r.rank + '</div>';
+                const learner = r.is_me
+                    ? '<div class="leaderboard-learner"><span class="me-avatar">' + escapeHtml(r.initials) + '</span>' + escapeHtml(r.name) + '</div>'
+                    : '<div class="leaderboard-learner">' + escapeHtml(r.name) + '</div>';
+                const score = '<div class="lb-score">' + r.score + '</div>';
+                return '<div class="leaderboard-row' + (r.is_me ? ' me' : '') + '">' + rankCell + learner + score + '</div>';
+            }).join('');
+        }
+
+        function renderLeaderboard() {
+            const isOverall = lbBoard === 'overall';
+            const subject = isOverall ? null : subjectBoards.find(b => String(b.id) === String(lbBoard));
+            const rows = isOverall ? (leaderboardData[lbSelect.value] || []) : (subject ? subject.rows : []);
+
+            // The period only applies to the overall board; subjects are all-time.
+            lbSelect.style.display = isOverall ? '' : 'none';
+            lbScope.textContent = isOverall
+                ? PERIODS[lbSelect.value] + ' · correct answers'
+                : (subject ? subject.name : '') + ' · all time';
+
             if (!rows.length) {
                 lbBody.innerHTML = '';
                 lbPodium.innerHTML = '';
                 lbPodium.style.display = 'none';
                 lbEmpty.style.display = 'block';
-                return;
+                lbEmptyT.textContent = isOverall
+                    ? 'No quiz activity in this period yet.'
+                    : 'No one has scored in this subject yet — be the first!';
+            } else {
+                lbEmpty.style.display = 'none';
+                renderPodium(rows);
+                renderRows(rows);
             }
-            lbEmpty.style.display = 'none';
 
-            renderPodium(rows);
+            let note = '';
+            if (subject) {
+                const me = subject.me;
+                if (me.rank === 1) {
+                    note = 'You lead <strong>' + escapeHtml(subject.code) + '</strong> with ' + me.correct + ' correct (' + me.accuracy + '% accuracy).';
+                } else if (me.rank) {
+                    note = 'You\'re <strong>#' + me.rank + ' of ' + me.total + '</strong> in ' + escapeHtml(subject.code) + ' · ' + me.accuracy + '% accuracy.';
+                } else if (me.attempted) {
+                    note = 'Answer a few ' + escapeHtml(subject.code) + ' questions correctly to get ranked.';
+                } else {
+                    note = 'You haven\'t practised ' + escapeHtml(subject.code) + ' yet — take a quiz to join this board.';
+                }
+            } else if (rows.length && !rows.some(r => r.is_me)) {
+                note = 'You\'re not on this board yet — finish a quiz to climb in.';
+            }
+            lbMe.style.display = note ? 'flex' : 'none';
+            lbMe.innerHTML = note ? '<i class="fas fa-circle-info"></i><span>' + note + '</span>' : '';
 
-            lbBody.innerHTML = rows.map(r => {
-                const circleClass = r.rank <= 3 ? 'r' + r.rank : 'rn';
-                const rankCell = '<div class="lb-rank-circle ' + circleClass + '">' + r.rank + '</div>';
-
-                const learner = r.is_me
-                    ? '<div class="leaderboard-learner"><span class="me-avatar">' + escapeHtml(r.initials) + '</span>' + escapeHtml(r.name) + '</div>'
-                    : '<div class="leaderboard-learner">' + escapeHtml(r.name) + '</div>';
-
-                const score = '<div class="lb-score">' + r.score + '</div>';
-
-                return '<div class="leaderboard-row' + (r.is_me ? ' me' : '') + '">' + rankCell + learner + score + '</div>';
-            }).join('');
+            document.querySelectorAll('.lb-tab').forEach(t => {
+                const on = t.dataset.board === String(lbBoard);
+                t.classList.toggle('active', on);
+                t.setAttribute('aria-selected', on ? 'true' : 'false');
+            });
         }
 
+        document.querySelectorAll('.lb-tab').forEach(t => t.addEventListener('click', () => {
+            lbBoard = t.dataset.board;
+            renderLeaderboard();
+        }));
         if (lbSelect) {
-            lbSelect.addEventListener('change', () => renderLeaderboard(lbSelect.value));
+            lbSelect.addEventListener('change', renderLeaderboard);
         }
-        renderLeaderboard('month');
+        renderLeaderboard();
     </script>
 
     <!-- Badges feature: Vue 3 + confetti (badge image is drawn natively on canvas) -->

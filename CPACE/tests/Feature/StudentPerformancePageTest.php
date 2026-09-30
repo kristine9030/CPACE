@@ -76,6 +76,7 @@ class StudentPerformancePageTest extends TestCase
             $table->string('code');
             $table->string('name');
             $table->unsignedTinyInteger('passing_threshold')->default(75);
+            $table->boolean('is_active')->default(true);
             $table->timestamps();
         });
         Schema::create('topics', function (Blueprint $table) {
@@ -147,6 +148,62 @@ class StudentPerformancePageTest extends TestCase
 
         $response->assertOk();
         $response->assertViewHas('stats', fn ($stats) => $stats['attempted'] === 10 && $stats['correct'] === 8);
+    }
+
+    public function test_the_accuracy_filter_supports_a_custom_range_and_a_subject(): void
+    {
+        $me = $this->student('me@example.com');
+        $other = $this->student('other@example.com');
+        $far = DB::table('subjects')->insertGetId(['code' => 'FAR', 'name' => 'Financial Accounting', 'created_at' => now(), 'updated_at' => now()]);
+        $tax = DB::table('subjects')->insertGetId(['code' => 'TAX', 'name' => 'Taxation', 'created_at' => now(), 'updated_at' => now()]);
+
+        $session = fn ($student, $subject, $date, $items, $correct, $type = 'testing') => DB::table('quiz_sessions')->insert([
+            'student_id' => $student, 'subject_id' => $subject, 'session_type' => $type,
+            'total_items' => $items, 'correct_answers' => $correct, 'started_at' => $date, 'completed_at' => $date,
+        ]);
+
+        $session($me->id, $far, now()->subDays(3), 10, 8);
+        $session($me->id, $tax, now()->subDays(2), 10, 2);
+        $session($me->id, $far, now()->subDays(40), 10, 10);          // outside the window
+        $session($me->id, $far, now()->subDays(1), 10, 0, 'training'); // training never counts
+        $session($other->id, $far, now()->subDays(1), 10, 0);          // someone else's
+
+        $response = $this->actingAs($me)->getJson(route('performance.series', [
+            'from' => now()->subDays(6)->toDateString(),
+            'to' => now()->toDateString(),
+            'subject_id' => $far,
+        ]));
+
+        $response->assertOk()
+            ->assertJsonPath('granularity', 'daily')
+            ->assertJsonPath('summary.attempted', 10)
+            ->assertJsonPath('summary.accuracy', 80)
+            ->assertJsonPath('summary.quizzes', 1)
+            ->assertJsonCount(7, 'labels');
+
+        // Every subject, a quick range: FAR + TAX in the last 7 days.
+        $this->actingAs($me)->getJson(route('performance.series', ['preset' => 'daily']))
+            ->assertOk()
+            ->assertJsonPath('summary.attempted', 20)
+            ->assertJsonPath('summary.accuracy', 50);
+
+        // A year of daily points is stepped up to keep the chart readable.
+        $this->actingAs($me)->getJson(route('performance.series', [
+            'from' => now()->subYear()->toDateString(), 'to' => now()->toDateString(), 'granularity' => 'daily',
+        ]))->assertOk()->assertJsonPath('granularity', 'weekly');
+    }
+
+    public function test_the_accuracy_filter_rejects_an_invalid_range(): void
+    {
+        $me = $this->student('me@example.com');
+
+        $this->actingAs($me)->getJson(route('performance.series', [
+            'from' => now()->toDateString(), 'to' => now()->subDays(5)->toDateString(),
+        ]))->assertStatus(422)->assertJsonValidationErrors('from');
+
+        $this->actingAs($me)->getJson(route('performance.series', [
+            'from' => now()->toDateString(), 'to' => now()->addDays(5)->toDateString(),
+        ]))->assertStatus(422)->assertJsonValidationErrors('to');
     }
 
     private function student(string $email): User

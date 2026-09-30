@@ -23,7 +23,7 @@ class ChairAnalyticsTest extends TestCase
     private const TABLES = [
         'messages', 'conversation_participants', 'conversations', 'student_profiles',
         'notifications', 'question_variants', 'quiz_answers', 'quiz_sessions',
-        'performance_records', 'questions', 'faculty_subjects', 'topics', 'subjects', 'sections', 'users',
+        'performance_records', 'questions', 'faculty_subject_sections', 'faculty_subjects', 'topics', 'subjects', 'sections', 'users',
     ];
 
     protected function setUp(): void
@@ -152,7 +152,15 @@ class ChairAnalyticsTest extends TestCase
         Schema::create('notifications', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('recipient_id');
+            $table->unsignedBigInteger('sender_id')->nullable();
+            $table->string('type', 50)->default('normal');
+            $table->string('title', 150)->nullable();
+            $table->text('message')->nullable();
+            $table->string('link')->nullable();
             $table->boolean('is_read')->default(false);
+            $table->string('reference_type', 50)->nullable();
+            $table->unsignedBigInteger('reference_id')->nullable();
+            $table->timestamps();
         });
 
         $this->seedAnalyticsData();
@@ -418,6 +426,63 @@ class ChairAnalyticsTest extends TestCase
         DB::table('performance_records')->insert(['student_id' => $studentId, 'topic_id' => $topicId, 'correct_count' => $correct, 'total_attempts' => $attempts, 'is_weak_area' => false]);
     }
 
+    public function test_leaderboard_ranks_by_correct_answers_overall_and_per_subject(): void
+    {
+        // Base seed: Test Student has 14/20 in each of AUD, FAR and TAX (42
+        // correct). A second student does better in FAR alone (18/20) but
+        // answers less overall, so the two orders must differ.
+        $rival = User::create(['role_id' => Role::STUDENT, 'first_name' => 'Rival', 'last_name' => 'Student', 'email' => 'rival@example.com', 'password' => Hash::make('password'), 'is_active' => true, 'setup_completed_at' => now()]);
+        DB::table('student_profiles')->insert(['user_id' => $rival->id, 'section' => 'BSA-1B', 'created_at' => now(), 'updated_at' => now()]);
+        $far = (int) DB::table('subjects')->where('code', 'FAR')->value('id');
+        DB::table('quiz_sessions')->insert(['student_id' => $rival->id, 'subject_id' => $far, 'session_type' => 'adaptive', 'total_items' => 20, 'correct_answers' => 18, 'duration_secs' => 600, 'completed_at' => now()]);
+
+        $dashboard = app(\App\Services\ChairDashboardService::class);
+        $from = now()->subDays(29);
+
+        $overall = $dashboard->classPerformance($from, now())['leaderboard'];
+        $this->assertSame(['Test Student', 'Rival Student'], $overall->pluck('name')->all());
+        $this->assertSame([42, 18], $overall->pluck('correct')->all());
+
+        // Standing per subject: first overall, but second in FAR behind the rival.
+        $leader = (array) $overall[0]['standings'];
+        $rivalStandings = (array) $overall[1]['standings'];
+        $this->assertSame(['rank' => 2, 'of' => 2], array_intersect_key($leader['FAR'], ['rank' => 0, 'of' => 0]));
+        $this->assertSame(1, $leader['AUD']['rank']);
+        $this->assertSame(1, $rivalStandings['FAR']['rank']);
+        $this->assertSame(90, $rivalStandings['FAR']['accuracy']);
+        $this->assertArrayNotHasKey('AUD', $rivalStandings);
+
+        $farOnly = $dashboard->classPerformance($from, now(), $far)['leaderboard'];
+        $this->assertSame(['Rival Student', 'Test Student'], $farOnly->pluck('name')->all());
+
+        // The section filter narrows the board to that section's students.
+        $sectionB = $dashboard->classPerformance($from, now(), null, 'BSA-1B')['leaderboard'];
+        $this->assertSame(['Rival Student'], $sectionB->pluck('name')->all());
+    }
+
+    public function test_a_mixed_quiz_counts_toward_each_subject_it_covers(): void
+    {
+        // A mixed quiz has no subject_id, but its answers do. Two AUD answers
+        // (1 right) inside one must show up under the AUD filter, and the quiz
+        // must still count once.
+        $student = User::create(['role_id' => Role::STUDENT, 'first_name' => 'Mixed', 'last_name' => 'Taker', 'email' => 'mixed@example.com', 'password' => Hash::make('password'), 'is_active' => true, 'setup_completed_at' => now()]);
+        DB::table('student_profiles')->insert(['user_id' => $student->id, 'section' => 'BSA-1B', 'created_at' => now(), 'updated_at' => now()]);
+        $aud = (int) DB::table('subjects')->where('code', 'AUD')->value('id');
+        $audQuestion = DB::table('questions')->join('topics', 'topics.id', '=', 'questions.topic_id')->where('topics.subject_id', $aud)->value('questions.id');
+        $sessionId = DB::table('quiz_sessions')->insertGetId(['student_id' => $student->id, 'subject_id' => null, 'session_type' => 'testing', 'total_items' => 2, 'correct_answers' => 1, 'duration_secs' => 120, 'completed_at' => now()]);
+        DB::table('quiz_answers')->insert([
+            ['session_id' => $sessionId, 'question_id' => $audQuestion, 'is_correct' => true, 'answered_at' => now()],
+            ['session_id' => $sessionId, 'question_id' => $audQuestion, 'is_correct' => false, 'answered_at' => now()],
+        ]);
+
+        $report = app(\App\Services\ChairDashboardService::class)->classPerformance(now()->subDays(29), now(), $aud, 'BSA-1B');
+
+        $this->assertSame(['Mixed Taker'], $report['leaderboard']->pluck('name')->all());
+        $this->assertSame(2, $report['kpis']['items']);
+        $this->assertSame(50, $report['kpis']['accuracy']);
+        $this->assertSame(1, $report['kpis']['quizzes']);
+    }
+
     public function test_pass_projection_reports_coverage_and_confidence(): void
     {
         // Base seed: 1 active student, all 1 eligible → 100% coverage, but
@@ -470,10 +535,7 @@ class ChairAnalyticsTest extends TestCase
         $topicId = DB::table('topics')->insertGetId(['subject_id' => $subjectId, 'name' => 'Struggling Topic', 'sort_order' => 1, 'is_active' => true, 'created_at' => now(), 'updated_at' => now()]);
         DB::table('performance_records')->insert(['student_id' => $idle->id, 'topic_id' => $topicId, 'correct_count' => 2, 'total_attempts' => 15, 'is_weak_area' => true]);
 
-        $atRisk = app(\App\Http\Controllers\Chair\ProgramChairController::class);
-        $reflection = new \ReflectionMethod($atRisk, 'atRiskStudents');
-        $reflection->setAccessible(true);
-        $atRiskStudents = $reflection->invoke($atRisk);
+        $atRiskStudents = app(\App\Services\ChairDashboardService::class)->atRiskStudents();
 
         $actions = app(ChairAnalyticsService::class)->recommendedActions($atRiskStudents);
 
@@ -485,6 +547,95 @@ class ChairAnalyticsTest extends TestCase
             ->assertOk()
             ->assertSee('Recommended Actions')
             ->assertSee('Struggling Topic');
+    }
+
+    public function test_trend_class_accuracy_is_per_week_while_readiness_stays_cumulative(): void
+    {
+        // An old, poor quiz three weeks ago. Cumulative accuracy would blend it
+        // into every later week; per-week accuracy keeps it in its own week.
+        $student = User::where('email', 'student@example.com')->firstOrFail();
+        $subjectId = DB::table('subjects')->value('id');
+        $oldWeek = now()->startOfWeek()->subWeeks(3)->addDay();
+        DB::table('quiz_sessions')->insert([
+            'student_id' => $student->id, 'subject_id' => $subjectId, 'session_type' => 'adaptive',
+            'total_items' => 40, 'correct_answers' => 0, 'duration_secs' => 600, 'completed_at' => $oldWeek,
+        ]);
+
+        $trend = app(ChairAnalyticsService::class)->readinessTrend(4)->values();
+
+        $this->assertSame(0, $trend[0]['accuracy']);        // the old week on its own
+        $this->assertNull($trend[1]['accuracy']);           // no quizzes that week -> a gap, not 0%
+        $this->assertNull($trend[2]['accuracy']);
+        $this->assertSame(70, $trend[3]['accuracy']);       // this week only, not blended with the 0%
+        $this->assertSame(40, $trend[0]['answered']);
+
+        // Readiness still counts everything up to each week's end.
+        $this->assertSame(1, $trend[0]['eligible']);
+        $this->assertSame(1, $trend[3]['eligible']);
+    }
+
+    public function test_chair_can_remind_an_inactive_faculty_member_once_a_day(): void
+    {
+        \Illuminate\Support\Facades\Mail::fake();
+        // The faculty workload query reads section assignments once a faculty account exists.
+        Schema::create('faculty_subject_sections', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('faculty_id');
+            $table->unsignedBigInteger('subject_id');
+            $table->unsignedBigInteger('section_id');
+            $table->timestamps();
+        });
+        $chair = User::where('email', 'chair@example.com')->firstOrFail();
+        $faculty = User::create([
+            'role_id' => Role::FACULTY, 'first_name' => 'Idle', 'last_name' => 'Teacher', 'email' => 'idle@example.com',
+            'password' => Hash::make('password'), 'is_active' => true, 'setup_completed_at' => now(),
+            'last_login_at' => now()->subDays(45),
+        ]);
+        // Assigned (so the flag is "idle", not "no subjects yet") but not logged in for 45 days.
+        DB::table('faculty_subjects')->insert(['faculty_id' => $faculty->id, 'subject_id' => DB::table('subjects')->value('id')]);
+
+        // The dashboard offers a Notify button for the idle faculty member.
+        $this->actingAs($chair)->get(route('chair.dashboard'))
+            ->assertOk()
+            ->assertSee('data-remind-id="'.$faculty->id.'"', false);
+
+        $this->actingAs($chair)->post(route('chair.faculty.remind', $faculty->id), [
+            'title' => 'We miss you on CPAce',
+            'message' => 'Please sign in to check on your classes.',
+        ])->assertRedirect()->assertSessionHas('status');
+
+        $this->assertDatabaseHas('notifications', [
+            'recipient_id' => $faculty->id, 'sender_id' => $chair->id,
+            'reference_type' => 'faculty_reminder', 'title' => 'We miss you on CPAce',
+        ]);
+        \Illuminate\Support\Facades\Mail::assertSent(\App\Mail\CommunicationMail::class, fn ($m) => $m->hasTo('idle@example.com'));
+
+        // A second reminder within 24 hours is refused, and the dashboard shows it was sent.
+        $this->actingAs($chair)->post(route('chair.faculty.remind', $faculty->id), [
+            'title' => 'Again', 'message' => 'Again',
+        ])->assertSessionHas('warning');
+        $this->assertSame(1, DB::table('notifications')->where('reference_type', 'faculty_reminder')->count());
+
+        $this->actingAs($chair)->get(route('chair.dashboard'))
+            ->assertOk()
+            ->assertSee('Reminded')
+            ->assertDontSee('data-remind-id="'.$faculty->id.'"', false);
+    }
+
+    public function test_only_faculty_can_be_reminded_and_only_by_the_chair(): void
+    {
+        $chair = User::where('email', 'chair@example.com')->firstOrFail();
+        $student = User::where('email', 'student@example.com')->firstOrFail();
+
+        // A student id is not a faculty account.
+        $this->actingAs($chair)->post(route('chair.faculty.remind', $student->id), ['title' => 'x', 'message' => 'y'])
+            ->assertNotFound();
+
+        // A student cannot reach the chair route at all.
+        $this->actingAs($student)->post(route('chair.faculty.remind', $chair->id), ['title' => 'x', 'message' => 'y'])
+            ->assertStatus(403);
+
+        $this->assertSame(0, DB::table('notifications')->where('reference_type', 'faculty_reminder')->count());
     }
 
     public function test_student_cannot_open_chair_analytics(): void

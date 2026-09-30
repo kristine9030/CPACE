@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Faculty;
 
+use App\Http\Controllers\Concerns\ReadsChartFilters;
 use App\Http\Controllers\Controller;
 
 use App\Models\Role;
@@ -9,6 +10,7 @@ use App\Models\Subject;
 use App\Services\WeaknessDetector;
 use App\Support\CurriculumScope;
 use App\Support\FacultySectionScope;
+use App\Support\PeriodBuckets;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -23,19 +25,11 @@ use Illuminate\Support\Facades\DB;
  */
 class FacultyDashboardController extends Controller
 {
+    use ReadsChartFilters;
+
     /** Difficulty enum -> human label used across the UI. */
     private const DIFFICULTY_LABELS = [
         'easy' => 'Easy', 'moderate' => 'Medium', 'difficult' => 'Hard',
-    ];
-
-    /** Subject brand colours reused for the "Questions by Subject" bars. */
-    private const SUBJECT_COLORS = [
-        'FAR'  => '#3b82f6',
-        'AFAR' => '#17a2b8',
-        'MS'   => '#8b5cf6',
-        'TAX'  => '#27ae60',
-        'AUD'  => '#e8567d',
-        'RFBT' => '#f59e0b',
     ];
 
     /**
@@ -76,31 +70,31 @@ class FacultyDashboardController extends Controller
     private const READY_ATTEMPTS = 50;
     private const READY_SUBJECTS = 3;
 
+
+    /** The dashboard's filtered window, set once per request by computeDashboardData(). */
+    private Carbon $from;
+    private Carbon $to;
+    private ?string $section = null;
+
     public function index(Request $request)
     {
-        $data = $this->computeDashboardData();
+        $data = $this->computeDashboardData($request);
 
         return view('faculty.dashboard', $data);
     }
 
     /**
-     * Re-run just the insights computation against the live database and
-     * return it as JSON — backs the "Regenerate" button on the dashboard so
-     * a faculty member can pull fresh insights after adding questions or
-     * grading activity without reloading the whole page.
-     */
-    public function insights(Request $request)
-    {
-        $data = $this->computeDashboardData();
-
-        return response()->json(['insights' => $data['insights']]);
-    }
-
-    /**
      * Every figure the dashboard (and its insights) needs, computed fresh
-     * from the database and scoped to the faculty member's assigned subjects.
+     * from the database and scoped to the faculty member's assigned subjects,
+     * then narrowed by the filter bar: a date range, one of those subjects,
+     * and one of the sections this faculty member handles.
+     *
+     * Student figures follow all three filters. Test-bank composition (total
+     * questions, the by-subject / type / difficulty splits) has no section and
+     * describes the bank as it stands, so only the subject filter applies to
+     * it; "questions added" follows the date range too.
      */
-    private function computeDashboardData(): array
+    private function computeDashboardData(Request $request): array
     {
         // Subjects assigned to this faculty; fall back to all subjects so a
         // freshly-created account still sees the whole picture.
@@ -108,23 +102,37 @@ class FacultyDashboardController extends Controller
         if ($assigned->isEmpty()) {
             $assigned = Subject::orderBy('id')->get();
         }
-        $subjectIds = $assigned->pluck('id')->all();
 
-        $now         = Carbon::now();
-        $weekAgo     = $now->copy()->subDays(7);
-        $monthAgo    = $now->copy()->subDays(30);
-        $twoMonthAgo = $now->copy()->subDays(60);
+        $sectionOptions = $this->sectionOptions($assigned->pluck('id')->all());
+        $filters = $this->chartFilters($request);
+        // Only this faculty member's own subjects and sections can be picked.
+        if ($filters['subject'] && ! $assigned->contains('id', $filters['subject'])) {
+            $filters['subject'] = null;
+        }
+        if ($filters['section'] && ! $sectionOptions->contains($filters['section'])) {
+            $filters['section'] = null;
+        }
+        $filters = array_intersect_key($filters, array_flip(['from', 'to', 'subject', 'section']));
 
-        $weeklyTrend          = $this->weeklyTrend($subjectIds, $now);
-        $questionsWeeklyTrend = $this->questionsWeeklyTrend($subjectIds, $now);
-        $bySubject    = $this->questionsBySubject($assigned);
+        $scope = $filters['subject'] ? $assigned->where('id', $filters['subject'])->values() : $assigned;
+        $subjectIds = $scope->pluck('id')->all();
+        $this->from = Carbon::parse($filters['from'])->startOfDay();
+        $this->to = Carbon::parse($filters['to'])->endOfDay();
+        $this->section = $filters['section'];
+
+        $trend        = $this->periodTrend($subjectIds);
+        $bySubject    = $this->questionsBySubject($scope);
         $byType       = $this->questionsByType($subjectIds);
         $byDifficulty = $this->questionsByDifficulty($subjectIds);
         $studentBand  = $this->studentBandCounts($subjectIds);
-        $stats        = $this->headlineStats($subjectIds, $weekAgo, $monthAgo, $twoMonthAgo, $assigned, $weeklyTrend);
+        $stats        = $this->headlineStats($subjectIds, $scope);
 
         return [
             'assigned'        => $assigned,
+            'filters'         => $filters,
+            'defaults'        => array_intersect_key($this->chartFilters(new Request()), array_flip(['from', 'to', 'subject', 'section'])),
+            'sectionOptions'  => $sectionOptions,
+            'range'           => ['days' => (int) $this->from->diffInDays($this->to) + 1, 'bucket' => $trend->first()['unit'] ?? 'day'],
             'stats'           => $stats,
             'recentQuestions' => $this->recentQuestions($subjectIds),
             'recentActivity'  => $this->recentActivity($subjectIds),
@@ -132,15 +140,63 @@ class FacultyDashboardController extends Controller
             'byType'          => $byType,
             'byDifficulty'    => $byDifficulty,
             'topStudents'     => $this->topStudents($subjectIds),
-            'weeklyTrend'          => $weeklyTrend,
-            'questionsWeeklyTrend' => $questionsWeeklyTrend,
+            'weeklyTrend'     => $trend->map(fn ($b) => collect($b)->except(['unit'])->all())->values(),
             'studentBand'     => $studentBand,
             'benchmark'       => self::READINESS_BENCHMARK,
             'atRiskThreshold' => self::AT_RISK_THRESHOLD,
-            'insights'        => $this->buildInsights($bySubject, $byType, $byDifficulty, $weeklyTrend, $stats, $studentBand, $assigned),
-            'typeInsight'       => $this->typeInsight($byType),
-            'difficultyInsight' => $this->difficultyInsight($byDifficulty),
+            'chartInsights'   => $this->chartInsights(
+                $this->buildInsights($bySubject, $byType, $byDifficulty, $stats, $studentBand),
+                $byType,
+                $byDifficulty,
+            ),
         ];
+    }
+
+    /**
+     * Insights grouped by the chart they explain, shown as a hover tip on
+     * that chart rather than as a separate block of cards. The format and
+     * difficulty mix reads always have something to say, so those two charts
+     * always get a tip; the rest appear only when an insight fires.
+     *
+     * @return array<string, array{tone: string, items: array<int, array{title: string, text: string}>}>
+     */
+    private function chartInsights(array $insights, array $byType, array $byDifficulty): array
+    {
+        $grouped = collect($insights)->groupBy('target');
+
+        if ($byType['total'] > 0) {
+            $grouped['type'] = collect([['tone' => 'info', 'title' => 'Format mix', 'text' => $this->typeInsight($byType)]]);
+        }
+        if (! $grouped->has('difficulty') && ($byDifficulty['easy']['count'] + $byDifficulty['medium']['count'] + $byDifficulty['hard']['count']) > 0) {
+            $grouped['difficulty'] = collect([['tone' => 'info', 'title' => 'Difficulty mix', 'text' => $this->difficultyInsight($byDifficulty)]]);
+        }
+
+        // The tip wears the most urgent tone among its insights.
+        $rank = ['crit' => 0, 'warn' => 1, 'info' => 2, 'good' => 3];
+
+        return $grouped->map(fn ($items) => [
+            'tone' => $items->sortBy(fn ($i) => $rank[$i['tone']] ?? 9)->first()['tone'],
+            'items' => $items->map(fn ($i) => ['title' => $i['title'], 'text' => $i['text']])->values()->all(),
+        ])->all();
+    }
+
+    /**
+     * The sections this faculty member may filter by: the ones the chair
+     * assigned for their subjects, or every active section when they are
+     * unrestricted for any subject (same rule as FacultySectionScope).
+     */
+    private function sectionOptions(array $subjectIds): \Illuminate\Support\Collection
+    {
+        $names = [];
+        foreach ($subjectIds as $subjectId) {
+            $forSubject = Auth::user()->sectionNamesForSubject((int) $subjectId);
+            if ($forSubject === null) {
+                return DB::table('sections')->where('is_active', true)->orderBy('name')->pluck('name');
+            }
+            $names = array_merge($names, $forSubject);
+        }
+
+        return collect(array_values(array_unique($names)))->sort()->values();
     }
 
     /**
@@ -191,17 +247,15 @@ class FacultyDashboardController extends Controller
     }
 
     /**
-     * Last 8 calendar weeks in scope: distinct active students, quizzes taken,
-     * and average accuracy — feeds the Engagement / Accuracy trend charts.
+     * The filtered range, bucketed by day / week / month: distinct active
+     * students, quizzes taken and accuracy — feeds the Engagement / Accuracy
+     * trend charts.
      */
-    private function weeklyTrend(array $subjectIds, Carbon $now)
+    private function periodTrend(array $subjectIds)
     {
-        return collect(range(7, 0))->map(function (int $i) use ($subjectIds, $now) {
-            $start = $now->copy()->subWeeks($i)->startOfWeek();
-            $end   = $start->copy()->endOfWeek();
-
+        return PeriodBuckets::for($this->from, $this->to)->map(function (array $bucket) use ($subjectIds) {
             $row = $this->scopedSessions($subjectIds)
-                ->whereBetween('quiz_sessions.completed_at', [$start, $end])
+                ->whereBetween('quiz_sessions.completed_at', [$bucket['start'], $bucket['end']])
                 ->select(
                     DB::raw('COUNT(DISTINCT quiz_sessions.student_id) as active_students'),
                     DB::raw('COUNT(*) as quizzes'),
@@ -213,41 +267,11 @@ class FacultyDashboardController extends Controller
             $attempted = (int) ($row->attempted ?? 0);
 
             return [
-                'label'           => $start->format('M j'),
+                'unit'            => $bucket['unit'],
+                'label'           => $bucket['label'],
                 'active_students' => (int) ($row->active_students ?? 0),
                 'quizzes'         => (int) ($row->quizzes ?? 0),
                 'accuracy'        => $attempted > 0 ? (int) round(((int) $row->correct) / $attempted * 100) : null,
-            ];
-        })->values();
-    }
-
-    /**
-     * Last 8 calendar weeks of test-bank growth in scope: how many questions
-     * were added that week, and the running total as of that week's end —
-     * feeds the KPI sparklines for Total Questions / Questions Added.
-     */
-    private function questionsWeeklyTrend(array $subjectIds, Carbon $now)
-    {
-        $baseTotal = (clone $this->scopedQuestions($subjectIds))
-            ->where('questions.created_at', '<', $now->copy()->subWeeks(7)->startOfWeek())
-            ->count();
-
-        $running = $baseTotal;
-
-        return collect(range(7, 0))->map(function (int $i) use ($subjectIds, $now, &$running) {
-            $start = $now->copy()->subWeeks($i)->startOfWeek();
-            $end   = $start->copy()->endOfWeek();
-
-            $added = (clone $this->scopedQuestions($subjectIds))
-                ->whereBetween('questions.created_at', [$start, $end])
-                ->count();
-
-            $running += $added;
-
-            return [
-                'label'      => $start->format('M j'),
-                'added'      => $added,
-                'cumulative' => $running,
             ];
         })->values();
     }
@@ -271,9 +295,16 @@ class FacultyDashboardController extends Controller
             ->leftJoin('student_profiles', 'student_profiles.user_id', '=', 'quiz_sessions.student_id')
             ->where('quiz_sessions.session_type', '!=', 'training')->where('quiz_sessions.is_practice_room', false)
             ->whereNotNull('quiz_sessions.completed_at')
+            ->when($this->section, fn ($q) => $q->where('student_profiles.section', $this->section))
             ->select('quiz_sessions.*');
 
         return FacultySectionScope::apply($query, Auth::user(), $subjectIds, 'quiz_sessions.subject_id', 'student_profiles.section');
+    }
+
+    /** Scoped sessions completed inside [$from, $to]. */
+    private function sessionsBetween(array $subjectIds, Carbon $from, Carbon $to)
+    {
+        return $this->scopedSessions($subjectIds)->whereBetween('quiz_sessions.completed_at', [$from, $to]);
     }
 
     /**
@@ -281,64 +312,53 @@ class FacultyDashboardController extends Controller
      * context a program head actually needs to decide something: a benchmark
      * distance, a per-subject average, or a week-over-week pace comparison.
      */
-    private function headlineStats(array $subjectIds, Carbon $weekAgo, Carbon $monthAgo, Carbon $twoMonthAgo, $assigned, $weeklyTrend): array
+    private function headlineStats(array $subjectIds, $scope): array
     {
+        // The period just before the selected one, same length, for every
+        // "vs before" comparison on the cards.
+        $days = (int) $this->from->diffInDays($this->to) + 1;
+        $prevFrom = $this->from->copy()->subDays($days);
+        $prevTo = $this->from->copy()->subSecond();
+
         $totalQuestions = (clone $this->scopedQuestions($subjectIds))->count();
-        $addedThisWeek  = (clone $this->scopedQuestions($subjectIds))
-            ->where('questions.created_at', '>=', $weekAgo)->count();
+        $added = fn (Carbon $from, Carbon $to) => (clone $this->scopedQuestions($subjectIds))
+            ->whereBetween('questions.created_at', [$from, $to])->count();
+        $addedInRange = $added($this->from, $this->to);
+        $addedBefore = $added($prevFrom, $prevTo);
 
-        // Active students: distinct students with graded activity in scope.
-        $activeStudents = (clone $this->scopedSessions($subjectIds))
-            ->distinct()->count('student_id');
+        // Active students: distinct students with graded activity in the range.
+        $active = fn (Carbon $from, Carbon $to) => $this->sessionsBetween($subjectIds, $from, $to)
+            ->distinct()->count('quiz_sessions.student_id');
+        $activeStudents = $active($this->from, $this->to);
+        $activeBefore = $active($prevFrom, $prevTo);
 
-        // "New this month": students whose earliest graded session in scope is
-        // within the last 30 days.
+        // "New": students whose earliest graded session in scope falls inside the range.
         $firsts = $this->scopedSessions($subjectIds)
-            ->select('student_id', DB::raw('MIN(started_at) as first_seen'))
-            ->groupBy('student_id');
-
-        $newThisMonth = DB::query()
+            ->select('quiz_sessions.student_id', DB::raw('MIN(quiz_sessions.completed_at) as first_seen'))
+            ->groupBy('quiz_sessions.student_id');
+        $newInRange = DB::query()
             ->fromSub($firsts, 'firsts')
-            ->where('first_seen', '>=', $monthAgo)
+            ->whereBetween('first_seen', [$this->from, $this->to])
             ->count();
 
-        // Average student score this month vs the previous month.
-        $avgNow  = $this->avgScore($subjectIds, $monthAgo, null);
-        $avgPrev = $this->avgScore($subjectIds, $twoMonthAgo, $monthAgo);
-        $avgAll  = $this->avgScore($subjectIds, null, null);
-        $avgDelta = ($avgNow !== null && $avgPrev !== null) ? $avgNow - $avgPrev : null;
-        $avgScore = $avgAll ?? 0;
+        $avgScore = $this->avgScore($subjectIds, $this->from, $this->to);
+        $avgPrev  = $this->avgScore($subjectIds, $prevFrom, $prevTo);
 
-        // Week-over-week engagement, straight from the trend series so the
-        // number on the card and the chart never disagree.
-        $thisWeekTrend = $weeklyTrend->last();
-        $lastWeekTrend = $weeklyTrend->count() > 1 ? $weeklyTrend[$weeklyTrend->count() - 2] : null;
-        $engagementDelta = $lastWeekTrend ? $thisWeekTrend['active_students'] - $lastWeekTrend['active_students'] : null;
-        $engagementDeltaPct = ($engagementDelta !== null && $lastWeekTrend['active_students'] > 0)
-            ? (int) round($engagementDelta / $lastWeekTrend['active_students'] * 100)
-            : null;
-
-        // Weekly content pace over the trailing 8 weeks, to judge whether
-        // this week's additions are keeping up with the usual cadence.
-        $eightWeeksAgo = $weekAgo->copy()->subWeeks(7);
-        $addedLast8Weeks = (clone $this->scopedQuestions($subjectIds))
-            ->where('questions.created_at', '>=', $eightWeeksAgo)->count();
-        $weeklyPaceAvg = (int) round($addedLast8Weeks / 8);
-
-        $subjectCount = max(1, $assigned->count());
+        $engagementDelta = $activeStudents - $activeBefore;
 
         return [
             'total_questions'      => $totalQuestions,
-            'questions_per_subject'=> (int) round($totalQuestions / $subjectCount),
-            'added_this_week'      => $addedThisWeek,
-            'weekly_pace_avg'      => $weeklyPaceAvg,
+            'questions_per_subject'=> (int) round($totalQuestions / max(1, $scope->count())),
+            'added_in_range'       => $addedInRange,
+            'added_before'         => $addedBefore,
+            'weekly_pace'          => round($addedInRange / max(1, $days / 7), 1),
             'active_students'      => $activeStudents,
-            'new_this_month'       => $newThisMonth,
+            'new_in_range'         => $newInRange,
             'engagement_delta'     => $engagementDelta,
-            'engagement_delta_pct' => $engagementDeltaPct,
+            'engagement_delta_pct' => $activeBefore > 0 ? (int) round($engagementDelta / $activeBefore * 100) : null,
             'avg_score'            => $avgScore,
-            'avg_delta'            => $avgDelta,
-            'benchmark_gap'        => $avgScore - self::READINESS_BENCHMARK,
+            'avg_delta'            => ($avgScore !== null && $avgPrev !== null) ? $avgScore - $avgPrev : null,
+            'benchmark_gap'        => $avgScore === null ? null : $avgScore - self::READINESS_BENCHMARK,
         ];
     }
 
@@ -368,7 +388,8 @@ class FacultyDashboardController extends Controller
         $query = DB::table('users')
             ->leftJoin('student_profiles', 'student_profiles.user_id', '=', 'users.id')
             ->where('users.role_id', Role::STUDENT)
-            ->where('users.is_active', true);
+            ->where('users.is_active', true)
+            ->when($this->section, fn ($q) => $q->where('student_profiles.section', $this->section));
 
         if ($allowedSections !== null) {
             $query->whereIn('student_profiles.section', array_unique($allowedSections));
@@ -387,7 +408,10 @@ class FacultyDashboardController extends Controller
      */
     private function studentBandCounts(array $subjectIds): array
     {
+        // Cumulative as of the range end, like the chair's readiness: a
+        // student's standing is built from everything they have practised.
         $activity = $this->scopedSessions($subjectIds)
+            ->where('quiz_sessions.completed_at', '<=', $this->to)
             ->join('users', 'users.id', '=', 'quiz_sessions.student_id')
             ->where('users.role_id', Role::STUDENT)
             ->groupBy('users.id')
@@ -443,44 +467,42 @@ class FacultyDashboardController extends Controller
      * Short, data-driven narrative cards — the "so what" a program head would
      * otherwise have to work out themselves by staring at the charts.
      */
-    private function buildInsights($bySubject, array $byType, array $byDifficulty, $weeklyTrend, array $stats, array $studentBand, $assigned): array
+    private function buildInsights($bySubject, array $byType, array $byDifficulty, array $stats, array $studentBand): array
     {
         $insights = [];
 
-        // Engagement momentum.
-        if ($stats['engagement_delta'] !== null) {
-            if ($stats['engagement_delta'] > 0) {
-                $insights[] = [
-                    'tone' => 'good', 'icon' => 'fa-arrow-trend-up',
-                    'title' => 'Engagement is climbing',
-                    'text' => "Active students are up {$stats['engagement_delta']}" . ($stats['engagement_delta_pct'] !== null ? " ({$stats['engagement_delta_pct']}%)" : '') . ' week-over-week — momentum is on your side.',
-                ];
-            } elseif ($stats['engagement_delta'] < 0) {
-                $insights[] = [
-                    'tone' => 'warn', 'icon' => 'fa-arrow-trend-down',
-                    'title' => 'Engagement is slipping',
-                    'text' => 'Active students fell by ' . abs($stats['engagement_delta']) . ' week-over-week. Consider assigning a class quiz to re-engage the section.',
-                ];
-            } else {
-                $insights[] = [
-                    'tone' => 'info', 'icon' => 'fa-minus',
-                    'title' => 'Engagement is flat',
-                    'text' => 'Active student count is unchanged from last week.',
-                ];
-            }
+        // Engagement momentum, against the equally long period before.
+        if ($stats['engagement_delta'] > 0) {
+            $insights[] = [
+                'target' => 'engagement', 'tone' => 'good', 'icon' => 'fa-arrow-trend-up',
+                'title' => 'Engagement is climbing',
+                'text' => "Active students are up {$stats['engagement_delta']}" . ($stats['engagement_delta_pct'] !== null ? " ({$stats['engagement_delta_pct']}%)" : '') . ' compared with the period before — momentum is on your side.',
+            ];
+        } elseif ($stats['engagement_delta'] < 0) {
+            $insights[] = [
+                'target' => 'engagement', 'tone' => 'warn', 'icon' => 'fa-arrow-trend-down',
+                'title' => 'Engagement is slipping',
+                'text' => 'Active students fell by ' . abs($stats['engagement_delta']) . ' compared with the period before. Consider assigning a class quiz to re-engage the section.',
+            ];
+        } elseif ($stats['active_students'] > 0) {
+            $insights[] = [
+                'target' => 'engagement', 'tone' => 'info', 'icon' => 'fa-minus',
+                'title' => 'Engagement is flat',
+                'text' => 'Active student count is unchanged from the period before.',
+            ];
         }
 
         // Accuracy vs. the board-readiness benchmark.
-        if ($stats['avg_score'] > 0) {
+        if ($stats['avg_score'] !== null) {
             if ($stats['benchmark_gap'] >= 0) {
                 $insights[] = [
-                    'tone' => 'good', 'icon' => 'fa-check-circle',
+                    'target' => 'accuracy', 'tone' => 'good', 'icon' => 'fa-check-circle',
                     'title' => 'Above the readiness benchmark',
                     'text' => "Average accuracy ({$stats['avg_score']}%) is {$stats['benchmark_gap']} pts above the " . self::READINESS_BENCHMARK . "% board-readiness benchmark.",
                 ];
             } else {
                 $insights[] = [
-                    'tone' => 'crit', 'icon' => 'fa-triangle-exclamation',
+                    'target' => 'accuracy', 'tone' => 'crit', 'icon' => 'fa-triangle-exclamation',
                     'title' => 'Below the readiness benchmark',
                     'text' => "Average accuracy ({$stats['avg_score']}%) is " . abs($stats['benchmark_gap']) . ' pts below the ' . self::READINESS_BENCHMARK . '% benchmark — review the weakest topics before the next mock exam.',
                 ];
@@ -490,7 +512,7 @@ class FacultyDashboardController extends Controller
         // Students needing intervention.
         if ($studentBand['at_risk'] > 0) {
             $insights[] = [
-                'tone' => 'crit', 'icon' => 'fa-user-clock',
+                'target' => 'readiness', 'tone' => 'crit', 'icon' => 'fa-user-clock',
                 'title' => $studentBand['at_risk'] . ' student' . ($studentBand['at_risk'] === 1 ? '' : 's') . ' at risk',
                 'text' => 'Averaging below ' . self::AT_RISK_THRESHOLD . '% with enough attempts to be measured — worth a direct check-in or remedial material.',
             ];
@@ -500,13 +522,13 @@ class FacultyDashboardController extends Controller
         if ($byDifficulty['hard']['count'] + $byDifficulty['medium']['count'] + $byDifficulty['easy']['count'] > 0) {
             if ($byDifficulty['hard']['pct'] < 15) {
                 $insights[] = [
-                    'tone' => 'warn', 'icon' => 'fa-layer-group',
+                    'target' => 'difficulty', 'tone' => 'warn', 'icon' => 'fa-layer-group',
                     'title' => 'Test bank is Easy-heavy',
                     'text' => "Only {$byDifficulty['hard']['pct']}% of questions are Hard difficulty — top students may not be getting stretched. Consider adding harder items.",
                 ];
             } elseif ($byDifficulty['easy']['pct'] < 15) {
                 $insights[] = [
-                    'tone' => 'info', 'icon' => 'fa-layer-group',
+                    'target' => 'difficulty', 'tone' => 'info', 'icon' => 'fa-layer-group',
                     'title' => 'Test bank skews Hard',
                     'text' => "Only {$byDifficulty['easy']['pct']}% of questions are Easy — students still building fundamentals may struggle to find a foothold.",
                 ];
@@ -519,19 +541,19 @@ class FacultyDashboardController extends Controller
             $avgPerSubject = (int) round($bySubject->sum('total') / max(1, $bySubject->count()));
             if ($thin['total'] < $avgPerSubject * 0.6) {
                 $insights[] = [
-                    'tone' => 'warn', 'icon' => 'fa-database',
+                    'target' => 'subjects', 'tone' => 'warn', 'icon' => 'fa-database',
                     'title' => "{$thin['code']} needs more questions",
                     'text' => "{$thin['code']} has only {$thin['total']} question" . ($thin['total'] === 1 ? '' : 's') . ", well below your {$avgPerSubject}-question average per subject.",
                 ];
             }
         }
 
-        // Content pace.
-        if ($stats['weekly_pace_avg'] > 0 && $stats['added_this_week'] < $stats['weekly_pace_avg'] * 0.5) {
+        // Content pace, against the equally long period before.
+        if ($stats['added_before'] > 0 && $stats['added_in_range'] < $stats['added_before'] * 0.5) {
             $insights[] = [
-                'tone' => 'info', 'icon' => 'fa-gauge',
-                'title' => 'Slower content pace this week',
-                'text' => "{$stats['added_this_week']} question" . ($stats['added_this_week'] === 1 ? '' : 's') . ' added vs. your usual ~' . $stats['weekly_pace_avg'] . '/week average.',
+                'target' => 'subjects', 'tone' => 'info', 'icon' => 'fa-gauge',
+                'title' => 'Slower content pace',
+                'text' => "{$stats['added_in_range']} question" . ($stats['added_in_range'] === 1 ? '' : 's') . " added in this period vs. {$stats['added_before']} in the period before.",
             ];
         }
 
@@ -541,11 +563,9 @@ class FacultyDashboardController extends Controller
     /**
      * Average completed-session score (%) in scope over an optional window.
      */
-    private function avgScore(array $subjectIds, ?Carbon $from, ?Carbon $to): ?int
+    private function avgScore(array $subjectIds, Carbon $from, Carbon $to): ?int
     {
-        $agg = $this->scopedSessions($subjectIds)
-            ->when($from, fn ($q) => $q->where('started_at', '>=', $from))
-            ->when($to, fn ($q) => $q->where('started_at', '<', $to))
+        $agg = $this->sessionsBetween($subjectIds, $from, $to)
             ->select(DB::raw('COALESCE(SUM(total_items),0) as attempted'), DB::raw('COALESCE(SUM(correct_answers),0) as correct'))
             ->first();
 
@@ -592,7 +612,7 @@ class FacultyDashboardController extends Controller
      */
     private function recentActivity(array $subjectIds)
     {
-        $sessions = $this->scopedSessions($subjectIds)
+        $sessions = $this->sessionsBetween($subjectIds, $this->from, $this->to)
             ->join('users', 'users.id', '=', 'quiz_sessions.student_id')
             ->join('subjects', 'subjects.id', '=', 'quiz_sessions.subject_id')
             ->where('users.role_id', Role::STUDENT)
@@ -612,15 +632,16 @@ class FacultyDashboardController extends Controller
             $score = $s->score_percent !== null ? (int) round($s->score_percent) : null;
             $name  = trim("{$s->first_name} {$s->last_name}");
 
-            // Icon / tone driven by the achieved score.
+            // Icon / tone driven by the achieved score — steps of the page's
+            // maroon scale (resources/views/faculty/dashboard.blade.php --m-*).
             if ($score === null) {
-                $tone = ['bg' => '#f1f5f9', 'fg' => '#64748b', 'icon' => 'fa-hourglass-half'];
+                $tone = ['bg' => '#f4f4f5', 'fg' => '#9a9a9a', 'icon' => 'fa-hourglass-half'];
             } elseif ($score < 50) {
-                $tone = ['bg' => '#fde8e8', 'fg' => '#c0392b', 'icon' => 'fa-exclamation-circle'];
+                $tone = ['bg' => '#eec9c9', 'fg' => '#5f1515', 'icon' => 'fa-exclamation-circle'];
             } elseif ($score < 75) {
-                $tone = ['bg' => '#dbeafe', 'fg' => '#2563eb', 'icon' => 'fa-brain'];
+                $tone = ['bg' => '#f7e6e6', 'fg' => '#7B1D1D', 'icon' => 'fa-brain'];
             } else {
-                $tone = ['bg' => '#d1fae5', 'fg' => '#059669', 'icon' => 'fa-check-circle'];
+                $tone = ['bg' => '#7B1D1D', 'fg' => '#ffffff', 'icon' => 'fa-check-circle'];
             }
 
             $typeLabel = match ($s->session_type) {
@@ -658,7 +679,6 @@ class FacultyDashboardController extends Controller
             'code'  => $s->code,
             'total' => (int) ($counts[$s->id] ?? 0),
             'width' => (int) round(((int) ($counts[$s->id] ?? 0)) / $max * 100),
-            'color' => self::SUBJECT_COLORS[$s->code] ?? '#7B1D1D',
         ])->sortByDesc('total')->values();
     }
 
@@ -706,12 +726,12 @@ class FacultyDashboardController extends Controller
     }
 
     /**
-     * Top students by average completed-session score in scope (min. sample so a
-     * single lucky quiz can't top the board).
+     * Top students by average completed-session score within the range (min.
+     * sample so a single lucky quiz can't top the board).
      */
     private function topStudents(array $subjectIds)
     {
-        $agg = $this->scopedSessions($subjectIds)
+        $agg = $this->sessionsBetween($subjectIds, $this->from, $this->to)
             ->join('users', 'users.id', '=', 'quiz_sessions.student_id')
             ->where('users.role_id', Role::STUDENT)
             ->groupBy('users.id', 'users.first_name', 'users.last_name')

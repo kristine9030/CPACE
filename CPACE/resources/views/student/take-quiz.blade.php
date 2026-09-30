@@ -66,7 +66,7 @@
 
         /* ══════════ HEADER ══════════ */
         .hdr {
-            background:var(--primary);
+            position:relative;   /* keeps the quiz-brand photo layer inside */
             padding:14px 18px 0;
             flex-shrink:0;
         }
@@ -725,6 +725,7 @@
             .bottom-nav { padding:16px 56px 20px; }
         }
     </style>
+    @include('partials.quiz-brand-header')
 </head>
 <body>
 
@@ -743,11 +744,9 @@
 <div class="quiz-wrap">
 
     <!-- ══════ HEADER ══════ -->
-    <div class="hdr">
+    <div class="hdr quiz-brand">
         <div class="hdr-row">
-            <button class="hdr-back" id="endQuizBtn" title="End Quiz">
-                <i class="fas fa-times"></i>
-            </button>
+            @include('partials.quiz-brand-header', ['logo' => true])
             <div class="hdr-info">
                 <div class="hdr-subject">{{ $session->subject->name ?? 'Quiz' }}</div>
                 <div class="hdr-mode">
@@ -762,6 +761,10 @@
                     <i class="fas fa-clock"></i><span id="timer">--:--</span>
                 </div>
             @endisset
+            {{-- End sits on the right now that the logo holds the left edge. --}}
+            <button class="hdr-back" id="endQuizBtn" title="End Quiz">
+                <i class="fas fa-times"></i>
+            </button>
         </div>
         <div class="hdr-progress">
             <div class="hdr-progress-fill" id="progFill" style="width:{{ $total > 0 ? round(1/$total*100,1) : 0 }}%"></div>

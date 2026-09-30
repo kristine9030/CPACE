@@ -53,7 +53,7 @@
         text-transform:uppercase; letter-spacing:.3px; padding:0 8px 8px; }
     .viz-table td { padding:7px 8px; font-size:11px; color:#555; border-top:1px solid #f3f3f3;
         font-variant-numeric:tabular-nums; }
-    .viz-table td.num { text-align:right; }
+    .viz-table td.num, .viz-table th.num { text-align:right; }
     .viz-legend { display:flex; flex-wrap:wrap; gap:12px; margin-top:12px; }
     .viz-legend span { display:inline-flex; align-items:center; gap:6px; font-size:10.5px; color:var(--viz-ink); }
     .viz-legend i.swatch { width:10px; height:10px; border-radius:3px; display:inline-block; }

@@ -70,6 +70,7 @@ class User extends Authenticatable
             'email_verified' => 'boolean',
             'last_login_at' => 'datetime',
             'setup_completed_at' => 'datetime',
+            'mock_exam_notice_seen_at' => 'datetime',
             'password' => 'hashed',
             'temp_password' => 'encrypted',
         ];

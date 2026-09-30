@@ -96,60 +96,70 @@
         .breadcrumb a { color:var(--primary); text-decoration:none; font-weight:500; }
         .breadcrumb a:hover { text-decoration:underline; }
 
+        /* ─── Subject header ───
+           Same lively language as the Class Quizzes header: a pastel tint of
+           the subject's own colour, a coloured emblem, and an illustration
+           cluster tucked into the corner. Colours come from SubjectTheme
+           (--s-base / --s-dark / --s-pastel / --s-soft set inline). */
         .subject-hero {
             position:relative; display:flex; flex-direction:column; gap:20px;
-            border-radius:16px; padding:28px 32px; margin-bottom:26px;
-            overflow:hidden; z-index:0;
+            border-radius:16px; padding:26px 30px; margin-bottom:26px;
+            overflow:hidden; isolation:isolate;
+            background:var(--s-pastel);
+            border:1px solid rgba(0,0,0,.04);
+            box-shadow:0 14px 28px -14px rgba(20,20,30,.35), 0 2px 6px rgba(20,20,30,.08);
         }
-        .subject-hero::before {
-            content:'';
-            position:absolute; inset:-2px;
-            border-radius:18px;
-            background: linear-gradient(135deg, #c0392b, #7B1D1D, #a12626);
-            z-index:-2;
-        }
-        /* Blush wash from the top edge, matching the cards on the Subjects grid. */
-        .subject-hero::after {
-            content:'';
-            position:absolute; inset:0;
-            border-radius:16px;
-            background:linear-gradient(180deg, #fdeeeb 0%, #fdf6f5 30%, #ffffff 62%);
-            z-index:-1;
-        }
-        /* abstract shapes */
-        .hero-shapes { position:absolute; inset:0; pointer-events:none; overflow:hidden; z-index:0; }
-        .hero-shapes span { position:absolute; border-radius:50%; }
-        .hero-shapes .hs1 { top:-30px; right:8%; width:120px; height:120px; border:2px solid rgba(192,57,43,.08); }
-        .hero-shapes .hs2 { bottom:-20px; right:18%; width:80px; height:80px; background:rgba(123,29,29,.04); }
-        .hero-shapes .hs3 { top:20px; right:28%; width:0; height:0; border-left:16px solid transparent; border-right:16px solid transparent; border-bottom:28px solid rgba(192,57,29,.06); transform:rotate(15deg); }
-        .hero-shapes .hs4 { bottom:10px; right:5%; width:60px; height:60px; border:1.5px dashed rgba(123,29,29,.07); border-radius:14px; transform:rotate(35deg); }
-        .hero-shapes .hs5 { top:-15px; right:40%; width:40px; height:40px; background:rgba(255,200,100,.06); border-radius:50%; }
+        .hero-illus { position:absolute; right:-8px; bottom:-16px; width:190px; height:190px; pointer-events:none; z-index:0; }
+        .hero-illus .blob { position:absolute; right:10px; bottom:10px; width:140px; height:140px; border-radius:40px;
+                            background:var(--s-soft); transform:rotate(-8deg); }
+        .hero-illus i { position:absolute; color:var(--s-base); }
+        .hero-illus .i1 { font-size:58px; right:66px; bottom:58px; opacity:.5; }
+        .hero-illus .i2 { font-size:46px; right:24px; bottom:26px; opacity:.85; }
+
         .hero-top { display:flex; align-items:center; gap:20px; position:relative; z-index:1; }
         .hero-icon {
-            width:70px; height:70px; border-radius:50%;
+            width:70px; height:70px; border-radius:19px; flex-shrink:0;
             display:flex; align-items:center; justify-content:center;
-            flex-shrink:0; position:relative;
-            box-shadow:0 0 0 5px rgba(192,57,43,0.10);
+            background:linear-gradient(145deg, var(--s-base), var(--s-dark));
+            box-shadow:0 8px 16px -6px rgba(0,0,0,.35);
         }
-        .hero-icon::before { content:''; position:absolute; inset:0; border-radius:50%; background:var(--icon-bg, #f5e8e8); z-index:0; }
-        .hero-icon img { width:40px; height:40px; object-fit:contain; position:relative; z-index:1; }
-        .hero-info h1 { font-size:24px; font-weight:800; color:#1a1a1a; }
-        .hero-info p { font-size:13px; color:#888; margin-top:3px; }
-        /* Blush pill so the topic count reads as a stat, not stray text. */
+        .hero-icon img {
+            width:44px; height:44px; object-fit:contain;
+            background:#fff; border-radius:12px; padding:5px;
+        }
+        .hero-kicker {
+            display:flex; align-items:center; gap:6px; margin-bottom:4px;
+            font-size:10.5px; font-weight:700; letter-spacing:1.6px; text-transform:uppercase;
+            color:var(--s-base);
+        }
+        .hero-info h1 { font-family:'Montserrat',ui-sans-serif,system-ui,sans-serif; font-size:28px; font-weight:700; line-height:1.15; color:#1a1a1a; }
+        .hero-info p { font-size:13.5px; color:#5c5450; margin-top:4px; }
+        /* Frosted stat pill; right margin keeps it clear of the illustration. */
         .hero-count {
-            margin-left:auto; text-align:center; flex-shrink:0;
-            background:#fdf3f1; border:1px solid #f7e4e0;
-            border-radius:12px; padding:10px 18px;
+            margin-left:auto; margin-right:150px; text-align:center; flex-shrink:0;
+            background:rgba(255,255,255,.72); border:1px solid rgba(255,255,255,.9);
+            border-radius:14px; padding:10px 18px;
+            box-shadow:0 4px 12px -6px rgba(0,0,0,.2);
         }
-        .hero-count .n { font-size:26px; font-weight:800; color:var(--primary); line-height:1.1; }
-        .hero-count .l { font-size:11px; color:#a98e8a; text-transform:uppercase; letter-spacing:.5px; }
+        .hero-count .n { font-size:26px; font-weight:800; color:var(--s-dark); line-height:1.1; }
+        .hero-count .l { font-size:11px; color:var(--s-base); font-weight:600; text-transform:uppercase; letter-spacing:.5px; }
 
-        .hero-overall { border-top:1px solid #f6e7e4; padding-top:18px; position:relative; z-index:1; }
+        /* Progress sits on a white panel inside the tinted header. */
+        .hero-overall {
+            position:relative; z-index:1;
+            margin-right:150px;
+            background:rgba(255,255,255,.78); border:1px solid rgba(255,255,255,.95);
+            border-radius:14px; padding:14px 18px;
+        }
         .hero-overall-head { display:flex; justify-content:space-between; align-items:baseline; gap:12px; flex-wrap:wrap; margin-bottom:9px; }
-        .hero-overall-label { font-size:11.5px; font-weight:700; color:var(--primary); text-transform:uppercase; letter-spacing:.5px; }
+        .hero-overall-label { font-size:11.5px; font-weight:700; color:var(--s-dark); text-transform:uppercase; letter-spacing:.5px; }
         .hero-overall-value { font-size:20px; font-weight:800; }
-        .hero-overall-sub { font-size:11px; color:#a98e8a; }
-        .hero-track { height:14px; border-radius:8px; background:#f7e4e0; overflow:hidden; }
+        .hero-overall-sub { font-size:11px; color:#8a817d; }
+        .hero-track { height:12px; border-radius:8px; background:var(--s-soft); overflow:hidden; }
+        @media (max-width: 900px) {
+            .hero-count, .hero-overall { margin-right:0; }
+            .hero-illus { opacity:.35; }
+        }
         .hero-fill {
             height:100%; border-radius:8px;
             background-image:repeating-linear-gradient(45deg, rgba(255,255,255,.18) 0 8px, transparent 8px 16px);
@@ -306,7 +316,7 @@
                 <div class="dropdown-menu" id="profileDropdown">
                     <a href="#" class="js-open-profile-modal"><i class="fas fa-user"></i> Profile Settings</a>
                     <a href="#"><i class="fas fa-chart-line"></i> My Progress</a>
-                    <a href="#"><i class="fas fa-question-circle"></i> Help &amp; Support</a>
+                    <a href="{{ route('help.index') }}"><i class="fas fa-question-circle"></i> Help &amp; Support</a>
                     <form method="POST" action="{{ route('logout') }}"
                           data-confirm="You will be signed out of CPACE and returned to the login page."
                           data-confirm-title="Log out of CPACE?"
@@ -326,16 +336,19 @@
             ? ($overallAccuracy >= $subject->passing_threshold ? '#059669' : '#dc2626')
             : '#d1d5db';
     @endphp
-    <div class="subject-hero">
-        <div class="hero-shapes" aria-hidden="true">
-            <span class="hs1"></span><span class="hs2"></span><span class="hs3"></span>
-            <span class="hs4"></span><span class="hs5"></span>
+    <div class="subject-hero" style="--s-base:{{ $theme['base'] }}; --s-dark:{{ $theme['dark'] }}; --s-pastel:{{ $theme['pastel'] }}; --s-soft:{{ $theme['soft'] }};">
+        {{-- Illustration cluster in the corner, same language as the Class Quizzes header. --}}
+        <div class="hero-illus" aria-hidden="true">
+            <span class="blob"></span>
+            <i class="fas fa-book-open i1"></i>
+            <i class="fas {{ $subjectIcon }} i2"></i>
         </div>
         <div class="hero-top">
-            <div class="hero-icon" style="--icon-bg:{{ $color }}1a;">
+            <div class="hero-icon">
                 <img src="{{ asset('images/' . $subject->code . '.png') }}" alt="{{ $subject->code }}">
             </div>
             <div class="hero-info">
+                <div class="hero-kicker"><i class="fas fa-book"></i> Resources</div>
                 <h1>{{ $subject->code }}</h1>
                 <p>{{ $subject->name }}</p>
             </div>

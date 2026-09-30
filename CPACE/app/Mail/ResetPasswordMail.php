@@ -23,7 +23,7 @@ class ResetPasswordMail extends Mailable
 
     public function build()
     {
-        return $this->subject('Reset your CPACE password')
+        return $this->subject('Reset your CPAce password')
             ->view('emails.reset-password');
     }
 }

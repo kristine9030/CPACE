@@ -55,6 +55,8 @@ class MockExamController extends Controller
                 'open' => $group->filter(fn (MockExam $e) => $e->window() === 'open')->count(),
                 'done' => $group->filter(fn (MockExam $e) => $attempts->get($e->id)?->isSubmitted())->count(),
                 'next' => $group->sortBy('scheduled_at')->first(),
+                // When a muted folder lights up next.
+                'next_upcoming' => $group->filter(fn (MockExam $e) => $e->window() === 'upcoming')->sortBy('scheduled_at')->first(),
             ];
         })->values();
 
@@ -62,7 +64,21 @@ class MockExamController extends Controller
             'folders' => $folders,
             'hasAny' => $exams->isNotEmpty(),
             'isAlumniLocked' => $student->hasAlumniAccess(),
+            // One-time explainer for the muted folders, until acknowledged.
+            'showMutedNotice' => $exams->isNotEmpty() && $student->mock_exam_notice_seen_at === null,
         ]);
+    }
+
+    /**
+     * "Yes, got it" on the muted-folders explainer. Stamped on the account so
+     * it never shows again, on any device.
+     */
+    public function dismissNotice(Request $request)
+    {
+        $this->assertStudent();
+        Auth::user()->forceFill(['mock_exam_notice_seen_at' => now()])->save();
+
+        return $request->expectsJson() ? response()->noContent() : back();
     }
 
     /** One subject's folder: every exam this student is eligible for. */
