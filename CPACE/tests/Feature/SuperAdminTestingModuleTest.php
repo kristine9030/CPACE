@@ -167,6 +167,16 @@ class SuperAdminTestingModuleTest extends TestCase
 
     public function test_system_checks_page_runs_every_check_and_reports_ai_provider_reachability(): void
     {
+        // Force the "key configured" branch regardless of what's in .env —
+        // CI's .env.example has no AI provider keys, so without this the
+        // checks short-circuit to 'warn' before Http::fake() below ever
+        // gets exercised.
+        config([
+            'services.gemini.key' => 'test-gemini-key',
+            'services.openrouter.key' => 'test-openrouter-key',
+            'services.anthropic.key' => 'test-anthropic-key',
+        ]);
+
         Http::fake([
             'generativelanguage.googleapis.com/*' => Http::response(['models' => []], 200),
             'openrouter.ai/*' => Http::response(['data' => []], 200),

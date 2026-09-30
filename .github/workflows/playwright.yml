@@ -1,8 +1,10 @@
 name: Frontend Tests (Playwright)
 
-# Runs the e2e/ Playwright suite (login smoke tests — see
-# e2e/tests/login.spec.ts) and uploads the JSON result to the CPACE Super
-# Admin "Test Reports" -> Frontend Tests tab automatically.
+# Runs the CPACE/e2e/ Playwright suite (login smoke tests — see
+# CPACE/e2e/tests/login.spec.ts) and uploads the JSON result to the CPACE
+# Super Admin "Test Reports" -> Frontend Tests tab automatically. The
+# Laravel app lives in the CPACE/ subfolder of this repo (see
+# CPACE/DEPLOYMENT.md), so this workflow's working directory follows that.
 #
 # SETUP NEEDED before this does anything against a real deployment:
 #   Two repo secrets (Settings -> Secrets and variables -> Actions):
@@ -24,27 +26,30 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: e2e
+        working-directory: CPACE/e2e
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: 'npm'
+          cache-dependency-path: CPACE/e2e/package-lock.json
 
       - run: npm ci
       - run: npx playwright install --with-deps
 
       - name: Run Playwright tests
-        run: npx playwright test --reporter=json > ../playwright-report.json
+        run: npx playwright test --reporter=json > ../../playwright-report.json
         continue-on-error: true
         env:
           BASE_URL: ${{ secrets.CPACE_APP_URL }}
 
       - name: Upload result to CPACE
         if: always()
+        working-directory: .
         run: |
           curl -sf -X POST "${{ secrets.CPACE_APP_URL }}/api/test-reports" \
             -H "Authorization: Bearer ${{ secrets.CPACE_TEST_REPORTS_TOKEN }}" \
             -H "Content-Type: application/json" \
-            -d "{\"type\":\"frontend\",\"title\":\"Playwright — ${{ github.ref_name }} @ ${{ github.sha }}\",\"payload\":$(cat ../playwright-report.json)}"
+            -d "{\"type\":\"frontend\",\"title\":\"Playwright — ${{ github.ref_name }} @ ${{ github.sha }}\",\"payload\":$(cat playwright-report.json)}"

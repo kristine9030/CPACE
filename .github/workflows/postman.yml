@@ -1,12 +1,12 @@
 name: API Tests (Postman)
 
-# Runs the CPACE mobile-API smoke collection (postman/collection.json) via
-# Newman and uploads the JSON result to the Super Admin "Test Reports" ->
-# API Tests tab automatically. The collection logs in as the dedicated
-# student@cpace.test test account (seeded by database/cpace_database.sql),
-# exercises most of routes/api.php, and cleans up everything it creates
-# (cancels the training-mode quiz it starts, deletes the review note it
-# creates, logs out at the end).
+# Runs the CPACE mobile-API smoke collection (CPACE/postman/collection.json)
+# via Newman and uploads the JSON result to the Super Admin "Test Reports"
+# -> API Tests tab automatically. The collection logs in as the dedicated
+# student@cpace.test test account (seeded by CPACE/database/cpace_database.sql),
+# exercises most of CPACE/routes/api.php, and cleans up everything it
+# creates (cancels the training-mode quiz it starts, deletes the review
+# note it creates, logs out at the end).
 #
 # SETUP NEEDED before this does anything against a real deployment:
 #   Two repo secrets (Settings -> Secrets and variables -> Actions):
@@ -37,8 +37,8 @@ jobs:
 
       - name: Run Postman collection
         run: |
-          newman run postman/collection.json \
-            -e postman/environment.json \
+          newman run CPACE/postman/collection.json \
+            -e CPACE/postman/environment.json \
             --env-var "baseUrl=${{ secrets.CPACE_APP_URL }}" \
             --reporters cli,json --reporter-json-export newman-report.json
         continue-on-error: true
