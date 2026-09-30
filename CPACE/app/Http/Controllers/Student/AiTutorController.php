@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Student;
 
+use App\Http\Controllers\Concerns\LimitsAiUsage;
 use App\Http\Controllers\Controller;
 use App\Services\AiTutorService;
 use App\Services\StreakService;
@@ -14,6 +15,11 @@ use Illuminate\Support\Facades\Log;
 
 class AiTutorController extends Controller
 {
+    use LimitsAiUsage;
+
+    private const CHAT_DAILY_LIMIT = 60;
+    private const INSIGHTS_DAILY_LIMIT = 20;
+
     /**
      * Chat endpoint for the floating AI Tutor widget. The client sends the
      * whole conversation each turn; the service handles the Gemini →
@@ -26,6 +32,10 @@ class AiTutorController extends Controller
             'messages.*.role'    => ['required', 'in:user,assistant'],
             'messages.*.content' => ['required', 'string', 'max:6000'],
         ]);
+
+        if ($this->aiDailyLimitReached('tutor_chat', self::CHAT_DAILY_LIMIT)) {
+            return $this->aiDailyLimitResponse('You have reached today\'s limit for the AI Tutor. Please try again tomorrow.');
+        }
 
         try {
             $result = $ai->chat($data['messages']);
@@ -57,6 +67,10 @@ class AiTutorController extends Controller
 
         if ($request->boolean('refresh')) {
             Cache::forget($cacheKey);
+        }
+
+        if (! Cache::has($cacheKey) && $this->aiDailyLimitReached('tutor_insights', self::INSIGHTS_DAILY_LIMIT)) {
+            return $this->aiDailyLimitResponse('You have reached today\'s limit for AI insights. Please try again tomorrow.');
         }
 
         try {

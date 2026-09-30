@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Faculty;
 
+use App\Http\Controllers\Concerns\LimitsAiUsage;
 use App\Http\Controllers\Controller;
 
 use App\Models\CurriculumVersion;
@@ -21,10 +22,15 @@ use Illuminate\Support\Facades\Schema;
 
 class TestBankController extends Controller
 {
+    use LimitsAiUsage;
+
     /** Difficulty labels shown in the UI mapped to the DB enum. */
     private const DIFFICULTY_MAP = [
         'Easy' => 'easy', 'Medium' => 'moderate', 'Hard' => 'difficult',
     ];
+
+    private const AI_DRAFT_DAILY_LIMIT = 100;
+    private const AI_VARIANT_DAILY_LIMIT = 100;
 
     /**
      * Test Bank listing with live stats and filters.
@@ -309,6 +315,10 @@ class TestBankController extends Controller
             return response()->json(['message' => self::NOT_ASSIGNED_MESSAGE, 'not_assigned' => true], 403);
         }
 
+        if ($this->aiDailyLimitReached('question_draft', self::AI_DRAFT_DAILY_LIMIT)) {
+            return response()->json(['message' => 'You have reached today\'s limit for AI question drafting. Please try again tomorrow.'], 429);
+        }
+
         $existingQuestions = Question::where('topic_id', $topic->id)
             ->orderByDesc('id')
             ->limit(15)
@@ -581,16 +591,18 @@ class TestBankController extends Controller
             return response()->json(['message' => self::NOT_ASSIGNED_MESSAGE, 'not_assigned' => true], 403);
         }
 
-        try {
-            $draft = $ai->rewriteVariant(
-                $question->topic->subject->name ?? $question->topic->subject->code ?? 'CPA Reviewer',
-                $question->topic->name ?? '',
-                $question->question_text
-            );
+        if (! $this->aiDailyLimitReached('question_variant', self::AI_VARIANT_DAILY_LIMIT)) {
+            try {
+                $draft = $ai->rewriteVariant(
+                    $question->topic->subject->name ?? $question->topic->subject->code ?? 'CPA Reviewer',
+                    $question->topic->name ?? '',
+                    $question->question_text
+                );
 
-            return response()->json(['draft' => $draft, 'source' => 'ai']);
-        } catch (\Throwable $e) {
-            Log::warning('AI variant rewrite failed, falling back to rule-based paraphraser.', ['error' => $e->getMessage()]);
+                return response()->json(['draft' => $draft, 'source' => 'ai']);
+            } catch (\Throwable $e) {
+                Log::warning('AI variant rewrite failed, falling back to rule-based paraphraser.', ['error' => $e->getMessage()]);
+            }
         }
 
         $draft = QuestionParaphraser::rephrase(

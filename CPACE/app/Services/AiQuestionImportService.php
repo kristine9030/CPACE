@@ -11,9 +11,10 @@ use Illuminate\Support\Facades\Log;
  * parser (QuestionImportParser) can't confidently find questions in a file's
  * extracted text, and for images (which can only be read by a vision model).
  *
- * Provider strategy mirrors AiTutorService: Claude is tried first (it also
- * does vision), then Gemini (also vision-capable), then OpenRouter as a
- * text-only last resort for documents.
+ * Provider strategy mirrors AiTutorService: Gemini is tried first (it's
+ * vision-capable and cheaper), then OpenRouter as a text-only option for
+ * documents, then Claude last as a paid last-resort fallback (it also does
+ * vision, so it's used directly as the image-import fallback).
  */
 class AiQuestionImportService
 {
@@ -28,7 +29,7 @@ class AiQuestionImportService
 
     /**
      * Structure a photo/scan (e.g. a computation problem) into questions via
-     * vision. Claude is tried first, then Gemini — OpenRouter's free-tier
+     * vision. Gemini is tried first, then Claude — OpenRouter's free-tier
      * models here are text-only.
      *
      * @return array<int, array>
@@ -41,24 +42,24 @@ class AiQuestionImportService
 
         $base64 = base64_encode(file_get_contents($path));
 
-        if (config('services.anthropic.key') && ! Cache::has(self::CLAUDE_COOLDOWN_KEY)) {
+        if (config('services.gemini.key') && ! Cache::has(self::GEMINI_COOLDOWN_KEY)) {
             try {
-                $reply = $this->askClaudeVision($this->systemPrompt(), $base64, $mimeType);
+                $reply = $this->askGeminiVision($this->systemPrompt(), $base64, $mimeType);
 
                 return $this->parseItems($reply);
             } catch (\Throwable $e) {
-                Log::warning('AI Question Import: Claude vision failed, falling back to Gemini.', [
+                Log::warning('AI Question Import: Gemini vision failed, falling back to Claude.', [
                     'error' => $e->getMessage(),
                 ]);
-                Cache::put(self::CLAUDE_COOLDOWN_KEY, true, now()->addMinutes(self::CLAUDE_COOLDOWN_MINUTES));
+                Cache::put(self::GEMINI_COOLDOWN_KEY, true, now()->addMinutes(self::GEMINI_COOLDOWN_MINUTES));
             }
         }
 
-        if (! config('services.gemini.key')) {
+        if (! config('services.anthropic.key')) {
             throw new \RuntimeException('Image import needs the AI vision service, which is not configured right now.');
         }
 
-        $reply = $this->askGeminiVision($this->systemPrompt(), $base64, $mimeType);
+        $reply = $this->askClaudeVision($this->systemPrompt(), $base64, $mimeType);
 
         return $this->parseItems($reply);
     }
@@ -113,18 +114,6 @@ class AiQuestionImportService
 
     private function generate(string $system, array $messages): string
     {
-        if (config('services.anthropic.key') && ! Cache::has(self::CLAUDE_COOLDOWN_KEY)) {
-            try {
-                $reply = $this->askClaude($system, $messages);
-                if ($reply !== null && $reply !== '') {
-                    return $reply;
-                }
-            } catch (\Throwable $e) {
-                Log::warning('AI Question Import: Claude failed, falling back to Gemini.', ['error' => $e->getMessage()]);
-            }
-            Cache::put(self::CLAUDE_COOLDOWN_KEY, true, now()->addMinutes(self::CLAUDE_COOLDOWN_MINUTES));
-        }
-
         if (config('services.gemini.key') && ! Cache::has(self::GEMINI_COOLDOWN_KEY)) {
             try {
                 $reply = $this->askGemini($system, $messages);
@@ -137,7 +126,25 @@ class AiQuestionImportService
             Cache::put(self::GEMINI_COOLDOWN_KEY, true, now()->addMinutes(self::GEMINI_COOLDOWN_MINUTES));
         }
 
-        return $this->askOpenRouter($system, $messages);
+        try {
+            return $this->askOpenRouter($system, $messages);
+        } catch (\Throwable $e) {
+            Log::warning('AI Question Import: OpenRouter failed, falling back to Claude.', ['error' => $e->getMessage()]);
+        }
+
+        if (config('services.anthropic.key') && ! Cache::has(self::CLAUDE_COOLDOWN_KEY)) {
+            try {
+                $reply = $this->askClaude($system, $messages);
+                if ($reply !== null && $reply !== '') {
+                    return $reply;
+                }
+            } catch (\Throwable $e) {
+                Log::warning('AI Question Import: Claude failed.', ['error' => $e->getMessage()]);
+            }
+            Cache::put(self::CLAUDE_COOLDOWN_KEY, true, now()->addMinutes(self::CLAUDE_COOLDOWN_MINUTES));
+        }
+
+        throw new \RuntimeException('All AI providers are currently unavailable.');
     }
 
     private function askClaude(string $system, array $messages): ?string
