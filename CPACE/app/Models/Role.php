@@ -17,6 +17,7 @@ class Role extends Model
     public const STUDENT = 2;
     public const FACULTY = 3;
     public const ALUMNI = 4;
+    public const SUPER_ADMIN = 5;
 
     public function users()
     {

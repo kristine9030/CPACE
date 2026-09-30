@@ -25,6 +25,13 @@ class ApiAuthenticate
         // Bind the authenticated user so controllers can call Auth::user() / Auth::id().
         auth()->setUser($record->user);
 
+        try {
+            $record->forceFill(['last_used_at' => now()])->saveQuietly();
+        } catch (\Throwable $e) {
+            // Never let a missing last_used_at column (e.g. a test's hand-built
+            // api_tokens schema) break authentication.
+        }
+
         return $next($request);
     }
 }

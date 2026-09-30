@@ -1,0 +1,50 @@
+name: Frontend Tests (Playwright)
+
+# Runs the e2e/ Playwright suite (login smoke tests — see
+# e2e/tests/login.spec.ts) and uploads the JSON result to the CPACE Super
+# Admin "Test Reports" -> Frontend Tests tab automatically.
+#
+# SETUP NEEDED before this does anything against a real deployment:
+#   Two repo secrets (Settings -> Secrets and variables -> Actions):
+#     CPACE_APP_URL             e.g. https://staging.cpace.site — a
+#                                non-production deployment (see
+#                                DEPLOYMENT-STAGING.md), never cpace.site
+#     CPACE_TEST_REPORTS_TOKEN  a named Super Admin API token from
+#                                /superadmin/api-tokens on that staging
+#                                site ("GitHub Actions — Playwright")
+
+on:
+  push:
+    branches: [dev]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  playwright:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: e2e
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - run: npm ci
+      - run: npx playwright install --with-deps
+
+      - name: Run Playwright tests
+        run: npx playwright test --reporter=json > ../playwright-report.json
+        continue-on-error: true
+        env:
+          BASE_URL: ${{ secrets.CPACE_APP_URL }}
+
+      - name: Upload result to CPACE
+        if: always()
+        run: |
+          curl -sf -X POST "${{ secrets.CPACE_APP_URL }}/api/test-reports" \
+            -H "Authorization: Bearer ${{ secrets.CPACE_TEST_REPORTS_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d "{\"type\":\"frontend\",\"title\":\"Playwright — ${{ github.ref_name }} @ ${{ github.sha }}\",\"payload\":$(cat ../playwright-report.json)}"

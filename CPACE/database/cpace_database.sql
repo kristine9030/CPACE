@@ -17,7 +17,7 @@ USE cpace_db;
 
 CREATE TABLE roles (
     id          TINYINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    name        VARCHAR(30) NOT NULL UNIQUE  -- 'admin','student','faculty','alumni'
+    name        VARCHAR(30) NOT NULL UNIQUE  -- 'admin','student','faculty','alumni','super_admin'
 );
 
 CREATE TABLE users (
@@ -805,7 +805,7 @@ CREATE TABLE system_logs (
 -- =============================================================
 
 INSERT INTO roles (name) VALUES
-    ('admin'), ('student'), ('faculty'), ('alumni');
+    ('admin'), ('student'), ('faculty'), ('alumni'), ('super_admin');
 
 -- =============================================================
 -- SEED: CPALE Subjects
@@ -884,6 +884,54 @@ INSERT INTO badges (name, description, criteria) VALUES
     ('No Weakness',   'Cleared all weak areas in a subject',  'is_weak_area = FALSE for all topics in a subject');
 
 -- =============================================================
+-- SUPER ADMIN MODULE: system-monitoring console (separate from the
+-- Program Chair's academic-management portal). See app/Support/Auditor.php
+-- and app/Http/Controllers/SuperAdmin/*.
+-- =============================================================
+
+CREATE TABLE activity_logs (
+    id           BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    actor_id     INT UNSIGNED NULL,
+    actor_name   VARCHAR(255) NULL,
+    actor_role   VARCHAR(20) NULL,
+    action       VARCHAR(60) NOT NULL,
+    description  TEXT NULL,
+    subject_type VARCHAR(60) NULL,
+    subject_id   BIGINT UNSIGNED NULL,
+    ip_address   VARCHAR(45) NULL,
+    created_at   DATETIME NULL,
+    INDEX idx_al_actor (actor_id),
+    INDEX idx_al_action (action),
+    INDEX idx_al_created (created_at)
+);
+
+CREATE TABLE ai_usage_logs (
+    id         BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id    INT UNSIGNED NULL,
+    feature    VARCHAR(60) NOT NULL,
+    provider   VARCHAR(30) NULL,
+    created_at DATETIME NULL,
+    INDEX idx_aul_user (user_id),
+    INDEX idx_aul_feature (feature),
+    INDEX idx_aul_created (created_at)
+);
+
+-- One row per uploaded external test-run result (Playwright, Postman/
+-- Newman, a load benchmark, or a data-warehouse query benchmark) — see
+-- app/Http/Controllers/SuperAdmin/TestReportController.php.
+CREATE TABLE test_reports (
+    id          BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    type        VARCHAR(20) NOT NULL,   -- frontend | api | load | warehouse
+    title       VARCHAR(255) NOT NULL,
+    summary     JSON NULL,
+    raw_payload LONGTEXT NOT NULL,
+    uploaded_by INT UNSIGNED NULL,
+    created_at  DATETIME NULL,
+    INDEX idx_tr_type (type),
+    INDEX idx_tr_created (created_at)
+);
+
+-- =============================================================
 -- SEED: Program Chair (Admin role) — default login
 -- email: chair@cpace.test   password: ProgramChair123
 -- =============================================================
@@ -892,5 +940,39 @@ INSERT INTO users (role_id, first_name, last_name, email, password, is_active, e
 VALUES (1, 'Program', 'Chair', 'chair@cpace.test',
         '$2y$10$dVCMqvf.kMCjuzYkvTY5kuGSp5JS24MQtE/lAD6Ix9sELgljL.GdC',
         TRUE, TRUE);
+
+-- =============================================================
+-- SEED: Super Admin — default login
+-- email: superadmin@cpace.test   password: SuperAdmin123
+-- =============================================================
+
+INSERT INTO users (role_id, first_name, last_name, email, password, is_active, email_verified)
+VALUES (5, 'System', 'Admin', 'superadmin@cpace.test',
+        '$2y$12$ofOmhNM.EERhcpOdeoo9uua4nTzyg2q87Jz6j2lmJdxGxHepNhIS.',
+        TRUE, TRUE);
+
+-- =============================================================
+-- SEED: dedicated test accounts for automated Playwright/Postman
+-- runs against a freshly-seeded (staging) database — separate from the
+-- personal demo accounts wired into login.blade.php's quick-login buttons,
+-- which belong to real people and aren't guaranteed to exist on a fresh
+-- install. See DEPLOYMENT-STAGING.md.
+--   student@cpace.test   password: Student123
+--   faculty@cpace.test   password: Faculty123
+--   alumni@cpace.test    password: Alumni123
+-- =============================================================
+
+INSERT INTO users (role_id, first_name, last_name, email, password, is_active, email_verified)
+VALUES
+    (2, 'Test', 'Student', 'student@cpace.test',
+     '$2y$12$7huznzirS3JwRZDXeCWy0Om9W34W26CBKQReu1Q6GEFj6Io7Oxagm', TRUE, TRUE),
+    (3, 'Test', 'Faculty', 'faculty@cpace.test',
+     '$2y$12$3G7ZH8lCWvxlvN0i9awok.jg17Nvnkwy3mpxL/IOt6BvjhZGya8F2', TRUE, TRUE),
+    (4, 'Test', 'Alumni', 'alumni@cpace.test',
+     '$2y$12$SMOKImyv04qoGy9l2WuPkOta5Q5XCzdnbP5S941p6vzPyfIwS8VVG', TRUE, TRUE);
+
+INSERT INTO student_profiles (user_id) SELECT id FROM users WHERE email = 'student@cpace.test';
+INSERT INTO faculty_profiles (user_id) SELECT id FROM users WHERE email = 'faculty@cpace.test';
+INSERT INTO alumni_profiles (user_id) SELECT id FROM users WHERE email = 'alumni@cpace.test';
 
 SET FOREIGN_KEY_CHECKS = 1;

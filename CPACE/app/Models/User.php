@@ -214,6 +214,11 @@ class User extends Authenticatable
         return $this->role_id === Role::ALUMNI;
     }
 
+    public function isSuperAdmin(): bool
+    {
+        return $this->role_id === Role::SUPER_ADMIN;
+    }
+
     /**
      * Named route for this user's own home/dashboard — the single source of
      * truth for "where does this account belong", used by post-login
@@ -226,6 +231,9 @@ class User extends Authenticatable
      */
     public function homeRouteName(): string
     {
+        if ($this->isSuperAdmin()) {
+            return 'superadmin.dashboard';
+        }
         if ($this->isChair()) {
             return 'chair.dashboard';
         }

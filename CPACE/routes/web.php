@@ -48,6 +48,14 @@ use App\Http\Controllers\IssueReportController;
 use App\Http\Controllers\HelpCenterController;
 use App\Http\Controllers\Chair\SupportInboxController;
 use App\Http\Controllers\AiSubstituteReviewController;
+use App\Http\Controllers\SuperAdmin\DashboardController as SuperAdminDashboardController;
+use App\Http\Controllers\SuperAdmin\UserManagementController as SuperAdminUserManagementController;
+use App\Http\Controllers\SuperAdmin\ActivityLogController as SuperAdminActivityLogController;
+use App\Http\Controllers\SuperAdmin\PerformanceController as SuperAdminPerformanceController;
+use App\Http\Controllers\SuperAdmin\SystemCheckController as SuperAdminSystemCheckController;
+use App\Http\Controllers\SuperAdmin\TestReportController as SuperAdminTestReportController;
+use App\Http\Controllers\SuperAdmin\EvaluationController as SuperAdminEvaluationController;
+use App\Http\Controllers\SuperAdmin\ApiTokenController as SuperAdminApiTokenController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -103,6 +111,38 @@ Route::middleware(['auth', 'no-back-cache'])->group(function () {
     Route::post('/help/tickets', [HelpCenterController::class, 'store'])->middleware('throttle:6,1')->name('help.tickets.store');
     Route::get('/help/tickets/{report}', [HelpCenterController::class, 'show'])->name('help.tickets.show');
     Route::post('/help/tickets/{report}/replies', [HelpCenterController::class, 'reply'])->middleware('throttle:20,1')->name('help.tickets.reply');
+
+    // Super Admin Routes — system monitoring/ops console, separate from the
+    // Program Chair's academic-management portal.
+    Route::prefix('superadmin')->name('superadmin.')->middleware('superadmin')->group(function () {
+        Route::get('/dashboard', [SuperAdminDashboardController::class, 'index'])->name('dashboard');
+        Route::get('/dashboard/data', [SuperAdminDashboardController::class, 'data'])->name('dashboard.data');
+
+        Route::get('/performance', [SuperAdminPerformanceController::class, 'index'])->name('performance');
+        Route::get('/performance/data', [SuperAdminPerformanceController::class, 'data'])->name('performance.data');
+
+        Route::get('/users', [SuperAdminUserManagementController::class, 'index'])->name('users');
+        Route::get('/users/create', [SuperAdminUserManagementController::class, 'create'])->name('users.create');
+        Route::post('/users', [SuperAdminUserManagementController::class, 'store'])->name('users.store');
+        Route::post('/users/{id}/toggle-active', [SuperAdminUserManagementController::class, 'toggleActive'])->name('users.toggle-active');
+        Route::post('/users/{id}/resend-otp', [SuperAdminUserManagementController::class, 'resendOtp'])->name('users.resend-otp');
+
+        Route::get('/activity-log', [SuperAdminActivityLogController::class, 'index'])->name('activity-log');
+        Route::get('/activity-log/export', [SuperAdminActivityLogController::class, 'export'])->name('activity-log.export');
+
+        Route::get('/system-checks', [SuperAdminSystemCheckController::class, 'index'])->name('system-checks');
+
+        Route::get('/test-reports', [SuperAdminTestReportController::class, 'index'])->name('test-reports');
+        Route::post('/test-reports', [SuperAdminTestReportController::class, 'store'])->name('test-reports.store');
+        Route::get('/test-reports/{id}', [SuperAdminTestReportController::class, 'show'])->name('test-reports.show');
+        Route::delete('/test-reports/{id}', [SuperAdminTestReportController::class, 'destroy'])->name('test-reports.destroy');
+
+        Route::get('/evaluations', [SuperAdminEvaluationController::class, 'index'])->name('evaluations');
+
+        Route::get('/api-tokens', [SuperAdminApiTokenController::class, 'index'])->name('api-tokens');
+        Route::post('/api-tokens', [SuperAdminApiTokenController::class, 'store'])->name('api-tokens.store');
+        Route::delete('/api-tokens/{id}', [SuperAdminApiTokenController::class, 'destroy'])->name('api-tokens.destroy');
+    });
 
     // Program Chair Routes (Admin role)
     Route::prefix('chair')->name('chair.')->middleware('chair')->group(function () {

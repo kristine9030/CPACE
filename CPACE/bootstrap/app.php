@@ -17,13 +17,17 @@ return Application::configure(basePath: dirname(__DIR__))
             'chair'   => \App\Http\Middleware\ChairMiddleware::class,
             'student' => \App\Http\Middleware\StudentMiddleware::class,
             'alumni'  => \App\Http\Middleware\AlumniMiddleware::class,
+            'superadmin' => \App\Http\Middleware\SuperAdminMiddleware::class,
             'api.auth' => \App\Http\Middleware\ApiAuthenticate::class,
             'no-back-cache' => \App\Http\Middleware\PreventBackHistory::class,
         ]);
 
         // Gate freshly-imported students into first-login Account Setup.
+        // RecordRequestMetrics feeds the Super Admin dashboard's live
+        // request-count/error-count/response-time cards.
         $middleware->web(append: [
             \App\Http\Middleware\EnsureAccountSetup::class,
+            \App\Http\Middleware\RecordRequestMetrics::class,
         ]);
 
         // The 'guest' middleware (RedirectIfAuthenticated) bounces an already

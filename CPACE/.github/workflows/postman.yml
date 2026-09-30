@@ -1,0 +1,52 @@
+name: API Tests (Postman)
+
+# Runs the CPACE mobile-API smoke collection (postman/collection.json) via
+# Newman and uploads the JSON result to the Super Admin "Test Reports" ->
+# API Tests tab automatically. The collection logs in as the dedicated
+# student@cpace.test test account (seeded by database/cpace_database.sql),
+# exercises most of routes/api.php, and cleans up everything it creates
+# (cancels the training-mode quiz it starts, deletes the review note it
+# creates, logs out at the end).
+#
+# SETUP NEEDED before this does anything against a real deployment:
+#   Two repo secrets (Settings -> Secrets and variables -> Actions):
+#     CPACE_APP_URL             e.g. https://staging.cpace.site — a
+#                                non-production deployment (see
+#                                DEPLOYMENT-STAGING.md), never cpace.site
+#     CPACE_TEST_REPORTS_TOKEN  a named Super Admin API token from
+#                                /superadmin/api-tokens on that staging
+#                                site ("GitHub Actions — Postman")
+
+on:
+  push:
+    branches: [dev]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  postman:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - run: npm install -g newman
+
+      - name: Run Postman collection
+        run: |
+          newman run postman/collection.json \
+            -e postman/environment.json \
+            --env-var "baseUrl=${{ secrets.CPACE_APP_URL }}" \
+            --reporters cli,json --reporter-json-export newman-report.json
+        continue-on-error: true
+
+      - name: Upload result to CPACE
+        if: always()
+        run: |
+          curl -sf -X POST "${{ secrets.CPACE_APP_URL }}/api/test-reports" \
+            -H "Authorization: Bearer ${{ secrets.CPACE_TEST_REPORTS_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d "{\"type\":\"api\",\"title\":\"Postman — ${{ github.ref_name }} @ ${{ github.sha }}\",\"payload\":$(cat newman-report.json)}"

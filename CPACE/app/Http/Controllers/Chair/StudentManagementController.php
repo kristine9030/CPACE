@@ -12,10 +12,12 @@ use App\Models\Section;
 use App\Models\StudentProfile;
 use App\Models\User;
 use App\Services\WeaknessDetector;
+use App\Support\Auditor;
 use App\Support\BatchYear;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
@@ -77,6 +79,7 @@ class StudentManagementController extends Controller
     public function show(int $id)
     {
         $student = User::where('role_id', Role::STUDENT)->with('studentProfile')->findOrFail($id);
+        Auditor::log(Auth::user(), 'student_viewed', "Viewed {$student->name}'s student record.", 'User', $student->id);
         $row = $this->studentRows([$student->id])->first();
 
         $subjectPerformance = DB::table('subjects')

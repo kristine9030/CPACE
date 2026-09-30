@@ -13,6 +13,7 @@ use App\Models\Topic;
 use App\Services\AiQuestionAssistantService;
 use App\Services\BrandedXlsxReport;
 use App\Services\QuestionParaphraser;
+use App\Support\Auditor;
 use App\Support\CurriculumScope;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -360,7 +361,7 @@ class TestBankController extends Controller
             return redirect()->route('faculty.test-bank')->with('warning', self::ARCHIVED_MESSAGE);
         }
 
-        DB::transaction(function () use ($data, $request) {
+        $question = DB::transaction(function () use ($data, $request) {
             $question = Question::create([
                 'topic_id'      => $data['topic_id'],
                 'created_by'    => Auth::id(),
@@ -372,7 +373,11 @@ class TestBankController extends Controller
             ]);
 
             $this->saveChoices($question, $data);
+
+            return $question;
         });
+
+        Auditor::log(Auth::user(), 'question_added', "Added a question to \"{$topic->name}\".", 'Question', $question->id);
 
         return redirect()->route('faculty.test-bank')->with('status', 'Question added to the test bank.');
     }
