@@ -136,6 +136,7 @@ class AiTutorTest extends TestCase
     {
         $student = $this->student();
         Http::fake([
+            'https://api.anthropic.com/*' => Http::response('nope', 500),
             'https://generativelanguage.googleapis.com/*' => Http::response('nope', 500),
             'https://openrouter.ai/*' => Http::response('nope', 500),
         ]);
@@ -177,6 +178,9 @@ class AiTutorTest extends TestCase
     private function fakeAiReply(string $text): void
     {
         Http::fake([
+            'https://api.anthropic.com/*' => Http::response([
+                'content' => [['type' => 'text', 'text' => $text]],
+            ], 200),
             'https://generativelanguage.googleapis.com/*' => Http::response([
                 'candidates' => [['content' => ['parts' => [['text' => $text]]]]],
             ], 200),

@@ -11,11 +11,14 @@ use Illuminate\Support\Facades\Log;
  * parser (QuestionImportParser) can't confidently find questions in a file's
  * extracted text, and for images (which can only be read by a vision model).
  *
- * Provider strategy mirrors AiQuestionAssistantService (Gemini first, since
- * it also does vision; OpenRouter as a text-only fallback for documents).
+ * Provider strategy mirrors AiTutorService: Claude is tried first (it also
+ * does vision), then Gemini (also vision-capable), then OpenRouter as a
+ * text-only last resort for documents.
  */
 class AiQuestionImportService
 {
+    private const CLAUDE_COOLDOWN_KEY = 'ai_question_import.claude_down';
+    private const CLAUDE_COOLDOWN_MINUTES = 5;
     private const GEMINI_COOLDOWN_KEY = 'ai_question_import.gemini_down';
     private const GEMINI_COOLDOWN_MINUTES = 5;
     private const TIMEOUT_SECONDS = 90;
@@ -25,17 +28,36 @@ class AiQuestionImportService
 
     /**
      * Structure a photo/scan (e.g. a computation problem) into questions via
-     * vision. Gemini only — OpenRouter's free-tier models here are text-only.
+     * vision. Claude is tried first, then Gemini — OpenRouter's free-tier
+     * models here are text-only.
      *
      * @return array<int, array>
      */
     public function extractFromImage(string $path, string $mimeType): array
     {
-        if (! config('services.gemini.key')) {
+        if (! config('services.anthropic.key') && ! config('services.gemini.key')) {
             throw new \RuntimeException('Image import needs the AI vision service, which is not configured right now.');
         }
 
         $base64 = base64_encode(file_get_contents($path));
+
+        if (config('services.anthropic.key') && ! Cache::has(self::CLAUDE_COOLDOWN_KEY)) {
+            try {
+                $reply = $this->askClaudeVision($this->systemPrompt(), $base64, $mimeType);
+
+                return $this->parseItems($reply);
+            } catch (\Throwable $e) {
+                Log::warning('AI Question Import: Claude vision failed, falling back to Gemini.', [
+                    'error' => $e->getMessage(),
+                ]);
+                Cache::put(self::CLAUDE_COOLDOWN_KEY, true, now()->addMinutes(self::CLAUDE_COOLDOWN_MINUTES));
+            }
+        }
+
+        if (! config('services.gemini.key')) {
+            throw new \RuntimeException('Image import needs the AI vision service, which is not configured right now.');
+        }
+
         $reply = $this->askGeminiVision($this->systemPrompt(), $base64, $mimeType);
 
         return $this->parseItems($reply);
@@ -91,6 +113,18 @@ class AiQuestionImportService
 
     private function generate(string $system, array $messages): string
     {
+        if (config('services.anthropic.key') && ! Cache::has(self::CLAUDE_COOLDOWN_KEY)) {
+            try {
+                $reply = $this->askClaude($system, $messages);
+                if ($reply !== null && $reply !== '') {
+                    return $reply;
+                }
+            } catch (\Throwable $e) {
+                Log::warning('AI Question Import: Claude failed, falling back to Gemini.', ['error' => $e->getMessage()]);
+            }
+            Cache::put(self::CLAUDE_COOLDOWN_KEY, true, now()->addMinutes(self::CLAUDE_COOLDOWN_MINUTES));
+        }
+
         if (config('services.gemini.key') && ! Cache::has(self::GEMINI_COOLDOWN_KEY)) {
             try {
                 $reply = $this->askGemini($system, $messages);
@@ -104,6 +138,75 @@ class AiQuestionImportService
         }
 
         return $this->askOpenRouter($system, $messages);
+    }
+
+    private function askClaude(string $system, array $messages): ?string
+    {
+        $model = config('services.anthropic.model');
+
+        $claudeMessages = array_map(fn ($m) => [
+            'role'    => $m['role'] === 'assistant' ? 'assistant' : 'user',
+            'content' => $m['content'],
+        ], $messages);
+
+        $response = Http::timeout(self::TIMEOUT_SECONDS)
+            ->withHeaders([
+                'x-api-key'         => config('services.anthropic.key'),
+                'anthropic-version' => '2023-06-01',
+            ])
+            ->post('https://api.anthropic.com/v1/messages', [
+                'model'       => $model,
+                'system'      => $system,
+                'messages'    => $claudeMessages,
+                'temperature' => 0.2,
+                'max_tokens'  => 8192,
+            ]);
+
+        if ($response->failed()) {
+            throw new \RuntimeException('Claude HTTP ' . $response->status() . ': ' . mb_substr($response->body(), 0, 300));
+        }
+
+        $blocks = $response->json('content', []);
+        $text   = collect($blocks)->pluck('text')->filter()->implode("\n");
+
+        return $text !== '' ? $text : null;
+    }
+
+    private function askClaudeVision(string $system, string $base64Image, string $mimeType): string
+    {
+        $model = config('services.anthropic.model');
+
+        $response = Http::timeout(self::TIMEOUT_SECONDS)
+            ->withHeaders([
+                'x-api-key'         => config('services.anthropic.key'),
+                'anthropic-version' => '2023-06-01',
+            ])
+            ->post('https://api.anthropic.com/v1/messages', [
+                'model'    => $model,
+                'system'   => $system,
+                'messages' => [[
+                    'role'    => 'user',
+                    'content' => [
+                        ['type' => 'text', 'text' => 'Read every question in this image (including any computation/numeric problems) and structure them per the system instructions.'],
+                        ['type' => 'image', 'source' => ['type' => 'base64', 'media_type' => $mimeType, 'data' => $base64Image]],
+                    ],
+                ]],
+                'temperature' => 0.2,
+                'max_tokens'  => 8192,
+            ]);
+
+        if ($response->failed()) {
+            throw new \RuntimeException('Claude vision HTTP ' . $response->status() . ': ' . mb_substr($response->body(), 0, 300));
+        }
+
+        $blocks = $response->json('content', []);
+        $text   = collect($blocks)->pluck('text')->filter()->implode("\n");
+
+        if ($text === '') {
+            throw new \RuntimeException('Claude vision returned an empty reply.');
+        }
+
+        return $text;
     }
 
     private function askGemini(string $system, array $messages): ?string

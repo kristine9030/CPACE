@@ -122,15 +122,19 @@ class FacultyAiQuestionAssistantTest extends TestCase
     }
 
     /**
-     * Fakes a successful reply from BOTH providers with the same content, so
-     * the test doesn't care whether the service actually reaches Gemini or
-     * falls through to OpenRouter — which depends on whether GEMINI_API_KEY
-     * is set in the current environment (it isn't in CI, which runs off
-     * .env.example, but it is in local dev off the real .env).
+     * Fakes a successful reply from ALL providers with the same content, so
+     * the test doesn't care whether the service actually reaches Claude,
+     * Gemini, or falls through to OpenRouter — which depends on whether
+     * ANTHROPIC_API_KEY / GEMINI_API_KEY are set in the current environment
+     * (they aren't in CI, which runs off .env.example, but they are in local
+     * dev off the real .env).
      */
     private function fakeAiReply(string $text): void
     {
         Http::fake([
+            'https://api.anthropic.com/*' => Http::response([
+                'content' => [['type' => 'text', 'text' => $text]],
+            ], 200),
             'https://generativelanguage.googleapis.com/*' => Http::response([
                 'candidates' => [
                     ['content' => ['parts' => [['text' => $text]]]],
@@ -183,6 +187,7 @@ class FacultyAiQuestionAssistantTest extends TestCase
         $this->assignSubject($faculty, $subject);
 
         Http::fake([
+            'https://api.anthropic.com/*' => Http::response([], 500),
             'https://generativelanguage.googleapis.com/*' => Http::response([], 500),
             'https://openrouter.ai/*' => Http::response([], 500),
         ]);
@@ -253,6 +258,7 @@ class FacultyAiQuestionAssistantTest extends TestCase
         $this->assignSubject($faculty, $subject);
 
         Http::fake([
+            'https://api.anthropic.com/*' => Http::response([], 500),
             'https://generativelanguage.googleapis.com/*' => Http::response([], 500),
             'https://openrouter.ai/*' => Http::response([], 500),
         ]);
