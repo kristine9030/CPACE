@@ -23,7 +23,7 @@ class ChairFacultyPerformanceReportTest extends TestCase
 {
     private const TABLES = [
         'quiz_answers', 'question_variants', 'questions', 'topics', 'curriculum_versions', 'subjects', 'faculty_subjects',
-        'notifications', 'messages', 'conversation_participants', 'conversations', 'users',
+        'faculty_subject_sections', 'sections', 'notifications', 'messages', 'conversation_participants', 'conversations', 'users',
     ];
 
     private int $activeId;
@@ -98,6 +98,21 @@ class ChairFacultyPerformanceReportTest extends TestCase
             $table->unsignedBigInteger('assigned_by')->nullable();
             $table->timestamp('assigned_at')->nullable();
             $table->primary(['faculty_id', 'subject_id']);
+        });
+        Schema::create('sections', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->string('year_level')->nullable();
+            $table->boolean('is_active')->default(true);
+            $table->timestamps();
+        });
+        Schema::create('faculty_subject_sections', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('faculty_id');
+            $table->unsignedBigInteger('subject_id');
+            $table->unsignedBigInteger('section_id');
+            $table->unsignedBigInteger('assigned_by')->nullable();
+            $table->timestamp('assigned_at')->nullable();
         });
         Schema::create('questions', function (Blueprint $table) {
             $table->id();
