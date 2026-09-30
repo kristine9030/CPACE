@@ -9,13 +9,16 @@ use Illuminate\Support\Facades\Log;
 /**
  * AI Tutor backend used by the floating chat widget.
  *
- * Provider strategy: Gemini is always tried first. If Gemini errors out
- * (bad key, rate limit, outage), the request falls back to OpenRouter and
- * Gemini is put on a short cooldown so we stop hammering it. Once the
- * cooldown expires the next request tries Gemini again automatically.
+ * Provider strategy: Claude is tried first, then Gemini, then OpenRouter.
+ * If a provider errors out (bad key, rate limit, outage), the request falls
+ * through to the next one and the failed provider is put on a short cooldown
+ * so we stop hammering it. Once the cooldown expires the next request tries
+ * it again automatically.
  */
 class AiTutorService
 {
+    private const CLAUDE_COOLDOWN_KEY = 'ai_tutor.claude_down';
+    private const CLAUDE_COOLDOWN_MINUTES = 5;
     private const GEMINI_COOLDOWN_KEY = 'ai_tutor.gemini_down';
     private const GEMINI_COOLDOWN_MINUTES = 5;
     private const TIMEOUT_SECONDS = 45;
@@ -53,12 +56,29 @@ class AiTutorService
     }
 
     /**
-     * Run one completion through the provider chain (Gemini → OpenRouter).
+     * Run one completion through the provider chain (Claude → Gemini → OpenRouter).
      *
      * @return array{reply: string, provider: string}
      */
     private function generate(string $system, array $messages): array
     {
+        if (config('services.anthropic.key') && ! Cache::has(self::CLAUDE_COOLDOWN_KEY)) {
+            try {
+                $reply = $this->askClaude($system, $messages);
+
+                if ($reply !== null && $reply !== '') {
+                    return ['reply' => $reply, 'provider' => 'claude'];
+                }
+            } catch (\Throwable $e) {
+                Log::warning('AI Tutor: Claude failed, falling back to Gemini.', [
+                    'error' => $e->getMessage(),
+                ]);
+            }
+
+            // Claude misbehaved — rest it for a few minutes, then retry it.
+            Cache::put(self::CLAUDE_COOLDOWN_KEY, true, now()->addMinutes(self::CLAUDE_COOLDOWN_MINUTES));
+        }
+
         if (config('services.gemini.key') && ! Cache::has(self::GEMINI_COOLDOWN_KEY)) {
             try {
                 $reply = $this->askGemini($system, $messages);
@@ -79,6 +99,38 @@ class AiTutorService
         $reply = $this->askOpenRouter($system, $messages);
 
         return ['reply' => $reply, 'provider' => 'openrouter'];
+    }
+
+    private function askClaude(string $system, array $messages): ?string
+    {
+        $model = config('services.anthropic.model');
+
+        $claudeMessages = array_map(fn ($m) => [
+            'role'    => $m['role'] === 'assistant' ? 'assistant' : 'user',
+            'content' => $m['content'],
+        ], $messages);
+
+        $response = Http::timeout(self::TIMEOUT_SECONDS)
+            ->withHeaders([
+                'x-api-key'         => config('services.anthropic.key'),
+                'anthropic-version' => '2023-06-01',
+            ])
+            ->post('https://api.anthropic.com/v1/messages', [
+                'model'       => $model,
+                'system'      => $system,
+                'messages'    => $claudeMessages,
+                'temperature' => 0.4,
+                'max_tokens'  => 4096,
+            ]);
+
+        if ($response->failed()) {
+            throw new \RuntimeException('Claude HTTP ' . $response->status() . ': ' . mb_substr($response->body(), 0, 300));
+        }
+
+        $blocks = $response->json('content', []);
+        $text   = collect($blocks)->pluck('text')->filter()->implode("\n");
+
+        return $text !== '' ? $text : null;
     }
 
     private function askGemini(string $system, array $messages): ?string

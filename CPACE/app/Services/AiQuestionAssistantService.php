@@ -11,13 +11,15 @@ use Illuminate\Support\Facades\Log;
  * question (choices + explanation) from a subject/topic, and rewords an
  * existing question into a new variant.
  *
- * Provider strategy mirrors AiTutorService: Gemini is tried first, falling
- * back to OpenRouter (and a short Gemini cooldown) on failure. Kept as a
+ * Provider strategy mirrors AiTutorService: Claude is tried first, then
+ * Gemini, then OpenRouter (each with a short cooldown on failure). Kept as a
  * separate class from AiTutorService because the two have different prompts,
  * response shapes, and parsing/validation needs.
  */
 class AiQuestionAssistantService
 {
+    private const CLAUDE_COOLDOWN_KEY = 'ai_question_assistant.claude_down';
+    private const CLAUDE_COOLDOWN_MINUTES = 5;
     private const GEMINI_COOLDOWN_KEY = 'ai_question_assistant.gemini_down';
     private const GEMINI_COOLDOWN_MINUTES = 5;
     private const TIMEOUT_SECONDS = 45;
@@ -85,10 +87,26 @@ class AiQuestionAssistantService
     }
 
     /**
-     * Run one completion through the provider chain (Gemini → OpenRouter).
+     * Run one completion through the provider chain (Claude → Gemini → OpenRouter).
      */
     private function generate(string $system, array $messages): string
     {
+        if (config('services.anthropic.key') && ! Cache::has(self::CLAUDE_COOLDOWN_KEY)) {
+            try {
+                $reply = $this->askClaude($system, $messages);
+
+                if ($reply !== null && $reply !== '') {
+                    return $reply;
+                }
+            } catch (\Throwable $e) {
+                Log::warning('AI Question Assistant: Claude failed, falling back to Gemini.', [
+                    'error' => $e->getMessage(),
+                ]);
+            }
+
+            Cache::put(self::CLAUDE_COOLDOWN_KEY, true, now()->addMinutes(self::CLAUDE_COOLDOWN_MINUTES));
+        }
+
         if (config('services.gemini.key') && ! Cache::has(self::GEMINI_COOLDOWN_KEY)) {
             try {
                 $reply = $this->askGemini($system, $messages);
@@ -106,6 +124,38 @@ class AiQuestionAssistantService
         }
 
         return $this->askOpenRouter($system, $messages);
+    }
+
+    private function askClaude(string $system, array $messages): ?string
+    {
+        $model = config('services.anthropic.model');
+
+        $claudeMessages = array_map(fn ($m) => [
+            'role'    => $m['role'] === 'assistant' ? 'assistant' : 'user',
+            'content' => $m['content'],
+        ], $messages);
+
+        $response = Http::timeout(self::TIMEOUT_SECONDS)
+            ->withHeaders([
+                'x-api-key'         => config('services.anthropic.key'),
+                'anthropic-version' => '2023-06-01',
+            ])
+            ->post('https://api.anthropic.com/v1/messages', [
+                'model'       => $model,
+                'system'      => $system,
+                'messages'    => $claudeMessages,
+                'temperature' => 0.5,
+                'max_tokens'  => 2048,
+            ]);
+
+        if ($response->failed()) {
+            throw new \RuntimeException('Claude HTTP ' . $response->status() . ': ' . mb_substr($response->body(), 0, 300));
+        }
+
+        $blocks = $response->json('content', []);
+        $text   = collect($blocks)->pluck('text')->filter()->implode("\n");
+
+        return $text !== '' ? $text : null;
     }
 
     private function askGemini(string $system, array $messages): ?string

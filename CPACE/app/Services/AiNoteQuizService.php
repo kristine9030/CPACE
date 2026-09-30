@@ -10,13 +10,16 @@ use Illuminate\Support\Facades\Log;
  * Turns a student's own review note into a short practice quiz, so they can
  * check whether what they wrote down actually stuck.
  *
- * Provider strategy mirrors AiQuestionAssistantService: Gemini first, falling
- * back to OpenRouter (with a short Gemini cooldown) on failure. Kept separate
- * from that class because the grounding rules are different — these questions
- * must come from the note itself, not from the CPALE syllabus at large.
+ * Provider strategy mirrors AiQuestionAssistantService: Claude first, then
+ * Gemini, then OpenRouter (each with a short cooldown on failure). Kept
+ * separate from that class because the grounding rules are different — these
+ * questions must come from the note itself, not from the CPALE syllabus at
+ * large.
  */
 class AiNoteQuizService
 {
+    private const CLAUDE_COOLDOWN_KEY = 'ai_note_quiz.claude_down';
+    private const CLAUDE_COOLDOWN_MINUTES = 5;
     private const GEMINI_COOLDOWN_KEY = 'ai_note_quiz.gemini_down';
     private const GEMINI_COOLDOWN_MINUTES = 5;
     private const TIMEOUT_SECONDS = 60;
@@ -64,10 +67,26 @@ class AiNoteQuizService
     }
 
     /**
-     * Run one completion through the provider chain (Gemini → OpenRouter).
+     * Run one completion through the provider chain (Claude → Gemini → OpenRouter).
      */
     private function generateCompletion(string $system, array $messages): string
     {
+        if (config('services.anthropic.key') && ! Cache::has(self::CLAUDE_COOLDOWN_KEY)) {
+            try {
+                $reply = $this->askClaude($system, $messages);
+
+                if ($reply !== null && $reply !== '') {
+                    return $reply;
+                }
+            } catch (\Throwable $e) {
+                Log::warning('AI Note Quiz: Claude failed, falling back to Gemini.', [
+                    'error' => $e->getMessage(),
+                ]);
+            }
+
+            Cache::put(self::CLAUDE_COOLDOWN_KEY, true, now()->addMinutes(self::CLAUDE_COOLDOWN_MINUTES));
+        }
+
         if (config('services.gemini.key') && ! Cache::has(self::GEMINI_COOLDOWN_KEY)) {
             try {
                 $reply = $this->askGemini($system, $messages);
@@ -85,6 +104,38 @@ class AiNoteQuizService
         }
 
         return $this->askOpenRouter($system, $messages);
+    }
+
+    private function askClaude(string $system, array $messages): ?string
+    {
+        $model = config('services.anthropic.model');
+
+        $claudeMessages = array_map(fn ($m) => [
+            'role'    => $m['role'] === 'assistant' ? 'assistant' : 'user',
+            'content' => $m['content'],
+        ], $messages);
+
+        $response = Http::timeout(self::TIMEOUT_SECONDS)
+            ->withHeaders([
+                'x-api-key'         => config('services.anthropic.key'),
+                'anthropic-version' => '2023-06-01',
+            ])
+            ->post('https://api.anthropic.com/v1/messages', [
+                'model'       => $model,
+                'system'      => $system,
+                'messages'    => $claudeMessages,
+                'temperature' => 0.4,
+                'max_tokens'  => 4096,
+            ]);
+
+        if ($response->failed()) {
+            throw new \RuntimeException('Claude HTTP ' . $response->status() . ': ' . mb_substr($response->body(), 0, 300));
+        }
+
+        $blocks = $response->json('content', []);
+        $text   = collect($blocks)->pluck('text')->filter()->implode("\n");
+
+        return $text !== '' ? $text : null;
     }
 
     private function askGemini(string $system, array $messages): ?string
