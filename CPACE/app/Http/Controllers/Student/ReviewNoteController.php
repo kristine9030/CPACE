@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Student;
 
+use App\Http\Controllers\Concerns\LimitsAiUsage;
 use App\Http\Controllers\Controller;
 
 use App\Models\CommunityResource;
@@ -16,6 +17,10 @@ use Illuminate\Support\Facades\Log;
 
 class ReviewNoteController extends Controller
 {
+    use LimitsAiUsage;
+
+    private const AI_QUIZ_DAILY_LIMIT = 30;
+
     /**
      * Review Notes workspace (folders / notes list / preview). The whole page
      * is driven client-side from the student's own notes - including archived
@@ -179,6 +184,10 @@ class ReviewNoteController extends Controller
             return response()->json([
                 'message' => 'This note is too short to build a quiz from. Add more detail to it first — around a paragraph or two.',
             ], 422);
+        }
+
+        if ($this->aiDailyLimitReached('note_quiz', self::AI_QUIZ_DAILY_LIMIT)) {
+            return $this->aiDailyLimitResponse('You have reached today\'s limit for AI-generated quizzes. Please try again tomorrow.');
         }
 
         try {

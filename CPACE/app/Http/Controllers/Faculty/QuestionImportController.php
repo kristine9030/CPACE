@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Faculty;
 
+use App\Http\Controllers\Concerns\LimitsAiUsage;
 use App\Http\Controllers\Controller;
 use App\Models\Question;
 use App\Models\QuestionImportBatch;
@@ -28,9 +29,12 @@ use Illuminate\Support\Facades\Storage;
  */
 class QuestionImportController extends Controller
 {
+    use LimitsAiUsage;
+
     private const ALLOWED_EXTENSIONS = ['pdf', 'docx', 'doc', 'xlsx', 'xls', 'csv', 'txt', 'jpg', 'jpeg', 'png', 'webp'];
     private const MAX_UPLOAD_KB = 20480; // 20 MB
     private const NOT_ASSIGNED_MESSAGE = "You're not assigned to this subject, so you can't import questions into it. Ask your Program Chair for access if you think this is a mistake.";
+    private const AI_IMPORT_DAILY_LIMIT = 40;
 
     /** Upload form. */
     public function create()
@@ -123,7 +127,9 @@ class QuestionImportController extends Controller
             Log::error('Question import failed.', ['batch_id' => $batch->id, 'error' => $e->getMessage()]);
             $batch->update([
                 'status'        => QuestionImportBatch::STATUS_FAILED,
-                'error_message' => 'Something went wrong reading this file. Please try a different file, or add these questions manually.',
+                'error_message' => str_contains($e->getMessage(), "today's limit")
+                    ? $e->getMessage()
+                    : 'Something went wrong reading this file. Please try a different file, or add these questions manually.',
             ]);
 
             return redirect()->route('faculty.test-bank.import')->with('warning', $batch->error_message);
@@ -162,6 +168,10 @@ class QuestionImportController extends Controller
                 default       => 'image/jpeg',
             };
 
+            if ($this->aiDailyLimitReached('question_import', self::AI_IMPORT_DAILY_LIMIT)) {
+                throw new \RuntimeException("You've reached today's limit for AI-assisted imports. Please try again tomorrow.");
+            }
+
             return [$ai->extractFromImage($path, $mime), 'ai'];
         }
 
@@ -186,6 +196,14 @@ class QuestionImportController extends Controller
 
         // Rule-based pass found nothing usable, or found low-confidence rows
         // (e.g. missing answers) — let the AI take a pass at the same text.
+        if ($this->aiDailyLimitReached('question_import', self::AI_IMPORT_DAILY_LIMIT)) {
+            if (! empty($ruleItems)) {
+                return [$ruleItems, 'rule'];
+            }
+
+            throw new \RuntimeException("You've reached today's limit for AI-assisted imports. Please try again tomorrow.");
+        }
+
         $aiItems = $ai->extractFromText($text);
 
         if (empty($ruleItems)) {
