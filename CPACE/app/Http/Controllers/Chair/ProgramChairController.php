@@ -13,6 +13,7 @@ use App\Models\Subject;
 use App\Models\User;
 use App\Services\ChairAnalyticsService;
 use App\Services\ChairDashboardService;
+use App\Services\FacultyOverviewService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -162,24 +163,13 @@ class ProgramChairController extends Controller
     /**
      * Faculty account management with their assigned subjects.
      */
-    public function faculty()
+    public function faculty(FacultyOverviewService $overview)
     {
-        $faculty = User::where('role_id', Role::FACULTY)
-            ->with('assignedSubjects', 'assignedSections')
-            ->orderBy('first_name')
-            ->get();
-
-        $faculty->each(function (User $f) {
-            $f->sectionsBySubject = $f->assignedSections
-                ->groupBy(fn ($s) => $s->pivot->subject_id)
-                ->map(fn ($group) => $group->pluck('id'));
-        });
-
-        return view('chair.faculty', [
-            'faculty'  => $faculty,
-            'subjects' => Subject::orderBy('id')->get(),
-            'sections' => Section::where('is_active', true)->orderBy('name')->get(),
-        ]);
+        return view('chair.faculty', array_merge(
+            $overview->accountsData(),
+            $overview->performanceData(),
+            ['activeTab' => 'accounts']
+        ));
     }
 
     /**

@@ -25,7 +25,7 @@ use Tests\TestCase;
 class ChairAccountProvisioningTest extends TestCase
 {
     private const TABLES = [
-        'faculty_subject_sections', 'sections',
+        'faculty_subject_sections', 'sections', 'quiz_answers', 'question_variants', 'questions',
         'quiz_sessions', 'performance_records', 'topics', 'alumni_profiles', 'student_profiles', 'faculty_profiles', 'faculty_subjects', 'subjects',
         'notifications', 'messages', 'conversation_participants', 'conversations', 'users',
     ];
@@ -145,6 +145,25 @@ class ChairAccountProvisioningTest extends TestCase
             $table->unsignedBigInteger('subject_id');
             $table->string('name');
             $table->timestamps();
+        });
+        // The Faculty module now combines Accounts + Performance Report on one
+        // page, so even the Accounts-only route builds the performance figures.
+        Schema::create('questions', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('topic_id');
+            $table->unsignedBigInteger('created_by')->nullable();
+            $table->text('question_text');
+            $table->boolean('is_active')->default(true);
+            $table->timestamps();
+        });
+        Schema::create('question_variants', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('question_id');
+        });
+        Schema::create('quiz_answers', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('question_id');
+            $table->boolean('is_correct')->nullable();
         });
         Schema::create('performance_records', function (Blueprint $table) {
             $table->id();
