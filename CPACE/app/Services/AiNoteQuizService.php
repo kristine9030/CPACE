@@ -67,26 +67,13 @@ class AiNoteQuizService
     }
 
     /**
-     * Run one completion through the provider chain (Claude → Gemini → OpenRouter).
+     * Run one completion through the provider chain (Gemini → OpenRouter → Claude).
+     * Gemini/OpenRouter are prioritized here since students generate far more
+     * volume than the faculty-facing services, and Claude is kept only as a
+     * last-resort fallback so quiz generation still works if both are down.
      */
     private function generateCompletion(string $system, array $messages): string
     {
-        if (config('services.anthropic.key') && ! Cache::has(self::CLAUDE_COOLDOWN_KEY)) {
-            try {
-                $reply = $this->askClaude($system, $messages);
-
-                if ($reply !== null && $reply !== '') {
-                    return $reply;
-                }
-            } catch (\Throwable $e) {
-                Log::warning('AI Note Quiz: Claude failed, falling back to Gemini.', [
-                    'error' => $e->getMessage(),
-                ]);
-            }
-
-            Cache::put(self::CLAUDE_COOLDOWN_KEY, true, now()->addMinutes(self::CLAUDE_COOLDOWN_MINUTES));
-        }
-
         if (config('services.gemini.key') && ! Cache::has(self::GEMINI_COOLDOWN_KEY)) {
             try {
                 $reply = $this->askGemini($system, $messages);
@@ -103,7 +90,31 @@ class AiNoteQuizService
             Cache::put(self::GEMINI_COOLDOWN_KEY, true, now()->addMinutes(self::GEMINI_COOLDOWN_MINUTES));
         }
 
-        return $this->askOpenRouter($system, $messages);
+        try {
+            return $this->askOpenRouter($system, $messages);
+        } catch (\Throwable $e) {
+            Log::warning('AI Note Quiz: OpenRouter failed, falling back to Claude.', [
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        if (config('services.anthropic.key') && ! Cache::has(self::CLAUDE_COOLDOWN_KEY)) {
+            try {
+                $reply = $this->askClaude($system, $messages);
+
+                if ($reply !== null && $reply !== '') {
+                    return $reply;
+                }
+            } catch (\Throwable $e) {
+                Log::warning('AI Note Quiz: Claude failed.', [
+                    'error' => $e->getMessage(),
+                ]);
+            }
+
+            Cache::put(self::CLAUDE_COOLDOWN_KEY, true, now()->addMinutes(self::CLAUDE_COOLDOWN_MINUTES));
+        }
+
+        throw new \RuntimeException('All AI providers are currently unavailable.');
     }
 
     private function askClaude(string $system, array $messages): ?string

@@ -56,29 +56,15 @@ class AiTutorService
     }
 
     /**
-     * Run one completion through the provider chain (Claude → Gemini → OpenRouter).
+     * Run one completion through the provider chain (Gemini → OpenRouter → Claude).
+     * Gemini/OpenRouter are prioritized here since students generate far more
+     * volume than the faculty-facing services, and Claude is kept only as a
+     * last-resort fallback so the tutor still responds if both are down.
      *
      * @return array{reply: string, provider: string}
      */
     private function generate(string $system, array $messages): array
     {
-        if (config('services.anthropic.key') && ! Cache::has(self::CLAUDE_COOLDOWN_KEY)) {
-            try {
-                $reply = $this->askClaude($system, $messages);
-
-                if ($reply !== null && $reply !== '') {
-                    return ['reply' => $reply, 'provider' => 'claude'];
-                }
-            } catch (\Throwable $e) {
-                Log::warning('AI Tutor: Claude failed, falling back to Gemini.', [
-                    'error' => $e->getMessage(),
-                ]);
-            }
-
-            // Claude misbehaved — rest it for a few minutes, then retry it.
-            Cache::put(self::CLAUDE_COOLDOWN_KEY, true, now()->addMinutes(self::CLAUDE_COOLDOWN_MINUTES));
-        }
-
         if (config('services.gemini.key') && ! Cache::has(self::GEMINI_COOLDOWN_KEY)) {
             try {
                 $reply = $this->askGemini($system, $messages);
@@ -96,9 +82,34 @@ class AiTutorService
             Cache::put(self::GEMINI_COOLDOWN_KEY, true, now()->addMinutes(self::GEMINI_COOLDOWN_MINUTES));
         }
 
-        $reply = $this->askOpenRouter($system, $messages);
+        try {
+            $reply = $this->askOpenRouter($system, $messages);
 
-        return ['reply' => $reply, 'provider' => 'openrouter'];
+            return ['reply' => $reply, 'provider' => 'openrouter'];
+        } catch (\Throwable $e) {
+            Log::warning('AI Tutor: OpenRouter failed, falling back to Claude.', [
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        if (config('services.anthropic.key') && ! Cache::has(self::CLAUDE_COOLDOWN_KEY)) {
+            try {
+                $reply = $this->askClaude($system, $messages);
+
+                if ($reply !== null && $reply !== '') {
+                    return ['reply' => $reply, 'provider' => 'claude'];
+                }
+            } catch (\Throwable $e) {
+                Log::warning('AI Tutor: Claude failed.', [
+                    'error' => $e->getMessage(),
+                ]);
+            }
+
+            // Claude misbehaved — rest it for a few minutes, then retry it.
+            Cache::put(self::CLAUDE_COOLDOWN_KEY, true, now()->addMinutes(self::CLAUDE_COOLDOWN_MINUTES));
+        }
+
+        throw new \RuntimeException('All AI providers are currently unavailable.');
     }
 
     private function askClaude(string $system, array $messages): ?string
