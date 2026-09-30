@@ -60,6 +60,10 @@ class AiSubstituteReviewController extends Controller
             return back()->with('warning', "You're not assigned to this subject, so you can't generate questions for it.");
         }
 
+        // Up to gap_fill_max_per_topic sequential AI calls, each with a Gemini->OpenRouter
+        // fallback (45s timeout apiece) — comfortably past PHP's default 60s limit.
+        set_time_limit(300);
+
         $result = $filler->generateNow($topic);
 
         if ($result['shortBy'] === 0) {
