@@ -151,10 +151,10 @@
                 <div class="breadcrumb">
                     <a href="{{ route('faculty.test-bank') }}">Test Bank</a>
                     <i class="fas fa-chevron-right" style="font-size:9px;"></i>
-                    <span>{{ isset($editMode) ? 'Edit Question' : 'Add Question' }}</span>
+                    <span>{{ $editMode ? 'Edit Question' : 'Add Question' }}</span>
                 </div>
-                <div class="page-title">{{ isset($editMode) ? 'Edit Question' : 'Add New Question' }}</div>
-                <div class="page-sub">{{ isset($editMode) ? 'Update question details and answers.' : 'Create a new question for the test bank.' }}</div>
+                <div class="page-title">{{ $editMode ? 'Edit Question' : 'Add New Question' }}</div>
+                <div class="page-sub">{{ $editMode ? 'Update question details and answers.' : 'Create a new question for the test bank.' }}</div>
             </div>
         </div>
         <div class="topbar-right">

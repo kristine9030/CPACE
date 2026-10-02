@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "CPACE Mobile API",
-    "description": "Smoke-tests the student mobile API (routes/api.php). Uses the dedicated student@cpace.test test account seeded by database/cpace_database.sql — safe to run repeatedly against staging (see ../DEPLOYMENT-STAGING.md), never production. The quiz it starts uses session_type=training, which the app itself excludes from performance analytics, and it's cancelled at the end; the review note it creates is deleted at the end.",
+    "description": "Smoke-tests the student mobile API (routes/api.php). Uses the dedicated student@cpace.test test account seeded by database/cpace_database.sql — safe to run repeatedly against staging (see ../DEPLOYMENT-STAGING.md), never production. Both quizzes it starts use session_type=training, which the app itself excludes from performance analytics: the first is cancelled right away, the second is answered and submitted end-to-end (start -> take -> submit -> results) to cover the actual grading flow; the review note it creates is deleted at the end.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -146,7 +146,109 @@
       ]
     },
     {
-      "name": "8. Performance",
+      "name": "8. Start Quiz For Submission (training — excluded from analytics)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": "{{baseUrl}}/api/quizzes/start",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"subject_id\":{{subjectId}},\"count\":3,\"mode\":\"adaptive\",\"session_type\":\"training\"}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status is 200/201 (started) or 422 (no content for this subject yet)', () => pm.expect(pm.response.code).to.be.oneOf([200, 201, 422]));",
+              "pm.environment.set('submitAnswersBody', '{\"answers\":{}}');",
+              "if (pm.response.code < 400) {",
+              "  const json = pm.response.json();",
+              "  const id = json.id || json.session_id || (json.session && json.session.id);",
+              "  if (id) { pm.environment.set('submitSessionId', id); }",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "9. Take Quiz (get questions to answer)",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": "{{baseUrl}}/api/quizzes/{{submitSessionId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status is 200 or 404 (no session id captured)', () => pm.expect(pm.response.code).to.be.oneOf([200, 404]));",
+              "if (pm.response.code === 200) {",
+              "  const json = pm.response.json();",
+              "  const questions = json.questions || [];",
+              "  const answers = {};",
+              "  questions.forEach((q) => {",
+              "    const choice = (q.choices && q.choices[0]) || null;",
+              "    if (choice) { answers[q.id] = choice.id; }",
+              "  });",
+              "  pm.environment.set('submitAnswersBody', JSON.stringify({ answers }));",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "10. Submit Quiz",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": "{{baseUrl}}/api/quizzes/{{submitSessionId}}/submit",
+        "body": {
+          "mode": "raw",
+          "raw": "{{submitAnswersBody}}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status is 200 or 404 (no session id captured)', () => pm.expect(pm.response.code).to.be.oneOf([200, 404]));",
+              "if (pm.response.code === 200) {",
+              "  pm.test('response has a score_percent', () => pm.expect(pm.response.json().score_percent).to.not.be.undefined);",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "11. Get Quiz Results",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": "{{baseUrl}}/api/quizzes/{{submitSessionId}}/results"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status is 200 or 404 (no session id captured)', () => pm.expect(pm.response.code).to.be.oneOf([200, 404]));",
+              "if (pm.response.code === 200) {",
+              "  pm.test('session is marked completed', () => pm.expect(pm.response.json().session.completed).to.eql(true));",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "12. Performance",
       "request": {
         "method": "GET",
         "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
@@ -157,7 +259,7 @@
       ]
     },
     {
-      "name": "9. Calendar",
+      "name": "13. Calendar",
       "request": {
         "method": "GET",
         "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
@@ -168,7 +270,7 @@
       ]
     },
     {
-      "name": "10. Create Review Note",
+      "name": "14. Create Review Note",
       "request": {
         "method": "POST",
         "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" }],
@@ -194,7 +296,7 @@
       ]
     },
     {
-      "name": "11. Get Review Note",
+      "name": "15. Get Review Note",
       "request": {
         "method": "GET",
         "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
@@ -205,7 +307,7 @@
       ]
     },
     {
-      "name": "12. Delete Review Note (cleanup)",
+      "name": "16. Delete Review Note (cleanup)",
       "request": {
         "method": "DELETE",
         "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
@@ -219,7 +321,7 @@
       ]
     },
     {
-      "name": "13. Logout",
+      "name": "17. Logout",
       "request": {
         "method": "POST",
         "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],

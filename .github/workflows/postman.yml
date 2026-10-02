@@ -59,8 +59,22 @@ jobs:
 
       - name: Upload result to CPACE
         if: steps.staging.outputs.configured == 'true'
+        env:
+          REF_NAME: ${{ github.ref_name }}
+          SHA: ${{ github.sha }}
         run: |
-          curl -sf -X POST "${{ secrets.CPACE_APP_URL }}/api/test-reports" \
+          node -e "
+            const fs = require('fs');
+            const payload = JSON.parse(fs.readFileSync('newman-report.json', 'utf8'));
+            const body = { type: 'api', title: \`Postman — \${process.env.REF_NAME} @ \${process.env.SHA}\`, payload };
+            fs.writeFileSync('upload-body.json', JSON.stringify(body));
+          "
+          http_status=$(curl -s -o response.json -w "%{http_code}" -X POST "${{ secrets.CPACE_APP_URL }}/api/test-reports" \
             -H "Authorization: Bearer ${{ secrets.CPACE_TEST_REPORTS_TOKEN }}" \
             -H "Content-Type: application/json" \
-            -d "{\"type\":\"api\",\"title\":\"Postman — ${{ github.ref_name }} @ ${{ github.sha }}\",\"payload\":$(cat newman-report.json)}"
+            --data-binary @upload-body.json)
+          echo "Response (HTTP $http_status):"
+          cat response.json
+          if [ "$http_status" -lt 200 ] || [ "$http_status" -ge 300 ]; then
+            exit 1
+          fi

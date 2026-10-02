@@ -12,6 +12,8 @@
         .new-token-value { display:flex; align-items:center; gap:10px; background:rgba(255,255,255,.06); border-radius:8px; padding:10px 14px; font-family:'IBM Plex Mono', monospace, monospace; font-size:12px; word-break:break-all; }
         .copy-btn { flex-shrink:0; background:var(--primary); color:#fff; border:none; border-radius:6px; padding:6px 12px; font-size:11px; font-weight:600; cursor:pointer; }
         .warn-once { font-size:11px; color:#f5a623; margin-top:8px; }
+        #createPanel { display:none; }
+        #createPanel.open { display:block; }
         textarea.example { width:100%; background:#14283E; color:#a8e6cf; font-family:'IBM Plex Mono', monospace, monospace; font-size:11px; border:none; border-radius:8px; padding:14px; min-height:90px; }
     </style>
 </head>
@@ -42,7 +44,7 @@
             <div class="alert alert-success"><i class="fas fa-circle-check"></i> {{ session('status') }}</div>
         @endif
 
-        <div id="createPanel" class="card" style="{{ session('newToken') ? '' : 'display:none;' }}">
+        <div id="createPanel" class="card {{ session('newToken') ? 'open' : '' }}">
             <div class="card-title" style="margin-bottom:14px;">Issue a new token</div>
             <form method="POST" action="{{ route('superadmin.api-tokens.store') }}">
                 @csrf
