@@ -32,6 +32,8 @@ class PerformanceController extends Controller
             $errors = (int) Cache::get("metrics.errors.{$key}", 0);
             $durationSum = (int) Cache::get("metrics.duration_sum.{$key}", 0);
             $durationCount = (int) Cache::get("metrics.duration_count.{$key}", 0);
+            $aiDurationSum = (int) Cache::get("metrics.ai_duration_sum.{$key}", 0);
+            $aiDurationCount = (int) Cache::get("metrics.ai_duration_count.{$key}", 0);
 
             return [
                 'date' => $key,
@@ -40,6 +42,7 @@ class PerformanceController extends Controller
                 'errors' => $errors,
                 'avg_response_ms' => $durationCount > 0 ? (int) round($durationSum / $durationCount) : null,
                 'error_rate' => $requests > 0 ? round($errors / $requests * 100, 2) : null,
+                'ai_avg_response_ms' => $aiDurationCount > 0 ? (int) round($aiDurationSum / $aiDurationCount) : null,
             ];
         })->values();
 
@@ -47,6 +50,7 @@ class PerformanceController extends Controller
         $windowErrors = (int) $trend->sum('errors');
 
         $durations = Cache::get('metrics.durations', []);
+        $aiDurations = Cache::get('metrics.ai_durations', []);
 
         $summary = [
             'requests_today' => (int) Cache::get("metrics.requests.{$today}", 0),
@@ -59,6 +63,12 @@ class PerformanceController extends Controller
             'window_errors' => $windowErrors,
             'reliability' => $windowRequests > 0 ? round((1 - $windowErrors / $windowRequests) * 100, 2) : null,
             'retention_days' => RecordRequestMetrics::RETENTION_DAYS,
+            // AI-calling routes (ai-tutor chat, ai-draft, gap-fill generate) wait
+            // on Gemini/OpenRouter/Claude — tracked separately from the app's own
+            // response time so one doesn't skew the other (see RecordRequestMetrics).
+            'ai_avg_response_ms' => count($aiDurations) > 0 ? (int) round(array_sum($aiDurations) / count($aiDurations)) : null,
+            'ai_p95_response_ms' => $this->percentile($aiDurations, 95),
+            'ai_sample_size' => count($aiDurations),
         ];
 
         return ['trend' => $trend, 'summary' => $summary];

@@ -65,6 +65,35 @@
             </div>
         </div>
 
+        <div class="card" style="margin-bottom:22px;">
+            <div class="card-title" style="margin-bottom:8px;"><i class="fas fa-robot" style="color:var(--primary);"></i> AI Provider Response Time</div>
+            <div class="reliability-note" style="margin-bottom:14px;">
+                Tracked separately from the app's own response time above — these are routes (AI Tutor chat, AI-drafted questions, curriculum gap-fill) that wait on Gemini/OpenRouter/Claude before responding, so their latency belongs to the provider, not CPACE.
+            </div>
+            <div class="stats-row" style="margin-bottom:0;">
+                <div class="stat-card">
+                    <div class="stat-top">
+                        <div>
+                            <div class="stat-num">{{ $summary['ai_avg_response_ms'] ?? '—' }}{{ $summary['ai_avg_response_ms'] !== null ? 'ms' : '' }}</div>
+                            <div class="stat-lbl">Avg AI Response Time</div>
+                        </div>
+                        <div class="stat-icon si-teal"><i class="fas fa-brain"></i></div>
+                    </div>
+                    <span class="stat-delta">{{ $summary['ai_sample_size'] }} recent samples</span>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-top">
+                        <div>
+                            <div class="stat-num">{{ $summary['ai_p95_response_ms'] ?? '—' }}{{ $summary['ai_p95_response_ms'] !== null ? 'ms' : '' }}</div>
+                            <div class="stat-lbl">p95 AI Response Time</div>
+                        </div>
+                        <div class="stat-icon si-blue"><i class="fas fa-stopwatch"></i></div>
+                    </div>
+                    <span class="stat-delta">AI Tutor, AI-drafted questions, gap-fill</span>
+                </div>
+            </div>
+        </div>
+
         <div class="viz-grid-layout">
             <div class="viz-card">
                 <h4><i class="fas fa-chart-line"></i> Response Time Trend</h4>
@@ -87,7 +116,7 @@
                     <canvas id="chartErrorRate"></canvas>
                 </div>
                 <table class="viz-table">
-                    <thead><tr><th>Date</th><th class="num">Requests</th><th class="num">Errors</th><th class="num">Error Rate</th><th class="num">Avg Response</th></tr></thead>
+                    <thead><tr><th>Date</th><th class="num">Requests</th><th class="num">Errors</th><th class="num">Error Rate</th><th class="num">Avg Response</th><th class="num">Avg AI Response</th></tr></thead>
                     <tbody>
                         @foreach ($trend->reverse() as $day)
                             <tr>
@@ -96,6 +125,7 @@
                                 <td class="num">{{ $day['errors'] }}</td>
                                 <td class="num">{{ $day['error_rate'] !== null ? $day['error_rate'] . '%' : '—' }}</td>
                                 <td class="num">{{ $day['avg_response_ms'] !== null ? $day['avg_response_ms'] . 'ms' : '—' }}</td>
+                                <td class="num">{{ $day['ai_avg_response_ms'] !== null ? $day['ai_avg_response_ms'] . 'ms' : '—' }}</td>
                             </tr>
                         @endforeach
                     </tbody>
