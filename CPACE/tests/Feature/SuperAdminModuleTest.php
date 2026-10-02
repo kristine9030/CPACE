@@ -222,15 +222,24 @@ class SuperAdminModuleTest extends TestCase
         Cache::put("metrics.duration_sum.{$today}", 5000, now()->addDay());
         Cache::put("metrics.duration_count.{$today}", 50, now()->addDay());
         Cache::put('metrics.durations', array_fill(0, 50, 100), now()->addDay());
+        // AI-calling routes (ai-tutor chat, ai-draft, gap-fill generate) are
+        // tracked in their own bucket so their multi-second provider latency
+        // doesn't skew the app's own response-time metrics above.
+        Cache::put("metrics.ai_duration_sum.{$today}", 9000, now()->addDay());
+        Cache::put("metrics.ai_duration_count.{$today}", 3, now()->addDay());
+        Cache::put('metrics.ai_durations', [2000, 3000, 4000], now()->addDay());
 
         $this->actingAs($superAdmin)->get(route('superadmin.performance'))
             ->assertOk()
             ->assertViewHas('summary', function ($summary) {
                 return $summary['requests_today'] === 50
                     && $summary['errors_today'] === 1
-                    && $summary['avg_response_ms'] === 100;
+                    && $summary['avg_response_ms'] === 100
+                    && $summary['ai_avg_response_ms'] === 3000
+                    && $summary['ai_sample_size'] === 3;
             })
-            ->assertViewHas('trend', fn ($trend) => $trend->last()['requests'] === 50);
+            ->assertViewHas('trend', fn ($trend) => $trend->last()['requests'] === 50
+                && $trend->last()['ai_avg_response_ms'] === 3000);
     }
 
     private function makeUser(int $roleId, string $email = 'user@example.com', string $password = 'password'): User

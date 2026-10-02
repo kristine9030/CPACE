@@ -54,7 +54,7 @@
                     <tbody>
                         @foreach ($logs as $log)
                             <tr>
-                                <td class="cell-mono" title="{{ optional($log->created_at)->toDayDateTimeString() }}">{{ optional($log->created_at)->diffForHumans() }}</td>
+                                <td class="cell-mono" title="{{ optional($log->created_at)->diffForHumans() }}">{{ optional($log->created_at)->format('Y-m-d H:i:s') }}</td>
                                 <td>{{ $log->actor_name ?? 'System' }}</td>
                                 <td><span class="role-pill r-{{ $log->actor_role }}">{{ $log->actor_role ? ucfirst(str_replace('_',' ',$log->actor_role)) : '—' }}</span></td>
                                 <td><span class="action-pill">{{ $log->action }}</span></td>
