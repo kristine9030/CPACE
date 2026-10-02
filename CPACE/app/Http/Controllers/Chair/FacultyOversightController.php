@@ -113,8 +113,7 @@ class FacultyOversightController extends Controller
     {
         return view('chair.faculty', array_merge(
             $overview->accountsData(),
-            $overview->performanceData(),
-            ['activeTab' => 'performance']
+            $overview->performanceData()
         ));
     }
 

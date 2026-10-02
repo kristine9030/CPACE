@@ -142,19 +142,45 @@ class ChairEnrollmentKpiConsistencyTest extends TestCase
         $this->assertSame(1, $response->viewData('stats')['active']);
     }
 
-    public function test_sections_page_reports_students_not_yet_assigned_to_a_curated_section(): void
+    public function test_students_page_reports_students_not_yet_assigned_to_a_curated_section(): void
     {
         $this->makeStudent('sectioned@example.com', 'BSA-4A');
         $this->makeStudent('typo@example.com', 'BSA-4A-TYPO');
         $alumnus = $this->makeStudent('alumnus@example.com', 'BSA-4A');
         DB::table('student_profiles')->where('user_id', $alumnus->id)->update(['is_alumni' => true]);
 
-        $response = $this->actingAs($this->chair())->get(route('chair.sections'));
+        $response = $this->actingAs($this->chair())->get(route('chair.students'));
 
         $response->assertOk();
-        $sections = collect($response->viewData('sections'));
+        $sections = collect($response->viewData('sectionCatalog'));
         $this->assertSame(1, $sections->firstWhere('name', 'BSA-4A')->student_count);
-        $this->assertSame(1, $response->viewData('unsectioned'));
+        $this->assertSame(1, $response->viewData('noSectionCount'));
+    }
+
+    public function test_students_page_shows_section_tiles_and_a_section_roster(): void
+    {
+        $this->makeStudent('sectioned@example.com', 'BSA-4A');
+        DB::table('sections')->insert(['name' => 'BSA 3101', 'year_level' => 3, 'is_active' => true, 'created_at' => now(), 'updated_at' => now()]);
+        foreach (range(1, 37) as $i) {
+            $this->makeStudent("s{$i}@example.com", 'BSA 3101');
+        }
+        $chair = $this->chair();
+
+        // New-format card: year, semester read from the name, count.
+        // Old-format card (BSA-4A): no semester is made up.
+        $this->actingAs($chair)->get(route('chair.students'))
+            ->assertSeeInOrder(['BSA 3101', '3rd Year · 1st Sem · 37 Students'])
+            ->assertSeeInOrder(['BSA-4A', '4th Year · 1 Student<'], false)
+            ->assertDontSee('4th Year · 1st Sem')->assertDontSee('4th Year · 2nd Sem');
+
+        // Default view: section cards only, the student list stays closed.
+        $this->actingAs($chair)->get(route('chair.students'))
+            ->assertOk()->assertSee('View Students')->assertSee('New Section')->assertSee('Board Readiness')
+            ->assertDontSee('id="studentList"', false);
+
+        $this->actingAs($chair)->get(route('chair.students', ['section' => 'BSA-4A']))
+            ->assertOk()->assertSee('Add students to BSA-4A')->assertSee('Back to sections')
+            ->assertSee('id="studentList"', false);
     }
 
     public function test_a_section_with_students_or_faculty_cannot_be_deleted(): void

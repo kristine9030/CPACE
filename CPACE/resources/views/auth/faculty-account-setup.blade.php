@@ -66,7 +66,7 @@
         .strength { display:flex; gap:5px; margin-top:9px; }
         .strength span { flex:1; height:5px; border-radius:5px; background:#eee; transition:background .25s; }
         .strength-label { font-size:11px; margin-top:6px; font-weight:600; }
-        .pw-rules { list-style:none; margin-top:10px; display:grid; grid-template-columns:1fr 1fr; gap:5px 14px; }
+        .pw-rules { list-style:none; margin-top:10px; display:grid; grid-template-columns:minmax(0, 1fr) minmax(0, 1fr); gap:5px 14px; }
         .pw-rules li { font-size:11px; color:#aaa; display:flex; align-items:center; gap:6px; }
         .pw-rules li i { font-size:10px; }
         .pw-rules li.ok { color:#059669; }

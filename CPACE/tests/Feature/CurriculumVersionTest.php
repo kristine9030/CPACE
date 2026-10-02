@@ -46,16 +46,25 @@ class CurriculumVersionTest extends TestCase
         $this->assertSame(0, Topic::where('curriculum_version_id', $draft->id)->count(), 'a new curriculum starts blank');
         $this->assertSame('active', CurriculumVersion::find($this->activeId)->status);
 
-        // The page opens on the draft and its (empty) topic lists.
+        // The page opens on the draft; subjects show as folders.
         $this->actingAs($chair)->get(route('chair.subjects'))
             ->assertOk()
             ->assertSee('CPALE 2027')
-            ->assertSee('No topics in this draft yet', false)
-            ->assertDontSee('Inventories')
+            ->assertSee('Open details')
             // The switcher's onchange must stay one well-formed attribute: a
             // stray double quote inside it once left the <select> unclosed
             // and the browser swallowed the rest of the page.
             ->assertSee("onchange=\"window.location = '" . route('chair.subjects') . "?version=' + encodeURIComponent(this.value)\">", false);
+
+        // Opening the subject shows the draft's (empty) topic list.
+        $this->actingAs($chair)->get(route('chair.subjects', ['subject' => $subjectId]))
+            ->assertOk()
+            ->assertSee('All subjects')
+            ->assertSee('No topics in this draft yet', false)
+            ->assertDontSee('Inventories')
+            // An opened subject is just that subject: the curriculum (TOS) card belongs to the list.
+            ->assertDontSee('Curriculum you are viewing')
+            ->assertDontSee('class="cur-aside"', false);
 
         $this->assertSame(1, DB::table('notifications')->where('recipient_id', $faculty->id)->where('type', 'curriculum_update')->count());
     }
@@ -146,6 +155,46 @@ class CurriculumVersionTest extends TestCase
         $this->assertSame('active', CurriculumVersion::find($this->activeId)->status);
     }
 
+    public function test_the_curriculum_card_explains_the_draft_and_shows_where_topics_came_from(): void
+    {
+        $chair = $this->chair();
+        $subjectId = $this->subject('FAR');
+        $draftId = $this->draft();
+
+        // Empty draft: the next step is importing a TOS.
+        $this->actingAs($chair)->get(route('chair.subjects'))
+            ->assertOk()
+            ->assertSee('Curriculum you are viewing')
+            ->assertSee('Add topics')->assertSee('Check each subject')
+            ->assertSee('Import TOS')->assertDontSee('fa-rocket');
+
+        // Topics in, one file waiting for review, one already imported.
+        $this->topic($subjectId, $draftId, 'Inventories');
+        $pending = \App\Models\CurriculumImportBatch::create(['curriculum_version_id' => $draftId, 'created_by' => $chair->id, 'original_filename' => 'new-tos.pdf', 'status' => 'pending']);
+        \App\Models\CurriculumImportBatch::create(['curriculum_version_id' => $draftId, 'created_by' => $chair->id, 'original_filename' => 'first-tos.pdf', 'status' => 'committed']);
+
+        $this->actingAs($chair)->get(route('chair.subjects'))
+            ->assertOk()
+            ->assertSee('Publish')->assertSee('fa-rocket', false)
+            ->assertSee('A TOS file is waiting for your review')->assertSee('new-tos.pdf')
+            ->assertSee(route('chair.curriculum.import.review', $pending->id), false)
+            ->assertSee('TOS file:')->assertSee('first-tos.pdf');
+        // The change history is a menu item on the curriculum card (opening a
+        // popup), not a separate card; and the card sits in the right-hand column.
+        $html = $this->actingAs($chair)->get(route('chair.subjects'))->getContent();
+        $this->assertStringContainsString('View change history', $html);
+        $this->assertStringContainsString('id="historyModal"', $html);
+        $this->assertStringNotContainsString('Curriculum History', $html);
+        $this->assertStringContainsString('class="cur-layout has-aside"', $html);
+        // Summary cards run full width on top; the card then sits beside the compact subject rows.
+        $this->assertLessThan(strpos($html, 'class="cur-aside"'), strpos($html, 'class="kpi-row"'));
+        $this->assertLessThan(strpos($html, 'class="cur-content"'), strpos($html, 'class="cur-aside"'));
+        $this->assertStringContainsString('class="sj-card', $html);
+        $this->assertStringNotContainsString('class="sj-code"', $html);
+        $this->assertStringNotContainsString('sjViewBtn', $html);
+        $this->assertLessThan(strpos($html, 'id="historyModal"'), strpos($html, 'View change history'));
+    }
+
     public function test_an_archived_curriculum_is_read_only(): void
     {
         $chair = $this->chair();
@@ -168,7 +217,7 @@ class CurriculumVersionTest extends TestCase
         $this->assertSame(0, Topic::where('name', 'Sneaked in')->count());
 
         // History stays viewable, without any edit controls.
-        $this->actingAs($chair)->get(route('chair.subjects', ['version' => $this->activeId]))
+        $this->actingAs($chair)->get(route('chair.subjects', ['version' => $this->activeId, 'subject' => $subjectId]))
             ->assertOk()
             ->assertSee('Historic')
             ->assertSee('read-only history', false)

@@ -318,7 +318,7 @@ class ChairAccountProvisioningTest extends TestCase
         $pending = $this->student('pending@example.com', setupComplete: false);
         $active = $this->student('active@example.com', setupComplete: true);
 
-        $response = $this->actingAs($chair)->get(route('chair.students'));
+        $response = $this->actingAs($chair)->get(route('chair.students', ['view' => 'list']));
 
         $response->assertOk();
         $response->assertSee($pending->temp_password);

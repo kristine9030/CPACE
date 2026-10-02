@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     @include('partials.superadmin-sidebar', ['active' => 'dashboard'])
     <style>
-        .metric-row { display:grid; grid-template-columns:2fr 1fr; gap:18px; margin-bottom:18px; }
+        .metric-row { display:grid; grid-template-columns:2fr minmax(0, 1fr); gap:18px; margin-bottom:18px; }
         .feature-bar-wrap { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
         .feature-name { width:130px; font-size:12px; color:#4b5563; flex-shrink:0; }
         .feature-track { flex:1; height:8px; border-radius:4px; background:#eef1f5; overflow:hidden; }
@@ -19,7 +19,7 @@
         .activity-text { font-size:12.5px; color:#374151; }
         .activity-text b { color:#111827; }
         .activity-time { font-size:10.5px; color:#9aa3b2; margin-top:2px; }
-        .health-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; }
+        .health-grid { display:grid; grid-template-columns:repeat(2,minmax(0, 1fr)); gap:12px; }
         .health-item { display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-top:1px solid #f0f2f5; }
         .health-item:nth-child(1), .health-item:nth-child(2) { border-top:none; }
     </style>

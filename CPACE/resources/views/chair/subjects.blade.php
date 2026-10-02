@@ -8,68 +8,47 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* ── KPI cards — same treatment as the Program Chair Dashboard and
-           Student Management: a darker, more pronounced shadow than the rest
-           of the page's cards, a bold dark title (was a faint 10.5px gray
-           label), an inline unit next to the number, and a dashed-border
-           context line underneath explaining what the number means. ── */
-        .stats-row .stat-card {
-            display:flex; flex-direction:column; height:100%;
-            box-shadow:0 4px 10px rgba(10,5,5,.14), 0 16px 32px -8px rgba(10,5,5,.34);
-            transition:transform .18s ease, box-shadow .18s ease;
-        }
-        .stats-row .stat-card:hover {
-            transform:translateY(-2px);
-            box-shadow:0 6px 14px rgba(10,5,5,.18), 0 22px 40px -8px rgba(10,5,5,.4);
-        }
-        .stats-row .stat-top { flex:1; }
-        .stats-row .stat-icon { width:52px; height:52px; border-radius:13px; font-size:24px; flex-shrink:0; }
-        .stats-row .stat-lbl { font-size:13.5px; font-weight:700; color:#1a1a1a; margin-bottom:6px; letter-spacing:-.01em; }
-        .stat-unit { font-size:12px; font-weight:600; color:#aaa; vertical-align:middle; margin-left:2px; }
-        .stat-context {
-            font-size:10.5px; color:#999; margin-top:12px;
-            padding-top:10px; border-top:1px dashed #eee; line-height:1.4;
-        }
-        .stat-context strong { color:#1a1a1a; font-weight:700; }
-        .subj-grid { display:grid;grid-template-columns:repeat(2,1fr);gap:16px; }
-        .subj-card { background:#fff;border-radius:14px;border:1px solid #e8e8e8;overflow:hidden; }
-        .subj-card.inactive { opacity:.72; }
-        .sc-top { display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:18px 20px 14px;border-left:5px solid var(--subject-color); }
-        .sc-code { font-size:20px;font-weight:800;color:var(--subject-color);line-height:1; }
-        .sc-name { font-size:11.5px;color:#777;margin-top:4px; } .sc-desc { font-size:10.5px;color:#aaa;margin-top:6px;line-height:1.5; }
-        .sc-actions { display:flex;align-items:center;gap:6px; }
-        .icon-btn { width:30px;height:30px;border:0;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px;text-decoration:none; }
-        .ib-edit { background:#dbeafe;color:#2563eb; } .ib-delete { background:#fde8e8;color:#b91c1c; }
-        .threshold { display:inline-flex;align-items:center;gap:5px;padding:4px 9px;border-radius:15px;background:#fef3c7;color:#b45309;font-size:10px;font-weight:700;margin-top:9px; }
-        .inactive-pill { display:inline-flex;padding:3px 8px;border-radius:12px;background:#f3f4f6;color:#6b7280;font-size:9px;font-weight:700;margin-left:5px; }
+        .sf-illus { position:absolute; right:6px; top:2px; font-size:62px; opacity:.14; pointer-events:none; color:#fff; }
+
+        /* ── Opened subject ── */
+        .crumb { display:inline-flex; align-items:center; gap:8px; font-size:12.5px; color:#888; text-decoration:none; margin-bottom:14px; }
+        .crumb:hover { color:var(--primary); }
+        .sd-head { position:relative; display:flex; align-items:flex-start; gap:18px; padding:24px 26px; border-radius:16px; color:#fff; overflow:hidden; margin-bottom:18px; background:linear-gradient(135deg, var(--sc-base) 0%, var(--sc-dark) 100%); }
+        .sd-head::before { content:''; position:absolute; inset:0; background:linear-gradient(115deg, rgba(255,255,255,.18) 0%, rgba(255,255,255,0) 55%); pointer-events:none; }
+        .sd-head .sf-illus { font-size:90px; right:18px; top:6px; }
+        .sd-icon { position:relative; width:56px; height:56px; border-radius:16px; flex-shrink:0; background:#fff; color:var(--sc-base); display:flex; align-items:center; justify-content:center; font-size:22px; box-shadow:0 4px 10px -2px rgba(0,0,0,.25); }
+        .sd-titles { position:relative; flex:1; min-width:0; }
+        .sd-code { font-size:24px; font-weight:700; text-shadow:0 1px 4px rgba(0,0,0,.25); display:flex; align-items:center; gap:10px; }
+        .sd-name { font-size:13.5px; opacity:.95; margin-top:3px; }
+        .sd-desc { font-size:12px; opacity:.85; margin-top:8px; line-height:1.55; max-width:720px; }
+        .sd-pill { display:inline-flex; align-items:center; gap:6px; margin-top:12px; padding:5px 11px; border-radius:20px; background:rgba(255,255,255,.2); font-size:11.5px; font-weight:600; }
+        .sd-badge { font-size:10px; font-weight:700; background:rgba(255,255,255,.25); border-radius:12px; padding:3px 9px; text-shadow:none; }
+        .sd-actions { position:relative; display:flex; gap:8px; }
+        .sd-btn { display:inline-flex; align-items:center; gap:7px; height:36px; padding:0 14px; border:1px solid rgba(255,255,255,.45); border-radius:10px; background:rgba(255,255,255,.14); color:#fff; font:600 12px 'Poppins',sans-serif; cursor:pointer; transition:background .15s; }
+        .sd-btn:hover { background:rgba(255,255,255,.26); }
+        .sd-grid { display:grid; grid-template-columns:minmax(0, 1fr) 320px; gap:18px; align-items:start; }
+        .sd-grid .card + .card { margin-top:0; }
+        .sd-grid .sc-section { padding:20px 22px; border-top:0; }
+        .sd-section-title { display:inline-flex; align-items:center; gap:8px; font-size:14px; font-weight:700; color:#1a1a1a; }
+        .sd-section-title i { color:var(--subject-color); }
+        .sd-topics .topic-row { padding:10px 12px; }
+        .sd-grid > * { min-width:0; }
+        .sd-topics .section-head { flex-wrap:wrap; }
+        .sd-topics .topic-name { font-size:12.5px; }
+        .sd-topics .topic-meta { font-size:10.5px; }
+        .sd-fac { display:flex; align-items:center; gap:11px; padding:9px 0; border-bottom:1px solid #f3f4f6; }
+        .sd-fac:last-child { border-bottom:0; }
+        .sd-fac .fac-av { width:32px; height:32px; border-radius:9px; font-size:10.5px; flex-shrink:0; }
+        .sd-fac-name { font-size:12.5px; font-weight:600; color:#1a1a1a; }
+        .sd-fac-email { font-size:11px; color:#999; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        @media (max-width:980px) { .sd-grid { grid-template-columns:minmax(0, 1fr); } .sd-head { flex-wrap:wrap; } }
+        .topics-count { display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:#f3f4f6;color:#6b7280;font-size:10.5px;font-weight:700; }
         .sc-section { padding:13px 20px;border-top:1px solid #f3f4f6; }
         .section-head { display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:9px; }
         .section-label { font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#aaa; }
         .add-mini { border:0;background:var(--primary-light);color:var(--primary);border-radius:7px;padding:5px 9px;font:600 10px 'Poppins',sans-serif;cursor:pointer; }
         .fac-chip { display:inline-flex;align-items:center;gap:7px;padding:6px 10px;border-radius:8px;font-size:11px;font-weight:500;color:#374151;background:#f9fafb;border:1px solid #e5e7eb;margin:3px 4px 3px 0; }
         .fac-av { width:19px;height:19px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:#fff;background:var(--subject-color); }
-        /* ── Collapsible topics panel ── */
-        .topics-tab { cursor:pointer;user-select:none;margin-bottom:0;padding:2px 0;border-radius:6px; }
-        .topics-tab:hover .section-label { color:var(--primary); }
-        .topics-tab:focus-visible { outline:2px solid var(--primary);outline-offset:3px; }
-        .topics-tab .section-label { display:inline-flex;align-items:center;gap:7px;transition:color .15s; }
-        .topics-caret { font-size:9px;color:#bbb;transition:transform .2s ease; }
-        .topics-tab[aria-expanded="true"] .topics-caret { transform:rotate(90deg);color:var(--primary); }
-        .topics-count { display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:#f3f4f6;color:#6b7280;font-size:9.5px;font-weight:700;letter-spacing:0; }
-        .topics-tab[aria-expanded="true"] .topics-count { background:var(--primary-light);color:var(--primary); }
-        /* 0fr → 1fr animates to the content's natural height without hardcoding one. */
-        .topics-panel { display:grid;grid-template-rows:0fr;transition:grid-template-rows .26s ease; }
-        .topics-panel > .topics-panel-inner { overflow:hidden;min-height:0; }
-        .topics-tab[aria-expanded="true"] + .topics-panel { grid-template-rows:1fr; }
-        .topics-panel-inner > *:first-child { padding-top:9px; }
-        /* Progressive reveal: root topics fade in one after another as the panel opens. */
-        .topics-panel.revealing .topic-list > .topic-node { opacity:0;transform:translateY(-4px);animation:topicIn .22s ease forwards; }
-        @keyframes topicIn { to { opacity:1;transform:none; } }
-        @media (prefers-reduced-motion:reduce) {
-            .topics-panel { transition:none; }
-            .topics-panel.revealing .topic-list > .topic-node { animation:none;opacity:1;transform:none; }
-            .topics-caret { transition:none; }
-        }
         .topic-list { display:flex;flex-direction:column;gap:6px; }
         .topic-node + .topic-node { margin-top:6px; }
         .topic-row { display:flex;align-items:center;gap:9px;padding:8px 9px;border-radius:8px;background:#fafafa;border:1px solid #f0f0f0; }
@@ -84,13 +63,13 @@
         .topic-children { margin-top:6px; }
         .topic-search { position:relative; margin-bottom:9px; }
         .topic-search i { position:absolute; left:11px; top:50%; transform:translateY(-50%); color:#bbb; font-size:10px; }
-        .topic-search input { width:100%; padding:8px 10px 8px 30px; border:1.5px solid #e2e2e6; border-radius:8px; font:11px 'Poppins',sans-serif; }
-        .topic-search input:focus { outline:none; border-color:var(--primary); }
+        .topic-search input[type=text] { width:100%; padding:8px 10px 8px 32px; border:1.5px solid #e2e2e6; border-radius:8px; font:11px 'Poppins',sans-serif; }
+        .topic-search input[type=text]:focus { outline:none; border-color:var(--primary); }
         .empty-msg { font-size:11px;color:#bbb;display:flex;align-items:center;gap:7px;padding:4px 0; }
         .modal-overlay { display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:2000;align-items:center;justify-content:center;padding:20px; }
         .modal-overlay.open { display:flex; } .modal { background:#fff;border-radius:16px;width:100%;max-width:560px;padding:24px;max-height:90vh;overflow-y:auto; }
         .modal h3 { font-size:16px;color:#1a1a1a;margin-bottom:4px; } .modal-sub { font-size:11px;color:#999;margin-bottom:18px; }
-        .modal-grid { display:grid;grid-template-columns:1fr 1fr;gap:14px; } .full { grid-column:1/-1; }
+        .modal-grid { display:grid;grid-template-columns:minmax(0, 1fr) minmax(0, 1fr);gap:14px; } .full { grid-column:1/-1; }
         textarea { width:100%;padding:10px 12px;border:1.5px solid #e2e2e6;border-radius:8px;font:13px 'Poppins',sans-serif;resize:vertical;min-height:78px; }
         input[type=number], input[type=color], select { width:100%;padding:10px 12px;border:1.5px solid #e2e2e6;border-radius:8px;font:13px 'Poppins',sans-serif;background:#fff; }
         input[type=color] { height:42px;padding:4px;cursor:pointer; } textarea:focus,input:focus { outline:none;border-color:var(--primary); }
@@ -103,34 +82,156 @@
         .btn-warning:hover { background:#b45309; }
         .btn-success { border:none;background:#059669;color:#fff;padding:9px 16px;border-radius:8px;font:600 12px Poppins,sans-serif;cursor:pointer;display:inline-flex;align-items:center;gap:6px; }
         .btn-success:hover { background:#047857; }
+        .icon-btn { width:30px;height:30px;border:0;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px;text-decoration:none; }
+        .ib-edit { background:#dbeafe;color:#2563eb; } .ib-delete { background:#fde8e8;color:#b91c1c; }
+        .inactive-pill { display:inline-flex;padding:3px 8px;border-radius:12px;background:#f3f4f6;color:#6b7280;font-size:9px;font-weight:700;margin-left:5px; }
         .ib-warning { background:#fef3c7;color:#d97706; } .ib-success { background:#d1fae5;color:#059669; } .ib-muted { background:#f3f4f6;color:#9ca3af; }
         .del-warn { margin:14px 0;padding:12px;background:#fef3c7;border-radius:8px;font-size:11.5px;color:#92400e;display:flex;align-items:flex-start;gap:8px; }
         .del-warn i { margin-top:1px;flex-shrink:0; }
         .info-note { margin:14px 0;padding:12px;background:#eff6ff;border-radius:8px;font-size:11.5px;color:#1e40af;display:flex;align-items:flex-start;gap:8px; }
         .info-note i { margin-top:1px;flex-shrink:0; }
-        /* ── Curriculum version bar ── */
-        .curr-bar { display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;background:#fff;border:1px solid #e8e8e8;border-radius:14px;padding:14px 18px;margin-bottom:16px; }
-        .curr-bar.is-draft { border-color:#fcd34d;background:#fffbeb; }
-        .curr-bar.is-archived { border-color:#e5e7eb;background:#f9fafb; }
-        .curr-left { display:flex;align-items:center;gap:12px;flex-wrap:wrap;min-width:0; }
-        .curr-left select { width:auto;min-width:260px;padding:8px 10px;font-size:12px; }
-        .curr-meta { font-size:11px;color:#777; }
-        .curr-meta strong { color:#1a1a1a; }
-        .curr-pill { display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:12px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.3px; }
-        .curr-pill.active { background:#d1fae5;color:#047857; }
-        .curr-pill.draft { background:#fef3c7;color:#b45309; }
-        .curr-pill.archived { background:#e5e7eb;color:#4b5563; }
-        .curr-actions { display:flex;gap:8px;flex-wrap:wrap; }
-        .curr-note { font-size:11px;color:#92400e;margin-top:6px;flex-basis:100%; }
-        .curr-note.muted { color:#6b7280; }
-        .audit-list { list-style:none;margin:0;padding:0;font-size:11px;color:#555; }
-        .audit-list li { padding:6px 0;border-bottom:1px dashed #eee;display:flex;gap:8px; }
+        @media(max-width:620px) { .modal-grid { grid-template-columns:minmax(0, 1fr); }.full { grid-column:auto; } }
+        /* ── Page-level: soft card shadow, plain white action buttons ── */
+        :root { --card-shadow: 0 1px 2px rgba(16,24,40,.04), 0 4px 14px rgba(16,24,40,.06); }
+        .btn-plain { background:#fff; color:#374151; border:1px solid #e5e7eb; }
+        .btn-plain:hover { background:#f9fafb; border-color:#d1d5db; }
+        .btn-plain.accent { color:var(--primary); border-color:#ecc7cd; }
+
+        /* ── Curriculum card: which one, where its topics came from, what's next ── */
+        .cur-card { background:#fff; border:1px solid #eceef1; border-radius:16px; padding:18px 20px; margin-bottom:20px; box-shadow:var(--card-shadow); }
+        .cur-card.is-draft { border-color:#fbe3a7; background:#fffdf6; }
+        .cur-card.is-archived { background:#f9fafb; }
+        .cur-row { display:grid; grid-template-columns:46px minmax(0, 1fr); gap:14px; align-items:center; }
+        .cur-ic { width:46px; height:46px; border-radius:13px; display:flex; align-items:center; justify-content:center; background:var(--primary-light); color:var(--primary); font-size:18px; flex-shrink:0; }
+        .cur-info { min-width:0; }
+        .cur-eyebrow { font-size:10.5px; font-weight:600; color:#9ca3af; text-transform:uppercase; letter-spacing:.5px; }
+        .cur-name { font-size:14.5px; line-height:1.35; font-weight:700; color:#1a1a1a; margin-top:1px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+        .cur-sub { font-size:12px; color:#777; margin-top:3px; }
+        .curr-pill { display:inline-flex; align-items:center; padding:3px 10px; border-radius:12px; font-size:10.5px; font-weight:700; }
+        .curr-pill.active { background:#d1fae5; color:#047857; }
+        .curr-pill.draft { background:#fef3c7; color:#b45309; }
+        .curr-pill.archived { background:#e5e7eb; color:#4b5563; }
+        .cur-actions { grid-column:1 / -1; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+        .cur-actions .btn { flex:1; justify-content:center; }
+        .curr-select { width:100%; flex-basis:100%; max-width:none; height:38px; padding:0 34px 0 12px; border:1px solid #e5e7eb; border-radius:10px; font-size:12px; background-color:#fff; cursor:pointer; appearance:none; -webkit-appearance:none;
+            background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+            background-repeat:no-repeat; background-position:right 12px center; }
+        .cur-menu { position:relative; }
+        .cur-dots { width:38px; height:38px; border:1px solid #e5e7eb; border-radius:10px; background:#fff; color:#4b5563; cursor:pointer; }
+        .cur-dots:hover, .cur-menu.open .cur-dots { background:#f3f4f6; color:#111827; }
+        .cur-dropdown { display:none; position:absolute; right:0; top:44px; z-index:60; min-width:230px; background:#fff; border-radius:12px; padding:6px; box-shadow:0 12px 32px rgba(16,24,40,.16); border:1px solid #f0f0f0; }
+        .cur-menu.open .cur-dropdown { display:block; }
+        .cur-dropdown button { display:flex; align-items:center; gap:10px; width:100%; padding:9px 12px; border:0; background:none; border-radius:8px; font-family:'Poppins',sans-serif; font-size:12.5px; color:#333; cursor:pointer; text-align:left; }
+        .cur-dropdown button i { width:14px; color:#999; }
+        .cur-dropdown button:hover { background:#f6f6f7; }
+        .cur-dropdown .danger, .cur-dropdown .danger i { color:#b91c1c; }
+        .cur-layout.has-aside { display:grid; grid-template-columns:minmax(0, 1fr) 320px; gap:20px; align-items:start; }
+        .cur-layout.has-aside .cur-aside { grid-column:2; grid-row:1; position:sticky; top:16px; }
+        .cur-layout.has-aside .cur-content { grid-column:1; grid-row:1; min-width:0; }
+        @media (max-width:1180px) { .cur-layout.has-aside { display:block; } .cur-layout.has-aside .cur-aside { position:static; margin-bottom:18px; } }
+        .cur-help { margin-top:14px; padding-top:14px; border-top:1px solid #f0f0f2; display:flex; flex-direction:column; gap:12px; }
+        .cur-help:empty { display:none; }
+        .cur-text { font-size:12.5px; color:#555; line-height:1.6; margin:0; }
+        .cur-text i { color:#059669; margin-right:6px; }
+        .cur-card.is-archived .cur-text i { color:#9ca3af; }
+        .cur-source { font-size:12px; color:#777; margin:0; }
+        .cur-source i { color:#c0392b; margin-right:6px; }
+        .cur-source strong { color:#333; font-weight:600; }
+        .cur-steps { display:grid; grid-template-columns:minmax(0, 1fr); gap:8px; }
+        .cur-step { display:flex; align-items:center; gap:11px; padding:10px 12px; border-radius:12px; background:#f6f6f8; color:#9ca3af; }
+        .cur-step .n { width:26px; height:26px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; background:#e5e7eb; color:#6b7280; font-size:12px; font-weight:700; }
+        .cur-step strong { display:block; font-size:12.5px; color:#555; }
+        .cur-step small { display:block; font-size:11px; color:#9ca3af; margin-top:1px; }
+        .cur-step.now { background:#fff3d6; }
+        .cur-step.now .n { background:#d97706; color:#fff; }
+        .cur-step.now strong { color:#92400e; }
+        .cur-step.now small { color:#b45309; }
+        .cur-step.done { background:#e9f8f1; }
+        .cur-step.done .n { background:#059669; color:#fff; }
+        .cur-step.done strong { color:#047857; }
+        .cur-step.done small { color:#5b9c86; }
+        .cur-alert { display:flex; align-items:center; gap:12px; flex-wrap:wrap; padding:11px 14px; border-radius:12px; background:#eff6ff; border:1px solid #cfe0fb; color:#1e40af; font-size:12.5px; line-height:1.5; }
+        .cur-alert > span { flex:1; min-width:200px; }
+        .cur-alert-btn { padding:7px 14px; border-radius:9px; background:#2563eb; color:#fff; font-size:12px; font-weight:600; text-decoration:none; white-space:nowrap; }
+        .cur-alert-btn:hover { background:#1d4ed8; }
+        .audit-list { list-style:none; margin:0; padding:0; font-size:11.5px; color:#555; }
+        .audit-list li { padding:7px 0; border-bottom:1px dashed #eee; display:flex; gap:8px; }
+        .audit-modal { max-height:60vh; overflow-y:auto; }
         .audit-list li:last-child { border-bottom:0; }
-        .audit-when { color:#aaa;white-space:nowrap;min-width:92px; }
-        @media(max-width:620px) { .curr-left select { min-width:0;width:100%; } }
-        @media(max-width:1050px) { .stats-row { grid-template-columns:repeat(2,1fr); } }
-        @media(max-width:900px) { .subj-grid { grid-template-columns:1fr; } }
-        @media(max-width:620px) { .modal-grid { grid-template-columns:1fr; }.full { grid-column:auto; }.sc-top,.sc-section { padding-left:14px;padding-right:14px; } }
+        .audit-when { color:#aaa; white-space:nowrap; min-width:92px; }
+
+        /* ── Summary cards ── */
+        .kpi-row { display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:16px; margin-bottom:26px; }
+        .kpi { display:flex; flex-direction:column; background:#fff; border-radius:16px; padding:18px 18px 14px; box-shadow:var(--card-shadow); }
+        .kpi-top { display:flex; align-items:center; gap:14px; flex:1; padding-bottom:14px; }
+        .kpi-icon { width:48px; height:48px; border-radius:13px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:19px; }
+        .t-rose { background:#fde8ea; color:#c0392b; }
+        .t-violet { background:#ede9fe; color:#6d28d9; }
+        .t-green { background:#dcf5ec; color:#059669; }
+        .t-amber { background:#fdf0d5; color:#d97706; }
+        .kpi-lbl { font-size:12.5px; font-weight:600; color:#444; }
+        .kpi-num { font-size:24px; font-weight:700; color:#1a1a1a; line-height:1.15; margin-top:2px; }
+        .kpi-foot { padding-top:11px; border-top:1px solid #f0f0f0; font-size:11px; color:#888; line-height:1.45; }
+        .kpi-foot strong { font-weight:700; }
+
+        /* ── Subjects header + toolbar ── */
+        .sj-header { display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; margin-bottom:16px; }
+        .sj-h-title { font-size:22px; font-weight:700; color:#1a1a1a; }
+        .sj-h-sub { font-size:12px; color:#888; margin-top:2px; }
+        .sj-toolbar { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+        .sj-search { position:relative; }
+        .sj-search i { position:absolute; left:13px; top:50%; transform:translateY(-50%); color:#a3a8b0; font-size:12px; pointer-events:none; }
+        .sj-toolbar .sj-search input, .sj-toolbar .sj-select { height:36px; border:1px solid #e5e7eb; border-radius:10px; background-color:#fff; font-family:'Poppins',sans-serif; font-size:12.5px; color:#1a1a1a; }
+        .sj-toolbar .sj-search input { width:220px; padding:0 12px 0 34px; }
+        .sj-toolbar .sj-select { width:auto; min-width:160px; padding:0 34px 0 12px; cursor:pointer; appearance:none; -webkit-appearance:none;
+            background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+            background-repeat:no-repeat; background-position:right 12px center; }
+        .sj-toolbar .sj-search input:focus, .sj-toolbar .sj-select:focus { outline:none; border-color:var(--primary); box-shadow:0 0 0 3px rgba(123,29,29,.1); }
+        .sj-toolbar .sj-select.is-set { background-color:var(--primary-light); border-color:#ecc7cd; color:var(--primary); font-weight:600; }
+
+        /* ── Subject rows: one compact line per subject ── */
+        .sj-grid { display:flex; flex-direction:column; gap:11px; }
+        .sj-card { position:relative; display:grid; grid-template-columns:minmax(0, 1fr) 122px 182px 82px 36px; gap:15px; align-items:center; padding:13px 16px 13px 14px; background:#fff; border-radius:13px; border-left:4px solid var(--sc-base); box-shadow:var(--card-shadow); transition:transform .15s, box-shadow .15s; }
+        .sj-card:hover { transform:translateY(-1px); box-shadow:0 2px 4px rgba(16,24,40,.05), 0 8px 20px rgba(16,24,40,.09); }
+        .sj-card.is-inactive { opacity:.7; }
+        .sj-title { min-width:0; }
+        .sj-name { display:block; color:#1a1a1a; text-decoration:none; font-size:13.5px; font-weight:600; line-height:1.3; }
+        .sj-name:hover { color:var(--primary); text-decoration:underline; }
+        .sj-meta { font-size:11.5px; color:#999; margin-top:3px; }
+        .sj-lbl { font-size:11px; color:#9ca3af; margin-bottom:4px; }
+        .sj-val { font-size:12.5px; color:#333; font-weight:500; display:flex; align-items:center; gap:6px; white-space:nowrap; }
+        .sj-val i { color:var(--sc-base); font-size:11.5px; }
+        .sj-val.warn, .sj-val.warn i { color:#b45309; }
+        .sj-cov { display:flex; align-items:center; gap:8px; }
+        .sj-cov strong { font-size:12.5px; color:#1a1a1a; min-width:34px; }
+        .sj-ring { width:22px; height:22px; transform:rotate(-90deg); flex-shrink:0; }
+        .sj-ring circle { fill:none; stroke-width:3.4; }
+        .sj-ring .bg { stroke:#eceef1; }
+        .sj-ring .fg { stroke:var(--sc-base); stroke-linecap:round; }
+        .sj-bar { flex:1; height:6px; border-radius:6px; background:#eceef1; overflow:hidden; }
+        .sj-bar span { display:block; height:100%; border-radius:6px; background:var(--sc-base); }
+        .sj-status { display:inline-flex; align-items:center; justify-content:center; gap:5px; padding:4px 10px; border-radius:20px; background:#e9f8f1; color:#047857; font-size:11px; font-weight:700; }
+        .sj-status i { font-size:6px; }
+        .sj-status.off { background:#f1f2f4; color:#6b7280; }
+        .sj-menu { position:relative; }
+        .sj-dots { width:34px; height:34px; border:1px solid #e5e7eb; border-radius:10px; background:#fff; color:#4b5563; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; text-decoration:none; font-size:13px; }
+        .sj-dots:hover, .sj-menu.open .sj-dots { background:#f3f4f6; color:#111827; }
+        .sj-dropdown { display:none; position:fixed; z-index:1500; min-width:180px; background:#fff; border-radius:12px; padding:6px; box-shadow:0 12px 32px rgba(16,24,40,.16); border:1px solid #f0f0f0; }
+        .sj-dropdown.is-open { display:block; }
+        .sj-dropdown a, .sj-dropdown button { display:flex; align-items:center; gap:10px; width:100%; padding:9px 12px; border:0; background:none; border-radius:8px; font-family:'Poppins',sans-serif; font-size:12.5px; color:#333; cursor:pointer; text-align:left; text-decoration:none; }
+        .sj-dropdown a i, .sj-dropdown button i { width:14px; color:#999; }
+        .sj-dropdown a:hover, .sj-dropdown button:hover { background:#f6f6f7; }
+        .sj-dropdown .danger, .sj-dropdown .danger i { color:#b91c1c; }
+        .sj-empty { text-align:center; padding:28px; color:#999; font-size:12.5px; background:#fff; border-radius:12px; box-shadow:var(--card-shadow); }
+        .sj-empty a { color:var(--primary); font-weight:600; }
+        @media (max-width:1100px) { .kpi-row { grid-template-columns:repeat(2, minmax(0, 1fr)); } }
+        @media (max-width:760px) {
+            .kpi-row { grid-template-columns:minmax(0, 1fr); }
+            .sj-card { grid-template-columns:minmax(0, 1fr) 34px; row-gap:10px; }
+            .sj-fac, .sj-covcol { grid-column:1 / -1; }
+            .sj-status { display:none; }
+            .sj-toolbar .sj-search input { width:100%; }
+        }
     </style>
 </head>
 <body>
@@ -152,202 +253,233 @@
 @endphp
 
 <main class="main">
+    @php
+        $hasDraft = $versions->contains('status', \App\Models\CurriculumVersion::STATUS_DRAFT);
+    @endphp
     <div class="topbar">
-        <div class="topbar-left"><div><div class="page-title">Subject & Curriculum</div><div class="page-sub">Manage CPALE subjects, faculty coverage, topics, and readiness thresholds.</div></div></div>
-        <div class="topbar-right">
-            @unless($readOnly)
-                <button type="button" class="btn btn-primary" onclick="openSubject()"><i class="fas fa-plus"></i> Add Subject</button>
-            @endunless
-            @include('partials.topbar-actions')
-        </div>
+        <div class="topbar-left"><div><div class="page-title">Subject &amp; Curriculum</div><div class="page-sub">The subjects and topics students study, and the TOS they come from.</div></div></div>
+        <div class="topbar-right">@include('partials.topbar-actions')</div>
     </div>
 
     {{-- Status and validation messages surface as SweetAlert popups via partials.alerts --}}
 
-    {{-- Curriculum version bar: which curriculum's topics this page shows,
-         plus the draft lifecycle (start -> build -> publish / discard). --}}
-    @if($version)
-        @php
-            $hasDraft = $versions->contains('status', \App\Models\CurriculumVersion::STATUS_DRAFT);
-        @endphp
-        <div class="curr-bar {{ $version->isDraft() ? 'is-draft' : ($version->isArchived() ? 'is-archived' : '') }}">
-            <div class="curr-left">
-                <i class="fas fa-book-bookmark" style="color:var(--primary);"></i>
-                <select aria-label="Curriculum version" onchange="window.location = '{{ route('chair.subjects') }}?version=' + encodeURIComponent(this.value)">
-                    @foreach($versions as $v)
-                        <option value="{{ $v->id }}" @selected($v->id === $version->id)>
-                            {{ $v->label }} — {{ ucfirst($v->status) }}{{ $v->effectiveRange() ? ' (' . $v->effectiveRange() . ')' : '' }}
-                        </option>
-                    @endforeach
-                </select>
-                <span class="curr-pill {{ $version->status }}">{{ $version->status }}</span>
-                <span class="curr-meta">
-                    @if($version->effectiveRange())
-                        Batches <strong>{{ $version->effectiveRange() }}</strong>
-                    @else
-                        No batch range set
-                    @endif
-                    @if($version->published_at) · published {{ $version->published_at->format('M j, Y') }} @endif
-                </span>
-            </div>
-            <div class="curr-actions">
-                @unless($readOnly)
-                    <button type="button" class="btn btn-ghost btn-sm" onclick="document.getElementById('tosModal').classList.add('open')"><i class="fas fa-file-import"></i> Import TOS</button>
-                @endunless
-                @if($version->isDraft())
-                    <button type="button" class="btn btn-ghost btn-sm" onclick="document.getElementById('curriculumEditModal').classList.add('open')"><i class="fas fa-pen"></i> Edit details</button>
-                    <button type="button" class="btn btn-ghost btn-sm" onclick="discardDraft()"><i class="fas fa-trash"></i> Discard draft</button>
-                    <button type="button" class="btn btn-primary btn-sm" onclick="publishDraft()"><i class="fas fa-rocket"></i> Publish curriculum</button>
-                @elseif(! $hasDraft)
-                    <button type="button" class="btn btn-primary btn-sm" onclick="document.getElementById('curriculumModal').classList.add('open')"><i class="fas fa-plus"></i> Start New Curriculum</button>
-                @endif
-            </div>
-            @if($version->isDraft())
-                <div class="curr-note"><i class="fas fa-circle-info"></i> <strong>Draft</strong> — students won't see it until you publish.<x-tip label="How drafts work">Students keep studying the current curriculum until you publish. Add or import each subject's topics, then copy over the Test Bank questions that still apply.</x-tip></div>
-            @elseif($version->isArchived())
-                <div class="curr-note muted"><i class="fas fa-lock"></i> <strong>Archived</strong> — read-only.<x-tip label="About archived curricula">Kept as history. Past quiz results and questions under it are preserved.</x-tip></div>
-            @endif
-        </div>
-    @endif
-
     @php
+        // Per subject: questions written under this curriculum's topics, and
+        // "coverage" = share of its topics that have at least one question.
+        $subjectFigures = $subjectsColl->mapWithKeys(function ($subject) {
+            $topics = $subject->topics->count();
+            $withQuestions = $subject->topics->where('questions_count', '>', 0)->count();
+
+            return [$subject->id => [
+                'topics' => $topics,
+                'questions' => (int) $subject->topics->sum('questions_count'),
+                'covered' => $withQuestions,
+                'coverage' => $topics > 0 ? (int) round($withQuestions / $topics * 100) : 0,
+            ]];
+        });
+        $totalQuestions = $subjectFigures->sum('questions');
+
         $summaryCards = [
             [
-                'value' => $totalSubjects, 'unit' => 'Subjects', 'label' => 'CPALE Subjects',
-                'tone' => 'si-blue', 'icon' => 'fa-layer-group',
+                'value' => $totalSubjects, 'label' => 'Total Subjects', 'tone' => 't-rose', 'icon' => 'fa-book',
                 'context' => $totalSubjects > 0
                     ? '<strong>' . $activeCount . ' active</strong> in the curriculum right now.'
-                    : 'No subjects defined yet — add one to begin.',
+                    : 'No subjects yet — add one to begin.',
             ],
             [
-                'value' => $assigned, 'unit' => 'Covered', 'label' => 'Faculty Coverage',
-                'tone' => 'si-green', 'icon' => 'fa-chalkboard-user',
+                'value' => $assigned . ' / ' . $totalSubjects, 'label' => 'Faculty Coverage', 'tone' => 't-violet', 'icon' => 'fa-users',
                 'context' => $unassigned > 0
-                    ? '<strong style="color:var(--accent);">' . $unassigned . ' ' . ($unassigned === 1 ? 'subject' : 'subjects') . '</strong> still need a faculty assignment.'
+                    ? '<strong style="color:var(--accent);">' . $unassigned . ' ' . ($unassigned === 1 ? 'subject needs' : 'subjects need') . '</strong> a faculty assignment.'
                     : '<strong style="color:#059669;">Every subject</strong> has an assigned faculty.',
             ],
             [
-                'value' => $topicCount, 'unit' => 'Topics', 'label' => 'Curriculum Topics',
-                'tone' => 'si-orange', 'icon' => 'fa-list-check',
+                'value' => number_format($topicCount), 'label' => 'Curriculum Topics', 'tone' => 't-green', 'icon' => 'fa-bullseye',
                 'context' => $emptySubjects > 0
-                    ? '<strong style="color:var(--accent);">' . $emptySubjects . ' ' . ($emptySubjects === 1 ? 'subject has' : 'subjects have') . '</strong> no topics mapped yet.'
-                    : '<strong>' . $avgTopics . ' topics</strong> per subject on average.',
+                    ? '<strong style="color:var(--accent);">' . $emptySubjects . ' ' . ($emptySubjects === 1 ? 'subject has' : 'subjects have') . '</strong> no topics yet.'
+                    : '<strong>' . number_format($totalQuestions) . ' questions</strong> written across them.',
             ],
             [
-                'value' => $inactiveCount, 'unit' => 'Hidden', 'label' => 'Inactive Subjects',
-                'tone' => 'si-red', 'icon' => 'fa-eye-slash',
+                'value' => $inactiveCount, 'label' => 'Inactive Subjects', 'tone' => 't-amber', 'icon' => 'fa-triangle-exclamation',
                 'context' => $inactiveCount > 0
                     ? '<strong style="color:var(--accent);">' . $inactiveCount . ' ' . ($inactiveCount === 1 ? 'subject is' : 'subjects are') . '</strong> hidden from students.'
-                    : '<strong style="color:#059669;">All subjects</strong> are visible to students.',
+                    : 'All subjects are available to students.',
             ],
         ];
     @endphp
-    <div class="stats-row">
-        @foreach ($summaryCards as $card)
-            <div class="stat-card">
-                <div class="stat-top">
-                    <div>
-                        <div class="stat-lbl">{{ $card['label'] }}</div>
-                        <div class="stat-num">{{ $card['value'] }} <span class="stat-unit">{{ $card['unit'] }}</span></div>
-                    </div>
-                    <div class="stat-icon {{ $card['tone'] }}">
-                        <i class="fas {{ $card['icon'] }}"></i>
-                    </div>
-                </div>
-                <div class="stat-context">{!! $card['context'] !!}</div>
+    @if($openSubject)
+        {{-- ── One subject opened: its details, faculty, and topics ── --}}
+        @php
+            $subject = $openSubject;
+            $look = $looks[$subject->id];
+            $color = $subject->color ?: '#7B1D1D';
+        @endphp
+        <a class="crumb" href="{{ route('chair.subjects', array_filter(['version' => request('version')])) }}"><i class="fas fa-arrow-left"></i> All subjects</a>
+
+        <div class="sd-head" style="--sc-base:{{ $look['base'] }}; --sc-dark:{{ $look['dark'] }};">
+            <i class="fas fa-folder-open sf-illus"></i>
+            <div class="sd-icon"><i class="fas {{ $look['icon'] }}"></i></div>
+            <div class="sd-titles">
+                <div class="sd-code">{{ $subject->code }} @unless($subject->is_active)<span class="sd-badge">Inactive</span>@endunless</div>
+                <div class="sd-name">{{ $subject->name }}</div>
+                @if($subject->description)<div class="sd-desc">{{ $subject->description }}</div>@endif
+                <span class="sd-pill"><i class="fas fa-bullseye"></i> Passing threshold: {{ $subject->passing_threshold }}%</span>
             </div>
-        @endforeach
-    </div>
-
-    <div class="subj-grid">
-        @forelse($subjects as $subject)
-            @php $color = $subject->color ?: '#7B1D1D'; @endphp
-            <div class="subj-card {{ $subject->is_active ? '' : 'inactive' }}" style="--subject-color:{{ $color }};">
-                <div class="sc-top">
-                    <div style="flex:1;min-width:0;">
-                        <div class="sc-code">{{ $subject->code }} @unless($subject->is_active)<span class="inactive-pill">Inactive</span>@endunless</div>
-                        <div class="sc-name">{{ $subject->name }}</div>
-                        @if($subject->description)<div class="sc-desc">{{ Str::limit($subject->description, 130) }}</div>@endif
-                        <span class="threshold"><i class="fas fa-bullseye"></i> Passing threshold: {{ $subject->passing_threshold }}%</span>
-                    </div>
-                    <div class="sc-actions">
-                        @unless($readOnly)
-                        <button type="button" class="icon-btn ib-edit" title="Edit subject" onclick="openSubject({{ Illuminate\Support\Js::from(['id'=>$subject->id,'code'=>$subject->code,'name'=>$subject->name,'description'=>$subject->description,'passing_threshold'=>$subject->passing_threshold,'color'=>$color,'is_active'=>$subject->is_active]) }})"><i class="fas fa-pen"></i></button>
-                        <button type="button" class="icon-btn ib-delete" title="Remove subject" onclick="openSubjectDelete({{ $subject->id }}, '{{ addslashes($subject->code) }}')"><i class="fas fa-trash"></i></button>
-                        @endunless
-                    </div>
+            @unless($readOnly)
+                <div class="sd-actions">
+                    <button type="button" class="sd-btn" title="Edit subject" onclick="openSubject({{ Illuminate\Support\Js::from(['id'=>$subject->id,'code'=>$subject->code,'name'=>$subject->name,'description'=>$subject->description,'passing_threshold'=>$subject->passing_threshold,'color'=>$color,'is_active'=>$subject->is_active]) }})"><i class="fas fa-pen"></i> Edit</button>
+                    <button type="button" class="sd-btn" title="Remove subject" onclick="openSubjectDelete({{ $subject->id }}, '{{ addslashes($subject->code) }}')"><i class="fas fa-trash"></i></button>
                 </div>
+            @endunless
+        </div>
 
-                <div class="sc-section">
-                    <div class="section-head"><span class="section-label">Assigned Faculty ({{ $subject->faculty->count() }})</span><a href="{{ route('chair.faculty') }}" class="add-mini" style="text-decoration:none;"><i class="fas fa-layer-group"></i> Assign</a></div>
-                    @forelse($subject->faculty as $member)
-                        <span class="fac-chip"><span class="fac-av">{{ strtoupper(substr($member->first_name,0,1).substr($member->last_name,0,1)) }}</span>{{ $member->name }}</span>
-                    @empty
-                        <div class="empty-msg"><i class="fas fa-user-slash"></i>No faculty assigned yet.</div>
-                    @endforelse
-                </div>
-
-                {{-- Topics collapse: the curriculum tree is the tallest part of
-                     a subject card, so it stays folded behind its own header and
-                     opens on click. The header doubles as the toggle; "Add Topic"
-                     sits inside it but stops the click from reaching it. --}}
-                <div class="sc-section topics-section">
-                    <div class="section-head topics-tab" role="button" tabindex="0"
-                         aria-expanded="false" aria-controls="topics-panel-{{ $subject->id }}"
-                         onclick="toggleTopicsPanel(this)" onkeydown="topicsTabKey(event, this)">
-                        <span class="section-label">
-                            <i class="fas fa-chevron-right topics-caret"></i>
-                            Topics
-                            <span class="topics-count">{{ $subject->topics->count() }}</span>
-                        </span>
-                        @unless($readOnly)
-                            <span style="display:inline-flex;gap:6px;">
-                                @if($version?->isDraft())
-                                    <button type="button" class="add-mini" title="Copy this subject's Test Bank questions from the current curriculum into matching topics of this draft" onclick="event.stopPropagation(); copyQuestions({{ $subject->id }}, '{{ addslashes($subject->code) }}')"><i class="fas fa-copy"></i> Copy questions</button>
-                                @endif
-                                <button type="button" class="add-mini" onclick="event.stopPropagation(); openTopic({{ $subject->id }}, '{{ addslashes($subject->code) }}')"><i class="fas fa-plus"></i> Add Topic</button>
-                            </span>
-                        @endunless
-                    </div>
-
-                    <div class="topics-panel" id="topics-panel-{{ $subject->id }}" data-subject="{{ $subject->id }}">
-                        <div class="topics-panel-inner">
-                            @if($subject->topicTree->isNotEmpty())
-                                <div class="topic-search">
-                                    <i class="fas fa-magnifying-glass"></i>
-                                    <input type="text" placeholder="Search topics..." oninput="searchChairTopics(this, this.value)">
-                                </div>
+        <div class="sd-grid" style="--subject-color:{{ $look['base'] }};">
+            {{-- Topics: the main thing a chair works on here, always open --}}
+            <div class="card sc-section sd-topics">
+                <div class="section-head">
+                    <span class="sd-section-title"><i class="fas fa-list-check"></i> Topics <span class="topics-count">{{ $subject->topics->count() }}</span></span>
+                    @unless($readOnly)
+                        <span style="display:inline-flex;gap:6px;">
+                            @if($version?->isDraft())
+                                <button type="button" class="add-mini" title="Copy this subject's Test Bank questions from the current curriculum into matching topics of this draft" onclick="copyQuestions({{ $subject->id }}, '{{ addslashes($subject->code) }}')"><i class="fas fa-copy"></i> Copy questions</button>
                             @endif
-                            <div class="topic-list" id="topics-data-{{ $subject->id }}" data-topics="{{ json_encode($subject->topics->map(fn($t) => ['id' => $t->id, 'name' => $t->name, 'parent_id' => $t->parent_id])) }}">
-                                @if($subject->topicTree->isNotEmpty())
-                                    @include('chair.partials.topic-node', ['subject' => $subject, 'topics' => $subject->topicTree, 'depth' => 0, 'readOnly' => $readOnly])
-                                @else
-                                    <div class="empty-msg"><i class="fas fa-list"></i>{{ $version?->isDraft() ? 'No topics in this draft yet — add them or import the subject\'s TOS.' : 'No topics added yet.' }}</div>
-                                @endif
-                            </div>
+                            <button type="button" class="add-mini" onclick="openTopic({{ $subject->id }}, '{{ addslashes($subject->code) }}')"><i class="fas fa-plus"></i> Add Topic</button>
+                        </span>
+                    @endunless
+                </div>
+                @if($subject->topicTree->isNotEmpty())
+                    <div class="topic-search">
+                        <i class="fas fa-magnifying-glass"></i>
+                        <input type="text" placeholder="Search topics..." oninput="searchChairTopics(this, this.value)">
+                    </div>
+                @endif
+                <div class="topic-list" id="topics-data-{{ $subject->id }}" data-topics="{{ json_encode($subject->topics->map(fn($t) => ['id' => $t->id, 'name' => $t->name, 'parent_id' => $t->parent_id])) }}">
+                    @if($subject->topicTree->isNotEmpty())
+                        @include('chair.partials.topic-node', ['subject' => $subject, 'topics' => $subject->topicTree, 'depth' => 0, 'readOnly' => $readOnly])
+                    @else
+                        <div class="empty-msg"><i class="fas fa-list"></i>{{ $version?->isDraft() ? 'No topics in this draft yet — add them or import the subject\'s TOS.' : 'No topics added yet.' }}</div>
+                    @endif
+                </div>
+            </div>
+
+            {{-- Who handles this subject --}}
+            <div class="card sc-section sd-faculty">
+                <div class="section-head">
+                    <span class="sd-section-title"><i class="fas fa-chalkboard-user"></i> Assigned Faculty <span class="topics-count">{{ $subject->faculty->count() }}</span></span>
+                    <a href="{{ route('chair.faculty') }}" class="add-mini" style="text-decoration:none;"><i class="fas fa-layer-group"></i> Assign</a>
+                </div>
+                @forelse($subject->faculty as $member)
+                    <div class="sd-fac">
+                        <span class="fac-av">{{ strtoupper(substr($member->first_name,0,1).substr($member->last_name,0,1)) }}</span>
+                        <div style="min-width:0;">
+                            <div class="sd-fac-name">{{ $member->name }}</div>
+                            <div class="sd-fac-email">{{ $member->email }}</div>
                         </div>
                     </div>
-                </div>
-            </div>
-        @empty
-            <div class="card" style="grid-column:1/-1;"><div class="empty"><i class="fas fa-layer-group"></i><div>No subjects yet. Add the first subject to begin.</div></div></div>
-        @endforelse
-    </div>
-
-    @if($version && $audits->isNotEmpty())
-        <div class="card" style="margin-top:16px;">
-            <div class="card-head"><span class="card-title"><i class="fas fa-clock-rotate-left"></i> Curriculum history — {{ $version->label }}</span></div>
-            <div style="padding:6px 18px 12px;">
-                <ul class="audit-list">
-                    @foreach($audits as $audit)
-                        <li>
-                            <span class="audit-when">{{ $audit->created_at?->format('M j, g:i A') }}</span>
-                            <span><strong>{{ $audit->user?->name ?? 'System' }}</strong> · {{ $audit->label() }}@if($audit->subject) ({{ $audit->subject->code }})@endif @if($audit->details)— {{ $audit->details }}@endif</span>
-                        </li>
-                    @endforeach
-                </ul>
+                @empty
+                    <div class="empty-msg"><i class="fas fa-user-slash"></i>No faculty assigned yet.</div>
+                @endforelse
             </div>
         </div>
+    @else
+        {{-- ── All subjects ── --}}
+        <div class="kpi-row">
+            @foreach ($summaryCards as $card)
+                <div class="kpi">
+                    <div class="kpi-top">
+                        <div class="kpi-icon {{ $card['tone'] }}"><i class="fas {{ $card['icon'] }}"></i></div>
+                        <div>
+                            <div class="kpi-lbl">{{ $card['label'] }}</div>
+                            <div class="kpi-num">{{ $card['value'] }}</div>
+                        </div>
+                    </div>
+                    <div class="kpi-foot">{!! $card['context'] !!}</div>
+                </div>
+            @endforeach
+        </div>
+
+        <div class="cur-layout {{ $version ? 'has-aside' : '' }}">
+        @include('chair.partials.curriculum-card')
+        <div class="cur-content">
+        <div class="sj-header">
+            <div>
+                <div class="sj-h-title">Subjects</div>
+                <div class="sj-h-sub">{{ $totalSubjects }} subject{{ $totalSubjects === 1 ? '' : 's' }} &bull; View details, coverage, and faculty assignments.</div>
+            </div>
+            <div class="sj-toolbar">
+                <div class="sj-search">
+                    <i class="fas fa-search"></i>
+                    <input type="search" id="sjSearch" placeholder="Search subjects..." aria-label="Search subjects" oninput="filterSubjectCards()">
+                </div>
+                <select id="sjFilter" class="sj-select" aria-label="Filter subjects" onchange="filterSubjectCards()">
+                    <option value="">All Subjects</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                    <option value="no_faculty">Needs faculty</option>
+                    <option value="no_topics">No topics yet</option>
+                    <option value="low_coverage">Coverage below 50%</option>
+                </select>
+                @unless($readOnly)
+                    <button type="button" class="btn btn-primary btn-sm sj-add" onclick="openSubject()"><i class="fas fa-plus"></i> Add Subject</button>
+                @endunless
+            </div>
+        </div>
+
+        <div class="sj-grid" id="sjGrid">
+            @forelse($subjects as $subject)
+                @php
+                    $look = $looks[$subject->id];
+                    $fig = $subjectFigures[$subject->id];
+                    $color = $subject->color ?: '#7B1D1D';
+                    $openUrl = route('chair.subjects', array_filter(['subject' => $subject->id, 'version' => request('version')]));
+                    // Ring: circumference of r=9 is ~56.55.
+                    $ringDash = round(56.55 * $fig['coverage'] / 100, 2);
+                @endphp
+                <div class="sj-card {{ $subject->is_active ? '' : 'is-inactive' }}"
+                     data-search="{{ strtolower($subject->code . ' ' . $subject->name) }}"
+                     data-state="{{ $subject->is_active ? 'active' : 'inactive' }}"
+                     data-faculty="{{ $subject->faculty->count() }}" data-topics="{{ $fig['topics'] }}" data-coverage="{{ $fig['coverage'] }}"
+                     style="--sc-base:{{ $look['base'] }};">
+                    <div class="sj-title">
+                        <a class="sj-name" href="{{ $openUrl }}">{{ $subject->name }}</a>
+                        <div class="sj-meta">{{ $subject->code }} &bull; {{ $fig['topics'] }} topic{{ $fig['topics'] === 1 ? '' : 's' }} &bull; {{ number_format($fig['questions']) }} question{{ $fig['questions'] === 1 ? '' : 's' }}</div>
+                    </div>
+                    <div class="sj-col sj-fac">
+                        <div class="sj-lbl">Faculty</div>
+                        <div class="sj-val {{ $subject->faculty->isEmpty() ? 'warn' : '' }}"><i class="fas fa-user-group"></i> {{ $subject->faculty->isEmpty() ? 'None yet' : $subject->faculty->count() . ' assigned' }}</div>
+                    </div>
+                    <div class="sj-col sj-covcol" title="{{ $fig['topics'] > 0 ? $fig['covered'] . ' of ' . $fig['topics'] . ' topics have questions' : 'No topics yet' }}">
+                        <div class="sj-lbl">Coverage</div>
+                        <div class="sj-cov">
+                            <svg class="sj-ring" viewBox="0 0 24 24" aria-hidden="true">
+                                <circle cx="12" cy="12" r="9" class="bg"></circle>
+                                <circle cx="12" cy="12" r="9" class="fg" stroke-dasharray="{{ $ringDash }} 56.55"></circle>
+                            </svg>
+                            <strong>{{ $fig['coverage'] }}%</strong>
+                            <div class="sj-bar"><span style="width:{{ $fig['coverage'] }}%;"></span></div>
+                        </div>
+                    </div>
+                    <span class="sj-status {{ $subject->is_active ? '' : 'off' }}"><i class="fas fa-circle"></i> {{ $subject->is_active ? 'Active' : 'Inactive' }}</span>
+                    @unless($readOnly)
+                        <div class="sj-menu">
+                            <button type="button" class="sj-dots" onclick="toggleSubjectMenu(event, this)" aria-label="Options for {{ $subject->code }}"><i class="fas fa-ellipsis"></i></button>
+                            <div class="sj-dropdown">
+                                <a href="{{ $openUrl }}"><i class="fas fa-folder-open"></i> Open details</a>
+                                <button type="button" onclick="openSubject({{ Illuminate\Support\Js::from(['id'=>$subject->id,'code'=>$subject->code,'name'=>$subject->name,'description'=>$subject->description,'passing_threshold'=>$subject->passing_threshold,'color'=>$color,'is_active'=>$subject->is_active]) }})"><i class="fas fa-pen"></i> Edit subject</button>
+                                <button type="button" class="danger" onclick="openSubjectDelete({{ $subject->id }}, '{{ addslashes($subject->code) }}')"><i class="fas fa-trash"></i> Delete subject</button>
+                            </div>
+                        </div>
+                    @else
+                        <a class="sj-dots sj-go" href="{{ $openUrl }}" aria-label="Open {{ $subject->code }}"><i class="fas fa-chevron-right"></i></a>
+                    @endunless
+                </div>
+            @empty
+                <div class="card" style="grid-column:1/-1;"><div class="empty"><i class="fas fa-layer-group"></i><div>No subjects yet. Add the first subject to begin.</div></div></div>
+            @endforelse
+            <div class="sj-empty" id="sjNoMatch" hidden>No subjects match. <a href="#" onclick="clearSubjectFilters(); return false;">Clear filters</a></div>
+        </div>
+
+        </div>{{-- /.cur-content --}}
+        </div>{{-- /.cur-layout --}}
     @endif
 </main>
 
@@ -581,63 +713,75 @@ function searchChairTopics(input, rawQuery) {
     topLevelNodes.forEach(node => applyChairTopicSearch(node, query));
 }
 
-/* Opens/closes a subject's topics panel. Root topics are staggered in on open
-   so a long curriculum unfolds rather than appearing all at once. The open/closed
-   state is remembered per subject, since a chair usually works one subject at a
-   time and reloads after every topic edit. */
-const TOPICS_OPEN_KEY = 'cpace.chair.subjects.openTopics';
-
-function readOpenTopics() {
-    try { return JSON.parse(localStorage.getItem(TOPICS_OPEN_KEY) || '[]') || []; }
-    catch (e) { return []; }
-}
-
-function rememberTopicsPanel(subjectId, isOpen) {
-    try {
-        const open = new Set(readOpenTopics().map(String));
-        isOpen ? open.add(String(subjectId)) : open.delete(String(subjectId));
-        localStorage.setItem(TOPICS_OPEN_KEY, JSON.stringify([...open]));
-    } catch (e) { /* private mode or blocked storage — the toggle still works */ }
-}
-
-function setTopicsPanel(tab, isOpen, animate = true) {
-    const panel = tab.nextElementSibling;
-    if (!panel) return;
-
-    tab.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-
-    const roots = panel.querySelectorAll('.topic-list > .topic-node');
-    if (isOpen && animate && roots.length) {
-        panel.classList.add('revealing');
-        roots.forEach((node, i) => { node.style.animationDelay = (i * 40) + 'ms'; });
-    } else if (!isOpen) {
-        panel.classList.remove('revealing');
-        roots.forEach(node => { node.style.animationDelay = ''; });
-    }
-
-    rememberTopicsPanel(panel.dataset.subject, isOpen);
-}
-
-function toggleTopicsPanel(tab) {
-    setTopicsPanel(tab, tab.getAttribute('aria-expanded') !== 'true');
-}
-
-function topicsTabKey(event, tab) {
-    if (event.key === 'Enter' || event.key === ' ') {
-        event.preventDefault();
-        toggleTopicsPanel(tab);
-    }
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-    const open = new Set(readOpenTopics().map(String));
-    document.querySelectorAll('.topics-tab').forEach(tab => {
-        const panel = tab.nextElementSibling;
-        if (panel && open.has(String(panel.dataset.subject))) {
-            setTopicsPanel(tab, true, false);
-        }
+/* ── Subjects grid: search, filter, grid/list view, card "..." menu ── */
+function filterSubjectCards() {
+    const q = (document.getElementById('sjSearch')?.value || '').trim().toLowerCase();
+    const filterEl = document.getElementById('sjFilter');
+    const f = filterEl?.value || '';
+    filterEl?.classList.toggle('is-set', f !== '');
+    const tests = {
+        active: c => c.dataset.state === 'active',
+        inactive: c => c.dataset.state === 'inactive',
+        no_faculty: c => c.dataset.faculty === '0',
+        no_topics: c => c.dataset.topics === '0',
+        low_coverage: c => Number(c.dataset.coverage) < 50,
+    };
+    let shown = 0;
+    document.querySelectorAll('#sjGrid .sj-card').forEach(card => {
+        const ok = (!q || card.dataset.search.includes(q)) && (!f || tests[f](card));
+        card.style.display = ok ? '' : 'none';
+        if (ok) shown++;
     });
-});
+    const none = document.getElementById('sjNoMatch');
+    if (none) none.hidden = shown > 0 || !document.querySelector('#sjGrid .sj-card');
+}
+function clearSubjectFilters() {
+    document.getElementById('sjSearch').value = '';
+    document.getElementById('sjFilter').value = '';
+    filterSubjectCards();
+}
+
+/* Curriculum card "..." menu (positioned inside the card, so a plain toggle works). */
+function toggleCurMenu(event, btn) {
+    event.stopPropagation();
+    const menu = btn.closest('.cur-menu');
+    const wasOpen = menu.classList.contains('open');
+    document.querySelectorAll('.cur-menu.open').forEach(m => m.classList.remove('open'));
+    if (!wasOpen) menu.classList.add('open');
+}
+document.addEventListener('click', () => document.querySelectorAll('.cur-menu.open').forEach(m => m.classList.remove('open')));
+
+/* Subject row "..." menu. The rows lift on hover (a CSS transform), and a
+   transformed parent makes "position:fixed" measure from the row instead of the
+   screen — the menu then lands far from its button. So while open, the menu is
+   moved to <body> and put back when it closes. */
+function closeSubjectMenus() {
+    document.querySelectorAll('.sj-dropdown.is-open').forEach(drop => {
+        drop.classList.remove('is-open');
+        if (drop._home) { drop._home.classList.remove('open'); drop._home.appendChild(drop); }
+    });
+}
+function toggleSubjectMenu(event, btn) {
+    event.stopPropagation();
+    const menu = btn.closest('.sj-menu');
+    menu._drop = menu._drop || menu.querySelector('.sj-dropdown');
+    const drop = menu._drop;
+    const wasOpen = drop.classList.contains('is-open');
+    closeSubjectMenus();
+    if (wasOpen) return;
+    drop._home = menu;
+    menu.classList.add('open');
+    document.body.appendChild(drop);
+    drop.classList.add('is-open');
+    const r = btn.getBoundingClientRect();
+    const below = r.bottom + 6 + drop.offsetHeight <= window.innerHeight;
+    drop.style.top = (below ? r.bottom + 6 : Math.max(8, r.top - 6 - drop.offsetHeight)) + 'px';
+    drop.style.left = Math.max(8, r.right - drop.offsetWidth) + 'px';
+}
+document.addEventListener('click', closeSubjectMenus);
+window.addEventListener('scroll', closeSubjectMenus, true);
+window.addEventListener('resize', closeSubjectMenus);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeSubjectMenus(); document.querySelectorAll('.cur-menu.open').forEach(m => m.classList.remove('open')); } });
 
 function toggleTopicChildren(button) {
     button.classList.toggle('open');

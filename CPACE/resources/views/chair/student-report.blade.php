@@ -2,282 +2,166 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Student Performance Report - CPACE</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    {{-- Rendered by dompdf (StudentManagementController::exportPdf): table-based
+         layout, no flex/grid, no remote assets — the logo arrives as a data URI. --}}
     <style>
+        @page { margin: 30mm 12mm 16mm 12mm; }
         * { box-sizing: border-box; }
-        body {
-            margin: 0;
-            background: #e5e7eb;
-            font-family: 'Poppins', sans-serif;
-            color: #1f2937;
+        body { font-family: 'DejaVu Sans', sans-serif; font-size: 8.5px; color: #1f2937; margin: 0; }
+
+        /* Repeated on every page */
+        .page-head { position: fixed; top: -24mm; left: 0; right: 0; height: 20mm; }
+        .page-head table { width: 100%; border-collapse: collapse; }
+        .page-head td { vertical-align: middle; padding: 0; }
+        .logo { width: 44px; height: 44px; }
+        .brand-name { font-size: 15px; font-weight: bold; color: #7B1D1D; letter-spacing: .5px; }
+        .brand-sub { font-size: 8px; color: #6b7280; margin-top: 2px; }
+        .head-meta { text-align: right; font-size: 7.5px; color: #6b7280; line-height: 1.5; }
+        .head-meta strong { color: #1f2937; }
+        .head-rule { height: 3px; background: #7B1D1D; margin-top: 6px; }
+        .head-rule-thin { height: 1px; background: #e8d4d4; margin-top: 1px; }
+
+        .page-foot { position: fixed; bottom: -11mm; left: 0; right: 0; height: 8mm; border-top: 1px solid #e5e7eb; padding-top: 5px; font-size: 7px; color: #9ca3af; }
+        .page-foot table { width: 100%; border-collapse: collapse; }
+
+        /* Title + scope */
+        .title { font-size: 17px; font-weight: bold; color: #111827; margin: 0 0 3px; }
+        .scope { font-size: 8.5px; color: #6b7280; margin-bottom: 12px; }
+        .scope span { display: inline-block; background: #f3f4f6; color: #374151; border-radius: 9px; padding: 2px 8px; margin-right: 3px; }
+
+        /* Summary tiles */
+        .summary { width: 100%; border-collapse: separate; border-spacing: 6px 0; margin: 0 -6px 14px; }
+        .summary td { width: 25%; border: 1px solid #ececef; border-radius: 6px; padding: 9px 11px; background: #fafafa; }
+        .summary .num { font-size: 17px; font-weight: bold; color: #111827; }
+        .summary .lbl { font-size: 7px; color: #6b7280; text-transform: uppercase; letter-spacing: .4px; margin-top: 2px; }
+        .summary td.accent { border-left: 3px solid #7B1D1D; }
+        .summary td.risk .num { color: #b91c1c; }
+
+        /* Roster */
+        .roster { width: 100%; border-collapse: collapse; }
+        .roster thead th {
+            background: #f3f4f6; color: #4b5563; text-align: left; font-size: 7px; font-weight: bold;
+            text-transform: uppercase; letter-spacing: .4px; padding: 7px 6px; border-bottom: 1px solid #d1d5db;
         }
-        .toolbar {
-            max-width: 1100px;
-            margin: 18px auto;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 12px;
-        }
-        .toolbar a,
-        .toolbar button {
-            border: 0;
-            border-radius: 8px;
-            padding: 9px 16px;
-            font: 600 12px 'Poppins', sans-serif;
-            text-decoration: none;
-            cursor: pointer;
-        }
-        .back { background: #fff; color: #555; }
-        .print { background: #7B1D1D; color: #fff; }
-        .paper {
-            max-width: 1100px;
-            min-height: 900px;
-            margin: 0 auto 30px;
-            background: #fff;
-            padding: 42px 48px;
-            box-shadow: 0 10px 28px rgba(0, 0, 0, .12);
-        }
-        .report-head {
-            display: flex;
-            justify-content: space-between;
-            gap: 20px;
-            border-bottom: 3px solid #7B1D1D;
-            padding-bottom: 16px;
-        }
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        .brand img {
-            width: 52px;
-            height: 52px;
-            object-fit: contain;
-        }
-        .brand h1 {
-            font-size: 19px;
-            color: #7B1D1D;
-            margin: 0;
-        }
-        .brand p,
-        .report-meta {
-            font-size: 10px;
-            color: #6b7280;
-            margin: 3px 0;
-        }
-        .report-meta { text-align: right; }
-        .report-title { margin: 22px 0 15px; }
-        .report-title h2 {
-            font-size: 18px;
-            margin: 0 0 4px;
-        }
-        .report-title .report-meta { text-align: left; }
-        .summary {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-        .summary-box {
-            border: 1px solid #e5e7eb;
-            border-radius: 8px;
-            padding: 11px;
-        }
-        .summary-number {
-            font-size: 19px;
-            font-weight: 700;
-        }
-        .summary-label {
-            font-size: 9px;
-            color: #6b7280;
-            text-transform: uppercase;
-            margin-top: 4px;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            border: 1px solid #e5e7eb;
-        }
-        th {
-            background: #fafafa;
-            text-align: left;
-            padding: 8px;
-            font-size: 8.5px;
-            text-transform: uppercase;
-            color: #6b7280;
-        }
-        td {
-            padding: 8px;
-            border-top: 1px solid #eee;
-            font-size: 9.5px;
-            vertical-align: top;
-        }
-        .student-email { color: #999; }
-        .status {
-            font-size: 8px;
-            font-weight: 700;
-            padding: 2px 6px;
-            border-radius: 10px;
-        }
-        .status.risk { background: #fde8e8; color: #b91c1c; }
-        .status.track { background: #d1fae5; color: #047857; }
-        .status.disabled { background: #eee; color: #777; }
-        .empty-row {
-            text-align: center;
-            padding: 25px;
-        }
-        .report-foot {
-            display: flex;
-            justify-content: space-between;
-            font-size: 8.5px;
-            color: #9ca3af;
-            border-top: 1px solid #eee;
-            margin-top: 20px;
-            padding-top: 9px;
-        }
-        @media (max-width: 800px) {
-            .paper {
-                padding: 25px;
-                overflow: auto;
-            }
-            .summary { grid-template-columns: repeat(2, 1fr); }
-        }
-        @media print {
-            body { background: #fff; }
-            .toolbar { display: none; }
-            .paper {
-                max-width: none;
-                margin: 0;
-                padding: 0;
-                box-shadow: none;
-            }
-            .report-head { break-after: avoid; }
-            tr { break-inside: avoid; }
-            @page { size: A4 landscape; margin: 12mm; }
-        }
+        .roster td { padding: 6px; border-bottom: 1px solid #eef0f2; vertical-align: middle; }
+        .roster tbody tr:nth-child(even) td { background: #fafafa; }
+        .roster tr { page-break-inside: avoid; }
+        .num-col { text-align: right; }
+        .idx { color: #9ca3af; text-align: center; }
+        .name { font-weight: bold; color: #111827; }
+        .email { color: #9ca3af; font-size: 7.5px; }
+        .muted { color: #9ca3af; }
+        .bar { width: 52px; height: 4px; background: #e5e7eb; border-radius: 2px; margin-top: 3px; }
+        .bar div { height: 4px; border-radius: 2px; }
+        .pill { display: inline-block; font-size: 7px; font-weight: bold; padding: 2px 7px; border-radius: 8px; }
+        .pill.at-risk { background: #fde8e8; color: #b91c1c; }
+        .pill.on-track { background: #d1fae5; color: #047857; }
+        .pill.setup-pending { background: #fef3c7; color: #b45309; }
+        .pill.disabled { background: #eceef1; color: #6b7280; }
+        .pill.alumni { background: #e0e7ff; color: #4338ca; }
+        .empty { text-align: center; padding: 24px; color: #9ca3af; }
     </style>
 </head>
 <body>
-<div class="toolbar">
-    <a class="back" href="{{ route('chair.students', request()->query()) }}">
-        <i class="fas fa-arrow-left"></i> Back to Students
-    </a>
-    <button class="print" onclick="window.print()">
-        <i class="fas fa-file-pdf"></i> Save as PDF / Print
-    </button>
+
+<div class="page-head">
+    <table>
+        <tr>
+            @if ($logo)
+                <td style="width:52px;"><img class="logo" src="{{ $logo }}" alt="CPACE"></td>
+            @endif
+            <td>
+                <div class="brand-name">CPACE</div>
+                <div class="brand-sub">College of Accountancy &bull; Program Chair Office</div>
+            </td>
+            <td class="head-meta">
+                <strong>Student Performance Report</strong><br>
+                Generated {{ now()->format('F j, Y \a\t g:i A') }}<br>
+                Prepared by {{ $preparedBy }}
+            </td>
+        </tr>
+    </table>
+    <div class="head-rule"></div>
+    <div class="head-rule-thin"></div>
 </div>
 
-<main class="paper">
-    <!-- Report identity -->
-    <div class="report-head">
-        <div class="brand">
-            <img src="{{ asset('images/cpace_logo.png') }}" alt="CPACE">
-            <div>
-                <h1>CPACE Student Performance Report</h1>
-                <p>College of Accountancy &bull; Program Chair Office</p>
-            </div>
-        </div>
-        <div class="report-meta">
-            <strong>Generated {{ now()->format('F j, Y') }}</strong><br>
-            {{ now()->format('g:i A') }}<br>
-            Prepared by {{ Auth::user()->name }}
-        </div>
-    </div>
-
-    <!-- Applied report scope -->
-    <div class="report-title">
-        <h2>Enrollment and Readiness Summary</h2>
-        <p class="report-meta">
-            Scope: {{ $filters['year'] ? 'Year '.$filters['year'] : 'All year levels' }}
-            &bull; {{ $filters['section'] ? 'Section '.$filters['section'] : 'All sections' }}
-            &bull; {{ $filters['status']
-                ? ucwords(str_replace('_', ' ', $filters['status']))
-                : 'All statuses' }}
-        </p>
-    </div>
-
-    <!-- Headline report metrics -->
-    <div class="summary">
-        <div class="summary-box">
-            <div class="summary-number">{{ $stats['total'] }}</div>
-            <div class="summary-label">Students in Report</div>
-        </div>
-        <div class="summary-box">
-            <div class="summary-number">{{ $stats['active'] }}</div>
-            <div class="summary-label">Active Accounts</div>
-        </div>
-        <div class="summary-box">
-            <div class="summary-number">{{ $stats['average'] }}%</div>
-            <div class="summary-label">Average Readiness</div>
-        </div>
-        <div class="summary-box">
-            <div class="summary-number">{{ $stats['at_risk'] }}</div>
-            <div class="summary-label">At Risk</div>
-        </div>
-    </div>
-
-    <!-- Student performance roster -->
+<div class="page-foot">
     <table>
-        <thead>
-            <tr>
-                <th>Student</th>
-                <th>Student No.</th>
-                <th>Year / Section</th>
-                <th>Readiness</th>
-                <th>Attempted</th>
-                <th>Quizzes</th>
-                <th>Streak</th>
-                <th>Last Active</th>
-                <th>Intervention Status</th>
-            </tr>
-        </thead>
-        <tbody>
-            @forelse ($rows as $row)
-                <tr>
-                    <td>
-                        <strong>{{ $row['name'] }}</strong><br>
-                        <span class="student-email">{{ $row['email'] }}</span>
-                    </td>
-                    <td>{{ $row['student_number'] ?: '—' }}</td>
-                    <td>
-                        {{ $row['year_level'] ? 'Year '.$row['year_level'] : '—' }}
-                        / {{ $row['section'] ?: '—' }}
-                    </td>
-                    <td>
-                        <strong>{{ $row['score'] === null ? 'Not rated' : $row['score'].'%' }}</strong>
-                    </td>
-                    <td>{{ $row['attempted'] }}</td>
-                    <td>{{ $row['quizzes'] }}</td>
-                    <td>{{ $row['streak'] }} days</td>
-                    <td>{{ $row['last_active'] ? $row['last_active']->format('M j, Y') : 'Never' }}</td>
-                    <td>
-                        @if (! $row['is_active'])
-                            <span class="status disabled">Disabled</span>
-                        @elseif ($row['at_risk'])
-                            <span class="status risk">At Risk</span>
-                        @else
-                            <span class="status track">On Track</span>
-                        @endif
-                    </td>
-                </tr>
-            @empty
-                <tr>
-                    <td colspan="9" class="empty-row">No students matched the selected scope.</td>
-                </tr>
-            @endforelse
-        </tbody>
+        <tr>
+            <td>CPACE &bull; Confidential departmental document &mdash; for internal use only</td>
+            <td style="text-align:right;">{{-- page numbers are drawn here by exportPdf() --}}</td>
+        </tr>
     </table>
+</div>
 
-    <div class="report-foot">
-        <span>CPACE &bull; Confidential departmental document</span>
-        <span>{{ $stats['total'] }} student records</span>
-    </div>
-</main>
+<div class="title">Enrollment and Readiness Summary</div>
+<div class="scope">
+    @foreach (explode(' · ', $scope) as $part)<span>{{ $part }}</span>@endforeach
+</div>
 
-    @include('partials.alerts')
+<table class="summary">
+    <tr>
+        <td class="accent"><div class="num">{{ $stats['total'] }}</div><div class="lbl">Students in report</div></td>
+        <td><div class="num">{{ $stats['active'] }}</div><div class="lbl">Active accounts</div></td>
+        <td><div class="num">{{ $stats['average'] }}%</div><div class="lbl">Average readiness (75% target)</div></td>
+        <td class="risk"><div class="num">{{ $stats['at_risk'] }}</div><div class="lbl">Need intervention</div></td>
+    </tr>
+</table>
+
+<table class="roster">
+    <thead>
+        <tr>
+            <th style="width:22px;" class="idx">#</th>
+            <th>Student</th>
+            <th style="width:72px;">Student No.</th>
+            <th style="width:70px;">Section</th>
+            <th style="width:72px;">Readiness</th>
+            <th style="width:56px;" class="num-col">Answered</th>
+            <th style="width:46px;" class="num-col">Quizzes</th>
+            <th style="width:44px;" class="num-col">Streak</th>
+            <th style="width:78px;">Last Active</th>
+            <th style="width:72px;">Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        @forelse ($rows as $i => $row)
+            @php
+                $status = $statusOf($row);
+                $barColor = match (true) {
+                    $row['score'] === null => '#d1d5db',
+                    $row['score'] >= 75 => '#059669',
+                    $row['score'] >= 60 => '#d97706',
+                    default => '#c0392b',
+                };
+            @endphp
+            <tr>
+                <td class="idx">{{ $i + 1 }}</td>
+                <td>
+                    <div class="name">{{ $row['name'] }}</div>
+                    <div class="email">{{ $row['email'] }}</div>
+                </td>
+                <td>{!! $row['student_number'] ? e($row['student_number']) : '<span class="muted">—</span>' !!}</td>
+                <td>{!! $row['section'] ? e($row['section']) : '<span class="muted">No section</span>' !!}</td>
+                <td>
+                    @if ($row['score'] === null)
+                        <span class="muted">Not rated</span>
+                    @else
+                        <strong style="color:{{ $barColor }};">{{ $row['score'] }}%</strong>
+                        <div class="bar"><div style="width:{{ $row['score'] }}%; background:{{ $barColor }};"></div></div>
+                    @endif
+                </td>
+                <td class="num-col">{{ $row['attempted'] }}</td>
+                <td class="num-col">{{ $row['quizzes'] }}</td>
+                <td class="num-col">{{ $row['streak'] }}d</td>
+                <td>{!! $row['last_active'] ? e($row['last_active']->format('M j, Y')) : '<span class="muted">Never</span>' !!}</td>
+                <td><span class="pill {{ \Illuminate\Support\Str::slug($status) }}">{{ $status }}</span></td>
+            </tr>
+        @empty
+            <tr><td colspan="10" class="empty">No students matched this scope.</td></tr>
+        @endforelse
+    </tbody>
+</table>
+
 </body>
 </html>

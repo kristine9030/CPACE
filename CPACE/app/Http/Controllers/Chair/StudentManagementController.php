@@ -11,9 +11,12 @@ use App\Models\Role;
 use App\Models\Section;
 use App\Models\StudentProfile;
 use App\Models\User;
+use App\Services\BrandedXlsxReport;
 use App\Services\WeaknessDetector;
 use App\Support\Auditor;
 use App\Support\BatchYear;
+use Dompdf\Dompdf;
+use Dompdf\Options as DompdfOptions;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
@@ -32,6 +35,9 @@ class StudentManagementController extends Controller
     private const PER_PAGE = 15;
 
     private const INACTIVE_DAYS = 7;
+
+    /** Section filter value for "not in any curated section". */
+    public const NO_SECTION = '__unsectioned__';
 
     public function __construct(private WeaknessDetector $weakness) {}
 
@@ -67,13 +73,80 @@ class StudentManagementController extends Controller
             ->select('student_profiles.year_level', 'student_profiles.section')
             ->get();
 
+        // Sections are managed from this page (there's no separate Sections
+        // page any more), so it also needs the curated catalog with counts.
+        $catalog = SectionManagementController::catalog();
+
         return view('chair.students', [
             'students' => $students,
             'stats' => $stats,
             'filters' => $filters,
             'years' => $groups->pluck('year_level')->filter()->unique()->sort()->values(),
             'sections' => $groups->pluck('section')->filter()->unique()->sort()->values(),
+            'sectionCatalog' => $catalog['sections'],
+            'sectionStats' => $enrolledRows->whereNotNull('section')->groupBy('section')->map(function ($group) {
+                $scored = $group->whereNotNull('score');
+
+                return [
+                    'readiness' => $scored->isNotEmpty() ? (int) round($scored->avg('score')) : null,
+                    'at_risk' => $group->where('at_risk', true)->count(),
+                ];
+            }),
+            // Counted with the same rule as the "Not in a section" filter, so
+            // the chip's number matches the list it opens.
+            'noSectionCount' => $this->applyFilters($allRows, [
+                'search' => '', 'year' => null, 'section' => self::NO_SECTION, 'status' => null, 'sort' => 'name',
+            ])->count(),
         ]);
+    }
+
+    /**
+     * Put one or more students into a curated section (or take them out of
+     * any section when section_id is empty). Year level follows the section,
+     * same as adding students from a section's roster.
+     */
+    public function assignSection(Request $request)
+    {
+        $request->validate([
+            'section_id' => ['nullable', 'integer', Rule::exists('sections', 'id')],
+        ]);
+
+        // Same "select all matching filters" handling as bulkMarkAlumni().
+        if ($request->boolean('select_all')) {
+            $ids = $this->applyFilters($this->studentRows(), $this->filters($request))
+                ->where('is_alumni', false)->pluck('id')->values()->all();
+        } else {
+            $ids = $request->validate([
+                'student_ids' => ['required', 'array', 'min:1'],
+                'student_ids.*' => ['integer'],
+            ])['student_ids'];
+        }
+
+        // Alumni and shifted-out students keep the section they left with.
+        $userIds = StudentProfile::query()
+            ->join('users', 'users.id', '=', 'student_profiles.user_id')
+            ->where('users.role_id', Role::STUDENT)
+            ->where('student_profiles.is_alumni', false)
+            ->where('student_profiles.is_shifted', false)
+            ->whereIn('users.id', $ids)
+            ->pluck('users.id');
+
+        if ($userIds->isEmpty()) {
+            return back()->with('error', 'No students who can be sectioned were selected.');
+        }
+
+        $section = $request->filled('section_id') ? Section::find($request->input('section_id')) : null;
+
+        StudentProfile::whereIn('user_id', $userIds)->update($section
+            ? ['section' => $section->name, 'year_level' => $section->year_level]
+            : ['section' => null]);
+
+        $count = $userIds->count();
+        $who = $count === 1 ? '1 student was' : $count . ' students were';
+
+        return back()->with('status', $section
+            ? "{$who} placed in {$section->name}."
+            : "{$who} removed from their section.");
     }
 
     public function show(int $id)
@@ -375,6 +448,13 @@ class StudentManagementController extends Controller
             }
         }
 
+        // Coming from a section's "Add students": rows that don't name a
+        // section go into that one (only if it's a real section).
+        $defaultSection = trim((string) $request->input('default_section'));
+        if ($defaultSection !== '' && Section::where('name', $defaultSection)->exists()) {
+            $rows = array_map(fn($row) => ['section' => ($row['section'] ?? null) ?: $defaultSection] + $row, $rows);
+        }
+
         [$created, $errors] = $this->createAccountsFromRows($rows);
 
         $failedMail = count(array_filter($created, fn($row) => ! $row['mailed']));
@@ -544,48 +624,150 @@ class StudentManagementController extends Controller
         return $base . '@cpace.edu';
     }
 
-    public function exportCsv(Request $request)
+    /**
+     * The filtered roster as a designed Excel report: maroon CPACE banner with
+     * the logo, who/when/scope lines, summary figures, and a styled table.
+     * (A plain CSV can't carry a logo or formatting, hence .xlsx.)
+     */
+    public function exportExcel(Request $request)
     {
-        $rows = $this->applyFilters($this->studentRows(), $this->filters($request));
+        $filters = $this->filters($request);
+        $rows = $this->applyFilters($this->studentRows(), $filters)->values();
+        $stats = $this->reportStats($rows);
 
-        return response()->streamDownload(function () use ($rows) {
-            $out = fopen('php://output', 'w');
-            fwrite($out, "\xEF\xBB\xBF");
-            fputcsv($out, ['Student Number', 'Student', 'Email', 'Year Level', 'Section', 'Readiness (%)', 'Questions Attempted', 'Quizzes', 'Streak', 'Last Active', 'At Risk', 'Status']);
-            foreach ($rows as $row) {
-                fputcsv($out, [
-                    $row['student_number'],
-                    $row['name'],
-                    $row['email'],
-                    $row['year_level'],
-                    $row['section'],
-                    $row['score'],
-                    $row['attempted'],
-                    $row['quizzes'],
-                    $row['streak'],
-                    $row['last_active']?->format('Y-m-d H:i'),
-                    $row['at_risk'] ? 'Yes' : 'No',
-                    $row['is_active'] ? 'Active' : 'Disabled',
-                ]);
-            }
-            fclose($out);
-        }, 'student-performance-' . now()->format('Y-m-d_His') . '.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
+        $report = (new BrandedXlsxReport('Student Performance Report'))->withLogo(public_path('images/cpace_logo.png'));
+        $sheet = $report->sheet('Students');
+        $headers = ['Student No.', 'Student', 'Email', 'Year Level', 'Section', 'Readiness', 'Questions Answered', 'Quizzes', 'Streak (days)', 'Last Active', 'Status'];
+
+        $next = $report->writeBanner($sheet, 'Student Performance Report', [
+            'Generated ' . now()->format('F j, Y g:i A') . ' by ' . Auth::user()->name,
+            'Scope: ' . $this->scopeLabel($filters),
+        ], count($headers));
+        $next = $report->writeSummaryStrip($sheet, $next, [
+            'Students' => $stats['total'],
+            'Active Accounts' => $stats['active'],
+            'Avg. Readiness' => $stats['average'] . '%',
+            'At Risk' => $stats['at_risk'],
+        ]);
+
+        $tableStart = $next;
+        $report->writeTable($sheet, $tableStart, $headers, $rows->map(fn ($row) => [
+            $row['student_number'] ?: '—',
+            $row['name'],
+            $row['email'],
+            $row['year_level'] ? (Section::YEAR_LABELS[$row['year_level']] ?? 'Year ' . $row['year_level']) : '—',
+            $row['section'] ?: 'No section',
+            $row['score'] === null ? 'Not rated' : $row['score'] . '%',
+            $row['attempted'],
+            $row['quizzes'],
+            $row['streak'],
+            $row['last_active']?->format('M j, Y g:i A') ?? 'Never',
+            $this->statusLabel($row),
+        ])->all(), [1 => 14, 2 => 26, 3 => 32, 4 => 12, 5 => 13, 6 => 12, 7 => 12, 8 => 10, 9 => 11, 10 => 20, 11 => 15]);
+
+        // Colour the Status column the way the page does.
+        $colors = ['At Risk' => 'FFB91C1C', 'On Track' => 'FF047857', 'Setup Pending' => 'FFB45309', 'Disabled' => 'FF6B7280', 'Alumni' => 'FF4338CA'];
+        foreach ($rows as $i => $row) {
+            $sheet->getStyle('K' . ($tableStart + 1 + $i))->getFont()->setBold(true)
+                ->getColor()->setARGB($colors[$this->statusLabel($row)] ?? 'FF333333');
+        }
+
+        return $report->download($this->reportFilename($filters, 'xlsx'));
     }
 
+    /** The filtered roster as a designed, downloadable PDF (A4 landscape). */
     public function exportPdf(Request $request)
     {
         $filters = $this->filters($request);
-        $rows = $this->applyFilters($this->studentRows(), $filters);
-        $enrolledRows = $rows->where('is_alumni', false)->where('is_shifted', false);
-        $scored = $enrolledRows->whereNotNull('score');
-        $stats = [
-            'total' => $enrolledRows->count(),
-            'active' => $enrolledRows->where('is_active', true)->count(),
+        $rows = $this->applyFilters($this->studentRows(), $filters)->values();
+
+        // The maroon crest: cpace_logo.png is the white version for dark backgrounds.
+        $logo = public_path('images/cpace-crest.png');
+        $html = view('chair.student-report', [
+            'rows' => $rows,
+            'stats' => $this->reportStats($rows),
+            'scope' => $this->scopeLabel($filters),
+            'statusOf' => fn ($row) => $this->statusLabel($row),
+            // Embedded so dompdf never has to fetch anything remotely.
+            'logo' => is_file($logo) ? 'data:image/png;base64,' . base64_encode(file_get_contents($logo)) : null,
+            'preparedBy' => Auth::user()->name,
+        ])->render();
+
+        $options = new DompdfOptions();
+        $options->set('isRemoteEnabled', false);
+        $options->set('defaultFont', 'DejaVu Sans');
+        $dompdf = new Dompdf($options);
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'landscape');
+        $dompdf->render();
+
+        // "Page X of Y" in the footer (dompdf can't count total pages in CSS).
+        // Right-aligned with the 12mm page margin, on the footer text's line.
+        $canvas = $dompdf->getCanvas();
+        $font = $dompdf->getFontMetrics()->getFont('DejaVu Sans');
+        $width = $dompdf->getFontMetrics()->getTextWidth('Page 99 of 99', $font, 5.3);
+        $canvas->page_text($canvas->get_width() - 34 - $width, $canvas->get_height() - 35.5, 'Page {PAGE_NUM} of {PAGE_COUNT}',
+            $font, 5.3, [0.61, 0.64, 0.69]);
+
+        return response($dompdf->output(), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="' . $this->reportFilename($filters, 'pdf') . '"',
+        ]);
+    }
+
+    /** Headline figures for exports — currently-enrolled students only, like the KPI cards. */
+    private function reportStats($rows): array
+    {
+        $enrolled = $rows->where('is_alumni', false)->where('is_shifted', false);
+        $scored = $enrolled->whereNotNull('score');
+
+        return [
+            'total' => $enrolled->count(),
+            'active' => $enrolled->where('is_active', true)->count(),
             'average' => $scored->isNotEmpty() ? (int) round($scored->avg('score')) : 0,
-            'at_risk' => $enrolledRows->where('at_risk', true)->count(),
+            'at_risk' => $enrolled->where('at_risk', true)->count(),
+        ];
+    }
+
+    /** Same order of precedence as the Status column on the page. */
+    private function statusLabel(array $row): string
+    {
+        return match (true) {
+            $row['is_alumni'] => 'Alumni',
+            ! $row['is_active'] => 'Disabled',
+            ! $row['setup_completed'] => 'Setup Pending',
+            $row['at_risk'] => 'At Risk',
+            default => 'On Track',
+        };
+    }
+
+    /** e.g. "Section BSA 4101 · At Risk · Search: cruz" — what an export covers. */
+    private function scopeLabel(array $filters): string
+    {
+        $statuses = [
+            'at_risk' => 'At Risk', 'low_score' => 'Low Scores', 'inactive' => 'Inactive 7+ Days',
+            'setup_pending' => 'Setup Pending', 'active' => 'Active Accounts', 'disabled' => 'Disabled Accounts',
         ];
 
-        return view('chair.student-report', compact('rows', 'stats', 'filters'));
+        return collect([
+            match (true) {
+                $filters['section'] === self::NO_SECTION => 'Students not in a section',
+                (bool) $filters['section'] => 'Section ' . $filters['section'],
+                default => 'All sections',
+            },
+            filled($filters['year']) ? (Section::YEAR_LABELS[(int) $filters['year']] ?? 'Year ' . $filters['year']) : null,
+            $statuses[$filters['status']] ?? 'All statuses',
+            $filters['search'] !== '' ? 'Search: ' . $filters['search'] : null,
+        ])->filter()->implode(' · ');
+    }
+
+    private function reportFilename(array $filters, string $extension): string
+    {
+        $section = $filters['section'] && $filters['section'] !== self::NO_SECTION
+            ? '-' . trim(preg_replace('/[^A-Za-z0-9]+/', '-', $filters['section']), '-')
+            : '';
+
+        return 'cpace-students' . $section . '-' . now()->format('Y-m-d') . '.' . $extension;
     }
 
     private function studentRows(?array $onlyIds = null)
@@ -628,6 +810,10 @@ class StudentManagementController extends Controller
                     'last_active' => $lastActive,
                     'days_idle' => $daysIdle,
                     'at_risk' => $student->is_active && ($low || $inactive),
+                    // The two halves of "at risk", kept apart so the section
+                    // cards can show why students are struggling.
+                    'low_score' => $student->is_active && $low,
+                    'inactive' => $student->is_active && $inactive,
                     'is_active' => (bool) $student->is_active,
                     'is_alumni' => (bool) ($profile?->is_alumni ?? false),
                     'is_shifted' => (bool) ($profile?->is_shifted ?? false),
@@ -659,7 +845,12 @@ class StudentManagementController extends Controller
         if ($filters['year'] !== null && $filters['year'] !== '') {
             $rows = $rows->where('year_level', (int) $filters['year']);
         }
-        if ($filters['section']) {
+        if ($filters['section'] === self::NO_SECTION) {
+            // Enrolled students whose section isn't one of the curated
+            // sections (never set, or a legacy/typo value).
+            $known = Section::pluck('name')->all();
+            $rows = $rows->filter(fn($r) => ! $r['is_alumni'] && ! $r['is_shifted'] && ! in_array($r['section'], $known, true));
+        } elseif ($filters['section']) {
             $rows = $rows->where('section', $filters['section']);
         }
         if ($filters['status'] === 'active') {
@@ -670,6 +861,10 @@ class StudentManagementController extends Controller
             $rows = $rows->where('at_risk', true);
         } elseif ($filters['status'] === 'setup_pending') {
             $rows = $rows->where('setup_completed', false);
+        } elseif ($filters['status'] === 'low_score') {
+            $rows = $rows->where('low_score', true);
+        } elseif ($filters['status'] === 'inactive') {
+            $rows = $rows->where('inactive', true);
         }
         $rows = match ($filters['sort']) {
             'score_desc' => $rows->sortByDesc(fn($row) => $row['score'] ?? -1),

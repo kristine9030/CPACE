@@ -171,7 +171,7 @@
             height: 14px;
         }
         @media (max-width: 950px) {
-            .detail-grid { grid-template-columns: 1fr; }
+            .detail-grid { grid-template-columns: minmax(0, 1fr); }
         }
         @media (max-width: 650px) {
             .profile-card {

@@ -27,15 +27,9 @@
         .btn-ghost:hover { background:#f5f5f5; }
         .btn-sm { padding:6px 12px; font-size:12px; }
 
-        /* Charts / Tables switch — both views follow the same filters. */
-        .tab-bar { display:flex; gap:0; background:white; border-radius:12px; padding:4px; border:1px solid #eee; width:fit-content; margin-bottom:16px; }
-        .tab-btn { padding:9px 22px; border-radius:9px; font-size:13px; font-weight:600; font-family:'Poppins',sans-serif; cursor:pointer; border:none; background:transparent; color:#888; transition:all .2s; display:flex; align-items:center; gap:7px; }
-        .tab-btn:hover { color:#555; background:#f8f8fa; }
-        .tab-btn.active { background:var(--primary); color:white; box-shadow:0 2px 8px rgba(123,29,29,0.25); }
-        .tab-panel { display:none; }
-        .tab-panel.active { display:block; }
+        /* One page: headline figures and the key charts. */
 
-        #tab-charts .chart-grid { align-items:start; }
+        #tab-charts .chart-grid { align-items:stretch; }
         .is-loading .chart-grid, .is-loading .table-card { opacity:.55; pointer-events:none; transition:opacity .2s; }
         .confidence { display:inline-block; font-size:10px; font-weight:700; padding:2px 9px; border-radius:20px; margin-left:6px; vertical-align:middle; }
         .confidence.high { color:#047857; background:#e7f6ef; }
@@ -43,10 +37,10 @@
         .confidence.low { color:#b91c1c; background:#fde8e8; }
 
         /* Tables view */
-        .table-card { background:#fff; border-radius:14px; padding:20px 22px; margin-bottom:16px; box-shadow:0 2px 6px rgba(15,10,10,.08), 0 10px 22px -10px rgba(15,10,10,.22); }
+        .table-card { background:#fff; border-radius:14px; padding:20px 22px; margin-bottom:16px; box-shadow:0 1px 2px rgba(16,24,40,.04), 0 4px 14px rgba(16,24,40,.06); }
         .table-card h3 { font-size:14px; font-weight:700; color:#1a1a1a; display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:12px; }
         .table-card h3 small { font-size:10px; font-weight:500; color:#aaa; }
-        .table-pair { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+        .table-pair { display:grid; grid-template-columns:minmax(0, 1fr) minmax(0, 1fr); gap:16px; }
         .table-pair .table-card { margin-bottom:0; }
         .table-scroll { overflow-x:auto; }
         .subject-row { display:grid; grid-template-columns:minmax(185px,1fr) minmax(160px,1.3fr) 72px 78px 110px; gap:13px; align-items:center; padding:12px 0; border-top:1px solid #f3f3f3; }
@@ -61,50 +55,65 @@
         .table-empty { text-align:center; padding:26px 10px; color:#aaa; font-size:12px; }
         .method-note { font-size:10px; line-height:1.7; color:#888; background:#f8f8fa; border-radius:10px; padding:12px 14px; }
 
-        /* Leaderboard */
-        .lb-head { display:flex; justify-content:space-between; align-items:flex-start; gap:14px; flex-wrap:wrap; margin-bottom:16px; }
-        .lb-scope { font-size:11px; color:#999; }
-        .lb-sort { display:flex; gap:4px; background:#f4f5f7; border-radius:10px; padding:3px; }
-        .lb-sort button { display:flex; align-items:center; gap:6px; padding:7px 12px; border:none; border-radius:8px; background:none; color:#777; font:600 11.5px 'Poppins',sans-serif; cursor:pointer; }
-        .lb-sort button.active { background:#fff; color:var(--primary); box-shadow:0 1px 3px rgba(0,0,0,.1); }
-        .lb-podium { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; margin-bottom:16px; }
-        .lb-podium:empty { display:none; }
-        .lb-top { display:flex; align-items:center; gap:12px; padding:14px; border-radius:12px; border:1px solid #f1e3e3; background:linear-gradient(135deg,#fff,#fdf6f6); text-decoration:none; color:inherit; }
-        .lb-top:hover { border-color:#e3c4c4; }
-        .lb-medal { width:34px; height:34px; border-radius:50%; display:grid; place-items:center; font-size:14px; color:#fff; flex:none; }
-        .lb-medal.r1 { background:#d4a017; } .lb-medal.r2 { background:#9ca3af; } .lb-medal.r3 { background:#b87333; }
-        .lb-top-name { font-size:13px; font-weight:700; color:#1a1a1a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-        .lb-top-meta { font-size:10.5px; color:#999; }
-        .lb-top-score { margin-left:auto; text-align:right; font-size:18px; font-weight:700; color:var(--primary); line-height:1.1; }
-        .lb-top-score small { display:block; font-size:9.5px; font-weight:500; color:#aaa; }
-        .lb-table td { vertical-align:middle; }
-        .lb-rank { font-weight:700; color:#1a1a1a; text-align:center; }
-        .lb-student { display:flex; align-items:center; gap:10px; min-width:0; text-decoration:none; color:inherit; }
-        .lb-av { width:30px; height:30px; border-radius:50%; background:var(--primary); color:#fff; display:grid; place-items:center; font-size:10.5px; font-weight:700; flex:none; }
-        .lb-name { font-size:12px; font-weight:600; color:#1a1a1a; }
-        .lb-student:hover .lb-name { color:var(--primary); text-decoration:underline; }
-        .lb-sub { font-size:10px; color:#aaa; }
-        .lb-foot { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:12px; font-size:11px; color:#999; }
-        .lb-foot .btn[hidden] { display:none; }
-        /* Per-subject standing: rank chip over that subject's accuracy. */
-        .lb-table th.lb-subj, .lb-table td.lb-subj { text-align:center; padding-left:4px; padding-right:4px; }
-        .lb-table th.lb-subj { color:#7a7a7a; }
-        .lb-srank { display:inline-block; min-width:32px; padding:2px 6px; border-radius:6px; font-size:11px; font-weight:700; background:#f3f4f6; color:#555; }
-        .lb-srank.s1 { background:var(--primary); color:#fff; }
-        .lb-srank.s2 { background:#e3c4c4; color:#5f1515; }
-        .lb-srank.s3 { background:#f5e8e8; color:#7B1D1D; }
-        .lb-sacc { display:block; font-size:9.5px; color:#aaa; margin-top:2px; }
-        .lb-snone { color:#d4d4d4; }
-        .lb-top-best { font-size:10px; font-weight:600; color:var(--primary); margin-top:2px; }
-
-        @media (max-width: 1050px) { .table-pair { grid-template-columns:1fr; } .lb-podium { grid-template-columns:1fr; } }
+        @media (max-width: 1050px) { .table-pair { grid-template-columns:minmax(0, 1fr); } }
         @media (max-width: 640px) {
-            .tab-bar { width:100%; }
-            .tab-btn { flex:1; justify-content:center; }
-            .subject-row { grid-template-columns:1fr 65px; }
+            .subject-row { grid-template-columns:minmax(0, 1fr) 65px; }
             .subject-row .bar, .subject-row .small-meta, .subject-row .delta, .subject-row.head { display:none; }
         }
-    </style>
+            /* Top students + topic tables */
+        .top-card .chart-card-head { flex-wrap:wrap; }
+        .lb-sort { display:flex; gap:3px; background:#f4f5f7; border-radius:9px; padding:3px; }
+        .lb-sort button { padding:5px 10px; border:none; border-radius:7px; background:none; color:#777; font:600 11px 'Poppins',sans-serif; cursor:pointer; }
+        .lb-sort button.active { background:#fff; color:var(--primary); box-shadow:0 1px 3px rgba(0,0,0,.1); }
+        .tp-podium { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; align-items:end; justify-items:center; margin:10px 0 12px; }
+        .tp-top { position:relative; width:100%; max-width:200px; text-align:center; padding:16px 8px 12px; border:1px solid #eee; border-radius:14px; background:#fafbfc; text-decoration:none; color:inherit; }
+        .tp-top.p1 { background:linear-gradient(#fffdf3,#fff7dc); border-color:#f3e3a6; padding-bottom:18px; }
+        .tp-top:hover { border-color:#e3c4c4; }
+        .tp-medal { position:absolute; top:-10px; left:50%; transform:translateX(-50%); width:22px; height:22px; border-radius:50%; color:#fff; font-size:11px; font-weight:700; line-height:22px; }
+        .p1 .tp-medal { background:#d4a017; } .p2 .tp-medal { background:#9ca3af; } .p3 .tp-medal { background:#b87333; }
+        .tp-av { width:42px; height:42px; margin:0 auto 6px; border-radius:50%; background:var(--primary); color:#fff; display:grid; place-items:center; font-size:13px; font-weight:700; }
+        .tp-name { font-size:12px; font-weight:600; color:#1a1a1a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .tp-meta { font-size:10px; color:#999; }
+        .tp-score { margin-top:4px; font-size:18px; font-weight:700; color:var(--primary); line-height:1.1; }
+        .tp-score small { display:block; font-size:9.5px; font-weight:500; color:#aaa; }
+        .tp-row { display:flex; align-items:center; gap:10px; padding:8px 10px; border:1px solid #eee; border-radius:10px; margin-bottom:6px; text-decoration:none; color:inherit; }
+        .tp-row:hover { border-color:#e3c4c4; background:#fdf8f8; }
+        .tp-rank { width:22px; text-align:center; font-size:11.5px; font-weight:700; color:#888; }
+        .tp-row .tp-name { flex:1; min-width:0; }
+        .tp-row b { font-size:12.5px; color:#1a1a1a; }
+        .tp-empty { text-align:center; padding:26px 10px; color:#aaa; font-size:12px; }
+        .topic-tables { margin-bottom:16px; }
+        .table-note { font-size:11px; color:#999; margin:-6px 0 10px; }
+        .topic-filter { font:500 12px 'Poppins',sans-serif; padding:6px 10px; border:1px solid #e5e7eb; border-radius:9px; background:#fff; color:#444; max-width:46%; }
+        .tp-empty-slot { background:#fafafa; border:1.5px dashed #e3e3e8; color:#bbb; }
+        .tp-empty-slot .tp-av { background:#ececf0; color:#c4c4cc; }
+        .tp-empty-slot .tp-name, .tp-empty-slot .tp-score { color:#b5b5be; }
+        .tp-empty-slot .tp-medal { background:#d6d6dc !important; }
+        .tp-row-empty { border-style:dashed; background:#fafafa; color:#b5b5be; }
+        .tp-row-empty b, .tp-row-empty .tp-rank { color:#b5b5be; font-weight:600; }
+        .top-card { display:flex; flex-direction:column; }
+        .top-card .tp-viewall { margin-top:auto; }
+        .tp-list { margin-bottom:10px; }
+        .tp-viewall { display:block; width:100%; text-align:right; padding-top:10px; background:none; border:0; border-top:1px solid #f0f0f2; color:var(--primary); font:600 12px 'Poppins',sans-serif; cursor:pointer; padding:4px 0; }
+        .tp-viewall:hover { text-decoration:underline; }
+        .lbm-overlay { position:fixed; inset:0; z-index:1000; background:rgba(15,10,10,.5); display:none; align-items:center; justify-content:center; padding:20px; }
+        .lbm-overlay.open { display:flex; }
+        .lbm { background:#fff; border-radius:16px; width:100%; max-width:860px; max-height:88vh; display:flex; flex-direction:column; box-shadow:0 20px 50px rgba(0,0,0,.3); }
+        .lbm-head { display:flex; justify-content:space-between; gap:12px; padding:20px 22px 10px; }
+        .lbm-head h3 { font-size:16px; font-weight:700; }
+        .lbm-scope { font-size:11px; color:#999; margin-top:2px; }
+        .lbm-x { border:0; background:#f4f5f7; width:32px; height:32px; border-radius:50%; cursor:pointer; color:#666; }
+        .lbm-tools { display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; padding:0 22px 12px; }
+        .lbm-tools input[type=search] { flex:1; min-width:180px; max-width:340px; padding:9px 14px; border:1px solid #e5e7eb; border-radius:10px; font:13px 'Poppins',sans-serif; outline:none; }
+        .lbm-body { overflow:auto; padding:0 22px; }
+        .lbm-body thead th { position:sticky; top:0; background:#fff; z-index:1; }
+        .lb-rank { font-weight:700; text-align:center; }
+        .lb-student { display:flex; align-items:center; gap:10px; text-decoration:none; color:inherit; }
+        .lb-av { width:28px; height:28px; border-radius:50%; background:var(--primary); color:#fff; display:grid; place-items:center; font-size:10px; font-weight:700; flex:none; }
+        .lb-name { font-size:12px; font-weight:600; color:#1a1a1a; } .lb-student:hover .lb-name { color:var(--primary); text-decoration:underline; }
+        .lb-sub { font-size:10px; color:#aaa; }
+        .lbm-foot { padding:12px 22px; font-size:11px; color:#999; border-top:1px solid #f0f0f2; }
+</style>
 </head>
 <body>
 @include('partials.chair-sidebar', ['active' => 'analytics-performance'])
@@ -227,15 +236,9 @@
         </article>
     </section>
 
-    <div class="tab-bar" role="tablist">
-        <button class="tab-btn active" role="tab" aria-selected="true" onclick="switchTab('charts', this)"><i class="fas fa-chart-line"></i> Charts</button>
-        <button class="tab-btn" role="tab" aria-selected="false" onclick="switchTab('tables', this)"><i class="fas fa-table"></i> Tables</button>
-        <button class="tab-btn" role="tab" aria-selected="false" onclick="switchTab('leaderboard', this)"><i class="fas fa-trophy"></i> Leaderboard</button>
-    </div>
-
-    <div id="tab-charts" class="tab-panel active">
+    <div id="tab-charts">
         <section class="chart-grid cols-2" aria-label="Charts">
-            <article class="chart-card span-2" id="readiness-trend">
+            <article class="chart-card" id="readiness-trend">
                 <div class="chart-card-head">
                     <span class="chart-card-icon"><i class="fas fa-chart-line"></i></span>
                     <span class="chart-card-title">Board Readiness Rate vs. Class Accuracy</span>
@@ -246,6 +249,18 @@
                     <div class="viz-empty chart-empty" id="emptyTrend" hidden>No quiz activity yet.</div>
                 </div>
                 <div class="chart-card-cap">Readiness rate: share of measured students (20+ questions) who have 50+ questions at 75%+ accuracy across 3+ subjects, counted from the start. Class accuracy: % of questions answered correctly within each period.</div>
+            </article>
+
+            <article class="chart-card top-card" aria-label="Top students">
+                <div class="chart-card-head">
+                    <span class="chart-card-icon"><i class="fas fa-trophy"></i></span>
+                    <span class="chart-card-title">Top Students</span>
+                    <select class="topic-filter" id="tpSubject" aria-label="Show top students for a subject" style="margin-left:auto;"></select>
+                </div>
+                <div class="chart-card-note" id="lbScope">&nbsp;</div>
+                <div class="tp-podium" id="tpPodium"></div>
+                <div class="tp-list" id="tpList"></div>
+                <button type="button" class="tp-viewall" id="lbOpen">View full leaderboard <i class="fas fa-arrow-right"></i></button>
             </article>
 
             <article class="chart-card">
@@ -264,158 +279,65 @@
             <article class="chart-card">
                 <div class="chart-card-head">
                     <span class="chart-card-icon"><i class="fas fa-people-group"></i></span>
-                    <span class="chart-card-title">Accuracy by Section</span>
+                    <span class="chart-card-title">Section Engagement</span>
                 </div>
                 <div class="chart-card-note" id="noteSections">&nbsp;</div>
                 <div class="chart-canvas-wrap tall">
-                    <canvas id="chartSections" role="img" aria-label="Class accuracy per section"></canvas>
+                    <canvas id="chartSections" role="img" aria-label="Share of each section's students who completed a quiz"></canvas>
                     <div class="viz-empty chart-empty" id="emptySections" hidden>No section has quiz activity in this range.</div>
                 </div>
-                <div class="chart-card-cap">Shows every section — the selected one is highlighted</div>
+                <div class="chart-card-cap">% of each section's active students who completed a quiz in the range — the selected section is highlighted</div>
             </article>
 
-            <article class="chart-card">
-                <div class="chart-card-head">
-                    <span class="chart-card-icon"><i class="fas fa-chart-simple"></i></span>
-                    <span class="chart-card-title">Score Distribution</span>
-                </div>
-                <div class="chart-card-note">How the measured class is spread, not just its average.</div>
-                <div class="chart-canvas-wrap tall">
-                    <canvas id="chartDistribution" role="img" aria-label="Measured students by accuracy band"></canvas>
-                    <div class="viz-empty chart-empty" id="emptyDistribution" hidden>No student has enough attempts to be measured yet.</div>
-                </div>
-                <div class="chart-card-cap">Measured students, as of the range end</div>
-            </article>
+        </section>
 
-            <article class="chart-card">
-                <div class="chart-card-head">
-                    <span class="chart-card-icon"><i class="fas fa-users"></i></span>
-                    <span class="chart-card-title">Students Practising</span>
-                </div>
-                <div class="chart-card-note" id="noteEngagement">&nbsp;</div>
-                <div class="chart-canvas-wrap tall">
-                    <canvas id="chartEngagement" role="img" aria-label="Distinct students completing a quiz per period"></canvas>
-                    <div class="viz-empty chart-empty" id="emptyEngagement" hidden>No quiz activity in this range.</div>
-                </div>
-                <div class="chart-card-cap">Distinct students completing a quiz in each period</div>
-            </article>
-
-            <article class="chart-card">
-                <div class="chart-card-head">
-                    <span class="chart-card-icon"><i class="fas fa-gauge-high"></i></span>
-                    <span class="chart-card-title">Accuracy by Difficulty<x-tip>Accuracy should fall as difficulty rises. If it doesn't, the test bank's difficulty labels need review.</x-tip></span>
-                </div>
-                <div class="chart-card-note">A calibration check on the test bank, not a student metric.</div>
-                <div class="chart-canvas-wrap tall">
-                    <canvas id="chartDifficulty" role="img" aria-label="Class accuracy by question difficulty"></canvas>
-                    <div class="viz-empty chart-empty" id="emptyDifficulty" hidden>No answers recorded in this range.</div>
-                </div>
-                <div class="chart-card-cap">Answers in quizzes completed within the range</div>
-            </article>
-
-            <article class="chart-card">
-                <div class="chart-card-head">
-                    <span class="chart-card-icon"><i class="fas fa-triangle-exclamation"></i></span>
-                    <span class="chart-card-title">Weakest Topics</span>
-                </div>
-                <div class="chart-card-note">Under 60% class accuracy, with {{ \App\Services\ChairAnalyticsService::TOPIC_MIN_ATTEMPTS }}+ answers in the range.</div>
-                <div class="chart-canvas-wrap" id="weakWrap" style="height:320px;">
-                    <canvas id="chartWeak" role="img" aria-label="Weakest topics by class accuracy"></canvas>
-                    <div class="viz-empty chart-empty" id="emptyWeak" hidden>No topic is below 60% (among topics with {{ \App\Services\ChairAnalyticsService::TOPIC_MIN_ATTEMPTS }}+ answers).</div>
-                </div>
-            </article>
+        <section class="table-pair topic-tables" aria-label="Topics">
+            <div class="table-card">
+                <h3><span><i class="fas fa-triangle-exclamation" style="color:#b91c1c;margin-right:7px;"></i>Top 5 Weakest Topics</span>
+                    <select class="topic-filter" id="weakSubject" aria-label="Filter weakest topics by subject"></select></h3>
+                <div class="table-note">Under 60% class accuracy, with {{ \App\Services\ChairAnalyticsService::TOPIC_MIN_ATTEMPTS }}+ answers in the range.</div>
+                <table class="viz-table"><thead><tr><th>Topic</th><th>Subject</th><th class="num">Accuracy</th><th class="num">Answers</th></tr></thead><tbody id="tableWeak"></tbody></table>
+            </div>
+            <div class="table-card">
+                <h3><span><i class="fas fa-circle-check" style="color:#047857;margin-right:7px;"></i>Top 5 Strongest Topics</span>
+                    <select class="topic-filter" id="strongSubject" aria-label="Filter strongest topics by subject"></select></h3>
+                <div class="table-note">75% and above class accuracy, with {{ \App\Services\ChairAnalyticsService::TOPIC_MIN_ATTEMPTS }}+ answers in the range.</div>
+                <table class="viz-table"><thead><tr><th>Topic</th><th>Subject</th><th class="num">Accuracy</th><th class="num">Answers</th></tr></thead><tbody id="tableStrong"></tbody></table>
+            </div>
         </section>
     </div>
 
-    <div id="tab-tables" class="tab-panel">
-        <section class="table-card">
-            <h3>Subject-by-Subject Accuracy <small>Within the selected range</small></h3>
-            <div class="table-scroll">
-                <div class="subject-row head"><span>Subject</span><span>Accuracy</span><span>Score</span><span>vs pass</span><span>Practice</span></div>
-                <div id="tableSubjects"></div>
-            </div>
-        </section>
-
-        <section class="table-card">
-            <h3>Practice per Period <small id="tableEngagementNote"></small></h3>
-            <div class="table-scroll">
-                <table class="viz-table">
-                    <thead><tr><th>Period starting</th><th class="num">Students</th><th class="num">Quizzes</th><th class="num">Items</th><th class="num">Accuracy</th><th class="num">Board ready*</th><th class="num">Hours</th></tr></thead>
-                    <tbody id="tableEngagement"></tbody>
-                </table>
-            </div>
-            <div class="small-meta" style="margin-top:8px;">* Cumulative to the end of each period, like the readiness line in the chart above.</div>
-        </section>
-
-        <div class="table-pair" style="margin-bottom:16px;">
-            <section class="table-card">
-                <h3>Accuracy by Section <small>Every active section</small></h3>
-                <table class="viz-table">
-                    <thead><tr><th>Section</th><th class="num">Accuracy</th><th class="num">Students</th><th class="num">Items</th></tr></thead>
-                    <tbody id="tableSections"></tbody>
-                </table>
-            </section>
-            <section class="table-card">
-                <h3>Accuracy by Difficulty <small>Should fall as difficulty rises</small></h3>
-                <table class="viz-table">
-                    <thead><tr><th>Difficulty</th><th class="num">Answers</th><th class="num">Accuracy</th></tr></thead>
-                    <tbody id="tableDifficulty"></tbody>
-                </table>
-            </section>
-        </div>
-
-        <div class="table-pair">
-            <section class="table-card">
-                <h3>Weakest Topics <small>Under 60%</small></h3>
-                <table class="viz-table">
-                    <thead><tr><th>Topic</th><th>Subject</th><th class="num">Accuracy</th><th class="num">Answers</th><th class="num">Students</th></tr></thead>
-                    <tbody id="tableWeak"></tbody>
-                </table>
-            </section>
-            <section class="table-card">
-                <h3>Strongest Topics <small>75% and above</small></h3>
-                <table class="viz-table">
-                    <thead><tr><th>Topic</th><th>Subject</th><th class="num">Accuracy</th><th class="num">Answers</th><th class="num">Students</th></tr></thead>
-                    <tbody id="tableStrong"></tbody>
-                </table>
-            </section>
-        </div>
-
-        <div class="method-note" style="margin-top:16px;">
-            <i class="fas fa-circle-info"></i>
-            Accuracy and practice count quizzes completed within the date range. Readiness, the score distribution and the pass projection are cumulative as of the range end, since a student's standing is built from everything they have practised.
-        </div>
-    </div>
-
-    <div id="tab-leaderboard" class="tab-panel">
-        <section class="table-card">
-            <div class="lb-head">
-                <div>
-                    <h3 style="margin-bottom:2px;">Student Leaderboard</h3>
-                    <div class="lb-scope" id="lbScope">&nbsp;</div>
-                </div>
-                {{-- Ranking rule. "Correct answers" matches the students' own
-                     leaderboard; "Accuracy" only ranks students with enough
-                     items for the percentage to mean something. --}}
-                <div class="lb-sort" role="radiogroup" aria-label="Rank students by">
-                    <button type="button" class="active" data-sort="correct" role="radio" aria-checked="true"><i class="fas fa-check-double"></i> Most correct answers</button>
-                    <button type="button" data-sort="accuracy" role="radio" aria-checked="false"><i class="fas fa-bullseye"></i> Highest accuracy</button>
-                </div>
-            </div>
-            <div class="lb-podium" id="lbPodium"></div>
-            <div class="table-scroll">
-                <table class="viz-table lb-table">
-                    <thead id="lbHead"></thead>
-                    <tbody id="lbBody"></tbody>
-                </table>
-            </div>
-            <div class="lb-foot">
-                <span id="lbCount"></span>
-                <button type="button" class="btn btn-ghost btn-sm" id="lbMore" hidden>Show all</button>
-            </div>
-        </section>
+    <div class="method-note" style="margin:0 0 16px;">
+        <i class="fas fa-circle-info"></i>
+        Accuracy and practice count quizzes completed within the date range. Readiness and the pass projection are cumulative as of the range end, since a student's standing is built from everything they have practised.
     </div>
 </main>
+
+<div class="lbm-overlay" id="lbModal" role="dialog" aria-modal="true" aria-labelledby="lbModalTitle">
+    <div class="lbm">
+        <div class="lbm-head">
+            <div>
+                <h3 id="lbModalTitle"><i class="fas fa-trophy" style="color:#d4a017;margin-right:8px;"></i>Student Leaderboard</h3>
+                <div class="lbm-scope" id="lbmScope"></div>
+            </div>
+            <button type="button" class="lbm-x" id="lbClose" aria-label="Close"><i class="fas fa-xmark"></i></button>
+        </div>
+        <div class="lbm-tools">
+            <input type="search" id="lbSearch" placeholder="Search student or section" aria-label="Search students">
+            <span class="lb-sort" role="radiogroup" aria-label="Rank students by">
+                <button type="button" class="active" data-sort="correct" role="radio" aria-checked="true">Most correct</button>
+                <button type="button" data-sort="accuracy" role="radio" aria-checked="false">Accuracy</button>
+            </span>
+        </div>
+        <div class="lbm-body">
+            <table class="viz-table lb-table">
+                <thead><tr><th style="width:52px;">Rank</th><th>Student</th><th class="num">Correct</th><th class="num">Items</th><th class="num">Accuracy</th><th class="num">Quizzes</th><th class="num">Last active</th></tr></thead>
+                <tbody id="lbmBody"></tbody>
+            </table>
+        </div>
+        <div class="lbm-foot" id="lbmCount"></div>
+    </div>
+</div>
 
 <script>
 (function () {
@@ -555,222 +477,184 @@
             plugins: [Viz.referenceMarks(subjects.map((s) => s.threshold), P.ink), Viz.endLabels((v) => v + '%')],
         });
 
-        // Section comparison — all sections, the selected one highlighted.
-        const secs = r.by_section;
+        // Section engagement — share of each section's students who practised.
+        const secs = r.by_section.map((x) => Object.assign({}, x, { rate: x.enrolled ? Math.round(x.students / x.enrolled * 100) : null }));
         $('noteSections').textContent = filters.section ? `${filters.section} vs the other sections` : `${plural(secs.length, 'active section')} compared`;
-        toggleEmpty('emptySections', allNull(secs.map((s) => s.accuracy)));
+        toggleEmpty('emptySections', allNull(secs.map((x) => x.rate)) || secs.every((x) => !x.students));
+        // Value on top of each (vertical) bar.
+        const topLabels = {
+            id: 'sectionTopLabels',
+            afterDatasetsDraw(chart) {
+                const ctx = chart.ctx;
+                ctx.save();
+                ctx.font = "600 10.5px 'Poppins', sans-serif";
+                ctx.fillStyle = P.ink;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'bottom';
+                chart.getDatasetMeta(0).data.forEach((el, i) => { if (secs[i].rate !== null) { ctx.fillText(secs[i].rate + '%', el.x, el.y - 4); } });
+                ctx.restore();
+            },
+        };
         Viz.chart('chartSections', {
             type: 'bar',
             data: {
-                labels: secs.map((s) => s.section),
-                datasets: [Viz.bar({ label: 'Class accuracy', data: secs.map((s) => s.accuracy), backgroundColor: secs.map((s) => (!filters.section || s.section === filters.section ? P.s1 : 'rgba(163,43,43,.28)')), maxBarThickness: 20 })],
+                labels: secs.map((x) => x.section),
+                datasets: [Viz.bar({ label: 'Students practising', data: secs.map((x) => x.rate), backgroundColor: secs.map((x) => (!filters.section || x.section === filters.section ? P.s1 : 'rgba(163,43,43,.28)')), maxBarThickness: 42 })],
             },
             options: {
-                indexAxis: 'y',
-                layout: { padding: { right: 40 } },
-                scales: { x: Viz.percentAxis(), y: Viz.catAxis() },
+                layout: { padding: { top: 18 } },
+                scales: { y: Viz.percentAxis(), x: tickAxis(12) },
                 plugins: {
                     legend: { display: false },
                     tooltip: { callbacks: { label: (c) => {
-                        const s = secs[c.dataIndex];
-                        return s.accuracy === null ? 'No activity in range' : `${s.accuracy}% · ${plural(s.students, 'student')} · ${plural(s.items, 'item')}`;
+                        const x = secs[c.dataIndex];
+                        return x.rate === null ? 'No students enrolled' : `${x.rate}% · ${x.students} of ${plural(x.enrolled, 'student')} · ${plural(x.quizzes, 'quiz', 'quizzes')}`;
                     } } },
                 },
             },
-            plugins: [Viz.endLabels((v) => v + '%')],
-        });
-
-        // Score distribution.
-        const dist = r.distribution;
-        toggleEmpty('emptyDistribution', dist.every((d) => d.students === 0));
-        Viz.chart('chartDistribution', {
-            type: 'bar',
-            data: { labels: dist.map((d) => d.label), datasets: [Viz.bar({ label: 'Students', data: dist.map((d) => d.students), backgroundColor: P.s1 })] },
-            options: { scales: { y: Viz.countAxis(), x: Viz.catAxis() }, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => plural(c.raw, 'student') } } } },
-        });
-
-        // Students practising, per period.
-        const eng = r.engagement;
-        const noActivity = eng.every((e) => e.quizzes === 0);
-        const peak = eng.reduce((max, e) => Math.max(max, e.students), 0);
-        $('noteEngagement').textContent = `Peak of ${plural(peak, 'student')} in a ${range.bucket}`;
-        toggleEmpty('emptyEngagement', noActivity);
-        Viz.chart('chartEngagement', {
-            type: 'bar',
-            data: { labels: eng.map((e) => e.label), datasets: [Viz.bar({ label: 'Students', data: eng.map((e) => e.students), backgroundColor: P.s1 })] },
-            options: {
-                scales: { y: Viz.countAxis(), x: tickAxis(8) },
-                plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => { const e = eng[c.dataIndex]; return `${plural(e.students, 'student')} · ${plural(e.quizzes, 'quiz', 'quizzes')} · ${plural(e.items, 'item')}`; } } } },
-            },
-        });
-        // Accuracy by difficulty (ordered → ordinal ramp).
-        const diff = r.difficulty;
-        toggleEmpty('emptyDifficulty', diff.every((d) => d.answered === 0));
-        Viz.chart('chartDifficulty', {
-            type: 'bar',
-            data: { labels: diff.map((d) => d.label), datasets: [Viz.bar({ label: 'Accuracy', data: diff.map((d) => d.accuracy), backgroundColor: P.ordinal })] },
-            options: {
-                scales: { y: Viz.percentAxis(), x: Viz.catAxis() },
-                plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => { const d = diff[c.dataIndex]; return d.accuracy === null ? 'Not answered yet' : `${d.accuracy}% correct across ${plural(d.answered, 'answer')}`; } } } },
-            },
-        });
-
-        // Weakest topics (horizontal); the card grows with the list.
-        const weak = r.weak_topics;
-        toggleEmpty('emptyWeak', weak.length === 0);
-        $('weakWrap').style.height = Math.max(160, weak.length * 30 + 40) + 'px';
-        Viz.chart('chartWeak', {
-            type: 'bar',
-            data: { labels: weak.map((t) => `${t.subject_code} · ${t.name}`), datasets: [Viz.bar({ label: 'Accuracy', data: weak.map((t) => t.accuracy), backgroundColor: P.s1, maxBarThickness: 18, minBarLength: 2 })] },
-            options: {
-                indexAxis: 'y',
-                layout: { padding: { right: 40 } },
-                // Long topic names are shortened on the axis (they were being
-                // clipped at the card edge); the tooltip keeps the full name.
-                scales: { x: Viz.percentAxis(), y: Viz.catAxis({ ticks: { color: P.ink, padding: 6, font: { size: 10 }, callback(v) { const s = this.getLabelForValue(v); return s.length > 38 ? s.slice(0, 37) + '…' : s; } } }) },
-                plugins: { legend: { display: false }, tooltip: { callbacks: { title: (items) => items[0].label, label: (c) => { const t = weak[c.dataIndex]; return `${t.accuracy}% across ${plural(t.attempts, 'answer')} by ${plural(t.students, 'student')}`; } } } },
-            },
-            plugins: [Viz.endLabels((v) => v + '%')],
+            plugins: [topLabels],
         });
     }
 
-    // ── Tables ──
-    function topicRows(topics, emptyText) {
-        return topics.length
-            ? topics.map((t) => `<tr><td>${esc(t.name)}</td><td>${esc(t.subject_code)}</td><td class="num"><strong>${t.accuracy}%</strong></td><td class="num">${t.attempts.toLocaleString()}</td><td class="num">${t.students}</td></tr>`).join('')
-            : `<tr><td colspan="5"><div class="table-empty">${emptyText}</div></td></tr>`;
-    }
-
-    function renderTables(r) {
-        $('tableSubjects').innerHTML = r.by_subject.map((s) => `
-            <div class="subject-row">
-                <div><span class="subj-badge b-${esc(s.code.toLowerCase())}">${esc(s.code)}</span><span class="subject-name">${esc(s.name)}</span></div>
-                <div class="bar"><span style="width:${s.accuracy ?? 0}%"></span></div>
-                <div class="accuracy">${pct(s.accuracy)}</div>
-                <div class="delta ${s.gap === null ? 'na' : (s.gap >= 0 ? 'up' : 'down')}">${s.gap === null ? '—' : (s.gap > 0 ? '+' : '') + s.gap + ' pts'}</div>
-                <div><div class="small-meta">${plural(s.students, 'student')}</div><div class="small-meta">${plural(s.items, 'item')}</div></div>
-            </div>`).join('') || '<div class="table-empty">No subjects are available.</div>';
-
-        $('tableEngagementNote').textContent = `One row per ${r.range.bucket}`;
-        // Engagement and trend share the same period buckets, row for row.
-        $('tableEngagement').innerHTML = r.engagement.map((e, i) => `
-            <tr><td>${esc(e.label)}</td><td class="num">${e.students}</td><td class="num">${e.quizzes}</td><td class="num">${e.items.toLocaleString()}</td><td class="num">${pct(e.accuracy)}</td><td class="num">${pct(r.trend[i] ? r.trend[i].readiness : null)}</td><td class="num">${e.hours}</td></tr>`).join('');
-
-        $('tableSections').innerHTML = r.by_section.map((s) => `
-            <tr${filters.section === s.section ? ' style="background:#fef2f2;"' : ''}><td>${esc(s.section)}</td><td class="num"><strong>${pct(s.accuracy)}</strong></td><td class="num">${s.students}</td><td class="num">${s.items.toLocaleString()}</td></tr>`).join('')
-            || '<tr><td colspan="4"><div class="table-empty">No active sections.</div></td></tr>';
-
-        $('tableDifficulty').innerHTML = r.difficulty.map((d) => `
-            <tr><td>${esc(d.label)}</td><td class="num">${d.answered.toLocaleString()}</td><td class="num"><strong>${pct(d.accuracy)}</strong></td></tr>`).join('');
-
-        $('tableWeak').innerHTML = topicRows(r.weak_topics, 'No topic is below 60% class accuracy.');
-        $('tableStrong').innerHTML = topicRows(r.strong_topics, 'No topic has reached 75% class accuracy yet.');
-    }
-
-    // ── Leaderboard ──
-    // Accuracy ranking needs the same floor a student needs to be measured at
-    // all; below it one lucky 3/3 quiz would top the board.
+    // ── Top students ──
     const LB_MIN_ITEMS = {{ \App\Services\ChairAnalyticsService::DEVELOPING_ATTEMPTS }};
-    const LB_PAGE = 20;
-    const MEDALS = ['r1', 'r2', 'r3'];
     let lbRows = [];
-    let lbSubjects = [];
     let lbSort = 'correct';
-    let lbShowAll = false;
+    let rangeText = '';
 
-    function renderLeaderboard(rows, range, subjects) {
-        lbRows = rows;
-        // Per-subject columns only mean something across several subjects;
-        // with one subject selected they would just repeat the overall rank.
-        lbSubjects = subjects.length > 1 ? subjects : [];
-        lbShowAll = false;
-        const subject = filters.subject ? $('filterSubject').selectedOptions[0].textContent.trim() : 'All subjects';
-        $('lbScope').textContent = [subject, filters.section || 'All sections', `${pretty(range.from)} – ${pretty(range.to)}`].join(' · ');
-        drawLeaderboard();
+    function renderTop(rows, range, subjects) {
+        lbRows = rows || [];
+        fillSubjectFilter($('tpSubject'), subjects);
+        rangeText = `${pretty(range.from)} – ${pretty(range.to)}`;
+        drawTop();
     }
 
-    function drawLeaderboard() {
-        const byAccuracy = lbSort === 'accuracy';
-        const ranked = byAccuracy
-            ? lbRows.filter((s) => s.items >= LB_MIN_ITEMS)
-                .slice()
-                .sort((a, b) => b.accuracy - a.accuracy || b.items - a.items || a.id - b.id)
-            : lbRows;
-        const score = (s) => (byAccuracy ? `${s.accuracy}%` : s.correct.toLocaleString());
-        const scoreNote = (s) => (byAccuracy ? `of ${plural(s.items, 'item')}` : 'correct answers');
-        // Mixed-subject quizzes carry no subject, so a count of 0 is left out.
-        const sub = (s) => [s.section, s.subjects ? plural(s.subjects, 'subject') : null].filter(Boolean).map(esc).join(' · ');
-        const standing = (s, code) => (s.standings || {})[code];
-        const topIn = (s) => lbSubjects.filter((code) => standing(s, code)?.rank === 1);
-        const subjectCell = (s, code) => {
-            const st = standing(s, code);
-            if (!st) { return `<td class="lb-subj"><span class="lb-snone" title="${esc(code)}: no quizzes in this range">—</span></td>`; }
-            const tip = `${code}: #${st.rank} of ${st.of} · ${plural(st.correct, 'correct answer')} · ${pct(st.accuracy)} accuracy`;
-            return `<td class="lb-subj" title="${esc(tip)}"><span class="lb-srank ${st.rank <= 3 ? 's' + st.rank : ''}">#${st.rank}</span><span class="lb-sacc">${pct(st.accuracy)}</span></td>`;
+    // Rows for the subject picked on the card: that subject's own totals and order.
+    function scopedRows() {
+        const code = $('tpSubject').value;
+        if (!code) { return lbRows; }
+        return lbRows
+            .filter((s) => s.standings && s.standings[code])
+            .map((s) => Object.assign({}, s, { correct: s.standings[code].correct, items: s.standings[code].items, accuracy: s.standings[code].accuracy }))
+            .sort((x, y) => y.correct - x.correct || x.id - y.id);
+    }
+
+    function scopeText() {
+        const code = $('tpSubject').value;
+        return [code || (filters.subject ? $('filterSubject').selectedOptions[0].textContent.trim() : 'All subjects'), filters.section || 'All sections', rangeText].join(' · ');
+    }
+
+    function drawTop() {
+        const ranked = scopedRows().slice(0, 5);
+        $('lbScope').textContent = scopeText();
+        const slot = (i) => {
+            const s = ranked[i];
+            return s ? `
+            <a class="tp-top p${i + 1}" href="${esc(s.url)}">
+                <span class="tp-medal">${i + 1}</span>
+                <div class="tp-av">${esc(s.initials)}</div>
+                <div class="tp-name">${esc(s.name)}</div>
+                <div class="tp-meta">${esc(s.section || '')}</div>
+                <div class="tp-score">${s.correct.toLocaleString()}<small>correct answers</small></div>
+            </a>` : `
+            <div class="tp-top tp-empty-slot p${i + 1}" aria-label="Rank ${i + 1}: no student yet">
+                <span class="tp-medal">${i + 1}</span>
+                <div class="tp-av"><i class="fas fa-user"></i></div>
+                <div class="tp-name">No student yet</div>
+                <div class="tp-meta">&nbsp;</div>
+                <div class="tp-score">—<small>&nbsp;</small></div>
+            </div>`;
         };
+        // Podium order: 2nd, 1st, 3rd — always three slots, so a lone leader stays centred.
+        $('tpPodium').innerHTML = [1, 0, 2].map(slot).join('');
+        // Ranks 4 and 5 are always listed; an empty one is held with a placeholder.
+        $('tpList').innerHTML = [3, 4].map((i) => {
+            const s = ranked[i];
+            return s ? `
+            <a class="tp-row" href="${esc(s.url)}">
+                <span class="tp-rank">${i + 1}</span>
+                <span class="tp-name"><b>${esc(s.name)}</b><div class="tp-meta">${esc(s.section || '')} · correct answers</div></span>
+                <b>${s.correct.toLocaleString()}</b>
+            </a>` : `
+            <div class="tp-row tp-row-empty" aria-label="Rank ${i + 1}: no student yet">
+                <span class="tp-rank">${i + 1}</span>
+                <span class="tp-name"><b>No student yet</b></span>
+                <b>—</b>
+            </div>`;
+        }).join('');
+        if (lbModal.classList.contains('open')) { drawFull(); }
+    }
+    $('tpSubject').addEventListener('change', drawTop);
+    // The popup has its own sort toggle (most correct / accuracy).
+    document.querySelectorAll('#lbModal .lb-sort button').forEach((btn) => btn.addEventListener('click', () => {
+        lbSort = btn.dataset.sort;
+        document.querySelectorAll('#lbModal .lb-sort button').forEach((x) => { x.classList.toggle('active', x === btn); x.setAttribute('aria-checked', x === btn ? 'true' : 'false'); });
+        drawFull();
+    }));
 
-        $('lbHead').innerHTML = '<tr><th style="width:52px;">Rank</th><th>Student</th><th class="num">Correct</th><th class="num">Items</th><th class="num">Accuracy</th>'
-            + lbSubjects.map((code) => `<th class="lb-subj" title="Standing in ${esc(code)}">${esc(code)}</th>`).join('')
-            + '<th class="num">Quizzes</th><th class="num">Last active</th></tr>';
-
-        $('lbPodium').innerHTML = ranked.slice(0, 3).map((s, i) => `
-            <a class="lb-top" href="${esc(s.url)}">
-                <span class="lb-medal ${MEDALS[i]}"><i class="fas fa-trophy"></i></span>
-                <span style="min-width:0;">
-                    <div class="lb-top-name">${esc(s.name)}</div>
-                    <div class="lb-top-meta">#${i + 1} · ${sub(s)}</div>
-                    ${topIn(s).length ? `<div class="lb-top-best"><i class="fas fa-crown"></i> #1 in ${esc(topIn(s).join(', '))}</div>` : ''}
-                </span>
-                <span class="lb-top-score">${score(s)}<small>${scoreNote(s)}</small></span>
-            </a>`).join('');
-
-        const shown = lbShowAll ? ranked : ranked.slice(0, LB_PAGE);
-        $('lbBody').innerHTML = shown.length
-            ? shown.map((s, i) => `
-                <tr>
-                    <td class="lb-rank">${i + 1}</td>
-                    <td>
-                        <a class="lb-student" href="${esc(s.url)}">
-                            <span class="lb-av">${esc(s.initials)}</span>
-                            <span style="min-width:0;"><div class="lb-name">${esc(s.name)}</div><div class="lb-sub">${sub(s)}</div></span>
-                        </a>
-                    </td>
-                    <td class="num"><strong>${s.correct.toLocaleString()}</strong></td>
-                    <td class="num">${s.items.toLocaleString()}</td>
-                    <td class="num">${pct(s.accuracy)}</td>
-                    ${lbSubjects.map((code) => subjectCell(s, code)).join('')}
-                    <td class="num">${s.quizzes}</td>
-                    <td class="num">${esc(s.last_active)}</td>
-                </tr>`).join('')
-            : `<tr><td colspan="${7 + lbSubjects.length}"><div class="table-empty">${byAccuracy
-                ? `No student answered ${LB_MIN_ITEMS}+ items in this range yet.`
-                : 'No student completed a quiz in this range.'} Try a longer date range, e.g. Last 90 days or Last 12 months.</div></td></tr>`;
-
-        $('lbCount').textContent = ranked.length
-            ? `Showing ${shown.length} of ${plural(ranked.length, 'ranked student')}` + (byAccuracy ? ` · only students with ${LB_MIN_ITEMS}+ items` : '')
-            : '';
-        $('lbMore').hidden = lbShowAll || ranked.length <= LB_PAGE;
+    // ── Full leaderboard popup ──
+    function rankedRows() {
+        const rows = scopedRows();
+        return lbSort === 'accuracy'
+            ? rows.filter((s) => s.items >= LB_MIN_ITEMS).slice().sort((a, b) => b.accuracy - a.accuracy || b.items - a.items || a.id - b.id)
+            : rows;
     }
 
-    document.querySelectorAll('.lb-sort button').forEach((btn) => {
-        btn.addEventListener('click', () => {
-            lbSort = btn.dataset.sort;
-            lbShowAll = false;
-            document.querySelectorAll('.lb-sort button').forEach((b) => {
-                const on = b === btn;
-                b.classList.toggle('active', on);
-                b.setAttribute('aria-checked', on ? 'true' : 'false');
-            });
-            drawLeaderboard();
-        });
-    });
-    $('lbMore').addEventListener('click', () => { lbShowAll = true; drawLeaderboard(); });
+    function drawFull() {
+        const q = $('lbSearch').value.trim().toLowerCase();
+        const ranked = rankedRows().map((s, i) => Object.assign({ rank: i + 1 }, s));
+        const shown = q ? ranked.filter((s) => (s.name + ' ' + (s.section || '')).toLowerCase().includes(q)) : ranked;
+        $('lbmBody').innerHTML = shown.length ? shown.map((s) => `
+            <tr>
+                <td class="lb-rank">${s.rank}</td>
+                <td><a class="lb-student" href="${esc(s.url)}"><span class="lb-av">${esc(s.initials)}</span><span><div class="lb-name">${esc(s.name)}</div><div class="lb-sub">${esc(s.section || '')}</div></span></a></td>
+                <td class="num"><strong>${s.correct.toLocaleString()}</strong></td>
+                <td class="num">${s.items.toLocaleString()}</td>
+                <td class="num">${pct(s.accuracy)}</td>
+                <td class="num">${s.quizzes}</td>
+                <td class="num">${esc(s.last_active)}</td>
+            </tr>`).join('')
+            : '<tr><td colspan="7"><div class="table-empty">No student matches.</div></td></tr>';
+        $('lbmCount').textContent = `${shown.length} of ${plural(ranked.length, 'ranked student')}` + (lbSort === 'accuracy' ? ` · only students with ${LB_MIN_ITEMS}+ items` : '');
+        $('lbmScope').textContent = scopeText();
+    }
+    const lbModal = $('lbModal');
+    const closeFull = () => lbModal.classList.remove('open');
+    $('lbOpen').addEventListener('click', () => { lbModal.classList.add('open'); $('lbSearch').value = ''; drawFull(); });
+    $('lbClose').addEventListener('click', closeFull);
+    lbModal.addEventListener('click', (e) => { if (e.target === lbModal) { closeFull(); } });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeFull(); } });
+    $('lbSearch').addEventListener('input', drawFull);
+
+    // ── Weakest / strongest topics (top 5, filtered by subject on the page) ──
+    let topicData = { weak: [], strong: [] };
+
+    function fillSubjectFilter(select, subjects) {
+        const keep = select.value;
+        select.innerHTML = '<option value="">All subjects</option>' + subjects.map((x) => `<option value="${esc(x.code)}">${esc(x.code)}</option>`).join('');
+        select.value = subjects.some((x) => x.code === keep) ? keep : '';
+    }
+
+    function drawTopics() {
+        const rows = (list, code, empty) => {
+            const top = list.filter((t) => !code || t.subject_code === code).slice(0, 5);
+            return top.length
+                ? top.map((t) => `<tr><td>${esc(t.name)}</td><td>${esc(t.subject_code)}</td><td class="num"><strong>${t.accuracy}%</strong></td><td class="num">${t.attempts.toLocaleString()}</td></tr>`).join('')
+                : `<tr><td colspan="4"><div class="table-empty">${empty}</div></td></tr>`;
+        };
+        $('tableWeak').innerHTML = rows(topicData.weak, $('weakSubject').value, 'No topic is below 60% class accuracy here.');
+        $('tableStrong').innerHTML = rows(topicData.strong, $('strongSubject').value, 'No topic has reached 75% class accuracy here yet.');
+    }
+    ['weakSubject', 'strongSubject'].forEach((id) => $(id).addEventListener('change', drawTopics));
 
     function render(r) {
         renderKpis(r.kpis, r.range);
         renderCharts(r);
-        renderTables(r);
-        renderLeaderboard(r.leaderboard, r.range, r.leaderboard_subjects);
+        renderTop(r.leaderboard, r.range, r.by_subject);
+        topicData = { weak: r.weak_topics, strong: r.strong_topics };
+        fillSubjectFilter($('weakSubject'), r.by_subject);
+        fillSubjectFilter($('strongSubject'), r.by_subject);
+        drawTopics();
     }
 
     // ── Filters ──

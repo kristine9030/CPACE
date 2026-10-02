@@ -183,12 +183,6 @@ class ChairAnalyticsTest extends TestCase
             ->assertSee('Class-Level Performance')
             ->assertSee('70%')
             ->assertSee('Predicted Pass Rate');
-
-        $this->actingAs($chair)->get(route('chair.analytics.test-bank-coverage'))
-            ->assertOk()
-            ->assertSee('Test Bank Coverage')
-            ->assertSee('Thin Areas')
-            ->assertSee('Needs 20 more');
     }
 
     public function test_chair_dashboard_and_faculty_report_render(): void

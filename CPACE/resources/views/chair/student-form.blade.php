@@ -25,7 +25,7 @@
             color: var(--primary);
             margin-right: 7px;
         }
-        .form-grid.three { grid-template-columns: repeat(3, 1fr); }
+        .form-grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
         input[type=date],
         input[type=number] {
             width: 100%;
@@ -85,7 +85,7 @@
         }
         @media (max-width: 700px) {
             .form-grid,
-            .form-grid.three { grid-template-columns: 1fr !important; }
+            .form-grid.three { grid-template-columns: minmax(0, 1fr) !important; }
             .toggle-row { grid-column: auto; }
         }
     </style>
@@ -222,7 +222,7 @@
                         @foreach ($sections as $sec)
                             <option
                                 value="{{ $sec->name }}"
-                                @selected(old('section', $profile?->section) === $sec->name)
+                                @selected(old('section', $profile?->section ?? request('section')) === $sec->name)
                             >
                                 {{ $sec->name }}{{ $sec->is_active ? '' : ' (inactive)' }}
                             </option>

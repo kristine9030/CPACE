@@ -9,10 +9,27 @@ use App\Models\StudentProfile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class SectionManagementController extends Controller
 {
+    /**
+     * Sections no longer have a page of their own: they're managed from the
+     * Students page (section strip + "Assign section"), so send old links there.
+     */
     public function index()
+    {
+        return redirect()->route('chair.students');
+    }
+
+    /**
+     * The section catalog with per-section student/faculty counts, plus the
+     * number of enrolled students who aren't in any curated section. Shown on
+     * the Students page.
+     *
+     * @return array{sections: \Illuminate\Support\Collection, unsectioned: int}
+     */
+    public static function catalog(): array
     {
         $sections = Section::orderBy('year_level')->orderBy('name')->get();
 
@@ -70,10 +87,10 @@ class SectionManagementController extends Controller
         $unsectioned = $enrolledStudents->count()
             - $studentCounts->only($sections->pluck('name')->all())->sum();
 
-        return view('chair.sections', [
+        return [
             'sections' => $sections,
             'unsectioned' => $unsectioned,
-        ]);
+        ];
     }
 
     /**
@@ -133,26 +150,101 @@ class SectionManagementController extends Controller
 
     public function store(Request $request)
     {
-        $data = $request->validate([
-            'name' => ['required', 'string', 'max:30', Rule::unique('sections', 'name')],
-            'year_level' => ['required', 'integer', 'between:1,6'],
-        ]);
+        [$name, $yearLevel] = $this->validatedName($request);
 
-        Section::create($data);
+        Section::create(['name' => $name, 'year_level' => $yearLevel]);
 
-        return back()->with('status', "Section \"{$data['name']}\" was added.");
+        return back()->with('status', "Section \"{$name}\" was added.");
     }
 
+    /**
+     * Edit (and possibly rename) a section. Students and mock-exam audiences
+     * point at a section by its name, so a rename carries them over in the
+     * same transaction — nobody drops to "Not in a section", and if any step
+     * fails nothing is changed.
+     */
     public function update(Request $request, Section $section)
     {
+        [$name, $yearLevel] = $this->validatedName($request, $section);
+        $oldName = $section->name;
+        $yearChanged = $section->year_level !== $yearLevel;
+
+        DB::transaction(function () use ($section, $name, $yearLevel, $oldName, $yearChanged) {
+            $section->update(['name' => $name, 'year_level' => $yearLevel]);
+
+            // Every profile still pointing at the old name (alumni included,
+            // so their records don't dangle), matched the same forgiving way
+            // mock-exam audiences are (case/whitespace-insensitive).
+            $members = StudentProfile::whereRaw('LOWER(TRIM(section)) = ?', [mb_strtolower(trim($oldName))]);
+
+            if ($oldName !== $name) {
+                $members->update(['section' => $name]);
+                $this->renameInMockExamAudiences($oldName, $name);
+            }
+
+            // Year level follows the section for current students, the same
+            // rule used when a student is placed into a section.
+            if ($yearChanged) {
+                StudentProfile::where('section', $name)
+                    ->where('is_alumni', false)->where('is_shifted', false)
+                    ->update(['year_level' => $yearLevel]);
+            }
+        });
+
+        return back()->with('status', $oldName === $name
+            ? "Section \"{$name}\" was updated."
+            : "Section \"{$oldName}\" was renamed to \"{$name}\". Its students moved with it.");
+    }
+
+    /**
+     * Builds "<PROGRAM> <year><sem><no.>" from the form's parts and rejects a
+     * name another section already uses.
+     *
+     * @return array{0: string, 1: int} [name, year level]
+     */
+    private function validatedName(Request $request, ?Section $ignore = null): array
+    {
         $data = $request->validate([
-            'name' => ['required', 'string', 'max:30', Rule::unique('sections', 'name')->ignore($section->id)],
-            'year_level' => ['required', 'integer', 'between:1,6'],
+            'program' => ['required', 'string', 'regex:/^[A-Za-z]{2,10}$/'],
+            'year_level' => ['required', 'integer', Rule::in(Section::CODE_YEAR_LEVELS)],
+            'semester' => ['required', 'integer', Rule::in(array_keys(Section::SEMESTER_LABELS))],
+            // Digits, not 'integer': the form sends the padded "01", which
+            // Laravel's integer rule rejects because of the leading zero.
+            'section_number' => ['required', 'regex:/^\d{1,2}$/', 'not_in:0,00'],
+        ], [
+            'program.regex' => 'Program must be 2–10 letters, e.g. BSA.',
+            'section_number.regex' => 'Section number must be a number from 1 to 99.',
+            'section_number.not_in' => 'Section number must be a number from 1 to 99.',
         ]);
 
-        $section->update($data);
+        $name = Section::composeName($data['program'], (int) $data['year_level'], (int) $data['semester'], (int) $data['section_number']);
 
-        return back()->with('status', "Section \"{$section->name}\" was updated.");
+        $taken = Section::whereRaw('LOWER(name) = ?', [mb_strtolower($name)])
+            ->when($ignore, fn ($q) => $q->whereKeyNot($ignore->id))
+            ->exists();
+        if ($taken) {
+            throw ValidationException::withMessages(['name' => "A section named \"{$name}\" already exists."]);
+        }
+
+        return [$name, (int) $data['year_level']];
+    }
+
+    private function renameInMockExamAudiences(string $oldName, string $newName): void
+    {
+        $old = mb_strtolower(trim($oldName));
+
+        DB::table('mock_exams')->whereNotNull('audience_sections')->get(['id', 'audience_sections'])
+            ->each(function ($exam) use ($old, $newName) {
+                $sections = json_decode($exam->audience_sections, true);
+                if (! is_array($sections)) {
+                    return;
+                }
+                $renamed = array_map(fn ($s) => mb_strtolower(trim((string) $s)) === $old ? $newName : $s, $sections);
+                if ($renamed !== $sections) {
+                    DB::table('mock_exams')->where('id', $exam->id)
+                        ->update(['audience_sections' => json_encode(array_values(array_unique($renamed)))]);
+                }
+            });
     }
 
     public function toggle(Section $section)

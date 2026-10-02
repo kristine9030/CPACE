@@ -147,8 +147,8 @@ class ChairDashboardService
             // Column order for the per-subject standings on the leaderboard.
             'leaderboard_subjects' => $subjects->pluck('code')->values(),
             'difficulty' => $this->difficultyAccuracy($answers),
-            'weak_topics' => $topics->filter(fn ($t) => $t['rate'] < $weakLine)->sortBy('accuracy')->take(10)->values(),
-            'strong_topics' => $topics->filter(fn ($t) => $t['rate'] >= $strongLine)->sortByDesc('accuracy')->take(10)->values(),
+            'weak_topics' => $topics->filter(fn ($t) => $t['rate'] < $weakLine)->sortBy('accuracy')->values(),
+            'strong_topics' => $topics->filter(fn ($t) => $t['rate'] >= $strongLine)->sortByDesc('accuracy')->values(),
         ]);
     }
 
@@ -188,6 +188,7 @@ class ChairDashboardService
                     'rank' => $i + 1,
                     'of' => $ranked->count(),
                     'correct' => $r['correct'],
+                    'items' => $r['items'],
                     'accuracy' => $r['items'] ? (int) round($r['correct'] / $r['items'] * 100) : null,
                 ];
             }
@@ -322,8 +323,6 @@ class ChairDashboardService
         $now = $this->readinessBands($sessions, (bool) $subjectId);
         $then = $this->readinessBands($this->upTo($sessions, $from->copy()->subSecond()), (bool) $subjectId);
 
-        $thin = $this->analytics->coverageReport($subjectId)->whereIn('status', ['critical', 'thin']);
-
         return [
             'accuracy' => [
                 'value' => $accuracy,
@@ -350,13 +349,8 @@ class ChairDashboardService
                     return ['code' => $subject->code, 'rate' => $bands['readiness_rate'], 'eligible' => $bands['eligible']];
                 })->values(),
             ],
-            'thin' => [
-                'value' => $thin->count(),
-                'by_subject' => $subjects->map(fn ($subject) => [
-                    'code' => $subject->code,
-                    'topics' => $thin->where('subject_id', (int) $subject->id)->count(),
-                ])->values(),
-            ],
+            // Students ranked for the dashboard's leaderboard (same rule as before).
+            'leaderboard' => $this->leaderboard($inRange, $subjects),
             'projection' => [
                 'value' => $now['pass_projection'],
                 'eligible' => $now['eligible'],
@@ -382,6 +376,7 @@ class ChairDashboardService
         $measured = $this->perStudent($sessions)->filter(fn ($s) => $s['attempts'] >= ChairAnalyticsService::DEVELOPING_ATTEMPTS);
 
         $allInRange = $this->between($allSections, $from, $to);
+        $enrolledBySection = $this->activeStudents(null)->groupBy('section')->map->count();
 
         return [
             // Readiness is a standing, so it stays cumulative to each period
@@ -426,11 +421,13 @@ class ChairDashboardService
                 ];
             })->values(),
             'by_section' => Section::where('is_active', true)->orderBy('year_level')->orderBy('name')->pluck('name')
-                ->map(function ($name) use ($allInRange) {
+                ->map(function ($name) use ($allInRange, $enrolledBySection) {
                     $rows = $allInRange->where('section', $name);
 
                     return [
                         'section' => $name,
+                        'enrolled' => (int) ($enrolledBySection[$name] ?? 0),
+                        'quizzes' => $this->quizCount($rows),
                         'accuracy' => $this->accuracyOf($rows),
                         'students' => $rows->pluck('student_id')->unique()->count(),
                         'items' => (int) $rows->sum('items'),

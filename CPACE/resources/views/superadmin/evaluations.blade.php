@@ -7,11 +7,12 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     @include('partials.superadmin-sidebar', ['active' => 'evaluations'])
     <style>
-        .confusion-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin:16px 0; }
+        .confusion-grid { display:grid; grid-template-columns:repeat(4,minmax(0, 1fr)); gap:12px; margin:16px 0; }
         .confusion-cell { background:#f9fafb; border-radius:10px; padding:14px; text-align:center; }
         .confusion-cell .v { font-size:22px; font-weight:700; color:#1a1a1a; }
         .confusion-cell .k { font-size:10.5px; color:#999; margin-top:2px; }
-        .metric-row-3 { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:18px; }
+        .metric-row-3 { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; margin-bottom:18px; }
+        @media (max-width:560px) { .metric-row-3 { grid-template-columns:minmax(0,1fr); } .metric-box .v { font-size:22px; } }
         .metric-box { background:#fff; border:1px solid #eee; border-radius:14px; padding:18px 20px; text-align:center; }
         .metric-box .v { font-size:26px; font-weight:700; color:var(--primary); }
         .metric-box .k { font-size:11px; color:#999; margin-top:4px; }
@@ -70,7 +71,7 @@
                 I(2)=6, I(n)=I(n-1)&times;EF, EF'=EF+(0.1&minus;(5&minus;q)&times;(0.08+(5&minus;q)&times;0.02)), floored at 1.30 — independently of the implementation, so an actual bug can fail a case here.
             </p>
 
-            <div class="metric-row-3" style="grid-template-columns:1fr;">
+            <div class="metric-row-3" style="grid-template-columns:minmax(0, 1fr);">
                 <div class="metric-box">
                     <div class="v" style="color:{{ $sm2['passed'] === $sm2['total'] ? '#10b981' : '#c0392b' }};">{{ $sm2['passed'] }} / {{ $sm2['total'] }}</div>
                     <div class="k">Test Cases Passing</div>

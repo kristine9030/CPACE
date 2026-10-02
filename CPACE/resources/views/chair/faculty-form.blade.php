@@ -10,9 +10,9 @@
     <style>
         /* ── Faculty-form responsive ── */
         @media (max-width: 768px) {
-            .form-grid { grid-template-columns: 1fr !important; }
+            .form-grid { grid-template-columns: minmax(0, 1fr) !important; }
             .form-grid .form-group.full { grid-column: 1 !important; }
-            .check-grid { grid-template-columns: 1fr !important; }
+            .check-grid { grid-template-columns: minmax(0, 1fr) !important; }
         }
         @media (max-width: 480px) {
             .form-submit-row { flex-direction: column-reverse; gap: 8px; }

@@ -167,6 +167,62 @@ class ChairSectionRosterTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_the_old_sections_page_redirects_to_students(): void
+    {
+        $this->actingAs($this->chair())->get(route('chair.sections'))
+            ->assertRedirect(route('chair.students'));
+    }
+
+    public function test_assign_section_moves_students_and_sets_their_year(): void
+    {
+        $one = $this->student('1@t.test', null);
+        $two = $this->student('2@t.test', 'BSA-3A');
+
+        $this->actingAs($this->chair())
+            ->post(route('chair.students.assign-section'), ['section_id' => $this->sectionB, 'student_ids' => [$one->id, $two->id]])
+            ->assertRedirect()->assertSessionHas('status');
+
+        foreach ([$one, $two] as $s) {
+            $this->assertSame('BSA-4A', DB::table('student_profiles')->where('user_id', $s->id)->value('section'));
+            $this->assertSame(4, (int) DB::table('student_profiles')->where('user_id', $s->id)->value('year_level'));
+        }
+    }
+
+    public function test_assign_section_with_no_section_clears_it(): void
+    {
+        $student = $this->student('1@t.test', 'BSA-3A');
+
+        $this->actingAs($this->chair())
+            ->post(route('chair.students.assign-section'), ['section_id' => '', 'student_ids' => [$student->id]])
+            ->assertRedirect();
+
+        $this->assertNull(DB::table('student_profiles')->where('user_id', $student->id)->value('section'));
+    }
+
+    public function test_assign_section_skips_alumni_and_rejects_unknown_sections(): void
+    {
+        $alumnus = $this->student('al@t.test', null, ['is_alumni' => true]);
+        $chair = $this->chair();
+
+        $this->actingAs($chair)
+            ->post(route('chair.students.assign-section'), ['section_id' => $this->sectionA, 'student_ids' => [$alumnus->id]])
+            ->assertSessionHas('error');
+        $this->assertNull(DB::table('student_profiles')->where('user_id', $alumnus->id)->value('section'));
+
+        $this->actingAs($chair)
+            ->post(route('chair.students.assign-section'), ['section_id' => 999999, 'student_ids' => [$alumnus->id]])
+            ->assertSessionHasErrors('section_id');
+    }
+
+    public function test_students_cannot_assign_sections(): void
+    {
+        $student = $this->student('s2@t.test', null);
+
+        $this->actingAs($student)
+            ->post(route('chair.students.assign-section'), ['section_id' => $this->sectionA, 'student_ids' => [$student->id]])
+            ->assertForbidden();
+    }
+
     private function chair(): User
     {
         return $this->user('chair@t.test', Role::ADMIN);
