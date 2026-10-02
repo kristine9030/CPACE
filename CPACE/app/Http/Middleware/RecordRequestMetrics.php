@@ -69,9 +69,12 @@ class RecordRequestMetrics
         Cache::increment("{$prefix}duration_count.{$today}");
         Cache::put("{$prefix}duration_count.{$today}", Cache::get("{$prefix}duration_count.{$today}", 0), $ttl);
 
+        // Each sample carries the route name (falling back to the raw path for
+        // unnamed routes) alongside its duration, so the Performance page can
+        // break the p95/p99 tail down by endpoint instead of just one number.
         $samplesKey = $isAiRoute ? 'metrics.ai_durations' : 'metrics.durations';
         $samples = Cache::get($samplesKey, []);
-        $samples[] = $durationMs;
+        $samples[] = ['route' => $request->route()?->getName() ?? $request->path(), 'ms' => $durationMs];
         if (count($samples) > self::MAX_SAMPLES) {
             $samples = array_slice($samples, -self::MAX_SAMPLES);
         }

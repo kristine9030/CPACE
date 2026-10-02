@@ -96,6 +96,48 @@
 
         <div class="viz-grid-layout">
             <div class="viz-card">
+                <h4><i class="fas fa-ranking-star"></i> Slowest Routes (App)</h4>
+                <div class="viz-sub">Which endpoints are driving the p95/p99 tail above, from the same {{ $summary['sample_size'] }} recent samples.</div>
+                @if (empty($summary['slow_routes']))
+                    <div class="reliability-note">No samples yet.</div>
+                @else
+                    <table class="viz-table">
+                        <thead><tr><th>Route</th><th class="num">Samples</th><th class="num">Avg</th><th class="num">Max</th></tr></thead>
+                        <tbody>
+                            @foreach ($summary['slow_routes'] as $row)
+                                <tr>
+                                    <td class="cell-mono" style="font-size:11px;">{{ $row['route'] }}</td>
+                                    <td class="num">{{ $row['count'] }}</td>
+                                    <td class="num">{{ $row['avg_ms'] }}ms</td>
+                                    <td class="num">{{ $row['max_ms'] }}ms</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                @endif
+            </div>
+            <div class="viz-card">
+                <h4><i class="fas fa-robot"></i> Slowest Routes (AI)</h4>
+                <div class="viz-sub">Same breakdown for the AI-calling routes tracked above.</div>
+                @if (empty($summary['ai_slow_routes']))
+                    <div class="reliability-note">No samples yet.</div>
+                @else
+                    <table class="viz-table">
+                        <thead><tr><th>Route</th><th class="num">Samples</th><th class="num">Avg</th><th class="num">Max</th></tr></thead>
+                        <tbody>
+                            @foreach ($summary['ai_slow_routes'] as $row)
+                                <tr>
+                                    <td class="cell-mono" style="font-size:11px;">{{ $row['route'] }}</td>
+                                    <td class="num">{{ $row['count'] }}</td>
+                                    <td class="num">{{ $row['avg_ms'] }}ms</td>
+                                    <td class="num">{{ $row['max_ms'] }}ms</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                @endif
+            </div>
+            <div class="viz-card">
                 <h4><i class="fas fa-chart-line"></i> Response Time Trend</h4>
                 <div class="viz-sub">Daily average, last 14 days. Empty points mean no traffic that day.</div>
                 <div class="chart-canvas-wrap h-md" id="wrapResponseTime">

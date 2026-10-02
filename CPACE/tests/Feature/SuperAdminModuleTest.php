@@ -221,13 +221,24 @@ class SuperAdminModuleTest extends TestCase
         Cache::put("metrics.errors.{$today}", 1, now()->addDay());
         Cache::put("metrics.duration_sum.{$today}", 5000, now()->addDay());
         Cache::put("metrics.duration_count.{$today}", 50, now()->addDay());
-        Cache::put('metrics.durations', array_fill(0, 50, 100), now()->addDay());
+        // Each sample is route-tagged (RecordRequestMetrics) so the page can
+        // break the p95/p99 tail down by endpoint — mixing in one legacy
+        // plain-int sample here too, to confirm older cached samples (from
+        // before route tagging shipped) don't break the summary while their
+        // 1-day TTL rolls off naturally.
+        $samples = array_fill(0, 49, ['route' => 'dashboard', 'ms' => 100]);
+        $samples[] = 100;
+        Cache::put('metrics.durations', $samples, now()->addDay());
         // AI-calling routes (ai-tutor chat, ai-draft, gap-fill generate) are
         // tracked in their own bucket so their multi-second provider latency
         // doesn't skew the app's own response-time metrics above.
         Cache::put("metrics.ai_duration_sum.{$today}", 9000, now()->addDay());
         Cache::put("metrics.ai_duration_count.{$today}", 3, now()->addDay());
-        Cache::put('metrics.ai_durations', [2000, 3000, 4000], now()->addDay());
+        Cache::put('metrics.ai_durations', [
+            ['route' => 'ai-tutor.chat', 'ms' => 2000],
+            ['route' => 'ai-tutor.chat', 'ms' => 3000],
+            ['route' => 'chair.ai-review.generate', 'ms' => 4000],
+        ], now()->addDay());
 
         $this->actingAs($superAdmin)->get(route('superadmin.performance'))
             ->assertOk()
@@ -236,7 +247,10 @@ class SuperAdminModuleTest extends TestCase
                     && $summary['errors_today'] === 1
                     && $summary['avg_response_ms'] === 100
                     && $summary['ai_avg_response_ms'] === 3000
-                    && $summary['ai_sample_size'] === 3;
+                    && $summary['ai_sample_size'] === 3
+                    && $summary['slow_routes'][0]['route'] === 'dashboard'
+                    && $summary['slow_routes'][0]['count'] === 49
+                    && collect($summary['ai_slow_routes'])->firstWhere('route', 'ai-tutor.chat')['avg_ms'] === 2500;
             })
             ->assertViewHas('trend', fn ($trend) => $trend->last()['requests'] === 50
                 && $trend->last()['ai_avg_response_ms'] === 3000);

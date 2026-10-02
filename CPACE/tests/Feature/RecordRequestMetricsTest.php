@@ -82,4 +82,23 @@ class RecordRequestMetricsTest extends TestCase
         $this->assertCount(5, Cache::get('metrics.ai_durations', []));
         $this->assertSame(5, Cache::get("metrics.requests.{$today}"));
     }
+
+    public function test_each_sample_is_tagged_with_its_route_name(): void
+    {
+        $this->handle('dashboard');
+
+        $sample = Cache::get('metrics.durations')[0];
+
+        $this->assertSame('dashboard', $sample['route']);
+        $this->assertIsInt($sample['ms']);
+    }
+
+    public function test_an_unnamed_route_falls_back_to_the_request_path(): void
+    {
+        $this->handle(null);
+
+        $sample = Cache::get('metrics.durations')[0];
+
+        $this->assertSame('whatever', $sample['route']);
+    }
 }
