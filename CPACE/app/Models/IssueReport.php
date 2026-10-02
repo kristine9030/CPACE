@@ -36,10 +36,16 @@ class IssueReport extends Model
         'other'    => 'Something else',
     ];
 
+    /**
+     * Categories that are technical or about data privacy: the Super Admin
+     * sees these straight away, alongside the Program Chair.
+     */
+    public const TECHNICAL_CATEGORIES = ['bug', 'proctor', 'privacy'];
+
     protected $fillable = [
         'user_id', 'name', 'email', 'category', 'subject', 'message',
         'page_url', 'user_agent', 'ip_address', 'status',
-        'resolved_at', 'last_activity_at',
+        'resolved_at', 'last_activity_at', 'escalated_at', 'escalated_by',
     ];
 
     protected function casts(): array
@@ -47,6 +53,7 @@ class IssueReport extends Model
         return [
             'resolved_at'      => 'datetime',
             'last_activity_at' => 'datetime',
+            'escalated_at'     => 'datetime',
         ];
     }
 
@@ -96,9 +103,33 @@ class IssueReport extends Model
         return $this->status === self::STATUS_RESOLVED;
     }
 
-    /** The requester, or the Program Chair who handles every ticket. */
+    public function isEscalated(): bool
+    {
+        return $this->escalated_at !== null;
+    }
+
+    public function isTechnical(): bool
+    {
+        return in_array($this->category, self::TECHNICAL_CATEGORIES, true);
+    }
+
+    /** Whether the Super Admin is meant to see this request. */
+    public function isForSuperAdmin(): bool
+    {
+        return $this->isEscalated() || $this->isTechnical();
+    }
+
+    /** Requests the Super Admin handles: technical categories plus anything the Chair escalated. */
+    public function scopeForSuperAdmin($query)
+    {
+        return $query->where(fn ($q) => $q->whereNotNull('escalated_at')->orWhereIn('category', self::TECHNICAL_CATEGORIES));
+    }
+
+    /** The requester, the Program Chair, or the Super Admin for requests that reach them. */
     public function isVisibleTo(User $user): bool
     {
-        return $user->isChair() || ($this->user_id !== null && (int) $this->user_id === (int) $user->id);
+        return $user->isChair()
+            || ($user->isSuperAdmin() && $this->isForSuperAdmin())
+            || ($this->user_id !== null && (int) $this->user_id === (int) $user->id);
     }
 }

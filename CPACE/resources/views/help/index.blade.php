@@ -61,7 +61,7 @@
     .manual-list{list-style:none;margin:16px 0 0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px}
     .manual-list li{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px dashed #e6d6d4;border-radius:10px;font-size:13px;color:var(--muted);background:#fff}
     .ch-no{font:700 11px 'Montserrat',sans-serif;color:var(--primary);background:var(--primary-light);border-radius:6px;padding:3px 7px}
-    @media(max-width:1000px){.help-grid{grid-template-columns:1fr}.side-stack{position:static}}
+    @media(max-width:1000px){.help-grid{grid-template-columns:minmax(0, 1fr)}.side-stack{position:static}}
     @media(max-width:768px){.hero{padding:24px 20px}.hero h2{font-size:21px}.hero::after{display:none}}
 </style>
 @endpush

@@ -30,6 +30,27 @@ class SupportNotifier
         $this->insert($chairIds->all(), $report, $title, $message, $senderId);
     }
 
+    /** Tell every active Super Admin about a request that reaches them. */
+    public function notifySuperAdmins(IssueReport $report, string $title, string $message, ?int $senderId): void
+    {
+        $ids = User::where('role_id', Role::SUPER_ADMIN)
+            ->where('is_active', true)
+            ->when($senderId, fn ($q) => $q->where('id', '!=', $senderId))
+            ->pluck('id');
+
+        $this->insert($ids->all(), $report, $title, $message, $senderId);
+    }
+
+    /** The Chairs always, and the Super Admins too when the request is technical or escalated. */
+    public function notifyStaff(IssueReport $report, string $title, string $message, ?int $senderId): void
+    {
+        $this->notifyChairs($report, $title, $message, $senderId);
+
+        if ($report->isForSuperAdmin()) {
+            $this->notifySuperAdmins($report, $title, $message, $senderId);
+        }
+    }
+
     /** Tell the requester the Chair replied (in-app when they have an account, always by email). */
     public function notifyRequesterOfReply(IssueReport $report, IssueReportReply $reply, int $senderId): void
     {

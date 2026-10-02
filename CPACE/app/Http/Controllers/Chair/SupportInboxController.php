@@ -25,7 +25,7 @@ class SupportInboxController extends Controller
         $status = $request->query('status', 'open');
         $search = trim((string) $request->query('q', ''));
 
-        $counts = IssueReport::selectRaw('status, COUNT(*) as total')->groupBy('status')->pluck('total', 'status');
+        $counts = $this->scope()->selectRaw('status, COUNT(*) as total')->groupBy('status')->pluck('total', 'status');
         $counts = [
             'open'                         => ($counts[IssueReport::STATUS_NEW] ?? 0) + ($counts[IssueReport::STATUS_IN_REVIEW] ?? 0),
             IssueReport::STATUS_NEW        => $counts[IssueReport::STATUS_NEW] ?? 0,
@@ -34,7 +34,7 @@ class SupportInboxController extends Controller
             'all'                          => $counts->sum(),
         ];
 
-        $tickets = IssueReport::with('user')
+        $tickets = $this->scope()->with('user')
             ->withCount('replies')
             ->when($status === 'open', fn ($q) => $q->where('status', '!=', IssueReport::STATUS_RESOLVED))
             ->when(array_key_exists($status, IssueReport::STATUSES), fn ($q) => $q->where('status', $status))
@@ -51,11 +51,56 @@ class SupportInboxController extends Controller
             ->paginate(20)
             ->withQueryString();
 
-        return view('chair.support.index', compact('tickets', 'counts', 'status', 'search'));
+        return view('chair.support.index', [
+            'tickets' => $tickets, 'counts' => $counts, 'status' => $status, 'search' => $search,
+            'indexRoute' => $this->indexRoute(),
+            'subheading' => $this->subheading(),
+        ]);
+    }
+
+    /** Which requests this inbox lists. The Super Admin's inbox narrows it. */
+    protected function scope()
+    {
+        return IssueReport::query();
+    }
+
+    protected function indexRoute(): string
+    {
+        return 'chair.support.index';
+    }
+
+    protected function subheading(): string
+    {
+        return 'Requests from Help & Support and the website’s “Report an issue”.';
+    }
+
+    protected function authorizeReport(IssueReport $report): void
+    {
+    }
+
+    /** Hand a request up to the Super Admin (technical ones already reach them). */
+    public function escalate(IssueReport $report)
+    {
+        if ($report->isForSuperAdmin()) {
+            return back()->with('status', 'Request #' . $report->id . ' is already with the Super Admin.');
+        }
+
+        $report->update(['escalated_at' => now(), 'escalated_by' => Auth::id(), 'last_activity_at' => now()]);
+
+        $this->notifier->notifySuperAdmins(
+            $report,
+            'Escalated request #' . $report->id . ': ' . $report->title(),
+            Auth::user()->name . ' escalated this — ' . $report->categoryLabel(),
+            Auth::id(),
+        );
+
+        return back()->with('status', 'Request #' . $report->id . ' escalated to the Super Admin.');
     }
 
     public function updateStatus(Request $request, IssueReport $report)
     {
+        $this->authorizeReport($report);
+
         $data = $request->validate(['status' => ['required', Rule::in(array_keys(IssueReport::STATUSES))]]);
 
         if ($data['status'] === $report->status) {
