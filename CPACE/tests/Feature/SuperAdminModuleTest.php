@@ -129,9 +129,20 @@ class SuperAdminModuleTest extends TestCase
         $this->makeUser(Role::STUDENT, 'student1@example.com');
         $this->makeUser(Role::FACULTY, 'faculty1@example.com');
 
+        // Route-tagged duration samples (RecordRequestMetrics), same shape the
+        // dashboard's own "Avg Response Time"/"p95" cards read from — a plain
+        // array_sum() over these (without pulling out 'ms' first) is what broke
+        // the dashboard with a 500 right after that change shipped.
+        Cache::put('metrics.durations', [
+            ['route' => 'dashboard', 'ms' => 100],
+            ['route' => 'dashboard', 'ms' => 200],
+        ], now()->addDay());
+
         $this->actingAs($superAdmin)->get(route('superadmin.dashboard'))
             ->assertOk()
-            ->assertViewHas('userStats', fn ($stats) => $stats['total'] === 3 && $stats['students'] === 1 && $stats['faculty'] === 1);
+            ->assertViewHas('userStats', fn ($stats) => $stats['total'] === 3 && $stats['students'] === 1 && $stats['faculty'] === 1)
+            ->assertViewHas('performance', fn ($performance) => $performance['avg_response_ms'] === 150
+                && $performance['sample_size'] === 2);
     }
 
     public function test_super_admin_can_create_a_faculty_account_and_the_otp_never_leaks_into_the_flash_message(): void

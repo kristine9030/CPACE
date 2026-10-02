@@ -53,7 +53,10 @@ class DashboardController extends Controller
                 ->groupBy('feature')->orderByDesc('total')->limit(6)->get(),
         ];
 
-        $durations = Cache::get('metrics.durations', []);
+        // Samples are [{'route' => ..., 'ms' => ...}, ...] (RecordRequestMetrics
+        // tags each one with its route for the Performance page's breakdown) —
+        // pull out just the ms values here for the dashboard's own summary.
+        $durations = array_map(fn ($s) => (int) (is_array($s) ? $s['ms'] : $s), Cache::get('metrics.durations', []));
         $performance = [
             'requests_today' => (int) Cache::get("metrics.requests.{$today}", 0),
             'errors_today'   => (int) Cache::get("metrics.errors.{$today}", 0),
