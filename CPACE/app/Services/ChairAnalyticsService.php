@@ -790,66 +790,6 @@ class ChairAnalyticsService
             });
     }
 
-    /** Subject-level rollup of the coverage report — the chair's planning unit. */
-    public function subjectCoverageRollup(?int $subjectId = null): Collection
-    {
-        return $this->coverageReport($subjectId)
-            ->groupBy('subject_code')
-            ->map(function (Collection $areas, $code) {
-                $target = $areas->count() * self::COVERAGE_TARGET;
-                $active = (int) $areas->sum('active');
-
-                return [
-                    'code' => $code,
-                    'name' => $areas->first()['subject_name'],
-                    'areas' => $areas->count(),
-                    'subtopics' => (int) $areas->sum('subtopics'),
-                    'adequate' => $areas->where('status', 'adequate')->count(),
-                    'thin' => $areas->where('status', 'thin')->count(),
-                    'critical' => $areas->where('status', 'critical')->count(),
-                    'total' => (int) $areas->sum('total'),
-                    'active' => $active,
-                    'inactive' => (int) $areas->sum('total') - $active,
-                    'easy' => (int) $areas->sum('easy'),
-                    'moderate' => (int) $areas->sum('moderate'),
-                    'difficult' => (int) $areas->sum('difficult'),
-                    'gap' => (int) $areas->sum('gap'),
-                    'coverage' => $target > 0 ? (int) min(100, round($active / $target * 100)) : 0,
-                ];
-            })
-            ->values();
-    }
-
-    /** Month-by-month test-bank growth — is authoring keeping up with the gap? */
-    public function bankGrowth(int $months = 6, ?int $subjectId = null): Collection
-    {
-        $from = now()->startOfMonth()->subMonths($months - 1);
-
-        $questions = CurriculumScope::restrictToActive(DB::table('questions')
-            ->join('topics', 'topics.id', '=', 'questions.topic_id'))
-            ->when($subjectId, fn ($query) => $query->where('topics.subject_id', $subjectId))
-            ->where('questions.created_at', '>=', $from)
-            ->select('questions.created_at', 'questions.is_active')
-            ->get();
-
-        return collect(range($months - 1, 0))->map(function ($offset) use ($questions) {
-            $start = now()->startOfMonth()->subMonths($offset);
-            $end = $start->copy()->endOfMonth();
-
-            $bucket = $questions->filter(function ($question) use ($start, $end) {
-                $at = Carbon::parse($question->created_at);
-
-                return $at->gte($start) && $at->lte($end);
-            });
-
-            return [
-                'label' => $start->format('M Y'),
-                'added' => $bucket->count(),
-                'active' => $bucket->where('is_active', true)->count(),
-            ];
-        });
-    }
-
     /** Enrollment health: who is on the platform and who has gone quiet. */
     public function cohortSummary(?string $section = null): array
     {

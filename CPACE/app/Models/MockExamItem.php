@@ -11,13 +11,16 @@ use Illuminate\Database\Eloquent\Model;
  */
 class MockExamItem extends Model
 {
+    use \App\Models\Concerns\HasExhibit;
+
     protected $fillable = [
         'exam_id', 'source_question_id', 'topic_id', 'question_text', 'question_type',
-        'difficulty', 'choices', 'explanation', 'points', 'sort_order',
+        'difficulty', 'choices', 'explanation', 'points', 'sort_order', 'image_path', 'table_data',
     ];
 
     protected $casts = [
         'choices' => 'array',
+        'table_data' => 'array',
         'points' => 'integer',
         'sort_order' => 'integer',
     ];
@@ -64,7 +67,7 @@ class MockExamItem extends Model
             'explanation' => $question->explanation,
             'points' => 1,
             'sort_order' => $sortOrder,
-        ];
+        ] + \App\Support\QuestionExhibit::attributesOf($question);
     }
 
     /** The label ("A", "B", "T"...) of this item's correct choice. */

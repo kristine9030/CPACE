@@ -129,7 +129,7 @@ class ClassQuizController extends Controller
     /** Published / closed quizzes, soonest deadline first. */
     private function visibleQuizzes()
     {
-        return FacultyQuiz::with(['subject', 'faculty:id,first_name,last_name,profile_photo'])
+        return FacultyQuiz::with(['subject', 'faculty:' . implode(',', array_filter(['id', 'first_name', 'last_name', 'profile_photo', \Illuminate\Support\Facades\Schema::hasColumn('users', 'avatar') ? 'avatar' : null]))])
             ->withCount('items')
             ->whereIn('status', [FacultyQuiz::STATUS_PUBLISHED, FacultyQuiz::STATUS_CLOSED])
             ->orderByRaw('due_at IS NULL')

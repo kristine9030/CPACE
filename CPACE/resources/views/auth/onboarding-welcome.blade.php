@@ -64,7 +64,7 @@
             padding:18px; margin-bottom:24px; text-align:left;
         }
         .plan-summary h4 { font-size:11px; font-weight:700; letter-spacing:.5px; text-transform:uppercase; color:#bbb; margin-bottom:13px; text-align:center; }
-        .plan-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+        .plan-grid { display:grid; grid-template-columns:minmax(0, 1fr) minmax(0, 1fr); gap:12px; }
         .plan-item { display:flex; align-items:center; gap:11px; }
         .plan-item .pi-ic { width:38px; height:38px; border-radius:11px; display:flex; align-items:center; justify-content:center; font-size:15px; color:#fff; flex-shrink:0; }
         .pi-ic.g { background:radial-gradient(circle at 35% 28%,#ffe24a,#ffab00 82%); }
@@ -92,7 +92,7 @@
         @media (max-width:520px) {
             .welcome-card { padding:34px 22px 26px; }
             .welcome-card h1 { font-size:23px; }
-            .plan-grid { grid-template-columns:1fr; }
+            .plan-grid { grid-template-columns:minmax(0, 1fr); }
         }
     </style>
 </head>

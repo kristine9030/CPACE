@@ -1,0 +1,241 @@
+{
+  "info": {
+    "name": "CPACE Mobile API",
+    "description": "Smoke-tests the student mobile API (routes/api.php). Uses the dedicated student@cpace.test test account seeded by database/cpace_database.sql — safe to run repeatedly against staging (see ../DEPLOYMENT-STAGING.md), never production. The quiz it starts uses session_type=training, which the app itself excludes from performance analytics, and it's cancelled at the end; the review note it creates is deleted at the end.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "{{baseUrl}}" }
+  ],
+  "item": [
+    {
+      "name": "1. Login",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/api/login",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"email\":\"{{studentEmail}}\",\"password\":\"{{studentPassword}}\"}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('login succeeds', () => pm.response.to.have.status(200));",
+              "const json = pm.response.json();",
+              "pm.test('response has a token', () => pm.expect(json.token).to.be.a('string'));",
+              "pm.environment.set('token', json.token);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Get Authenticated User",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": "{{baseUrl}}/api/user"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status 200', () => pm.response.to.have.status(200));",
+              "pm.test('is the student account', () => pm.expect(pm.response.json().user.email).to.eql(pm.environment.get('studentEmail')));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Dashboard",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": "{{baseUrl}}/api/dashboard"
+      },
+      "event": [
+        { "listen": "test", "script": { "exec": ["pm.test('status 200', () => pm.response.to.have.status(200));"] } }
+      ]
+    },
+    {
+      "name": "4. Subjects",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": "{{baseUrl}}/api/subjects"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status 200', () => pm.response.to.have.status(200));",
+              "const subjects = pm.response.json().subjects || [];",
+              "pm.test('at least one subject', () => pm.expect(subjects.length).to.be.above(0));",
+              "const withQuestions = subjects.find((s) => s.question_count > 0);",
+              "if (withQuestions) { pm.environment.set('subjectId', withQuestions.id); }",
+              "else if (subjects.length > 0) { pm.environment.set('subjectId', subjects[0].id); }"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Quiz History",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": "{{baseUrl}}/api/quizzes/history"
+      },
+      "event": [
+        { "listen": "test", "script": { "exec": ["pm.test('status 200', () => pm.response.to.have.status(200));"] } }
+      ]
+    },
+    {
+      "name": "6. Start Quiz (training — excluded from analytics)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": "{{baseUrl}}/api/quizzes/start",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"subject_id\":{{subjectId}},\"count\":3,\"mode\":\"adaptive\",\"session_type\":\"training\"}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "// 422 'no questions available for that subject yet' is a legitimate",
+              "// outcome, not a failure — whether the seeded curriculum has content",
+              "// is environment/data state, not something this endpoint controls.",
+              "pm.test('status is 200/201 (started) or 422 (no content for this subject yet)', () => pm.expect(pm.response.code).to.be.oneOf([200, 201, 422]));",
+              "if (pm.response.code < 400) {",
+              "  const json = pm.response.json();",
+              "  const id = json.id || (json.session && json.session.id);",
+              "  if (id) { pm.environment.set('sessionId', id); }",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. Cancel Quiz (cleanup)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": "{{baseUrl}}/api/quizzes/{{sessionId}}/cancel"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status is 2xx (or 404 if the id could not be captured)', () => pm.expect([200, 201, 204, 404]).to.include(pm.response.code));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "8. Performance",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": "{{baseUrl}}/api/performance"
+      },
+      "event": [
+        { "listen": "test", "script": { "exec": ["pm.test('status 200', () => pm.response.to.have.status(200));"] } }
+      ]
+    },
+    {
+      "name": "9. Calendar",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": "{{baseUrl}}/api/calendar"
+      },
+      "event": [
+        { "listen": "test", "script": { "exec": ["pm.test('status 200', () => pm.response.to.have.status(200));"] } }
+      ]
+    },
+    {
+      "name": "10. Create Review Note",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": "{{baseUrl}}/api/review-notes",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"title\":\"CI smoke test note\",\"content\":\"Created by the Postman/Newman smoke suite — safe to delete.\"}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status 200/201', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+              "const json = pm.response.json();",
+              "const id = json.id || (json.note && json.note.id);",
+              "pm.test('note has an id', () => pm.expect(id).to.exist);",
+              "if (id) { pm.environment.set('noteId', id); }"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "11. Get Review Note",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": "{{baseUrl}}/api/review-notes/{{noteId}}"
+      },
+      "event": [
+        { "listen": "test", "script": { "exec": ["pm.test('status 200', () => pm.response.to.have.status(200));"] } }
+      ]
+    },
+    {
+      "name": "12. Delete Review Note (cleanup)",
+      "request": {
+        "method": "DELETE",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": "{{baseUrl}}/api/review-notes/{{noteId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": { "exec": ["pm.test('status is 2xx', () => pm.expect(pm.response.code).to.be.within(200, 299));"] }
+        }
+      ]
+    },
+    {
+      "name": "13. Logout",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": "{{baseUrl}}/api/logout"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status 200', () => pm.response.to.have.status(200));",
+              "pm.environment.set('token', '');"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

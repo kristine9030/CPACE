@@ -18,7 +18,7 @@
            Quiz Results all do the same) rather than the shared chair
            sidebar partial, so other Program Chair pages are unaffected. */
         .card, .stat-card, .viz-card, .roster-modal {
-            box-shadow:0 2px 6px rgba(15,10,10,.08), 0 10px 22px -10px rgba(15,10,10,.22);
+            box-shadow:0 1px 2px rgba(16,24,40,.04), 0 4px 14px rgba(16,24,40,.06);
         }
         .viz-card { border-color:transparent; }
         /* .viz-sub is normally scoped to .viz-card (chart-kit.blade.php) — the
@@ -29,17 +29,17 @@
         .card, .stat-card { transition:transform .18s ease, box-shadow .18s ease; }
         .card:hover, .stat-card:hover {
             transform:translateY(-2px);
-            box-shadow:0 4px 10px rgba(15,10,10,.1), 0 16px 30px -10px rgba(15,10,10,.3);
+            box-shadow:0 2px 4px rgba(16,24,40,.05), 0 8px 20px rgba(16,24,40,.09);
         }
 
         /* KPI cards get an even darker, more pronounced shadow than the rest
            of the page's cards so they read as the headline row and visibly
            pop off the background. */
         .stats-row .stat-card {
-            box-shadow:0 4px 10px rgba(10,5,5,.14), 0 16px 32px -8px rgba(10,5,5,.34);
+            box-shadow:0 1px 2px rgba(16,24,40,.04), 0 4px 14px rgba(16,24,40,.06);
         }
         .stats-row .stat-card:hover {
-            box-shadow:0 6px 14px rgba(10,5,5,.18), 0 22px 40px -8px rgba(10,5,5,.4);
+            box-shadow:0 2px 4px rgba(16,24,40,.05), 0 8px 20px rgba(16,24,40,.09);
         }
 
         /* ── KPI cards — bolder, darker titles (was a faint 11px gray label)
@@ -103,7 +103,7 @@
         /* ── Dashboard-specific responsive ── */
         @media (max-width: 768px) {
             .dash-content-grid {
-                grid-template-columns: 1fr !important;
+                grid-template-columns: minmax(0, 1fr) !important;
             }
             .dash-table-wrap {
                 overflow-x: auto;
@@ -238,7 +238,7 @@
         .actions-bar {
             display:flex; align-items:center; gap:12px;
             background:#fff; border-radius:14px; padding:12px 14px 12px 12px; margin-bottom:16px;
-            box-shadow:0 2px 6px rgba(15,10,10,.08), 0 10px 22px -10px rgba(15,10,10,.22);
+            box-shadow:0 1px 2px rgba(16,24,40,.04), 0 4px 14px rgba(16,24,40,.06);
         }
         .actions-bar-icon { width:34px; height:34px; border-radius:10px; display:grid; place-items:center; background:#fef2f2; color:var(--accent); font-size:14px; flex:none; }
         .actions-bar-text { flex:1; min-width:0; display:flex; flex-direction:column; gap:1px; }
@@ -267,12 +267,62 @@
             .risk-last { display:none; }
         }
         @media (max-width: 620px) {
-            .risk-row { grid-template-columns:1fr auto; gap:9px; }
+            .risk-row { grid-template-columns:minmax(0, 1fr) auto; gap:9px; }
             .risk-head { display:none; }
             .risk-reasons { grid-column:1 / -1; padding-left:49px; }
             .risk-score, .risk-last { display:none; }
         }
-    </style>
+            /* Top students */
+        .top-card .chart-card-head { flex-wrap:wrap; }
+        .lb-sort { display:flex; gap:3px; background:#f4f5f7; border-radius:9px; padding:3px; }
+        .lb-sort button { padding:5px 10px; border:none; border-radius:7px; background:none; color:#777; font:600 11px 'Poppins',sans-serif; cursor:pointer; }
+        .lb-sort button.active { background:#fff; color:var(--primary); box-shadow:0 1px 3px rgba(0,0,0,.1); }
+        .tp-podium { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; align-items:end; justify-items:center; margin:10px 0 12px; }
+        .tp-top { position:relative; width:100%; max-width:200px; text-align:center; padding:16px 8px 12px; border:1px solid #eee; border-radius:14px; background:#fafbfc; text-decoration:none; color:inherit; }
+        .tp-top.p1 { background:linear-gradient(#fffdf3,#fff7dc); border-color:#f3e3a6; padding-bottom:18px; }
+        .tp-top:hover { border-color:#e3c4c4; }
+        .tp-medal { position:absolute; top:-10px; left:50%; transform:translateX(-50%); width:22px; height:22px; border-radius:50%; color:#fff; font-size:11px; font-weight:700; line-height:22px; }
+        .tp-av { width:42px; height:42px; margin:0 auto 6px; border-radius:50%; background:var(--primary); color:#fff; display:grid; place-items:center; font-size:13px; font-weight:700; }
+        .tp-name { font-size:12px; font-weight:600; color:#1a1a1a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .tp-meta { font-size:10px; color:#999; }
+        .tp-score { margin-top:4px; font-size:18px; font-weight:700; color:var(--primary); line-height:1.1; }
+        .tp-score small { display:block; font-size:9.5px; font-weight:500; color:#aaa; }
+        .tp-row { display:flex; align-items:center; gap:10px; padding:8px 10px; border:1px solid #eee; border-radius:10px; margin-bottom:6px; text-decoration:none; color:inherit; }
+        .tp-row:hover { border-color:#e3c4c4; background:#fdf8f8; }
+        .tp-rank { width:22px; text-align:center; font-size:11.5px; font-weight:700; color:#888; }
+        .tp-row .tp-name { flex:1; min-width:0; }
+        .tp-row b { font-size:12.5px; color:#1a1a1a; }
+        .tp-empty { text-align:center; padding:26px 10px; color:#aaa; font-size:12px; }
+        .tp-empty-slot { background:#fafafa; border:1.5px dashed #e3e3e8; color:#bbb; }
+        .tp-empty-slot .tp-av { background:#ececf0; color:#c4c4cc; }
+        .tp-empty-slot .tp-name, .tp-empty-slot .tp-score { color:#b5b5be; }
+        .tp-empty-slot .tp-medal { background:#d6d6dc !important; }
+        .tp-row-empty { border-style:dashed; background:#fafafa; color:#b5b5be; }
+        .tp-row-empty b, .tp-row-empty .tp-rank { color:#b5b5be; font-weight:600; }
+        .top-card { display:flex; flex-direction:column; }
+        .top-card .tp-viewall { margin-top:auto; }
+        .tp-list { margin-bottom:10px; }
+        .tp-viewall { display:block; width:100%; text-align:right; padding-top:10px; background:none; border:0; border-top:1px solid #f0f0f2; color:var(--primary); font:600 12px 'Poppins',sans-serif; cursor:pointer; padding:4px 0; }
+        .tp-viewall:hover { text-decoration:underline; }
+        .lbm-overlay { position:fixed; inset:0; z-index:1000; background:rgba(15,10,10,.5); display:none; align-items:center; justify-content:center; padding:20px; }
+        .lbm-overlay.open { display:flex; }
+        .lbm { background:#fff; border-radius:16px; width:100%; max-width:860px; max-height:88vh; display:flex; flex-direction:column; box-shadow:0 20px 50px rgba(0,0,0,.3); }
+        .lbm-head { display:flex; justify-content:space-between; gap:12px; padding:20px 22px 10px; }
+        .lbm-head h3 { font-size:16px; font-weight:700; }
+        .lbm-scope { font-size:11px; color:#999; margin-top:2px; }
+        .lbm-x { border:0; background:#f4f5f7; width:32px; height:32px; border-radius:50%; cursor:pointer; color:#666; }
+        .lbm-tools { display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; padding:0 22px 12px; }
+        .lbm-tools input[type=search] { flex:1; min-width:180px; max-width:340px; padding:9px 14px; border:1px solid #e5e7eb; border-radius:10px; font:13px 'Poppins',sans-serif; outline:none; }
+        .lbm-body { overflow:auto; padding:0 22px; }
+        .lbm-body thead th { position:sticky; top:0; background:#fff; z-index:1; }
+        .lb-rank { font-weight:700; text-align:center; }
+        .lb-student { display:flex; align-items:center; gap:10px; text-decoration:none; color:inherit; }
+        .lb-av { width:28px; height:28px; border-radius:50%; background:var(--primary); color:#fff; display:grid; place-items:center; font-size:10px; font-weight:700; flex:none; }
+        .lb-name { font-size:12px; font-weight:600; color:#1a1a1a; } .lb-student:hover .lb-name { color:var(--primary); text-decoration:underline; }
+        .lb-sub { font-size:10px; color:#aaa; }
+        .lbm-foot { padding:12px 22px; font-size:11px; color:#999; border-top:1px solid #f0f0f2; }
+        .topic-filter { font:500 12px 'Poppins',sans-serif; padding:6px 10px; border:1px solid #e5e7eb; border-radius:9px; background:#fff; color:#444; max-width:46%; }
+</style>
 </head>
 <body>
 @include('partials.chair-sidebar', ['active' => 'dashboard'])
@@ -557,21 +607,6 @@
 
         <article class="chart-card">
             <div class="chart-card-head">
-                <span class="chart-card-icon"><i class="fas fa-layer-group"></i></span>
-                <span class="chart-card-title">Thin Test-Bank Areas</span>
-                <a href="{{ route('chair.analytics.test-bank-coverage') }}" class="chart-card-link" aria-label="Open test-bank coverage"><i class="fas fa-chevron-right"></i></a>
-            </div>
-            <div class="chart-card-value" id="kpiThin">—</div>
-            <div class="chart-card-note" id="noteThin">Topics below {{ \App\Services\ChairAnalyticsService::COVERAGE_TARGET }} active questions</div>
-            <div class="chart-canvas-wrap">
-                <canvas id="chartThin" aria-label="Thin test-bank areas by subject" role="img"></canvas>
-                <div class="viz-empty chart-empty" id="emptyThin" hidden>Every area is well stocked.</div>
-            </div>
-            <div class="chart-card-cap">Follows the subject filter only</div>
-        </article>
-
-        <article class="chart-card">
-            <div class="chart-card-head">
                 <span class="chart-card-icon"><i class="fas fa-graduation-cap"></i></span>
                 <span class="chart-card-title">Pass Projection</span>
                 <a href="{{ route('chair.analytics.performance') }}#pass-projection" class="chart-card-link" aria-label="Open pass projection analytics"><i class="fas fa-chevron-right"></i></a>
@@ -584,7 +619,45 @@
             </div>
             <div class="chart-card-cap">Readiness-based, as of each period end</div>
         </article>
+
+            <article class="chart-card top-card" aria-label="Top students">
+                <div class="chart-card-head">
+                    <span class="chart-card-icon"><i class="fas fa-trophy"></i></span>
+                    <span class="chart-card-title">Top Students</span>
+                    <select class="topic-filter" id="tpSubject" aria-label="Show top students for a subject" style="margin-left:auto;"></select>
+                </div>
+                <div class="chart-card-note" id="lbScope">&nbsp;</div>
+                <div class="tp-podium" id="tpPodium"></div>
+                <div class="tp-list" id="tpList"></div>
+                <button type="button" class="tp-viewall" id="lbOpen">View full leaderboard <i class="fas fa-arrow-right"></i></button>
+            </article>
     </section>
+
+<div class="lbm-overlay" id="lbModal" role="dialog" aria-modal="true" aria-labelledby="lbModalTitle">
+    <div class="lbm">
+        <div class="lbm-head">
+            <div>
+                <h3 id="lbModalTitle"><i class="fas fa-trophy" style="color:#d4a017;margin-right:8px;"></i>Student Leaderboard</h3>
+                <div class="lbm-scope" id="lbmScope"></div>
+            </div>
+            <button type="button" class="lbm-x" id="lbClose" aria-label="Close"><i class="fas fa-xmark"></i></button>
+        </div>
+        <div class="lbm-tools">
+            <input type="search" id="lbSearch" placeholder="Search student or section" aria-label="Search students">
+            <span class="lb-sort" role="radiogroup" aria-label="Rank students by">
+                <button type="button" class="active" data-sort="correct" role="radio" aria-checked="true">Most correct</button>
+                <button type="button" data-sort="accuracy" role="radio" aria-checked="false">Accuracy</button>
+            </span>
+        </div>
+        <div class="lbm-body">
+            <table class="viz-table lb-table">
+                <thead><tr><th style="width:52px;">Rank</th><th>Student</th><th class="num">Correct</th><th class="num">Items</th><th class="num">Accuracy</th><th class="num">Quizzes</th><th class="num">Last active</th></tr></thead>
+                <tbody id="lbmBody"></tbody>
+            </table>
+        </div>
+        <div class="lbm-foot" id="lbmCount"></div>
+    </div>
+</div>
 
     <div class="roster-modal-overlay" id="actionsModal" role="dialog" aria-modal="true" aria-labelledby="actionsModalTitle">
         <div class="roster-modal actions-modal">
@@ -706,7 +779,7 @@
                 </table>
                 </div>
             @else
-                <div class="section-empty"><i class="fas fa-circle-info"></i> No section has a year level set yet — set one under <a href="{{ route('chair.sections') }}">Program Chair &rarr; Sections</a> to see this breakdown.</div>
+                <div class="section-empty"><i class="fas fa-circle-info"></i> No section has a year level set yet — set one under <a href="{{ route('chair.students') }}">Students &amp; Sections &rarr; Manage Sections</a> to see this breakdown.</div>
             @endif
         </div>
 
@@ -747,7 +820,7 @@
                 </table>
                 </div>
             @else
-                <div class="section-empty"><i class="fas fa-circle-info"></i> No active sections yet — add one under Program Chair &rarr; Sections to see per-section breakdowns here.</div>
+                <div class="section-empty"><i class="fas fa-circle-info"></i> No active sections yet — add one under Students &amp; Sections to see per-section breakdowns here.</div>
             @endif
         </div>
     </div>
@@ -891,7 +964,7 @@
         </div>
     </div>
 
-    <div class="dash-content-grid" style="display:grid; grid-template-columns:1fr 340px; gap:18px;">
+    <div class="dash-content-grid" style="display:grid; grid-template-columns:minmax(0, 1fr) 340px; gap:18px;">
         <div class="card">
             <div class="card-head">
                 <span class="card-title">Subject Coverage</span>
@@ -1140,7 +1213,125 @@
     const toggleEmpty = (id, empty) => { $(id).hidden = !empty; };
     const allNull = (values) => values.every((v) => v === null || v === undefined);
 
+    function fillSubjectFilter(select, subjects) {
+        const keep = select.value;
+        select.innerHTML = '<option value="">All subjects</option>' + subjects.map((x) => `<option value="${esc(x.code)}">${esc(x.code)}</option>`).join('');
+        select.value = subjects.some((x) => x.code === keep) ? keep : '';
+    }
+
+    // ── Top students ──
+    const LB_MIN_ITEMS = {{ \App\Services\ChairAnalyticsService::DEVELOPING_ATTEMPTS }};
+    let lbRows = [];
+    let lbSort = 'correct';
+    let rangeText = '';
+
+    function renderTop(rows, range, subjects) {
+        lbRows = rows || [];
+        fillSubjectFilter($('tpSubject'), subjects);
+        rangeText = `${pretty(range.from)} – ${pretty(range.to)}`;
+        drawTop();
+    }
+
+    // Rows for the subject picked on the card: that subject's own totals and order.
+    function scopedRows() {
+        const code = $('tpSubject').value;
+        if (!code) { return lbRows; }
+        return lbRows
+            .filter((s) => s.standings && s.standings[code])
+            .map((s) => Object.assign({}, s, { correct: s.standings[code].correct, items: s.standings[code].items, accuracy: s.standings[code].accuracy }))
+            .sort((x, y) => y.correct - x.correct || x.id - y.id);
+    }
+
+    function scopeText() {
+        const code = $('tpSubject').value;
+        return [code || (state.overview.subject ? ($('filterSubject').selectedOptions[0]?.textContent.trim() || 'Subject') : 'All subjects'), state.overview.section || 'All sections', rangeText].join(' · ');
+    }
+
+    function drawTop() {
+        const ranked = scopedRows().slice(0, 5);
+        $('lbScope').textContent = scopeText();
+        const slot = (i) => {
+            const s = ranked[i];
+            return s ? `
+            <a class="tp-top p${i + 1}" href="${esc(s.url)}">
+                <span class="tp-medal">${i + 1}</span>
+                <div class="tp-av">${esc(s.initials)}</div>
+                <div class="tp-name">${esc(s.name)}</div>
+                <div class="tp-meta">${esc(s.section || '')}</div>
+                <div class="tp-score">${s.correct.toLocaleString()}<small>correct answers</small></div>
+            </a>` : `
+            <div class="tp-top tp-empty-slot p${i + 1}" aria-label="Rank ${i + 1}: no student yet">
+                <span class="tp-medal">${i + 1}</span>
+                <div class="tp-av"><i class="fas fa-user"></i></div>
+                <div class="tp-name">No student yet</div>
+                <div class="tp-meta">&nbsp;</div>
+                <div class="tp-score">—<small>&nbsp;</small></div>
+            </div>`;
+        };
+        // Podium order: 2nd, 1st, 3rd — always three slots, so a lone leader stays centred.
+        $('tpPodium').innerHTML = [1, 0, 2].map(slot).join('');
+        // Ranks 4 and 5 are always listed; an empty one is held with a placeholder.
+        $('tpList').innerHTML = [3, 4].map((i) => {
+            const s = ranked[i];
+            return s ? `
+            <a class="tp-row" href="${esc(s.url)}">
+                <span class="tp-rank">${i + 1}</span>
+                <span class="tp-name"><b>${esc(s.name)}</b><div class="tp-meta">${esc(s.section || '')} · correct answers</div></span>
+                <b>${s.correct.toLocaleString()}</b>
+            </a>` : `
+            <div class="tp-row tp-row-empty" aria-label="Rank ${i + 1}: no student yet">
+                <span class="tp-rank">${i + 1}</span>
+                <span class="tp-name"><b>No student yet</b></span>
+                <b>—</b>
+            </div>`;
+        }).join('');
+        if (lbModal.classList.contains('open')) { drawFull(); }
+    }
+    $('tpSubject').addEventListener('change', drawTop);
+    // The popup has its own sort toggle (most correct / accuracy).
+    document.querySelectorAll('#lbModal .lb-sort button').forEach((btn) => btn.addEventListener('click', () => {
+        lbSort = btn.dataset.sort;
+        document.querySelectorAll('#lbModal .lb-sort button').forEach((x) => { x.classList.toggle('active', x === btn); x.setAttribute('aria-checked', x === btn ? 'true' : 'false'); });
+        drawFull();
+    }));
+
+    // ── Full leaderboard popup ──
+    function rankedRows() {
+        const rows = scopedRows();
+        return lbSort === 'accuracy'
+            ? rows.filter((s) => s.items >= LB_MIN_ITEMS).slice().sort((a, b) => b.accuracy - a.accuracy || b.items - a.items || a.id - b.id)
+            : rows;
+    }
+
+    function drawFull() {
+        const q = $('lbSearch').value.trim().toLowerCase();
+        const ranked = rankedRows().map((s, i) => Object.assign({ rank: i + 1 }, s));
+        const shown = q ? ranked.filter((s) => (s.name + ' ' + (s.section || '')).toLowerCase().includes(q)) : ranked;
+        $('lbmBody').innerHTML = shown.length ? shown.map((s) => `
+            <tr>
+                <td class="lb-rank">${s.rank}</td>
+                <td><a class="lb-student" href="${esc(s.url)}"><span class="lb-av">${esc(s.initials)}</span><span><div class="lb-name">${esc(s.name)}</div><div class="lb-sub">${esc(s.section || '')}</div></span></a></td>
+                <td class="num"><strong>${s.correct.toLocaleString()}</strong></td>
+                <td class="num">${s.items.toLocaleString()}</td>
+                <td class="num">${pct(s.accuracy)}</td>
+                <td class="num">${s.quizzes}</td>
+                <td class="num">${esc(s.last_active)}</td>
+            </tr>`).join('')
+            : '<tr><td colspan="7"><div class="table-empty">No student matches.</div></td></tr>';
+        $('lbmCount').textContent = `${shown.length} of ${plural(ranked.length, 'ranked student')}` + (lbSort === 'accuracy' ? ` · only students with ${LB_MIN_ITEMS}+ items` : '');
+        $('lbmScope').textContent = scopeText();
+    }
+    const lbModal = $('lbModal');
+    const closeFull = () => lbModal.classList.remove('open');
+    $('lbOpen').addEventListener('click', () => { lbModal.classList.add('open'); $('lbSearch').value = ''; drawFull(); });
+    $('lbClose').addEventListener('click', closeFull);
+    lbModal.addEventListener('click', (e) => { if (e.target === lbModal) { closeFull(); } });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeFull(); } });
+    $('lbSearch').addEventListener('input', drawFull);
+
+
     function renderOverview(c) {
+        renderTop(c.leaderboard, c.range, c.readiness.by_subject);
         const periodWord = { day: 'day', week: 'week', month: 'month' }[c.range.bucket] || 'period';
         const vsPrev = `vs previous ${c.range.days} day${c.range.days === 1 ? '' : 's'}`;
 
@@ -1207,30 +1398,6 @@
                     } } },
                 },
             },
-        });
-
-        // ── Thin test-bank areas ──
-        $('kpiThin').textContent = c.thin.value;
-        const thinRows = c.thin.by_subject;
-        toggleEmpty('emptyThin', c.thin.value === 0);
-        // Counts per subject are compared, not a share of a whole: bars, one
-        // hue, with the count at each bar's end.
-        Viz.chart('chartThin', {
-            type: 'bar',
-            data: {
-                labels: thinRows.map((r) => r.code),
-                datasets: [Viz.bar({ label: 'Thin areas', data: thinRows.map((r) => r.topics), backgroundColor: P.s1, maxBarThickness: 16 })],
-            },
-            options: {
-                indexAxis: 'y',
-                layout: { padding: { right: 24 } },
-                scales: { x: Viz.countAxis(), y: Viz.catAxis() },
-                plugins: {
-                    legend: { display: false },
-                    tooltip: { callbacks: { label: (ctx) => `${ctx.raw} thin area${ctx.raw === 1 ? '' : 's'}` } },
-                },
-            },
-            plugins: [Viz.endLabels()],
         });
 
         // ── Pass projection over time ──

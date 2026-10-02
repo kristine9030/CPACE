@@ -100,6 +100,7 @@ class AuthApiController extends Controller
             'name'            => $user->name,
             'email'           => $user->email,
             'profile_photo'   => $user->profile_photo,
+            'avatar_url'      => $user->avatarUrl(),
             'streak_days'     => (int) ($profile->streak_days ?? 0),
             'total_points'    => (int) ($profile->total_points ?? 0),
             'exam_target_date'=> $profile->exam_target_date ?? null,

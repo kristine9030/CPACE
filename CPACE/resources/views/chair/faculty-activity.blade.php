@@ -51,7 +51,7 @@
             color:var(--primary); opacity:.55;
         }
         .pages svg { width:14px; height:14px; }
-        @media (max-width:900px) { .activity-grid { grid-template-columns:1fr; } }
+        @media (max-width:900px) { .activity-grid { grid-template-columns:minmax(0, 1fr); } }
         @media (max-width:620px) { .timeline-date { display:none; } .profile-card { align-items:flex-start; } }
     </style>
 </head>

@@ -28,7 +28,7 @@
         .btn-purple { background:var(--purple); color:white; }
         .btn-purple:hover { background:#6d28d9; }
 
-        .grid { display:grid; grid-template-columns:1fr 360px; gap:20px; align-items:start; }
+        .grid { display:grid; grid-template-columns:minmax(0, 1fr) 360px; gap:20px; align-items:start; }
         .card { background:white; border-radius:14px; padding:22px 24px; margin-bottom:20px; }
         .card-title { font-size:15px; font-weight:700; color:#1a1a1a; margin-bottom:4px; display:flex; align-items:center; gap:8px; }
         .card-sub { font-size:12px; color:#999; margin-bottom:16px; }
@@ -89,7 +89,7 @@
         .helper-scroll::-webkit-scrollbar-thumb:hover { background:#ccc; }
         .helper-scroll .sg-group:last-child { margin-bottom:0; }
 
-        @media (max-width: 1050px) { .grid { grid-template-columns:1fr; } .helper-card { max-height:none; } }
+        @media (max-width: 1050px) { .grid { grid-template-columns:minmax(0, 1fr); } .helper-card { max-height:none; } }
 
         /* ── RESPONSIVE ── */
         @media (max-width: 768px) {

@@ -124,6 +124,11 @@
         .n-body{flex:1;min-width:0;padding-top:2px}
         .n-text{font-size:14.5px;line-height:1.45;color:#050505}
         .n-text strong{font-weight:700}
+        .n-files{display:flex;flex-wrap:wrap;gap:8px;padding:0 22px 14px 82px;margin-top:-4px;border-bottom:1px solid #f0f2f5}
+        .n-file{display:inline-flex;align-items:center;gap:8px;max-width:260px;padding:7px 12px;border-radius:10px;background:#f0f2f5;color:#1f2937;font-size:12.5px;font-weight:600;text-decoration:none}
+        .n-file:hover{background:#e4e6eb}
+        .n-file span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .n-file small{color:#8a8f98;font-weight:500;font-size:11px;flex-shrink:0}
         .n-message{font-size:13.5px;color:#65676b;margin-top:3px;line-height:1.45;white-space:pre-line;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
         .n-meta{font-size:12.5px;color:var(--fb-blue);margin-top:7px;font-weight:600}
         .notification-row:not(.unread) .n-meta{color:#65676b;font-weight:500}
@@ -220,8 +225,8 @@
                     <button type="submit" class="notification-row {{ $notification->is_read ? '' : 'unread' }}" data-priority="{{ $notification->type }}">
                         <div class="n-avatar-wrap">
                             <div class="n-avatar">
-                                @if($notification->sender_photo)
-                                    <img src="{{ asset('storage/' . $notification->sender_photo) }}" alt="">
+                                @if($sender && ($senderPic = \App\Models\User::avatarUrlFor($notification->sender_photo, $notification->sender_avatar ?? null, $notification->sender_id)))
+                                    <img src="{{ $senderPic }}" alt="">
                                 @elseif($sender)
                                     <span style="background:{{ $senderBg }};width:100%;height:100%;display:flex;align-items:center;justify-content:center;">{{ strtoupper(substr($notification->sender_first_name,0,1)) }}{{ strtoupper(substr($notification->sender_last_name,0,1)) }}</span>
                                 @else
@@ -242,8 +247,8 @@
                 <div class="notification-row static" data-priority="{{ $notification->type }}">
                     <div class="n-avatar-wrap">
                         <div class="n-avatar">
-                            @if($notification->sender_photo)
-                                <img src="{{ asset('storage/' . $notification->sender_photo) }}" alt="">
+                            @if($sender && ($senderPic = \App\Models\User::avatarUrlFor($notification->sender_photo, $notification->sender_avatar ?? null, $notification->sender_id)))
+                                <img src="{{ $senderPic }}" alt="">
                             @elseif($sender)
                                 <span style="background:{{ $senderBg }};width:100%;height:100%;display:flex;align-items:center;justify-content:center;">{{ strtoupper(substr($notification->sender_first_name,0,1)) }}{{ strtoupper(substr($notification->sender_last_name,0,1)) }}</span>
                             @else
@@ -257,6 +262,18 @@
                         <div class="n-message">{{ $notification->message }}</div>
                         <div class="n-meta">{{ \Illuminate\Support\Carbon::parse($notification->created_at)->diffForHumans() }}@if($sender) · {{ $sender }} @endif</div>
                     </div>
+                </div>
+            @endif
+            {{-- Files attached to an announcement sit under it (links can't live inside the row's button). --}}
+            @php $noteFiles = $notification->communication_id ? ($files[$notification->communication_id] ?? []) : []; @endphp
+            @if(! empty($noteFiles))
+                <div class="n-files">
+                    @foreach($noteFiles as $f)
+                        <a class="n-file" href="{{ $f['url'] }}" target="_blank" rel="noopener" title="{{ $f['name'] }} ({{ $f['size'] }})">
+                            @if($f['is_image'])<i class="fas fa-image" style="color:{{ $f['color'] }}"></i>@else<i class="fas {{ $f['icon'] }}" style="color:{{ $f['color'] }}"></i>@endif
+                            <span>{{ $f['name'] }}</span><small>{{ $f['size'] }}</small>
+                        </a>
+                    @endforeach
                 </div>
             @endif
         @empty

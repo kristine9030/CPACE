@@ -30,7 +30,7 @@
         }
         .flow-hero h2 { font-size: 20px; font-weight: 700; margin-bottom: 4px; display:flex; align-items:center; gap:10px; }
         .flow-hero p { font-size: 12.5px; color: rgba(255,255,255,.8); max-width: 560px; }
-        .flow-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 20px; position: relative; z-index: 1; }
+        .flow-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-top: 20px; position: relative; z-index: 1; }
         .flow-step {
             background: rgba(0,0,0,.22); border: 1px solid rgba(255,255,255,.12);
             border-radius: 14px; padding: 15px 16px; backdrop-filter: blur(6px);
@@ -45,7 +45,7 @@
         .flow-step .fs-d { font-size: 11px; color: rgba(255,255,255,.72); line-height: 1.5; }
 
         /* Upload */
-        .upload-grid { display: grid; grid-template-columns: 1.35fr 1fr; gap: 18px; align-items: start; }
+        .upload-grid { display: grid; grid-template-columns: 1.35fr minmax(0, 1fr); gap: 18px; align-items: start; }
         .dropzone {
             border: 2px dashed #d9c2c2; border-radius: 16px;
             background: #fff9f9; padding: 40px 24px; text-align: center;
@@ -137,7 +137,7 @@
         .copy-mini:hover { color: var(--primary); }
 
         @media (max-width: 820px) {
-            .flow-steps, .upload-grid { grid-template-columns: 1fr; }
+            .flow-steps, .upload-grid { grid-template-columns: minmax(0, 1fr); }
         }
     </style>
 </head>
@@ -150,6 +150,9 @@
             <div>
                 <div class="page-title">Bulk Enroll Students</div>
                 <div class="page-sub">Upload a class list and let the system create student accounts automatically.</div>
+                @if (request('section'))
+                    <div class="page-sub" style="color:var(--primary);font-weight:600;"><i class="fas fa-layer-group"></i> Rows without a section will be placed in {{ request('section') }}.</div>
+                @endif
             </div>
         </div>
         <div class="topbar-right">
@@ -205,6 +208,7 @@
                         <input type="file" id="fileInput" name="file" accept=".csv,.xlsx,.xls,.docx" hidden>
                     </label>
                     <input type="hidden" name="rows_json" id="rowsJson">
+                    <input type="hidden" name="default_section" value="{{ request('section') }}">
 
                     <div class="dz-file" id="dzFile">
                         <div class="df-ic"><i class="fas fa-file-csv"></i></div>
@@ -333,6 +337,8 @@
 </main>
 
 <script>
+    // Set when the chair came here from a section's "Add students" button.
+    const DEFAULT_SECTION = @json(request('section') ?: null);
 (function () {
     const dz = document.getElementById('dropzone');
     const input = document.getElementById('fileInput');
@@ -396,7 +402,7 @@
             if (!email && sn) email = sn.toLowerCase().replace(/[^a-z0-9\-]/g, '') + '@g.batstate-u.edu.ph';
             if (!email && fn && ln) email = (fn + '.' + ln).toLowerCase().replace(/\s+/g,'') + '@cpace.edu';
             const dup = seen.has(email); seen.add(email);
-            return { first_name: fn, last_name: ln, email, student_number: g('student_number'), section: g('section'), dup, exists: null };
+            return { first_name: fn, last_name: ln, email, student_number: g('student_number'), section: g('section') || DEFAULT_SECTION, dup, exists: null };
         }).filter(r => r.first_name || r.last_name);
         renderPreview();
         checkExistingEmails();
@@ -519,7 +525,7 @@
 
     // Lets the chair add a student the file missed, straight in the preview.
     addRowBtn.addEventListener('click', () => {
-        rows.push({ first_name: '', last_name: '', email: '', student_number: null, section: null, dup: false, exists: false });
+        rows.push({ first_name: '', last_name: '', email: '', student_number: null, section: DEFAULT_SECTION, dup: false, exists: false });
         renderPreview();
         previewBody.querySelector('tr:last-child .cell-input')?.focus();
     });

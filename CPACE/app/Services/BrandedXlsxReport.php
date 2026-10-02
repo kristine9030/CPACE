@@ -7,6 +7,7 @@ use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
@@ -37,12 +38,22 @@ class BrandedXlsxReport
 
     private Spreadsheet $spreadsheet;
 
+    private ?string $logoPath = null;
+
     public function __construct(private string $documentTitle = 'CPACE Report')
     {
         $this->spreadsheet = new Spreadsheet();
         $this->spreadsheet->getProperties()
             ->setCreator('CPACE')
             ->setTitle($documentTitle);
+    }
+
+    /** Opt-in: show an image (e.g. the CPACE logo) at the left of the banner. */
+    public function withLogo(string $path): static
+    {
+        $this->logoPath = is_file($path) ? $path : null;
+
+        return $this;
     }
 
     public function sheet(string $title = 'Report'): Worksheet
@@ -81,6 +92,18 @@ class BrandedXlsxReport
             'alignment' => ['vertical' => Alignment::VERTICAL_CENTER, 'indent' => 1],
         ]);
         $sheet->getRowDimension(2)->setRowHeight(34);
+
+        if ($this->logoPath) {
+            // The logo sits over the left of both banner rows; push the text past it.
+            $sheet->getStyle('A1:A2')->getAlignment()->setIndent(7);
+            $logo = new Drawing();
+            $logo->setPath($this->logoPath);
+            $logo->setCoordinates('A1');
+            $logo->setHeight(64);
+            $logo->setOffsetX(8);
+            $logo->setOffsetY(5);
+            $logo->setWorksheet($sheet);
+        }
 
         $row = 3;
         foreach ($subtitleLines as $line) {

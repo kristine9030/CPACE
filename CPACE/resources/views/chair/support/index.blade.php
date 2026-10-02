@@ -2,7 +2,7 @@
 
 @section('title', 'Support Inbox')
 @section('heading', 'Support Inbox')
-@section('subheading', 'Requests from Help & Support and the website’s “Report an issue”.')
+@section('subheading', $subheading ?? 'Requests from Help & Support and the website’s “Report an issue”.')
 
 @section('actions')
     <a class="btn btn-ghost" href="{{ route('help.index') }}"><i class="fas fa-circle-question"></i> Help & Support</a>
@@ -61,12 +61,12 @@
         <div class="toolbar">
             <nav class="tabs" aria-label="Filter by status">
                 @foreach($tabs as $key => [$label, $count])
-                    <a class="tab {{ $status === $key ? 'active' : '' }}" href="{{ route('chair.support.index', array_filter(['status' => $key, 'q' => $search])) }}">
+                    <a class="tab {{ $status === $key ? 'active' : '' }}" href="{{ route($indexRoute ?? 'chair.support.index', array_filter(['status' => $key, 'q' => $search])) }}">
                         {{ $label }} <span class="count">{{ $count }}</span>
                     </a>
                 @endforeach
             </nav>
-            <form class="search" method="GET" action="{{ route('chair.support.index') }}" role="search">
+            <form class="search" method="GET" action="{{ route($indexRoute ?? 'chair.support.index') }}" role="search">
                 <input type="hidden" name="status" value="{{ $status }}">
                 <i class="fas fa-search"></i>
                 <input type="search" name="q" value="{{ $search }}" placeholder="Search subject, name, email or #id" aria-label="Search requests">
@@ -86,7 +86,7 @@
                         <span class="r-id">#{{ $t->id }}</span>
                         <span style="min-width:0">
                             <div class="r-subject">{{ $t->title() }}</div>
-                            <div class="r-sub">{{ $t->categoryLabel() }}@if($t->replies_count) · {{ $t->replies_count }} {{ Str::plural('reply', $t->replies_count) }}@endif · {{ Str::limit($t->message, 70) }}</div>
+                            <div class="r-sub">{{ $t->categoryLabel() }}@if($t->isEscalated()) · Escalated by the Chair @endif @if($t->replies_count) · {{ $t->replies_count }} {{ Str::plural('reply', $t->replies_count) }}@endif · {{ Str::limit($t->message, 70) }}</div>
                         </span>
                         <span class="r-from">{{ $t->name }} <span class="tag">{{ $t->requesterRoleLabel() }}</span></span>
                         <span class="r-time">{{ ($t->last_activity_at ?? $t->created_at)->diffForHumans() }}</span>

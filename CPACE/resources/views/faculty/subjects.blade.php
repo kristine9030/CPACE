@@ -29,7 +29,7 @@
         .btn-ghost:hover { background:#f5f5f5; }
 
         /* GRID */
-        .subjects-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:18px; }
+        .subjects-grid { display:grid; grid-template-columns:repeat(2,minmax(0, 1fr)); gap:18px; }
 
         /* SUBJECT CARD */
         .subject-card { background:white; border-radius:16px; overflow:hidden; }
@@ -109,7 +109,7 @@
         /* ── RESPONSIVE ── */
         @media (max-width: 768px) {
             /* 2-col grid → 1-col */
-            .subjects-grid { grid-template-columns: 1fr !important; }
+            .subjects-grid { grid-template-columns: minmax(0, 1fr) !important; }
             /* subject card header: reduce icon size */
             .subject-icon { width: 42px; height: 42px; font-size: 18px; border-radius: 10px; }
             /* add-topic row: stack button below input */

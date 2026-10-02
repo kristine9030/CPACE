@@ -103,6 +103,8 @@ class HelpSupportTest extends TestCase
             $table->string('status', 20)->default('new');
             $table->timestamp('resolved_at')->nullable();
             $table->timestamp('last_activity_at')->nullable();
+            $table->timestamp('escalated_at')->nullable();
+            $table->unsignedBigInteger('escalated_by')->nullable();
             $table->timestamps();
         });
         Schema::create('issue_report_replies', function (Blueprint $table) {
@@ -224,6 +226,77 @@ class HelpSupportTest extends TestCase
 
         $this->actingAs($faculty)->get(route('chair.support.index'))->assertStatus(403);
         $this->actingAs($faculty)->patch(route('chair.support.status', $report), ['status' => 'resolved']);
+        $this->assertSame(IssueReport::STATUS_NEW, $report->fresh()->status);
+    }
+
+    public function test_technical_requests_reach_the_super_admin_but_ordinary_ones_do_not(): void
+    {
+        $chair = $this->user(Role::ADMIN, 'chair@example.com');
+        $admin = $this->user(Role::SUPER_ADMIN, 'root@example.com');
+        $student = $this->user(Role::STUDENT, 'stu@example.com');
+
+        $this->actingAs($student)->post(route('help.tickets.store'), ['subject' => 'Page crashes', 'category' => 'bug', 'message' => 'The results page crashes every time I open it.']);
+        $this->actingAs($student)->post(route('help.tickets.store'), ['subject' => 'Wrong answer key', 'category' => 'content', 'message' => 'Question 12 in Taxation has the wrong answer key.']);
+
+        $bug = IssueReport::where('category', 'bug')->sole();
+        $content = IssueReport::where('category', 'content')->sole();
+
+        // Both reach the Chair; only the technical one reaches the Super Admin.
+        $this->assertDatabaseHas('notifications', ['recipient_id' => $chair->id, 'reference_id' => $content->id]);
+        $this->assertDatabaseHas('notifications', ['recipient_id' => $admin->id, 'reference_id' => $bug->id]);
+        $this->assertDatabaseMissing('notifications', ['recipient_id' => $admin->id, 'reference_id' => $content->id]);
+
+        $this->actingAs($admin)->get(route('superadmin.support.index'))
+            ->assertOk()->assertSee('Page crashes')->assertDontSee('Wrong answer key');
+        $this->actingAs($admin)->get(route('help.tickets.show', $bug))->assertOk();
+        $this->actingAs($admin)->get(route('help.tickets.show', $content))->assertNotFound();
+    }
+
+    public function test_the_chair_can_escalate_a_request_and_the_super_admin_can_answer_it(): void
+    {
+        $chair = $this->user(Role::ADMIN, 'chair@example.com');
+        $admin = $this->user(Role::SUPER_ADMIN, 'root@example.com');
+        $student = $this->user(Role::STUDENT, 'stu@example.com');
+        $report = $this->ticket($student, ['category' => 'account', 'subject' => 'Locked out']);
+
+        $this->actingAs($admin)->get(route('help.tickets.show', $report))->assertNotFound();
+
+        $this->actingAs($chair)->get(route('help.tickets.show', $report))->assertOk()->assertSee('Escalate to Super Admin');
+        $this->actingAs($chair)->post(route('chair.support.escalate', $report))->assertRedirect();
+
+        $report->refresh();
+        $this->assertTrue($report->isEscalated());
+        $this->assertSame($chair->id, (int) $report->escalated_by);
+        $this->assertDatabaseHas('notifications', ['recipient_id' => $admin->id, 'reference_id' => $report->id]);
+
+        $this->actingAs($admin)->get(route('superadmin.support.index'))->assertOk()->assertSee('Locked out')->assertSee('Escalated by the Chair');
+        $this->actingAs($admin)->get(route('help.tickets.show', $report))->assertOk()->assertDontSee('Escalate to Super Admin');
+
+        // The Super Admin answers; the requester is told, and can resolve it from there.
+        $this->actingAs($admin)->post(route('help.tickets.reply', $report), ['body' => 'Your account is unlocked now.'])->assertRedirect();
+        $this->assertSame(IssueReport::STATUS_IN_REVIEW, $report->fresh()->status);
+        $this->assertDatabaseHas('notifications', ['recipient_id' => $student->id, 'reference_id' => $report->id]);
+
+        $this->actingAs($admin)->patch(route('superadmin.support.status', $report), ['status' => 'resolved'])->assertRedirect();
+        $this->assertTrue($report->fresh()->isResolved());
+
+        // The Chair still sees it.
+        $this->actingAs($chair)->get(route('chair.support.index', ['status' => 'all']))->assertOk()->assertSee('Locked out');
+    }
+
+    public function test_only_the_chair_can_escalate_and_the_super_admin_cannot_touch_ordinary_requests(): void
+    {
+        $this->user(Role::ADMIN, 'chair@example.com');
+        $admin = $this->user(Role::SUPER_ADMIN, 'root@example.com');
+        $faculty = $this->user(Role::FACULTY, 'fac@example.com');
+        $report = $this->ticket($faculty, ['category' => 'other']);
+
+        $this->actingAs($faculty)->post(route('chair.support.escalate', $report))->assertStatus(403);
+        $this->actingAs($admin)->post(route('chair.support.escalate', $report))->assertStatus(403);
+        $this->actingAs($admin)->patch(route('superadmin.support.status', $report), ['status' => 'resolved'])->assertNotFound();
+        $this->actingAs($faculty)->get(route('superadmin.support.index'))->assertStatus(403);
+
+        $this->assertFalse($report->fresh()->isEscalated());
         $this->assertSame(IssueReport::STATUS_NEW, $report->fresh()->status);
     }
 

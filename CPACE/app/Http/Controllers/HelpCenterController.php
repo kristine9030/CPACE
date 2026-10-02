@@ -74,7 +74,7 @@ class HelpCenterController extends Controller
             'last_activity_at' => now(),
         ]);
 
-        $this->notifier->notifyChairs(
+        $this->notifier->notifyStaff(
             $report,
             'New support request: ' . $report->title(),
             $user->name . ' — ' . $report->categoryLabel(),
@@ -112,6 +112,8 @@ class HelpCenterController extends Controller
         return view('help.ticket', [
             'report'   => $report,
             'isChair'  => $user->isChair(),
+            'isSuperAdmin' => $user->isSuperAdmin(),
+            'isStaff'  => $user->isChair() || $user->isSuperAdmin(),
             'statuses' => IssueReport::STATUSES,
         ]);
     }
@@ -142,7 +144,7 @@ class HelpCenterController extends Controller
         ]);
 
         if ($fromRequester) {
-            $this->notifier->notifyChairs($report, 'Reply on request #' . $report->id . ': ' . $report->title(), $reply->body, $user->id);
+            $this->notifier->notifyStaff($report, 'Reply on request #' . $report->id . ': ' . $report->title(), $reply->body, $user->id);
         } else {
             $this->notifier->notifyRequesterOfReply($report, $reply, $user->id);
         }

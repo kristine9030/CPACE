@@ -13,7 +13,7 @@
     <style>
         .kpis { display:grid; grid-template-columns:repeat(auto-fit, minmax(170px, 1fr)); gap:16px; margin-bottom:18px; }
         .stat-card { background:#fff; border-radius:14px; padding:18px 20px;
-                     box-shadow:0 2px 6px rgba(15,10,10,.08), 0 10px 22px -10px rgba(15,10,10,.22); }
+                     box-shadow:0 1px 2px rgba(16,24,40,.04), 0 4px 14px rgba(16,24,40,.06); }
         .stat-top { display:flex; justify-content:space-between; align-items:flex-start; }
         .stat-icon { width:40px; height:40px; border-radius:11px; display:flex; align-items:center; justify-content:center; font-size:17px; flex-shrink:0; }
         .si-blue   { background:#dbeafe; color:var(--blue); }
@@ -23,14 +23,14 @@
         .stat-lbl { font-size:11.5px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.4px; }
         .stat-num { font-size:28px; font-weight:700; color:var(--ink); font-family:'Montserrat',sans-serif; line-height:1; margin-top:6px; }
 
-        .charts-row { display:grid; grid-template-columns:1fr 320px; gap:18px; margin-bottom:18px; }
+        .charts-row { display:grid; grid-template-columns:minmax(0, 1fr) 320px; gap:18px; margin-bottom:18px; }
         .charts-row .card + .card { margin-top:0; }
         .chart-wrap { position:relative; height:220px; margin-top:14px; }
         .chart-empty { height:220px; display:flex; align-items:center; justify-content:center; color:#bbb; font-size:12.5px; }
         .donut-legend { display:flex; justify-content:center; gap:18px; margin-top:12px; font-size:11.5px; color:#666; }
         .donut-legend i { width:9px; height:9px; border-radius:3px; display:inline-block; margin-right:5px; }
 
-        .layout { display:grid; grid-template-columns:1fr 380px; gap:18px; align-items:start; margin-bottom:18px; }
+        .layout { display:grid; grid-template-columns:minmax(0, 1fr) 380px; gap:18px; align-items:start; margin-bottom:18px; }
         .layout .card + .card { margin-top:0; }
         /* Long lists scroll inside their card so the page itself stays short. */
         .scroll-card { display:flex; flex-direction:column; max-height:520px; padding:0; overflow:hidden; }
@@ -62,7 +62,7 @@
         .bar span { display:block; height:100%; border-radius:4px; }
         .item-meta { display:flex; justify-content:space-between; font-size:11px; color:#999; margin-top:5px; }
         .empty-note { padding:44px 20px; text-align:center; color:#bbb; font-size:13px; }
-        @media (max-width: 1100px) { .charts-row, .layout { grid-template-columns:1fr; } }
+        @media (max-width: 1100px) { .charts-row, .layout { grid-template-columns:minmax(0, 1fr); } }
     </style>
 </head>
 <body>

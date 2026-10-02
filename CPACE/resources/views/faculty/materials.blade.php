@@ -35,11 +35,13 @@
         .subject-tab.active { background:var(--primary); color:#fff; border-color:var(--primary); }
         .subject-tab .dot { width:9px; height:9px; border-radius:50%; }
 
-        .layout { display:grid; grid-template-columns:280px 1fr 280px; gap:20px; align-items:start; }
-        @media (max-width:1200px) { .layout { grid-template-columns:260px 1fr; } .mat-list-panel { grid-column:1 / -1; } }
+        .layout { display:grid; grid-template-columns:280px minmax(0, 1fr) 280px; gap:20px; align-items:start; }
+        @media (max-width:1200px) { .layout { grid-template-columns:260px minmax(0, 1fr); } .mat-list-panel { grid-column:1 / -1; } }
 
         .panel { background:#fff; border-radius:16px; box-shadow:0 2px 10px rgba(0,0,0,.04); overflow:hidden; }
-        .panel-head { padding:16px 20px; border-bottom:1px solid #f2f2f2; font-size:13px; font-weight:700; color:#333; display:flex; align-items:center; justify-content:space-between; }
+        .panel-head { padding:16px 20px; border-bottom:1px solid #f2f2f2; font-size:13px; font-weight:600; color:#1f2937; line-height:1.45; display:flex; align-items:center; justify-content:space-between; gap:12px; }
+        .panel-head .ph-eyebrow { display:block; font-size:10.5px; font-weight:600; letter-spacing:.6px; text-transform:uppercase; color:#9ca3af; margin-bottom:3px; }
+        .panel-head .ph-name { display:block; font-size:15px; font-weight:600; color:#1f2937; line-height:1.4; }
         .panel-head small { font-weight:500; color:#aaa; font-size:11px; }
 
         /* Topics search */
@@ -107,7 +109,9 @@
 
         /* Upload form */
         .field { margin-bottom:0; }
-        .field label { display:block; font-size:11.5px; font-weight:600; color:#777; margin-bottom:5px; }
+        .field label { display:block; font-size:12px; font-weight:600; color:#4b5563; margin-bottom:6px; }
+        .field label span { font-weight:400; color:#9ca3af; }
+        .field input::placeholder, .field textarea::placeholder { font-weight:400; color:#b4b9c2; }
         .field input[type=text], .field input[type=url], .field textarea, .field select {
             width:100%; font-family:'Poppins',sans-serif; font-size:13px; color:#333;
             border:1px solid #e2e2e2; border-radius:9px; padding:10px 12px; outline:none; transition:border-color .18s; background:#fff;
@@ -119,15 +123,15 @@
         /* Add-material panel header */
         .mat-form-head { display:flex; gap:14px; align-items:flex-start; padding:20px 22px 4px; }
         .mat-form-icon { width:44px; height:44px; border-radius:12px; background:var(--primary-light); color:var(--primary); display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
-        .mat-form-title { font-size:15.5px; font-weight:700; color:#1a1a1a; }
-        .mat-form-sub { font-size:12px; color:#999; margin-top:3px; line-height:1.5; }
+        .mat-form-title { font-size:16px; font-weight:600; color:#1f2937; line-height:1.3; }
+        .mat-form-sub { font-size:12.5px; font-weight:400; color:#6b7280; margin-top:4px; line-height:1.55; }
 
         /* Drag & drop zone */
         .dropzone { margin:18px 22px 0; border:1.5px dashed #d8d2d2; border-radius:14px; padding:34px 20px; text-align:center; background:#fcfbfb; transition:border-color .2s, background .2s; cursor:pointer; }
         .dropzone.drag-over { border-color:var(--primary); background:var(--primary-light); }
         .dropzone .dz-cloud { font-size:30px; color:var(--primary); margin-bottom:10px; display:block; }
-        .dropzone h5 { font-size:15px; font-weight:700; color:#333; margin-bottom:5px; }
-        .dropzone p { font-size:11.5px; color:#aaa; margin-bottom:16px; }
+        .dropzone h5 { font-size:14.5px; font-weight:600; color:#1f2937; margin-bottom:5px; }
+        .dropzone p { font-size:12px; font-weight:400; color:#9ca3af; margin-bottom:16px; }
         .dz-choose-btn { background:var(--primary); color:#fff; border:none; padding:10px 20px; border-radius:9px; font-size:13px; font-weight:600; font-family:'Poppins',sans-serif; cursor:pointer; display:inline-flex; align-items:center; gap:8px; }
         .dz-choose-btn:hover { background:var(--primary-hover); }
 
@@ -139,17 +143,17 @@
         .source-opt.active { background:#fff; color:var(--primary); box-shadow:0 1px 3px rgba(0,0,0,.1); }
 
         /* Title / description */
-        .form-grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:18px 22px 0; }
+        .form-grid-2 { display:grid; grid-template-columns:minmax(0, 1fr) minmax(0, 1fr); gap:16px; margin:18px 22px 0; }
         .field-label-row { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:5px; }
-        .char-count { font-size:10px; color:#bbb; }
+        .char-count { font-size:11px; font-weight:400; color:#9ca3af; }
 
         /* Selected-file row */
         .file-row { margin:14px 22px 0; display:flex; align-items:center; gap:12px; border:1px solid #ececec; border-radius:10px; padding:11px 14px; cursor:pointer; background:#fff; transition:border-color .18s; }
         .file-row:hover { border-color:var(--primary); }
         .file-row-icon { width:30px; height:30px; border-radius:8px; background:var(--primary-light); color:var(--primary); display:flex; align-items:center; justify-content:center; font-size:13px; flex-shrink:0; }
         .file-row-text { flex:1; min-width:0; }
-        .file-row-name { font-size:12.5px; font-weight:600; color:#333; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-        .file-row-hint { font-size:10.5px; color:#aaa; margin-top:1px; }
+        .file-row-name { font-size:13px; font-weight:600; color:#1f2937; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .file-row-hint { font-size:11.5px; font-weight:400; color:#9ca3af; margin-top:2px; }
         .file-row-clip { color:#bbb; font-size:13px; }
 
         .file-chip-list { margin:10px 22px 0; display:flex; flex-direction:column; gap:6px; }
@@ -172,13 +176,13 @@
         .mfa-publish:hover { background:var(--primary-hover); }
 
         @media (max-width:640px) {
-            .form-grid-2 { grid-template-columns:1fr; }
+            .form-grid-2 { grid-template-columns:minmax(0, 1fr); }
             .mat-form-actions { flex-direction:column-reverse; align-items:stretch; }
             .mfa-draft, .mfa-publish { justify-content:center; }
         }
 
         @media (max-width:900px) { .main { margin-left:68px; } }
-        @media (max-width:768px) { .main { margin-left:0; padding:16px; } .layout { grid-template-columns:1fr; } }
+        @media (max-width:768px) { .main { margin-left:0; padding:16px; } .layout { grid-template-columns:minmax(0, 1fr); } }
     </style>
 </head>
 <body>
@@ -247,7 +251,7 @@
             {{-- Add-material form --}}
             <div class="panel">
                 @if($selectedTopic)
-                    <div class="panel-head"><span>{{ $selectedTopic->name }}</span></div>
+                    <div class="panel-head"><span><span class="ph-eyebrow">Topic</span><span class="ph-name">{{ $selectedTopic->name }}</span></span></div>
 
                     {{-- Upload / add form --}}
                     <form method="POST" action="{{ route('faculty.materials.store') }}" enctype="multipart/form-data" id="matForm"
@@ -264,7 +268,7 @@
                         <div class="mat-form-head">
                             <div class="mat-form-icon"><i class="fas fa-folder"></i></div>
                             <div>
-                                <div class="mat-form-title">Add Material to “{{ $selectedTopic->name }}”</div>
+                                <div class="mat-form-title">Add material</div>
                                 <div class="mat-form-sub">Upload files or add a link to share with your students. You can also save it as a draft and publish later.</div>
                             </div>
                         </div>
@@ -299,7 +303,7 @@
                                     <label style="margin:0;">Title <span id="titleReq" style="color:var(--accent);">*</span></label>
                                     <span class="char-count"><span id="titleCount">0</span>/255</span>
                                 </div>
-                                <input type="text" name="title" id="titleInput" value="{{ old('title') }}" maxlength="255" placeholder="e.g. Revenue Recognition — Lecture Notes">
+                                <input type="text" name="title" id="titleInput" value="{{ old('title') }}" maxlength="255" placeholder="e.g. Revenue Recognition notes">
                                 <div class="field-hint" id="titleHint" style="display:none;">Several files selected — each material will be named after its own file.</div>
                             </div>
                             <div class="field">
@@ -493,7 +497,7 @@
         // name each material after its own file (see MaterialController@store).
         titleHint.style.display = n > 1 ? '' : 'none';
         titleInput.disabled = n > 1;
-        titleInput.placeholder = n > 1 ? 'Auto-named per file' : 'e.g. Revenue Recognition — Lecture Notes';
+        titleInput.placeholder = n > 1 ? 'Auto-named per file' : 'e.g. Revenue Recognition notes';
 
         fileChipList.innerHTML = '';
         if (n > 1) {

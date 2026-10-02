@@ -23,7 +23,7 @@ use Tests\TestCase;
 class ChairStudentImportExportTest extends TestCase
 {
     private const TABLES = [
-        'quiz_sessions', 'student_profiles', 'notifications', 'messages',
+        'quiz_sessions', 'sections', 'student_profiles', 'notifications', 'messages',
         'conversation_participants', 'conversations', 'users',
     ];
 
@@ -77,6 +77,13 @@ class ChairStudentImportExportTest extends TestCase
             $table->unsignedBigInteger('user_id')->primary();
             $table->string('student_number', 30)->nullable();
             $table->string('section', 30)->nullable();
+        });
+        Schema::create('sections', function (Blueprint $table) {
+            $table->id();
+            $table->string('name', 30)->unique();
+            $table->unsignedTinyInteger('year_level')->nullable();
+            $table->boolean('is_active')->default(true);
+            $table->timestamps();
         });
         Schema::create('quiz_sessions', function (Blueprint $table) {
             $table->id();
@@ -177,6 +184,47 @@ class ChairStudentImportExportTest extends TestCase
         $this->assertNotNull(DB::table('users')->where('email', 'fixed@example.com')->first());
     }
 
+    public function test_imported_rows_keep_old_and_new_format_section_names(): void
+    {
+        Mail::fake();
+        $chair = $this->chair();
+
+        $this->actingAs($chair)->post(route('chair.students.import'), [
+            'rows_json' => json_encode([
+                ['first_name' => 'Old', 'last_name' => 'Format', 'email' => 'old@example.com', 'section' => 'BSA-3A'],
+                ['first_name' => 'New', 'last_name' => 'Format', 'email' => 'new@example.com', 'section' => 'BSA 3101'],
+            ]),
+        ])->assertRedirect();
+
+        $this->assertSame('BSA-3A', $this->sectionOfEmail('old@example.com'));
+        $this->assertSame('BSA 3101', $this->sectionOfEmail('new@example.com'));
+    }
+
+    public function test_importing_from_a_sections_add_students_puts_unsectioned_rows_in_it(): void
+    {
+        Mail::fake();
+        $chair = $this->chair();
+        DB::table('sections')->insert(['name' => 'BSA 3101', 'year_level' => 3, 'is_active' => true]);
+
+        $this->actingAs($chair)->post(route('chair.students.import'), [
+            'default_section' => 'BSA 3101',
+            'rows_json' => json_encode([
+                ['first_name' => 'No', 'last_name' => 'Section', 'email' => 'none@example.com'],
+                ['first_name' => 'Has', 'last_name' => 'Section', 'email' => 'has@example.com', 'section' => 'BSA-4A'],
+            ]),
+        ])->assertRedirect();
+
+        $this->assertSame('BSA 3101', $this->sectionOfEmail('none@example.com'));
+        $this->assertSame('BSA-4A', $this->sectionOfEmail('has@example.com'));
+    }
+
+    private function sectionOfEmail(string $email): ?string
+    {
+        return DB::table('student_profiles')
+            ->where('user_id', DB::table('users')->where('email', $email)->value('id'))
+            ->value('section');
+    }
+
     public function test_a_row_removed_from_the_edited_preview_is_not_created(): void
     {
         Mail::fake();
@@ -204,28 +252,64 @@ class ChairStudentImportExportTest extends TestCase
         $this->assertSame(0, DB::table('users')->where('role_id', Role::STUDENT)->count());
     }
 
-    public function test_exporting_csv_streams_the_filtered_student_roster(): void
+    public function test_exporting_excel_downloads_a_branded_workbook_of_the_filtered_roster(): void
     {
         $chair = $this->chair();
         $alice = $this->student('alice@example.com');
         $bob = $this->student('bob@example.com');
 
-        $response = $this->actingAs($chair)->get(route('chair.students.export.csv'));
+        $response = $this->actingAs($chair)->get(route('chair.students.export.excel'));
 
         $response->assertOk();
-        $content = $response->streamedContent();
-        $this->assertStringContainsString($alice->email, $content);
-        $this->assertStringContainsString($bob->email, $content);
+        $this->assertStringContainsString('spreadsheetml', $response->headers->get('Content-Type'));
+        $this->assertStringContainsString('.xlsx', $response->headers->get('Content-Disposition'));
+
+        $path = tempnam(sys_get_temp_dir(), 'xlsx');
+        file_put_contents($path, $response->streamedContent());
+        $sheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($path)->getActiveSheet();
+        $cells = collect($sheet->toArray())->flatten()->filter()->implode("\n");
+        unlink($path);
+
+        $this->assertStringContainsString('Student Performance Report', $cells);
+        $this->assertStringContainsString('Scope: All sections · All statuses', $cells);
+        $this->assertStringContainsString($alice->email, $cells);
+        $this->assertStringContainsString($bob->email, $cells);
+        $this->assertCount(1, $sheet->getDrawingCollection(), 'the CPACE logo is placed in the banner');
     }
 
-    public function test_exporting_pdf_view_includes_the_scoped_roster(): void
+    public function test_exporting_pdf_downloads_a_real_pdf(): void
     {
         $chair = $this->chair();
-        $student = $this->student('roster@example.com');
+        $this->student('roster@example.com');
 
-        $this->actingAs($chair)->get(route('chair.students.export.pdf'))
-            ->assertOk()
-            ->assertSee($student->email);
+        $response = $this->actingAs($chair)->get(route('chair.students.export.pdf'));
+
+        $response->assertOk()->assertHeader('Content-Type', 'application/pdf');
+        $this->assertStringContainsString('attachment; filename="cpace-students-', $response->headers->get('Content-Disposition'));
+        $this->assertStringStartsWith('%PDF', $response->getContent());
+    }
+
+    public function test_the_pdf_template_lists_the_roster_with_the_logo(): void
+    {
+        $row = [
+            'name' => 'Roster Student', 'email' => 'roster@example.com', 'student_number' => '23-00001',
+            'section' => 'BSA 4101', 'score' => 62, 'attempted' => 40, 'quizzes' => 3, 'streak' => 2,
+            'last_active' => now(), 'is_alumni' => false, 'is_active' => true, 'setup_completed' => true, 'at_risk' => true,
+        ];
+
+        $html = view('chair.student-report', [
+            'rows' => collect([$row]),
+            'stats' => ['total' => 1, 'active' => 1, 'average' => 62, 'at_risk' => 1],
+            'scope' => 'Section BSA 4101 · All statuses',
+            'statusOf' => fn () => 'At Risk',
+            'logo' => 'data:image/png;base64,AAAA',
+            'preparedBy' => 'Program Chair',
+        ])->render();
+
+        $this->assertStringContainsString('roster@example.com', $html);
+        $this->assertStringContainsString('Section BSA 4101', $html);
+        $this->assertStringContainsString('class="pill at-risk"', $html);
+        $this->assertStringContainsString('src="data:image/png;base64,AAAA"', $html);
     }
 
     private function chair(): User

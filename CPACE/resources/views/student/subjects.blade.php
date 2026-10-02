@@ -294,7 +294,7 @@
            body whose top-left corner is square, so the two read as one shape. */
         .subjects-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(3, minmax(0, 1fr));
             column-gap: 28px;
             row-gap: 14px;         /* each card adds its own tab clearance on top */
             margin-top: 26px;
@@ -421,7 +421,7 @@
         /* White card floating on the flap — one more layer of depth. */
         .subject-stats {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(3, minmax(0, 1fr));
             gap: 0;
             padding: 13px 8px;
             background: #fafafa;
@@ -470,12 +470,12 @@
         .subject-card:hover .subject-btn i { transform: translateX(3px); }
 
         @media (max-width: 1200px) {
-            .subjects-grid { grid-template-columns: repeat(2, 1fr); }
+            .subjects-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         }
         @media (max-width: 768px) {
             .sidebar { width: 70px; }
             .main-content { margin-left: 70px; padding: 20px; }
-            .subjects-grid { grid-template-columns: 1fr; }
+            .subjects-grid { grid-template-columns: minmax(0, 1fr); }
             .search-wrap input { width: 160px; }
         }
 
@@ -492,7 +492,7 @@
 
         @media (max-width: 480px) {
             .main-content { padding: 16px 12px; }
-            .subjects-grid { grid-template-columns: 1fr; column-gap: 16px; row-gap: 10px; }
+            .subjects-grid { grid-template-columns: minmax(0, 1fr); column-gap: 16px; row-gap: 10px; }
             .folder-head { padding: 16px 17px 18px; gap: 13px; }
             .folder-front { padding: 16px 17px 18px; }
             .subject-icon-circle { width: 44px; height: 44px; }

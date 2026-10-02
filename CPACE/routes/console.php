@@ -17,6 +17,11 @@ Schedule::command('mock-exam:close-expired')->everyFiveMinutes();
 // period draft AI substitutes that wait for faculty/chair review.
 Schedule::command('curriculum:fill-gaps')->dailyAt('03:00')->withoutOverlapping();
 
+// Times the app's heaviest reporting queries and uploads the result to the
+// Super Admin "Test Reports" -> Data Warehouse Query Benchmark tab, so its
+// trend is visible over time without anyone running it by hand.
+Schedule::command('benchmark:warehouse')->weeklyOn(1, '04:00')->withoutOverlapping();
+
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');

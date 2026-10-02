@@ -55,7 +55,7 @@
     .chip-flag { background:#fde8e8; color:var(--red); }
 
     /* Subject cards, matching the Class Quizzes tiles elsewhere in the app. */
-    .subject-grid { display:grid; grid-template-columns:repeat(3, 1fr); gap:22px; }
+    .subject-grid { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:22px; }
     .subject-card { display:flex; flex-direction:column; background:#fff; border:1px solid var(--line);
                     border-radius:16px; overflow:hidden; text-decoration:none; color:inherit;
                     box-shadow:0 1px 3px rgba(0,0,0,.05); transition:box-shadow .2s, transform .2s; min-height:196px; }
@@ -129,9 +129,9 @@
     .profile-avatar { width:38px; height:38px; border-radius:50%; border:none; cursor:pointer; overflow:hidden; padding:0; }
     .profile-avatar img { width:100%; height:100%; object-fit:cover; }
 
-    @media (max-width: 1100px) { .subject-grid { grid-template-columns:repeat(2, 1fr); } }
+    @media (max-width: 1100px) { .subject-grid { grid-template-columns:repeat(2, minmax(0, 1fr)); } }
     @media (max-width: 760px) {
         .main, .main-content { margin-left:0; padding:18px 16px; }
-        .subject-grid { grid-template-columns:1fr; }
+        .subject-grid { grid-template-columns:minmax(0, 1fr); }
     }
 </style>

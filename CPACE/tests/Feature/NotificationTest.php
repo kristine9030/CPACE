@@ -17,7 +17,7 @@ use Tests\TestCase;
  */
 class NotificationTest extends TestCase
 {
-    private const TABLES = ['notifications', 'messages', 'conversation_participants', 'conversations', 'users'];
+    private const TABLES = ['communication_attachments', 'notifications', 'messages', 'conversation_participants', 'conversations', 'users'];
 
     protected function setUp(): void
     {
@@ -64,6 +64,15 @@ class NotificationTest extends TestCase
             $table->text('body')->nullable();
             $table->timestamps();
         });
+        Schema::create('communication_attachments', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('communication_id')->index();
+            $table->string('path');
+            $table->string('original_name');
+            $table->unsignedBigInteger('size')->default(0);
+            $table->string('category', 20)->default('other');
+            $table->timestamps();
+        });
         Schema::create('notifications', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('communication_id')->nullable();
@@ -100,6 +109,30 @@ class NotificationTest extends TestCase
         $response->assertOk();
         $response->assertSee('Mine');
         $response->assertDontSee('Not mine');
+    }
+
+    public function test_an_announcements_files_are_listed_under_its_notification(): void
+    {
+        $student = $this->user('me@example.com');
+        $withFiles = $this->notify($student->id, 'Finals schedule');
+        $plain = $this->notify($student->id, 'No files here');
+        DB::table('notifications')->where('id', $withFiles)->update(['communication_id' => 7]);
+        DB::table('communication_attachments')->insert([
+            ['communication_id' => 7, 'path' => 'communication-attachments/a.pdf', 'original_name' => 'finals-schedule.pdf', 'size' => 2048, 'category' => 'pdf', 'created_at' => now(), 'updated_at' => now()],
+            ['communication_id' => 7, 'path' => 'communication-attachments/b.png', 'original_name' => 'room-map.png', 'size' => 512, 'category' => 'image', 'created_at' => now(), 'updated_at' => now()],
+            // someone else's announcement: never listed here
+            ['communication_id' => 8, 'path' => 'communication-attachments/c.pdf', 'original_name' => 'other-announcement.pdf', 'size' => 100, 'category' => 'pdf', 'created_at' => now(), 'updated_at' => now()],
+        ]);
+
+        $response = $this->actingAs($student)->get(route('notifications.index'));
+
+        $response->assertOk()
+            ->assertSee('finals-schedule.pdf')->assertSee('room-map.png')->assertSee('2 KB')
+            ->assertSee('class="n-files"', false)
+            ->assertDontSee('other-announcement.pdf')
+            // the file chips link to the protected download route
+            ->assertSee(route('communications.attachments.download', DB::table('communication_attachments')->where('original_name', 'finals-schedule.pdf')->value('id')), false);
+        $this->assertSame(1, substr_count($response->getContent(), 'class="n-files"'), 'only the announcement with files gets a file strip');
     }
 
     public function test_marking_a_notification_read_requires_it_to_belong_to_the_current_user(): void

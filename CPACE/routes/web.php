@@ -39,6 +39,7 @@ use App\Http\Controllers\Student\StudentSettingsController;
 use App\Http\Controllers\Chair\CommunicationController;
 use App\Http\Controllers\Chair\AnalyticsController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\CommunityController;
 use App\Http\Controllers\CommunityResourceController;
 use App\Http\Controllers\ChatController;
@@ -47,7 +48,16 @@ use App\Http\Controllers\GlobalSearchController;
 use App\Http\Controllers\IssueReportController;
 use App\Http\Controllers\HelpCenterController;
 use App\Http\Controllers\Chair\SupportInboxController;
+use App\Http\Controllers\SuperAdmin\SupportController as SuperAdminSupportController;
 use App\Http\Controllers\AiSubstituteReviewController;
+use App\Http\Controllers\SuperAdmin\DashboardController as SuperAdminDashboardController;
+use App\Http\Controllers\SuperAdmin\UserManagementController as SuperAdminUserManagementController;
+use App\Http\Controllers\SuperAdmin\ActivityLogController as SuperAdminActivityLogController;
+use App\Http\Controllers\SuperAdmin\PerformanceController as SuperAdminPerformanceController;
+use App\Http\Controllers\SuperAdmin\SystemCheckController as SuperAdminSystemCheckController;
+use App\Http\Controllers\SuperAdmin\TestReportController as SuperAdminTestReportController;
+use App\Http\Controllers\SuperAdmin\EvaluationController as SuperAdminEvaluationController;
+use App\Http\Controllers\SuperAdmin\ApiTokenController as SuperAdminApiTokenController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -94,6 +104,9 @@ Route::middleware(['auth', 'no-back-cache'])->group(function () {
 
     Route::get('/search', [GlobalSearchController::class, 'search'])->name('global.search');
 
+    // Profile Settings (name, email, photo, avatar) for the roles without a settings page of their own
+    Route::post('/profile', [ProfileController::class, 'update'])->name('profile.update');
+
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::post('/notifications/read-all', [NotificationController::class, 'readAll'])->name('notifications.read-all');
     Route::post('/notifications/{id}/read', [NotificationController::class, 'read'])->name('notifications.read');
@@ -104,17 +117,51 @@ Route::middleware(['auth', 'no-back-cache'])->group(function () {
     Route::get('/help/tickets/{report}', [HelpCenterController::class, 'show'])->name('help.tickets.show');
     Route::post('/help/tickets/{report}/replies', [HelpCenterController::class, 'reply'])->middleware('throttle:20,1')->name('help.tickets.reply');
 
+    // Super Admin Routes — system monitoring/ops console, separate from the
+    // Program Chair's academic-management portal.
+    Route::prefix('superadmin')->name('superadmin.')->middleware('superadmin')->group(function () {
+        Route::get('/dashboard', [SuperAdminDashboardController::class, 'index'])->name('dashboard');
+        Route::get('/dashboard/data', [SuperAdminDashboardController::class, 'data'])->name('dashboard.data');
+
+        Route::get('/performance', [SuperAdminPerformanceController::class, 'index'])->name('performance');
+        Route::get('/performance/data', [SuperAdminPerformanceController::class, 'data'])->name('performance.data');
+
+        Route::get('/users', [SuperAdminUserManagementController::class, 'index'])->name('users');
+        Route::get('/users/create', [SuperAdminUserManagementController::class, 'create'])->name('users.create');
+        Route::post('/users', [SuperAdminUserManagementController::class, 'store'])->name('users.store');
+        Route::post('/users/{id}/toggle-active', [SuperAdminUserManagementController::class, 'toggleActive'])->name('users.toggle-active');
+        Route::post('/users/{id}/resend-otp', [SuperAdminUserManagementController::class, 'resendOtp'])->name('users.resend-otp');
+
+        Route::get('/activity-log', [SuperAdminActivityLogController::class, 'index'])->name('activity-log');
+        Route::get('/activity-log/export', [SuperAdminActivityLogController::class, 'export'])->name('activity-log.export');
+
+        Route::get('/system-checks', [SuperAdminSystemCheckController::class, 'index'])->name('system-checks');
+
+        Route::get('/test-reports', [SuperAdminTestReportController::class, 'index'])->name('test-reports');
+        Route::post('/test-reports', [SuperAdminTestReportController::class, 'store'])->name('test-reports.store');
+        Route::get('/test-reports/{id}', [SuperAdminTestReportController::class, 'show'])->name('test-reports.show');
+        Route::delete('/test-reports/{id}', [SuperAdminTestReportController::class, 'destroy'])->name('test-reports.destroy');
+
+        Route::get('/evaluations', [SuperAdminEvaluationController::class, 'index'])->name('evaluations');
+
+        Route::get('/support', [SuperAdminSupportController::class, 'index'])->name('support.index');
+        Route::patch('/support/{report}/status', [SuperAdminSupportController::class, 'updateStatus'])->name('support.status');
+
+        Route::get('/api-tokens', [SuperAdminApiTokenController::class, 'index'])->name('api-tokens');
+        Route::post('/api-tokens', [SuperAdminApiTokenController::class, 'store'])->name('api-tokens.store');
+        Route::delete('/api-tokens/{id}', [SuperAdminApiTokenController::class, 'destroy'])->name('api-tokens.destroy');
+    });
+
     // Program Chair Routes (Admin role)
     Route::prefix('chair')->name('chair.')->middleware('chair')->group(function () {
         Route::get('/dashboard', [ProgramChairController::class, 'dashboard'])->name('dashboard');
         Route::get('/dashboard/data', [ProgramChairController::class, 'dashboardData'])->name('dashboard.data');
 
-        // System-wide student performance and test-bank analytics
+        // System-wide student performance analytics
         Route::prefix('analytics')->name('analytics.')->group(function () {
             Route::get('/performance', [AnalyticsController::class, 'performance'])->name('performance');
             Route::get('/performance/data', [AnalyticsController::class, 'performanceData'])->name('performance.data');
             Route::get('/eligible-students', [AnalyticsController::class, 'eligibleStudents'])->name('eligible-students');
-            Route::get('/test-bank-coverage', [AnalyticsController::class, 'testBankCoverage'])->name('test-bank-coverage');
         });
 
         // Live email availability/format check used by the student & faculty forms
@@ -128,13 +175,14 @@ Route::middleware(['auth', 'no-back-cache'])->group(function () {
         Route::get('/students/import', fn () => view('chair.students-import'))->name('students.import.form');
         Route::post('/students/import', [StudentManagementController::class, 'import'])->name('students.import');
         Route::get('/students/import-template', [StudentManagementController::class, 'template'])->name('students.template');
-        Route::get('/students/export/csv', [StudentManagementController::class, 'exportCsv'])->name('students.export.csv');
+        Route::get('/students/export/excel', [StudentManagementController::class, 'exportExcel'])->name('students.export.excel');
         Route::get('/students/export/pdf', [StudentManagementController::class, 'exportPdf'])->name('students.export.pdf');
         Route::get('/students/{id}', [StudentManagementController::class, 'show'])->name('students.show');
         Route::get('/students/{id}/edit', [StudentManagementController::class, 'edit'])->name('students.edit');
         Route::put('/students/{id}', [StudentManagementController::class, 'update'])->name('students.update');
         Route::post('/students/{id}/toggle', [StudentManagementController::class, 'toggle'])->name('students.toggle');
         Route::post('/students/bulk-alumni', [StudentManagementController::class, 'bulkMarkAlumni'])->name('students.bulk-alumni');
+        Route::post('/students/assign-section', [StudentManagementController::class, 'assignSection'])->name('students.assign-section');
         Route::post('/students/{id}/regenerate-otp', [StudentManagementController::class, 'regenerateOtp'])->name('students.regenerate-otp');
 
         // Faculty account management
@@ -144,13 +192,15 @@ Route::middleware(['auth', 'no-back-cache'])->group(function () {
         Route::get('/faculty/{id}/edit', [ProgramChairController::class, 'editFaculty'])->name('faculty.edit');
         Route::put('/faculty/{id}', [ProgramChairController::class, 'updateFaculty'])->name('faculty.update');
         Route::post('/faculty/{id}/assign', [ProgramChairController::class, 'assignSubjects'])->name('faculty.assign');
+        Route::post('/faculty/bulk', [ProgramChairController::class, 'bulkFaculty'])->name('faculty.bulk');
         Route::post('/faculty/{id}/toggle', [ProgramChairController::class, 'toggleFaculty'])->name('faculty.toggle');
         Route::post('/faculty/{id}/regenerate-otp', [ProgramChairController::class, 'regenerateFacultyOtp'])->name('faculty.regenerate-otp');
         Route::post('/faculty/{id}/remind', [\App\Http\Controllers\Chair\FacultyReminderController::class, 'store'])->middleware('throttle:20,1')->name('faculty.remind');
         Route::get('/faculty-performance', [FacultyOversightController::class, 'performance'])->name('faculty.performance');
         Route::get('/faculty/{id}/activity', [FacultyOversightController::class, 'activity'])->name('faculty.activity');
 
-        // Section catalog (used to scope faculty-to-section assignment)
+        // Section catalog (used to scope faculty-to-section assignment). Managed
+        // from the Students page; GET /sections just redirects there.
         Route::get('/sections', [SectionManagementController::class, 'index'])->name('sections');
         Route::post('/sections', [SectionManagementController::class, 'store'])->name('sections.store');
         Route::put('/sections/{section}', [SectionManagementController::class, 'update'])->name('sections.update');
@@ -205,10 +255,12 @@ Route::middleware(['auth', 'no-back-cache'])->group(function () {
         // Help & Support triage - threads are answered on help.tickets.show
         Route::get('/support', [SupportInboxController::class, 'index'])->name('support.index');
         Route::patch('/support/{report}/status', [SupportInboxController::class, 'updateStatus'])->name('support.status');
+        Route::post('/support/{report}/escalate', [SupportInboxController::class, 'escalate'])->name('support.escalate');
 
         // Announcements and internal messages
         Route::get('/communications', [CommunicationController::class, 'index'])->name('communications');
         Route::post('/communications', [CommunicationController::class, 'store'])->name('communications.store');
+        Route::get('/communications/{communication}', [CommunicationController::class, 'show'])->name('communications.show');
 
     });
 
@@ -328,6 +380,7 @@ Route::middleware(['auth', 'no-back-cache'])->group(function () {
     Route::delete('/community/resources/{resource}', [CommunityResourceController::class, 'destroy'])->name('community.resources.destroy');
 
     // Messenger-style chat — the default community GC, alumni-created group chats, and DMs
+    Route::get('/communications/attachments/{attachment}', [\App\Http\Controllers\CommunicationAttachmentController::class, 'download'])->name('communications.attachments.download');
     Route::get('/messages', [ChatController::class, 'index'])->name('messages.index');
     Route::get('/messages/{conversation}', [ChatController::class, 'show'])->name('messages.show');
     Route::post('/messages/{conversation}', [ChatController::class, 'send'])->name('messages.send');

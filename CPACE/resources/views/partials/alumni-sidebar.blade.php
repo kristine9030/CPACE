@@ -113,7 +113,7 @@
     .sidebar .user-profile:hover { background: rgba(255,255,255,0.08); }
     .sidebar .avatar-sm {
         width: 34px; height: 34px;
-        background: rgba(255,255,255,0.18); border-radius: 8px;
+        background: rgba(255,255,255,0.18); border-radius: 50%;
         display: flex; align-items: center; justify-content: center;
         font-weight: 700; font-size: 12px; color: #fff;
         flex-shrink: 0; letter-spacing: 0.5px;
@@ -176,7 +176,7 @@
     .topbar-search input:focus { border-color: var(--primary); background: #fff; }
     .topbar-avatar-wrap { position: relative; }
     .topbar-avatar-btn {
-        width: 38px; height: 38px; border-radius: 10px; border: none;
+        width: 38px; height: 38px; border-radius: 50%; border: none;
         background: var(--primary); color: #fff;
         font-weight: 700; font-size: 13px; font-family: 'Poppins', sans-serif;
         cursor: pointer; display: flex; align-items: center; justify-content: center;
@@ -244,6 +244,7 @@
                 <i class="fas fa-chevron-down chevron-icon"></i>
             </div>
             <div class="user-dropdown" id="userDropdown">
+                <button type="button" class="js-open-profile-modal"><i class="fas fa-user"></i><span>Profile Settings</span></button>
                 <form method="POST" action="{{ route('logout') }}"
                           data-confirm="You will be signed out of CPACE and returned to the login page."
                           data-confirm-title="Log out of CPACE?"
@@ -256,6 +257,10 @@
         </div>
     </div>
 </aside>
+
+@include('partials.sidebar-common')
+
+@include('partials.profile-modal')
 
 <script>
 (function () {

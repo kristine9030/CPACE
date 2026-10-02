@@ -75,6 +75,8 @@
 <body>
 @if($me->isChair())
     @include('partials.chair-sidebar', ['active' => $active])
+@elseif($me->isSuperAdmin())
+    @include('partials.superadmin-sidebar', ['active' => $active])
 @elseif($me->isFaculty())
     @include('partials.faculty-sidebar', ['active' => $active])
 @elseif($me->isAlumni())

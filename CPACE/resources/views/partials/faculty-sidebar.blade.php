@@ -131,7 +131,7 @@
     .sidebar .user-profile:hover { background: rgba(255,255,255,0.08); }
     .sidebar .avatar-sm {
         width: 34px; height: 34px;
-        background: rgba(255,255,255,0.18); border-radius: 8px;
+        background: rgba(255,255,255,0.18); border-radius: 50%;
         display: flex; align-items: center; justify-content: center;
         font-weight: 700; font-size: 12px; color: #fff;
         flex-shrink: 0; letter-spacing: 0.5px;
@@ -190,12 +190,12 @@
         .topbar-right { width: 100%; justify-content: flex-end; flex-wrap: wrap; gap: 8px; }
         .topbar-search input { width: 160px; }
         .page-title { font-size: 20px !important; }
-        .stats-row { grid-template-columns: repeat(2, 1fr) !important; }
-        .main-grid { grid-template-columns: 1fr !important; }
+        .stats-row { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+        .main-grid { grid-template-columns: minmax(0, 1fr) !important; }
     }
 
     @media (max-width: 480px) {
-        .stats-row { grid-template-columns: 1fr !important; }
+        .stats-row { grid-template-columns: minmax(0, 1fr) !important; }
         .page-sub { display: none; }
     }
 
@@ -214,7 +214,7 @@
 
     .topbar-avatar-wrap { position: relative; }
     .topbar-avatar-btn {
-        width: 38px; height: 38px; border-radius: 10px; border: none;
+        width: 38px; height: 38px; border-radius: 50%; border: none;
         background: var(--primary); color: #fff;
         font-weight: 700; font-size: 13px; font-family: 'Poppins', sans-serif;
         cursor: pointer; display: flex; align-items: center; justify-content: center;
@@ -280,7 +280,7 @@
     .fp-modal-body { padding: 22px; }
     .fp-avatar-row { display: flex; align-items: center; gap: 16px; margin-bottom: 18px; }
     .fp-avatar-preview {
-        width: 64px; height: 64px; border-radius: 14px;
+        width: 64px; height: 64px; border-radius: 50%;
         background: var(--primary); color: #fff;
         display: flex; align-items: center; justify-content: center;
         font-weight: 700; font-size: 20px; overflow: hidden; position: relative; flex-shrink: 0;
@@ -408,6 +408,8 @@
     </div>
 </aside>
 
+@include('partials.sidebar-common')
+
 <div class="fp-modal-overlay" id="fpModalOverlay">
     <div class="fp-modal">
         <div class="fp-modal-head">
@@ -433,27 +435,13 @@
                         <label class="fp-upload-btn" for="fpPhotoInput"><i class="fas fa-camera"></i> Change photo</label>
                         <input type="file" name="photo" id="fpPhotoInput" accept="image/*" style="display:none;">
                         @if(Auth::user()->profile_photo)
-                            <button type="button" class="fp-avatar-remove" id="fpRemovePhoto"><i class="fas fa-xmark"></i> Remove photo, use color avatar</button>
+                            <button type="button" class="fp-avatar-remove" id="fpRemovePhoto"><i class="fas fa-xmark"></i> Remove photo, use my avatar</button>
                         @endif
                     </div>
                 </div>
 
-                <label class="fp-swatch-label">Avatar color <span style="color:#aaa;font-weight:400;">(used when there's no photo)</span></label>
-                <div class="fp-swatches" id="fpSwatches">
-                    @php
-                        $facultyAvatarColors = [
-                            'maroon' => '#7B1D1D', 'crimson' => '#c0392b', 'blue' => '#2563eb',
-                            'teal' => '#0d9488', 'green' => '#059669', 'purple' => '#7c3aed',
-                            'pink' => '#db2777', 'orange' => '#d97706', 'navy' => '#1e3a5f', 'slate' => '#475569',
-                        ];
-                        $fpCurrentColor = Auth::user()->avatar_color ?? 'maroon';
-                    @endphp
-                    @foreach($facultyAvatarColors as $key => $hex)
-                        <button type="button" class="fp-swatch {{ $fpCurrentColor === $key ? 'selected' : '' }}" data-color="{{ $key }}" data-hex="{{ $hex }}" style="background: {{ $hex }};" title="{{ ucfirst($key) }}"></button>
-                    @endforeach
-                    <input type="hidden" name="avatar_color" id="fpAvatarColorInput" value="{{ old('avatar_color', $fpCurrentColor) }}">
-                    <input type="hidden" name="remove_photo" id="fpRemovePhotoInput" value="0">
-                </div>
+                @include('partials.avatar-picker', ['p' => 'fp'])
+                <input type="hidden" name="remove_photo" id="fpRemovePhotoInput" value="0">
 
                 <div class="fp-row-2">
                     <div class="fp-field">
@@ -567,7 +555,7 @@
                     const selected = document.querySelector('#fpSwatches .fp-swatch[data-color="' + hex + '"]');
                     const bg = selected ? selected.dataset.hex : '#7B1D1D';
                     const initials = '{{ strtoupper(substr(Auth::user()->first_name,0,1)) }}{{ strtoupper(substr(Auth::user()->last_name,0,1)) }}';
-                    avatarPreview.innerHTML = '<span class="avatar-default" style="background:' + bg + ';">' + initials + '</span>';
+                    avatarPreview.innerHTML = '<img src="' + {!! json_encode(Auth::user()->presetAvatarUrl()) !!} + '" alt="">';
                 }
                 removeBtn.style.display = 'none';
             });

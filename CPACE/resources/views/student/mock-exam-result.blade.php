@@ -114,6 +114,7 @@
                     @endphp
                     <div class="rev {{ $correct ? 'right' : 'wrong' }}">
                         <div class="rev-q"><strong>{{ $i + 1 }}.</strong> {{ $item->question_text }}</div>
+                        @include('partials.question-exhibit', ['item' => $item])
                         <div class="rev-a">
                             @if($correct)
                                 <span class="key"><i class="fas fa-check"></i> Correct — {{ $picked }}</span>

@@ -84,6 +84,22 @@
     .sidebar.collapsed .logo-text { display: none; }
     .sidebar.collapsed .sidebar-logo { justify-content: center; padding: 14px 0 18px; }
 
+    /* Collapse chevron: only appears while the pointer is over the sidebar. */
+    .sidebar .sidebar-collapse-btn {
+        position: absolute; top: 16px; right: 10px;
+        width: 26px; height: 26px; border: 0; border-radius: 8px;
+        display: flex; align-items: center; justify-content: center;
+        background: rgba(255,255,255,0.16); color: #fff; font-size: 12px;
+        cursor: pointer; opacity: 0; pointer-events: none;
+        transition: opacity .18s, background .15s;
+    }
+    .sidebar:hover .sidebar-collapse-btn, .sidebar .sidebar-collapse-btn:focus-visible { opacity: 1; pointer-events: auto; }
+    .sidebar .sidebar-collapse-btn:hover { background: rgba(255,255,255,0.3); }
+    .sidebar .sidebar-collapse-btn i { transition: transform .28s; }
+    .sidebar.collapsed .sidebar-collapse-btn { top: 4px; right: 4px; width: 20px; height: 20px; font-size: 10px; }
+    .sidebar.collapsed .sidebar-collapse-btn i { transform: rotate(180deg); }
+    @media (hover: none) { .sidebar .sidebar-collapse-btn { opacity: 1; pointer-events: auto; } }
+
     .sidebar .sidebar-nav { list-style: none; flex: 1; margin: 0; padding: 8px 0 0; }
     .sidebar .sidebar-nav li { list-style: none; }
     .sidebar .nav-label {
@@ -126,7 +142,7 @@
     .sidebar .user-profile:hover { background: rgba(255,255,255,0.08); }
     .sidebar .avatar-sm {
         width: 34px; height: 34px;
-        background: rgba(255,255,255,0.18); border-radius: 8px;
+        background: rgba(255,255,255,0.18); border-radius: 50%;
         display: flex; align-items: center; justify-content: center;
         font-weight: 700; font-size: 12px; color: #fff;
         flex-shrink: 0; letter-spacing: 0.5px;
@@ -196,7 +212,7 @@
     .card-link { font-size:12px; color:var(--accent); text-decoration:none; font-weight:500; }
 
     /* STATS */
-    .stats-row { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:22px; }
+    .stats-row { display:grid; grid-template-columns:repeat(4,minmax(0, 1fr)); gap:16px; margin-bottom:22px; }
     .stat-card { background:white; border-radius:14px; padding:20px 22px; }
     .stat-top { display:flex; justify-content:space-between; align-items:flex-start; }
     .stat-icon { width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:18px; }
@@ -236,7 +252,7 @@
     }
 
     /* FORMS */
-    .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+    .form-grid { display:grid; grid-template-columns:minmax(0, 1fr) minmax(0, 1fr); gap:16px; }
     .form-group { margin-bottom:16px; }
     .form-group.full { grid-column:1 / -1; }
     label { display:block; font-size:12px; font-weight:600; color:#444; margin-bottom:6px; }
@@ -247,7 +263,7 @@
     input:focus, select:focus { outline:none; border-color:var(--primary); }
     .hint { font-size:11px; color:#aaa; margin-top:5px; }
 
-    .check-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
+    .check-grid { display:grid; grid-template-columns:repeat(2,minmax(0, 1fr)); gap:10px; }
     .check-card {
         display:flex; align-items:center; gap:10px; padding:12px 14px;
         border:1.5px solid #e6e6ea; border-radius:10px; cursor:pointer; transition:all .15s;
@@ -290,7 +306,7 @@
         .sidebar .sidebar-logo { justify-content: center; padding: 24px 0 22px; }
         .sidebar .user-profile { justify-content: center; padding: 8px 0; }
         .main { margin-left: 68px; }
-        .stats-row, .form-grid, .check-grid { grid-template-columns: 1fr; }
+        .stats-row, .form-grid, .check-grid { grid-template-columns: minmax(0, 1fr); }
     }
 
     @media (max-width: 768px) {
@@ -299,10 +315,10 @@
         .topbar { flex-direction: column; align-items: flex-start; gap: 10px; }
         .topbar-right { width: 100%; justify-content: flex-end; flex-wrap: wrap; gap: 8px; }
         .page-title { font-size: 20px !important; }
-        .stats-row { grid-template-columns: repeat(2, 1fr) !important; }
+        .stats-row { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
     }
     @media (max-width: 480px) {
-        .stats-row { grid-template-columns: 1fr !important; }
+        .stats-row { grid-template-columns: minmax(0, 1fr) !important; }
         .page-sub { display: none; }
         .topbar-search input { width: 140px; }
     }
@@ -322,7 +338,7 @@
 
     .topbar-avatar-wrap { position: relative; }
     .topbar-avatar-btn {
-        width: 38px; height: 38px; border-radius: 10px; border: none;
+        width: 38px; height: 38px; border-radius: 50%; border: none;
         background: var(--primary); color: #fff;
         font-weight: 700; font-size: 13px; font-family: 'Poppins', sans-serif;
         cursor: pointer; display: flex; align-items: center; justify-content: center;
@@ -374,6 +390,8 @@
         </div>
     </div>
 
+    <button type="button" class="sidebar-collapse-btn" id="sidebarChevron" aria-label="Collapse or expand the sidebar" title="Collapse or expand sidebar"><i class="fas fa-angles-left"></i></button>
+
     <ul class="sidebar-nav">
         <li class="nav-label">Main</li>
         <li><a href="{{ route('chair.dashboard') }}" class="{{ $active === 'dashboard' ? 'active' : '' }}"><i class="fas fa-gauge-high"></i><span>Dashboard</span></a></li>
@@ -381,14 +399,11 @@
         <li class="nav-label">Management</li>
         <li><a href="{{ route('chair.students') }}" class="{{ $active === 'students' ? 'active' : '' }}"><i class="fas fa-user-graduate"></i><span>Students</span></a></li>
         <li><a href="{{ route('chair.faculty') }}" class="{{ in_array($active, ['faculty', 'faculty-performance']) ? 'active' : '' }}"><i class="fas fa-chalkboard-user"></i><span>Faculty</span></a></li>
-        <li><a href="{{ route('chair.subjects') }}" class="{{ $active === 'subjects' ? 'active' : '' }}"><i class="fas fa-layer-group"></i><span>Subject Assignments</span></a></li>
-        <li><a href="{{ route('chair.sections') }}" class="{{ $active === 'sections' ? 'active' : '' }}"><i class="fas fa-people-group"></i><span>Sections</span></a></li>
+        <li><a href="{{ route('chair.subjects') }}" class="{{ $active === 'subjects' ? 'active' : '' }}"><i class="fas fa-layer-group"></i><span>Subjects &amp; Curriculum</span></a></li>
         <li><a href="{{ route('chair.mock-exams') }}" class="{{ $active === 'mock-exams' ? 'active' : '' }}"><i class="fas fa-file-pen"></i><span>Mock Exams</span></a></li>
-        <li><a href="{{ route('chair.communications') }}" class="{{ $active === 'communications' ? 'active' : '' }}"><i class="fas fa-bullhorn"></i><span>Communications</span></a></li>
 
         <li class="nav-label">Analytics</li>
         <li><a href="{{ route('chair.analytics.performance') }}" class="{{ $active === 'analytics-performance' ? 'active' : '' }}"><i class="fas fa-chart-line"></i><span>Class-Level Performance</span></a></li>
-        <li><a href="{{ route('chair.analytics.test-bank-coverage') }}" class="{{ $active === 'analytics-coverage' ? 'active' : '' }}"><i class="fas fa-table-cells-large"></i><span>Test Bank Coverage</span></a></li>
         <li><a href="{{ route('chair.ai-review') }}" class="{{ $active === 'ai-review' ? 'active' : '' }}"><i class="fas fa-robot"></i><span>AI Substitute Review</span></a></li>
 
         <li class="nav-label">Support</li>
@@ -411,6 +426,7 @@
                 <i class="fas fa-chevron-down chevron-icon"></i>
             </div>
             <div class="user-dropdown" id="userDropdown">
+                <button type="button" class="js-open-profile-modal"><i class="fas fa-user"></i><span>Profile Settings</span></button>
                 <form method="POST" action="{{ route('logout') }}"
                           data-confirm="You will be signed out of CPACE and returned to the login page."
                           data-confirm-title="Log out of CPACE?"
@@ -423,6 +439,10 @@
         </div>
     </div>
 </aside>
+
+@include('partials.sidebar-common')
+
+@include('partials.profile-modal')
 
 <script>
 (function () {
@@ -440,6 +460,8 @@
 
     const logo = document.getElementById('sidebarCollapseBtn');
     if (logo) logo.addEventListener('click', function(e) { e.stopPropagation(); toggle(); });
+    const chevron = document.getElementById('sidebarChevron');
+    if (chevron) chevron.addEventListener('click', function(e) { e.stopPropagation(); toggle(); });
 
     /* topbar avatar dropdown */
     document.addEventListener('DOMContentLoaded', function() {

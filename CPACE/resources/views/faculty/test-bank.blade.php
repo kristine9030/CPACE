@@ -41,14 +41,14 @@
         .export-menu a:hover { background:#f5f5f5; }
 
         /* STATS — same KPI card vibe as the faculty dashboard */
-        .stats-row { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:22px; }
+        .stats-row { display:grid; grid-template-columns:repeat(4,minmax(0, 1fr)); gap:16px; margin-bottom:22px; }
         .stat-card {
             background:white; border-radius:14px; padding:20px 22px;
             display:flex; flex-direction:column; height:100%;
-            box-shadow:0 2px 6px rgba(15,10,10,.08), 0 10px 22px -10px rgba(15,10,10,.22);
+            box-shadow:0 1px 2px rgba(16,24,40,.04), 0 4px 14px rgba(16,24,40,.06);
             transition:transform .18s ease, box-shadow .18s ease;
         }
-        .stat-card:hover { transform:translateY(-3px); box-shadow:0 4px 10px rgba(15,10,10,.1), 0 16px 30px -10px rgba(15,10,10,.3); }
+        .stat-card:hover { transform:translateY(-3px); box-shadow:0 2px 4px rgba(16,24,40,.05), 0 8px 20px rgba(16,24,40,.09); }
         .stat-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px; }
         .stat-icon { width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
         .si-red    { background:#fde8e8; color:var(--accent); }
@@ -152,7 +152,7 @@
         /* ── RESPONSIVE ── */
         @media (max-width: 768px) {
             /* stats: 4-col → 2-col */
-            .stats-row { grid-template-columns: repeat(2, 1fr) !important; }
+            .stats-row { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
             /* filter bar: wrap all items vertically */
             .filter-bar { flex-direction: column; align-items: stretch; gap: 10px; }
             .filter-group { flex-wrap: wrap; }
@@ -172,11 +172,38 @@
         }
 
         @media (max-width: 480px) {
-            .stats-row { grid-template-columns: 1fr !important; }
+            .stats-row { grid-template-columns: minmax(0, 1fr) !important; }
             .stat-num { font-size: 22px; }
             .btn { padding: 8px 12px; font-size: 12px; }
         }
-    </style>
+    
+        /* ── Question table: grey header, one row per question, actions in a ⋯ menu (same as the Program Chair tables) ── */
+        .tb-table { table-layout:fixed; }
+        .tb-table thead th { background:#f3f4f6; color:#4b5563; font-weight:700; letter-spacing:.5px; padding:13px 12px; border-bottom:1px solid #e5e7eb; white-space:nowrap; }
+        .tb-table tbody td { padding:14px 12px; border-bottom:1px solid #f2f2f4; }
+        .tb-table tbody tr { border-bottom:0; }
+        .tb-table .col-check { text-align:center; padding-left:0 !important; padding-right:0 !important; }
+        .tb-table .col-actions { text-align:center; }
+        .tb-table .q-text { max-width:none; white-space:normal; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; line-height:1.45; margin-bottom:6px; }
+        .tb-table .q-meta { display:flex; align-items:center; gap:8px; min-width:0; font-size:11.5px; color:#888; }
+        .tb-table .q-topic { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .tb-table .q-flag { color:#9ca3af; font-size:11px; flex-shrink:0; }
+        .tb-table .q-id { margin-left:auto; flex-shrink:0; color:#bbb; font-size:11px; }
+        .tb-table .subj-badge { flex-shrink:0; }
+        .sp-ai { background:#ede9fe; color:#7c3aed; text-decoration:none; white-space:nowrap; }
+        .row-menu { display:inline-block; }
+        .row-dots { width:32px; height:32px; border:1px solid #e5e7eb; border-radius:9px; background:#fff; color:#4b5563; font-size:14px; cursor:pointer; transition:background .15s, border-color .15s, color .15s; }
+        .row-dots:hover, .row-menu.open .row-dots { background:#f3f4f6; border-color:#d1d5db; color:#111827; }
+        .row-dropdown { display:none; position:fixed; z-index:1500; min-width:200px; background:#fff; border-radius:12px; padding:6px; box-shadow:0 12px 32px rgba(16,24,40,.16); border:1px solid #f0f0f0; text-align:left; }
+        .row-menu.open .row-dropdown { display:block; }
+        .row-dropdown form { margin:0; }
+        .row-dropdown a, .row-dropdown button { display:flex; align-items:center; gap:10px; width:100%; padding:9px 12px; border:0; background:none; border-radius:8px; font-family:'Poppins',sans-serif; font-size:12.5px; color:#333; cursor:pointer; text-align:left; text-decoration:none; }
+        .row-dropdown a i, .row-dropdown button i { width:14px; color:#999; }
+        .row-dropdown a:hover, .row-dropdown button:hover { background:#f6f6f7; }
+        .row-dropdown button.danger, .row-dropdown button.danger i { color:#b91c1c; }
+        .rd-count { margin-left:auto; font-size:11px; font-weight:700; color:#7c3aed; background:#ede9fe; border-radius:10px; padding:1px 8px; }
+        @media (max-width:900px) { .tb-table { table-layout:auto; min-width:760px; } .table-card { overflow-x:auto; } }
+</style>
 </head>
 <body>
 
@@ -367,6 +394,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const res  = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
             const html = await res.text();
             if (token !== reqToken) return; // a newer request already won
+            closeRowMenus();
             card.innerHTML = html;
             if (push) window.history.replaceState({}, '', url);
         } catch (e) {
@@ -477,6 +505,41 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+
+    // ── Row actions "⋯" menu ──
+    // The card plays a fade-up animation that leaves a transform on it, which
+    // would make a position:fixed child position itself against the card. So the
+    // open dropdown is moved to <body> and put back into its row when it closes.
+    let openMenu = null;
+    function closeRowMenus() {
+        if (!openMenu) return;
+        const { menu, drop } = openMenu;
+        drop.style.display = '';
+        menu.appendChild(drop);
+        menu.classList.remove('open');
+        openMenu = null;
+    }
+    function toggleRowMenu(event, btn) {
+        event.stopPropagation();
+        const menu = btn.closest('.row-menu');
+        const wasOpen = openMenu && openMenu.menu === menu;
+        closeRowMenus();
+        if (wasOpen) return;
+        const drop = menu.querySelector('.row-dropdown');
+        menu.classList.add('open');
+        document.body.appendChild(drop);
+        drop.style.display = 'block';
+        const r = btn.getBoundingClientRect();
+        const below = r.bottom + 6 + drop.offsetHeight <= window.innerHeight;
+        drop.style.top = (below ? r.bottom + 6 : r.top - 6 - drop.offsetHeight) + 'px';
+        drop.style.left = Math.max(8, r.right - drop.offsetWidth) + 'px';
+        openMenu = { menu, drop };
+    }
+    // Clicks inside the open dropdown (links, delete form) must not close it first.
+    document.addEventListener('click', (e) => { if (!(openMenu && openMenu.drop.contains(e.target))) closeRowMenus(); });
+    window.addEventListener('scroll', (e) => { if (!(openMenu && e.target instanceof Node && openMenu.drop.contains(e.target))) closeRowMenus(); }, true);
+    window.addEventListener('resize', closeRowMenus);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeRowMenus(); });
 </script>
 
     @include('partials.alerts')

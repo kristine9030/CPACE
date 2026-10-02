@@ -31,14 +31,14 @@
         .btn-ghost:hover { background:#f5f5f5; }
 
         /* STATS — same KPI card vibe as the faculty dashboard */
-        .stats-row { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:22px; }
+        .stats-row { display:grid; grid-template-columns:repeat(4,minmax(0, 1fr)); gap:14px; margin-bottom:14px; }
         .stat-card {
             background:white; border-radius:14px; padding:20px 22px;
             display:flex; flex-direction:column; height:100%;
-            box-shadow:0 2px 6px rgba(15,10,10,.08), 0 10px 22px -10px rgba(15,10,10,.22);
+            box-shadow:0 1px 2px rgba(16,24,40,.04), 0 4px 14px rgba(16,24,40,.06);
             transition:transform .18s ease, box-shadow .18s ease;
         }
-        .stat-card:hover { transform:translateY(-3px); box-shadow:0 4px 10px rgba(15,10,10,.1), 0 16px 30px -10px rgba(15,10,10,.3); }
+        .stat-card:hover { transform:translateY(-3px); box-shadow:0 2px 4px rgba(16,24,40,.05), 0 8px 20px rgba(16,24,40,.09); }
         .stat-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px; }
         .stat-icon { width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
         .si-red    { background:#fde8e8; color:var(--accent); }
@@ -51,10 +51,84 @@
         .stat-chg  { font-size:11px; color:var(--green); margin-top:2px; }
         .stat-chg.neutral { color:#999; }
 
+        /* LEADERBOARD — podium on a platform, then the rest of the top 10 */
+        .lb2 { background:#fff; border-radius:14px; padding:16px 20px 14px; margin-bottom:14px; box-shadow:0 1px 2px rgba(16,24,40,.04), 0 4px 14px rgba(16,24,40,.06); }
+        .lb2-head { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; flex-wrap:wrap; margin-bottom:6px; }
+        .lb2-title { font-size:15px; font-weight:600; color:#1f2937; display:flex; align-items:center; gap:8px; }
+        .lb2-title i { color:#d4a017; }
+        .lb2-sub { font-size:12px; color:#6b7280; margin-top:2px; }
+        .lb2-note { font-size:12px; color:#9ca3af; }
+        .lb2-empty { text-align:center; padding:34px 10px; color:#9ca3af; font-size:13px; }
+        .lb2-empty i { display:block; font-size:28px; color:#e5e7eb; margin-bottom:10px; }
+        .lb2-grid { display:grid; grid-template-columns:minmax(0, 1fr); gap:14px; align-items:start; }
+        .podium { display:flex; align-items:flex-end; justify-content:center; gap:8px; padding-top:6px; max-width:420px; margin:0 auto; width:100%; }
+        .pod { flex:1; min-width:0; max-width:130px; display:flex; flex-direction:column; align-items:center; text-align:center; position:relative; }
+        .pod-crown { color:#d4a017; font-size:15px; margin-bottom:2px; }
+        .pod-av { width:42px; height:42px; border-radius:50%; color:#fff; font-weight:700; font-size:13px; display:flex; align-items:center; justify-content:center; overflow:hidden; border:2px solid #fff; box-shadow:0 2px 6px rgba(16,24,40,.18); margin-bottom:5px; flex-shrink:0; }
+        .pod-1 .pod-av { width:52px; height:52px; border-color:#f3d77a; }
+        .pod-av img { width:100%; height:100%; object-fit:cover; display:block; }
+        .pod-av-empty { background:#eceef2 !important; color:#c4c8d0; box-shadow:none; }
+        .pod-name { font-size:12px; font-weight:600; color:#1f2937; max-width:100%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .pod-score { font-size:18px; font-weight:600; color:var(--primary); line-height:1.15; margin-top:1px; font-variant-numeric:tabular-nums; }
+        .pod-score small { font-size:11px; font-weight:500; }
+        .pod-meta { font-size:10.5px; color:#9ca3af; margin-bottom:4px; }
+        .pod-skills { display:flex; flex-direction:column; gap:3px; align-items:center; margin-bottom:6px; }
+        .pod.is-empty .pod-name, .pod.is-empty .pod-score { color:#c4c8d0; }
+        .pod-base { width:100%; display:flex; align-items:flex-start; justify-content:center; border-radius:8px 8px 0 0; color:#fff; font-size:20px; font-weight:700; padding-top:6px; background:linear-gradient(180deg, #9ca3af, #6b7280); }
+        .pod-1 .pod-base { height:70px; background:linear-gradient(180deg, #e6b422, #b8860b); }
+        .pod-2 .pod-base { height:52px; background:linear-gradient(180deg, #a8b0bd, #6f7886); }
+        .pod-3 .pod-base { height:38px; background:linear-gradient(180deg, #c98b5a, #8e5a30); }
+        .pod.is-empty .pod-base { background:#f1f2f5; color:#d1d5db; }
+        .pod.is-empty .pod-name { font-size:11px; font-weight:500; }
+        .skill { display:inline-flex; align-items:center; gap:4px; font-size:10.5px; font-weight:600; padding:2px 8px; border-radius:20px; white-space:nowrap; }
+        .skill.good { background:#d1fae5; color:#047857; } .skill.mid { background:#fef3c7; color:#b45309; } .skill.bad { background:#fee2e2; color:#b91c1c; }
+        .skill i { font-size:9px; }
+        .lb2-list { display:flex; flex-direction:column; gap:8px; }
+        .lb2-row { display:flex; align-items:center; gap:10px; padding:8px 10px; border:1px solid #f0f1f4; border-radius:10px; }
+        .lb2-rank { width:24px; text-align:center; font-size:13px; font-weight:600; color:#9ca3af; flex-shrink:0; }
+        .lb2-av { width:34px; height:34px; border-radius:50%; color:#fff; font-size:11.5px; font-weight:700; display:flex; align-items:center; justify-content:center; overflow:hidden; flex-shrink:0; }
+        .lb2-av img { width:100%; height:100%; object-fit:cover; }
+        .lb2-who { flex:1; min-width:0; }
+        .lb2-name { font-size:13px; font-weight:600; color:#1f2937; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .lb2-skills { display:flex; flex-wrap:wrap; gap:5px; margin-top:5px; align-items:center; }
+        .lb2-weak { font-size:11px; color:#b91c1c; }
+        .lb2-weak i { font-size:10px; margin-right:3px; }
+        .lb2-score { font-size:16px; font-weight:600; color:var(--primary); flex-shrink:0; font-variant-numeric:tabular-nums; }
+        .lb2-more { text-align:center; color:#9ca3af; font-size:12.5px; padding:20px 10px; border:1px dashed #e5e7eb; border-radius:12px; }
+        .lb2-more i { margin-right:6px; }
+        .lb2-legend { display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin-top:10px; padding-top:10px; border-top:1px solid #f3f4f6; }
+        .lb2-legend-note { font-size:11.5px; color:#9ca3af; margin-left:auto; }
+        @media (max-width:1000px) { .lb2-grid { grid-template-columns:minmax(0, 1fr); } .lb2-legend-note { margin-left:0; width:100%; } }
+        @media (max-width:520px) { .pod-av { width:38px; height:38px; font-size:12px; } .pod-1 .pod-av { width:46px; height:46px; } .pod-score { font-size:16px; } .lb2 { padding:14px 12px; } }
+
+        /* Leaderboard and the student table side by side */
+        .perf-duo { display:grid; grid-template-columns:minmax(0, 1fr) minmax(0, 1fr); gap:14px; margin-bottom:14px; align-items:stretch; }
+        .perf-duo > section { min-width:0; display:flex; flex-direction:column; }
+        .perf-duo .lb2 { margin-bottom:0; flex:1; }
+        .perf-duo .lb2-grid { grid-template-columns:minmax(0, 1fr); gap:22px; align-items:stretch; }
+        .perf-duo #perfStudents .table-card { flex:1; overflow-x:auto; }
+        /* Half-width table: the leaderboard already shows each student's subjects, so that column steps aside. */
+        .perf-duo #perfStudents th:nth-child(3), .perf-duo #perfStudents td:nth-child(3) { display:none; }
+        .perf-duo #perfStudents thead th, .perf-duo #perfStudents tbody td { padding-left:10px; padding-right:10px; }
+        .perf-duo #perfStudents .table-card table { min-width:0; width:100%; }
+        .perf-duo #perfStudents .student-email { display:none; }
+        .perf-duo #perfStudents .last-active { white-space:normal; }
+        @media (max-width:1100px) { .perf-duo { grid-template-columns:minmax(0, 1fr); } }
         /* INSIGHTS */
         .insights-head { font-size:13px; font-weight:700; color:#333; margin:4px 0 12px; display:flex; align-items:center; gap:8px; }
         .insights-head i { color:var(--primary); }
-        .insights-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:14px; margin-bottom:20px; align-items:stretch; }
+        .insights-fold { background:#fff; border-radius:14px; margin-bottom:14px; box-shadow:0 1px 2px rgba(16,24,40,.04), 0 4px 14px rgba(16,24,40,.06); }
+        .insights-fold > summary { list-style:none; cursor:pointer; display:flex; align-items:center; gap:12px; padding:13px 18px; user-select:none; }
+        .insights-fold > summary::-webkit-details-marker { display:none; }
+        .insights-fold .if-title { font-size:13.5px; font-weight:600; color:#1f2937; display:flex; align-items:center; gap:8px; }
+        .insights-fold .if-title i { color:#f59e0b; }
+        .insights-fold .if-count { font-size:11px; font-weight:600; color:#b45309; background:#fffbeb; border:1px solid #fde68a; padding:2px 9px; border-radius:20px; }
+        .insights-fold .if-hint { margin-left:auto; font-size:12px; color:#6b7280; display:flex; align-items:center; gap:6px; }
+        .insights-fold .if-hint i { font-size:10px; transition:transform .2s; }
+        .insights-fold[open] .if-hint i { transform:rotate(180deg); }
+        .insights-fold .if-hide, .insights-fold[open] .if-show { display:none; } .insights-fold[open] .if-hide { display:inline; }
+        .insights-fold > .insights-grid { padding:0 18px 16px; margin-bottom:0; }
+        .insights-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:14px; margin-bottom:14px; align-items:stretch; }
         .insight-card { background:#fff; border-radius:12px; padding:16px 18px; display:flex; gap:13px; align-items:flex-start; border-left:4px solid #ccc; box-shadow:0 2px 8px rgba(0,0,0,.04); }
         .insight-card.tone-good { border-left-color:var(--green); }
         .insight-card.tone-warn { border-left-color:var(--orange); }
@@ -70,7 +144,7 @@
         .insights-empty { background:#fff; border-radius:12px; padding:20px; text-align:center; color:#aaa; font-size:13px; margin-bottom:20px; }
 
         /* ANALYTICS CHARTS */
-        .analytics-row { display:grid; grid-template-columns:1fr 320px; gap:20px; margin-bottom:20px; align-items:stretch; }
+        .analytics-row { display:grid; grid-template-columns:minmax(0, 1fr) minmax(0, 1fr); gap:14px; margin-bottom:14px; align-items:start; }
         .chart-card { background:#fff; border-radius:14px; padding:18px 20px; }
         .chart-card h4 { font-size:13px; font-weight:700; color:#222; margin-bottom:4px; }
         .chart-card .chart-sub { font-size:11px; color:#aaa; margin-bottom:14px; }
@@ -101,7 +175,30 @@
         /* Left/right columns stretch to equal height so a short student list
            (e.g. one row) doesn't leave a big empty gap of bare page
            background hanging below the table while the side panels run on. */
-        .perf-layout { display:grid; grid-template-columns:1fr 300px; gap:18px; align-items:stretch; }
+        .perf-pair { display:grid; grid-template-columns:minmax(0, 1fr) minmax(0, 1fr); gap:14px; margin-bottom:14px; align-items:start; }
+        .perf-pair > .side-card { min-width:0; }
+        /* Every row is two equal cards of equal height, with the same gap and spacing below */
+        .perf-pair > .side-card { display:flex; flex-direction:column; }
+        .perf-pair > .side-card > form { margin-top:auto; padding-top:12px; }
+        #perfAttention { align-items:stretch; }
+        #perfAttention .chart-box-sm { flex:1; min-height:210px; margin-bottom:0; }
+        .side-head { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:12px; }
+        .side-head .side-title { margin-bottom:0; }
+        .bulb-btn { display:inline-flex; align-items:center; gap:6px; border:1px solid #fde68a; background:#fffbeb; color:#b45309; font:600 11.5px 'Poppins',sans-serif; padding:5px 11px; border-radius:20px; cursor:pointer; }
+        .bulb-btn:hover { background:#fef3c7; }
+        .bulb-btn i { color:#f59e0b; }
+        .wk-overlay { position:fixed; inset:0; z-index:3000; background:rgba(15,5,5,.5); display:flex; align-items:center; justify-content:center; padding:20px; }
+        .wk-overlay[hidden] { display:none; }
+        .wk-modal { background:#fff; border-radius:16px; width:100%; max-width:1000px; max-height:92vh; display:flex; flex-direction:column; box-shadow:0 20px 50px rgba(0,0,0,.3); }
+        .wk-head { display:flex; justify-content:space-between; gap:12px; padding:18px 22px 12px; border-bottom:1px solid #f3f4f6; }
+        .wk-title { font-size:16px; font-weight:600; color:#1f2937; display:flex; align-items:center; gap:9px; }
+        .wk-title i { color:#f59e0b; }
+        .wk-sub { font-size:12px; color:#6b7280; margin-top:3px; }
+        .wk-close { border:0; background:#f4f5f7; width:32px; height:32px; border-radius:50%; cursor:pointer; color:#666; flex-shrink:0; }
+        .wk-body { padding:14px 22px; overflow-y:auto; display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:4px 28px; align-content:start; }
+        @media (max-width:760px) { .wk-body { grid-template-columns:minmax(0, 1fr); } }
+        .wk-foot { padding:12px 22px; border-top:1px solid #f3f4f6; text-align:right; }
+        .wk-foot a { font-size:12.5px; font-weight:600; color:var(--accent); text-decoration:none; }
 
         /* Left column: student table, with Class Weak Topics stacked below it. */
         .left-col { display:flex; flex-direction:column; gap:18px; }
@@ -201,7 +298,7 @@
         .modal-email { font-size:12px; color:#aaa; }
         .modal-close { margin-left:auto; background:#f4f5f7; border:none; width:32px; height:32px; border-radius:8px; cursor:pointer; color:#777; font-size:14px; }
         .modal-close:hover { background:#eceef1; }
-        .modal-metrics { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:18px; }
+        .modal-metrics { display:grid; grid-template-columns:repeat(3,minmax(0, 1fr)); gap:10px; margin-bottom:18px; }
         .mm { background:#f9f9fb; border-radius:10px; padding:12px; text-align:center; }
         .mm-num { font-size:18px; font-weight:700; color:#1a1a1a; }
         .mm-lbl { font-size:10px; color:#999; margin-top:2px; }
@@ -215,7 +312,61 @@
         .modal-weak-item .wr { color:var(--accent); font-weight:700; }
         .modal-weak-item .wt-why { color:#9a4a4a; font-weight:500; font-size:10.5px; margin-top:4px; line-height:1.4; }
         .modal-weak-item .wt-miss { color:#b45309; font-weight:500; font-size:10.5px; margin-top:2px; line-height:1.4; }
-        .modal-weak-list { max-height:260px; overflow-y:auto; padding-right:4px; margin-right:-4px; }
+        /* ── Student view: header, four figures, then two cards (strengths | where they need help) ── */
+        .modal.sv { padding:22px 26px 20px; }
+        .sv-head { display:flex; align-items:center; gap:14px; padding-right:48px; margin-bottom:14px; flex-wrap:wrap; }
+        .sv-av { width:54px; height:54px; font-size:17px; }
+        .sv-who { min-width:0; flex:1 1 220px; }
+        .sv-who .modal-name { font-size:19px; font-weight:600; color:#1f2937; }
+        .sv-who .modal-email { font-size:12.5px; color:#6b7280; margin-top:1px; }
+        .sv-chips { display:flex; gap:8px; flex-wrap:wrap; }
+        .sv-chip { display:inline-flex; align-items:center; gap:6px; font-size:11.5px; font-weight:600; padding:5px 12px; border-radius:20px; }
+        .sv-chip.ok { background:#d1fae5; color:#047857; } .sv-chip.risk { background:#fee2e2; color:#b91c1c; }
+        .sv-chip.neutral { background:#f3f4f6; color:#6b7280; } .sv-chip.up { background:#dbeafe; color:#1d4ed8; }
+        .sv-tiles { display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:12px; margin-bottom:14px; }
+        .sv-tile { background:#f9fafb; border:1px solid #f0f1f4; border-radius:12px; padding:11px 16px; }
+        .sv-tile-lbl { font-size:11px; font-weight:600; letter-spacing:.4px; text-transform:uppercase; color:#9ca3af; margin-bottom:6px; }
+        .sv-tile-num { font-size:24px; font-weight:600; color:#1f2937; line-height:1.1; font-variant-numeric:tabular-nums; }
+        .sv-grid { display:grid; grid-template-columns:minmax(0, 5fr) minmax(0, 7fr); gap:14px; align-items:stretch; }
+        .sv-card { border:1px solid #f0f1f4; border-radius:14px; padding:15px 18px; background:#fff; display:flex; flex-direction:column; }
+        .sv-h { font-size:13.5px; font-weight:600; color:#1f2937; margin:0 0 12px; display:flex; align-items:center; gap:8px; }
+        .sv-h i { color:#9ca3af; font-size:12px; }
+        .sv-sub { margin-bottom:10px; }
+        .sv-sub-top { display:flex; justify-content:space-between; align-items:baseline; font-size:12.5px; margin-bottom:5px; }
+        .sv-sub-code { font-weight:600; color:#374151; } .sv-sub-n { font-weight:400; color:#9ca3af; font-size:11.5px; margin-left:4px; }
+        .sv-sub-pct { font-weight:600; font-variant-numeric:tabular-nums; }
+        .sv-bar { height:7px; background:#f0f1f4; border-radius:5px; overflow:hidden; }
+        .sv-bar i { display:block; height:100%; border-radius:5px; }
+        .sv-callouts { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:10px; margin-top:6px; }
+        .sv-call { border-radius:10px; padding:10px 12px; font-size:11.5px; line-height:1.4; }
+        .sv-call b { display:block; font-size:13px; font-weight:600; margin-top:2px; }
+        .sv-call.good { background:#ecfdf5; color:#047857; } .sv-call.bad { background:#fef2f2; color:#b91c1c; }
+        .sv-weak { border:1px solid #f3e4e4; background:#fffafa; border-radius:12px; padding:9px 14px; margin-bottom:8px; }
+        .sv-weak:last-child { margin-bottom:0; }
+        .sv-weak-top { display:flex; align-items:center; gap:8px; margin-bottom:6px; }
+        .sv-weak-name { font-size:13px; font-weight:600; color:#1f2937; min-width:0; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .sv-weak-subj { font-size:10.5px; font-weight:600; color:#6b7280; background:#f3f4f6; padding:2px 8px; border-radius:20px; flex-shrink:0; }
+        .sv-weak-pct { font-size:13px; font-weight:600; color:#b91c1c; flex-shrink:0; font-variant-numeric:tabular-nums; }
+        .sv-weak .sv-bar { height:5px; margin-bottom:7px; }
+        .sv-weak-note { font-size:11.5px; color:#6b7280; line-height:1.45; }
+        .sv-weak-note i { width:14px; color:#9ca3af; }
+        .sv-weak-tip { font-size:11.5px; color:#b45309; line-height:1.45; margin-top:2px; }
+        .sv-weak-tip i { width:14px; color:#f59e0b; }
+        .sv-more { text-align:center; font-size:12px; color:#9ca3af; padding-top:10px; }
+        .sv-empty { text-align:center; color:#6b7280; font-size:13px; padding:26px 10px; }
+        .sv-empty i { display:block; font-size:26px; color:#10b981; margin-bottom:8px; }
+        @media (max-width:900px) { .sv-grid { grid-template-columns:minmax(0, 1fr); } .sv-tiles { grid-template-columns:repeat(2, minmax(0, 1fr)); } }
+        .modal-weak-list { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:8px; }
+        .modal-weak-list .modal-weak-item { margin-bottom:0; }
+        .modal-weak-list .modal-more-note { grid-column:1 / -1; }
+        /* The student view is one wide card with two columns, so nothing inside needs its own scroll bar */
+        .modal.modal-lg { max-width:1080px; max-height:94vh; padding:22px 26px 20px; position:relative; }
+        .modal-close-abs { position:absolute; top:16px; right:16px; z-index:2; }
+        .modal-cols { display:grid; grid-template-columns:minmax(0, 360px) minmax(0, 1fr); gap:34px; align-items:start; }
+        .modal-col-left .modal-head { padding-right:0; }
+        .modal-col-right #mWeakChartBox { height:auto; overflow:visible; margin-bottom:14px; }
+        .modal-col-right { padding-right:34px; }
+        @media (max-width:900px) { .modal-cols { grid-template-columns:minmax(0, 1fr); gap:18px; } .modal-col-right { padding-right:0; } .modal-weak-list { grid-template-columns:minmax(0, 1fr); } }
         .modal-weak-list::-webkit-scrollbar { width:5px; }
         .modal-weak-list::-webkit-scrollbar-thumb { background:#e5d5d5; border-radius:3px; }
         .modal-weak-list::-webkit-scrollbar-track { background:transparent; }
@@ -226,9 +377,9 @@
 
         /* ── RESPONSIVE ── */
         @media (max-width: 768px) {
-            .stats-row { grid-template-columns: repeat(2, 1fr) !important; }
-            .perf-layout { grid-template-columns: 1fr !important; }
-            .analytics-row { grid-template-columns: 1fr !important; }
+            .stats-row { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+            .perf-pair { grid-template-columns: minmax(0, 1fr) !important; }
+            .analytics-row { grid-template-columns: minmax(0, 1fr) !important; }
             .table-card { overflow-x: auto; }
             table { min-width: 620px; }
             .filter-bar { flex-direction: column; align-items: stretch; gap: 10px; }
@@ -239,7 +390,7 @@
         }
 
         @media (max-width: 480px) {
-            .stats-row { grid-template-columns: 1fr !important; }
+            .stats-row { grid-template-columns: minmax(0, 1fr) !important; }
             .stat-num { font-size: 22px; }
             .score-bar-bg { display: none; }
         }
@@ -310,33 +461,55 @@
     </form>
 
     <!-- ANALYTICS (insights + charts, swapped in place via AJAX) -->
-    @include('faculty.partials.performance-analytics')
+    <!-- 1 · What it means, then who needs help right now -->
+    @include('faculty.partials.performance-insights')
+    @include('faculty.partials.performance-attention')
 
-    <!-- DYNAMIC BODY (table + side panels, swapped in place via AJAX) -->
+    <!-- 2 · The people: leaderboard and the student list -->
+    <div class="perf-duo">
+        @include('faculty.partials.performance-leaderboard')
+        @include('faculty.partials.performance-students')
+    </div>
+
+    <!-- 3 · Where the class is strong, and how scores are spread -->
     @include('faculty.partials.performance-body')
+
+    <!-- 4 · Trend over time and board readiness -->
+    @include('faculty.partials.performance-analytics')
 </main>
 
 <!-- STUDENT DETAIL MODAL -->
 <div class="modal-overlay" id="studentModal" onclick="if(event.target===this)closeStudent()">
-    <div class="modal">
-        <div class="modal-head">
-            <div class="modal-av" id="mAv"></div>
-            <div>
+    <div class="modal modal-lg sv" role="dialog" aria-modal="true" aria-labelledby="mName">
+        <button class="modal-close modal-close-abs" onclick="closeStudent()" aria-label="Close"><i class="fas fa-times"></i></button>
+
+        <header class="sv-head">
+            <div class="modal-av sv-av" id="mAv"></div>
+            <div class="sv-who">
                 <div class="modal-name" id="mName"></div>
                 <div class="modal-email" id="mEmail"></div>
             </div>
-            <button class="modal-close" onclick="closeStudent()"><i class="fas fa-times"></i></button>
+            <div class="sv-chips" id="mChips"></div>
+        </header>
+
+        <div class="sv-tiles">
+            <div class="sv-tile"><div class="sv-tile-lbl">Average score</div><div class="sv-tile-num" id="mScore"></div></div>
+            <div class="sv-tile"><div class="sv-tile-lbl">Quizzes taken</div><div class="sv-tile-num" id="mQuizzes"></div></div>
+            <div class="sv-tile"><div class="sv-tile-lbl">Questions answered</div><div class="sv-tile-num" id="mAttempted"></div></div>
+            <div class="sv-tile"><div class="sv-tile-lbl">Weak topics</div><div class="sv-tile-num" id="mWeakCount"></div></div>
         </div>
-        <div class="modal-metrics">
-            <div class="mm"><div class="mm-num" id="mScore"></div><div class="mm-lbl">Avg Score</div></div>
-            <div class="mm"><div class="mm-num" id="mQuizzes"></div><div class="mm-lbl">Quizzes</div></div>
-            <div class="mm"><div class="mm-num" id="mAttempted"></div><div class="mm-lbl">Questions</div></div>
+
+        <div class="sv-grid">
+            <section class="sv-card" aria-label="Accuracy by subject">
+                <h4 class="sv-h"><i class="fas fa-chart-simple"></i> Accuracy by subject</h4>
+                <div id="mSubjects"></div>
+                <div class="sv-callouts" id="mCallouts"></div>
+            </section>
+            <section class="sv-card" aria-label="Weak topics">
+                <h4 class="sv-h"><i class="fas fa-triangle-exclamation"></i> Where they need help</h4>
+                <div id="mWeak"></div>
+            </section>
         </div>
-        <div class="modal-sec-title">Accuracy by Subject</div>
-        <div id="mSubjects"></div>
-        <div class="modal-sec-title">Weak Topics</div>
-        <div class="chart-box-sm" id="mWeakChartBox"><div class="chart-inner" id="mWeakChartInner"><canvas id="chartStudentWeak"></canvas></div></div>
-        <div class="modal-weak-list" id="mWeak"></div>
     </div>
 </div>
 
@@ -551,89 +724,51 @@
         const s = STUDENTS[id];
         const d = DETAILS[id] || { subjects: [], weak: [] };
         if (!s) return;
+        const $ = (x) => document.getElementById(x);
+        const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-        document.getElementById('mAv').textContent = s.initials;
-        document.getElementById('mAv').style.background = s.color;
-        document.getElementById('mName').textContent = s.name;
-        document.getElementById('mEmail').textContent = s.email;
-        document.getElementById('mScore').textContent = s.score + '%';
-        document.getElementById('mScore').style.color = scoreColor(s.score);
-        document.getElementById('mQuizzes').textContent = s.quizzes;
-        document.getElementById('mAttempted').textContent = s.attempted;
+        // Header: who, and a plain-language status
+        $('mAv').textContent = s.initials;
+        $('mAv').style.background = s.color;
+        $('mName').textContent = s.name;
+        $('mEmail').textContent = s.email;
+        const trend = { up: ['up', 'fa-arrow-trend-up', 'Improving'], down: ['risk', 'fa-arrow-trend-down', 'Slipping'], new: ['neutral', 'fa-star', 'New this fortnight'], flat: ['neutral', 'fa-minus', 'Steady'] }[s.trend] || ['neutral', 'fa-minus', 'Steady'];
+        $('mChips').innerHTML =
+            (s.at_risk ? '<span class="sv-chip risk"><i class="fas fa-triangle-exclamation"></i> At risk</span>' : '<span class="sv-chip ok"><i class="fas fa-circle-check"></i> On track</span>')
+            + `<span class="sv-chip ${trend[0]}"><i class="fas ${trend[1]}"></i> ${trend[2]}</span>`;
 
-        const subjEl = document.getElementById('mSubjects');
-        if (!d.subjects.length) {
-            subjEl.innerHTML = '<div class="muted-empty">No topic data recorded yet.</div>';
-        } else {
-            subjEl.innerHTML = d.subjects.map(sub => `
-                <div class="subj-row">
-                    <div class="subj-row-top"><span style="color:#555;">${sub.code} <span style="color:#bbb;">(${sub.attempts} attempts)</span></span><span style="font-weight:700;color:${scoreColor(sub.accuracy)};">${sub.accuracy}%</span></div>
-                    <div class="subj-row-bar"><div style="height:100%;border-radius:4px;width:${sub.accuracy}%;background:${barColor(sub.accuracy)};"></div></div>
-                </div>`).join('');
-        }
+        // Four figures
+        $('mScore').textContent = s.score + '%';
+        $('mScore').style.color = scoreColor(s.score);
+        $('mQuizzes').textContent = s.quizzes;
+        $('mAttempted').textContent = Number(s.attempted).toLocaleString();
+        $('mWeakCount').textContent = d.weak.length;
+        $('mWeakCount').style.color = d.weak.length ? '#b91c1c' : '#059669';
 
-        const weakEl = document.getElementById('mWeak');
-        const chartBox = document.getElementById('mWeakChartBox');
-        if (studentWeakChart) { studentWeakChart.destroy(); studentWeakChart = null; }
+        // Accuracy by subject, best first, then the strongest / weakest callouts
+        const subj = d.subjects.slice().sort((a, b) => b.accuracy - a.accuracy);
+        $('mSubjects').innerHTML = subj.length ? subj.map((sub) => `
+            <div class="sv-sub">
+                <div class="sv-sub-top"><span><span class="sv-sub-code">${esc(sub.code)}</span><span class="sv-sub-n">${Number(sub.attempts).toLocaleString()} answers</span></span><span class="sv-sub-pct" style="color:${scoreColor(sub.accuracy)};">${sub.accuracy}%</span></div>
+                <div class="sv-bar"><i style="width:${sub.accuracy}%;background:${barColor(sub.accuracy)};"></i></div>
+            </div>`).join('') : '<div class="muted-empty">No topic data recorded yet.</div>';
+        const best = subj[0], worst = subj.length > 1 ? subj[subj.length - 1] : null;
+        $('mCallouts').innerHTML = (best ? `<div class="sv-call good"><i class="fas fa-arrow-up"></i> Strongest<b>${esc(best.code)} · ${best.accuracy}%</b></div>` : '')
+            + (worst && worst.accuracy < best.accuracy ? `<div class="sv-call bad"><i class="fas fa-arrow-down"></i> Needs the most help<b>${esc(worst.code)} · ${worst.accuracy}%</b></div>` : '');
 
-        if (!d.weak.length) {
-            chartBox.style.display = 'none';
-            weakEl.innerHTML = '<div class="muted-empty"><i class="fas fa-check-circle" style="color:#10b981;margin-right:5px;"></i>No weak topics — on track.</div>';
-        } else {
-            chartBox.style.display = '';
-            // Chart shows the weakest few (already sorted ascending by accuracy);
-            // the full detail with why/misconception lives in the scroll list below.
-            const top = d.weak.slice(0, 8);
-            sizeChartInner('mWeakChartInner', top, 15);
-            studentWeakChart = new Chart(document.getElementById('chartStudentWeak'), {
-                type: 'bar',
-                data: {
-                    labels: top.map(w => w.topic),
-                    datasets: [{
-                        data: top.map(w => w.accuracy),
-                        backgroundColor: top.map(w => weakBarColor(w.accuracy)),
-                        borderRadius: 5,
-                        borderSkipped: false,
-                        barThickness: 14
-                    }]
-                },
-                options: {
-                    responsive: true, maintainAspectRatio: false,
-                    indexAxis: 'y',
-                    layout: { padding: { left: 10 } },
-                    scales: {
-                        x: { beginAtZero: true, max: 100, grid: { color: '#f3f4f6' }, ticks: { font: { family: chartFont, size: 9 }, callback: v => v + '%' } },
-                        y: {
-                            grid: { display: false },
-                            ticks: {
-                                font: { family: chartFont, size: 10, weight: '600' },
-                                color: '#7f1d1d',
-                                autoSkip: false,
-                                callback: function (val) { return wrapChartLabel(this.getLabelForValue(val), 15); }
-                            }
-                        }
-                    },
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            callbacks: {
-                                title: items => top[items[0].dataIndex].topic,
-                                label: ctx => ctx.raw + '% accuracy'
-                            }
-                        }
-                    }
-                }
-            });
+        // Weak topics: the four weakest, each with the reason and the usual wrong answer
+        const MAX = 4;
+        $('mWeak').innerHTML = !d.weak.length
+            ? '<div class="sv-empty"><i class="fas fa-circle-check"></i>No weak topics — this student is on track.</div>'
+            : d.weak.slice(0, MAX).map((w) => `
+                <div class="sv-weak">
+                    <div class="sv-weak-top"><span class="sv-weak-name" title="${esc(w.topic)}">${esc(w.topic)}</span><span class="sv-weak-subj">${esc(w.subject)}</span><span class="sv-weak-pct">${w.accuracy}%</span></div>
+                    <div class="sv-bar"><i style="width:${w.accuracy}%;background:${weakBarColor(w.accuracy)};"></i></div>
+                    <div class="sv-weak-note"><i class="fas fa-circle-info"></i>${esc(w.why)}</div>
+                    ${w.miss ? `<div class="sv-weak-tip"><i class="fas fa-lightbulb"></i>${esc(w.miss)}</div>` : ''}
+                </div>`).join('') + (d.weak.length > MAX ? `<div class="sv-more">+ ${d.weak.length - MAX} more weak topic${d.weak.length - MAX === 1 ? '' : 's'}</div>` : '');
 
-            weakEl.innerHTML = d.weak.map(w => `
-                <div class="modal-weak-item">
-                    <div class="wt-row"><span class="wt">${w.topic} <span style="color:#c89;font-weight:500;">(${w.subject})</span></span><span class="wr">${w.accuracy}%</span></div>
-                    <div class="wt-why"><i class="fas fa-circle-info" style="margin-right:4px;"></i>${w.why}</div>
-                    ${w.miss ? `<div class="wt-miss"><i class="fas fa-lightbulb" style="margin-right:4px;"></i>${w.miss}</div>` : ''}
-                </div>`).join('');
-        }
-
-        document.getElementById('studentModal').classList.add('open');
+        $('studentModal').classList.add('open');
     }
     function closeStudent() { document.getElementById('studentModal').classList.remove('open'); }
 
@@ -664,14 +799,14 @@
                 // search box) untouched.
                 const tmp = document.createElement('div');
                 tmp.innerHTML = html;
-                const newStats     = tmp.querySelector('#perfStats');
-                const newAnalytics = tmp.querySelector('#perfAnalytics');
-                const newBody      = tmp.querySelector('#perfBody');
                 // Strip the entry-animation classes so the swap doesn't replay
                 // the fade/slide (that was the flicker) - animate first load only.
-                if (newStats)     { newStats.classList.remove('a1'); document.getElementById('perfStats').replaceWith(newStats); }
-                if (newAnalytics) { document.getElementById('perfAnalytics').replaceWith(newAnalytics); }
-                if (newBody)      { newBody.classList.remove('a2');  document.getElementById('perfBody').replaceWith(newBody); }
+                ['perfStats', 'perfInsights', 'perfAttention', 'perfLeaderboard', 'perfStudents', 'perfBody', 'perfAnalytics'].forEach(function (id) {
+                    const fresh = tmp.querySelector('#' + id);
+                    const old = document.getElementById(id);
+                    if (fresh && old) { fresh.classList.remove('a1', 'a2'); old.replaceWith(fresh); }
+                });
+                restoreInsightsFold();
                 hydratePerf();
                 syncTopbar(url);
                 if (push) history.pushState({ url }, '', url);
@@ -713,7 +848,7 @@
     // Pagination links inside the swapped body (document-level delegation, so
     // it keeps working after the body element is replaced).
     document.addEventListener('click', e => {
-        const a = e.target.closest('#perfBody .pag-btn');
+        const a = e.target.closest('#perfBody .pag-btn, #perfStudents .pag-btn');
         if (a && !a.classList.contains('disabled')) { e.preventDefault(); loadPerf(a.href); }
     });
 
@@ -728,5 +863,44 @@
 </script>
 
     @include('partials.alerts')
+<script>
+// Class Weak Topics popup. The modal sits inside a region that is swapped by AJAX and plays an entry
+// animation (which would trap a fixed-position child), so it is moved to <body> while it is open.
+(function () {
+    let home = null;
+    function modal() { return document.getElementById('weakModal'); }
+    function open() {
+        const m = modal();
+        if (!m) return;
+        home = m.parentNode;
+        document.body.appendChild(m);
+        m.hidden = false;
+    }
+    function close() {
+        const m = modal();
+        if (!m) return;
+        m.hidden = true;
+        const region = document.getElementById('perfAttention');
+        if (region && m.parentNode === document.body) region.appendChild(m);
+    }
+    document.addEventListener('click', function (e) {
+        if (e.target.closest('[data-open-weak]')) { open(); return; }
+        const m = modal();
+        if (m && !m.hidden && (e.target.closest('[data-close-weak]') || e.target === m)) close();
+    });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
+})();
+</script>
+<script>
+// "What this view means" stays folded until opened; remember the choice while filters refresh the page.
+function restoreInsightsFold() {
+    const el = document.getElementById('insightsFold');
+    if (el && sessionStorage.getItem('perfInsightsOpen') === '1') el.setAttribute('open', '');
+}
+document.addEventListener('toggle', function (e) {
+    if (e.target && e.target.id === 'insightsFold') sessionStorage.setItem('perfInsightsOpen', e.target.open ? '1' : '0');
+}, true);
+restoreInsightsFold();
+</script>
 </body>
 </html>

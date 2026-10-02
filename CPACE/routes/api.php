@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\PerformanceApiController;
 use App\Http\Controllers\Api\ReviewNoteApiController;
 use App\Http\Controllers\Api\CalendarApiController;
 use App\Http\Controllers\Api\SubjectsApiController;
+use App\Http\Controllers\Api\TestReportApiController;
 
 // ── Public (no token required) ────────────────────────────────────────────
 Route::post('/login',  [AuthApiController::class, 'login']);
@@ -48,4 +49,10 @@ Route::middleware('api.auth')->group(function () {
 
     // Spaced repetition calendar
     Route::get('/calendar', [CalendarApiController::class, 'index']);
+
+    // Super Admin automation — CI/scheduled jobs upload a test report here
+    // instead of a human pasting it into the web form. Requires a named
+    // Super Admin token (see SuperAdmin\ApiTokenController); the controller
+    // itself enforces the role check beyond just "any valid token".
+    Route::post('/test-reports', [TestReportApiController::class, 'store']);
 });

@@ -36,7 +36,7 @@
         .settings-wrap {
             max-width: 1240px;
             display: grid;
-            grid-template-columns: 1.6fr 1fr;
+            grid-template-columns: 1.6fr minmax(0, 1fr);
             align-items: start;
             gap: 20px;
         }
@@ -44,7 +44,7 @@
         .settings-col { display: flex; flex-direction: column; min-width: 0; }
 
         @media (max-width: 980px) {
-            .settings-wrap { grid-template-columns: 1fr; max-width: 760px; }
+            .settings-wrap { grid-template-columns: minmax(0, 1fr); max-width: 760px; }
         }
 
         .alert-status {
@@ -73,7 +73,7 @@
         /* ─── ACCOUNT PROFILE HEADER (avatar, same as the student side) ─── */
         .account-head { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
         .account-avatar {
-            width: 64px; height: 64px; border-radius: 16px;
+            width: 64px; height: 64px; border-radius: 50%;
             background: var(--primary); color: #fff;
             font-weight: 700; font-size: 22px;
             display: flex; align-items: center; justify-content: center;

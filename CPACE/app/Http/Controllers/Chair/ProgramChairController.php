@@ -14,6 +14,7 @@ use App\Models\User;
 use App\Services\ChairAnalyticsService;
 use App\Services\ChairDashboardService;
 use App\Services\FacultyOverviewService;
+use App\Support\Auditor;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -21,6 +22,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
 
 class ProgramChairController extends Controller
@@ -167,8 +169,7 @@ class ProgramChairController extends Controller
     {
         return view('chair.faculty', array_merge(
             $overview->accountsData(),
-            $overview->performanceData(),
-            ['activeTab' => 'accounts']
+            $overview->performanceData()
         ));
     }
 
@@ -345,6 +346,70 @@ class ProgramChairController extends Controller
         return back()->with('status', $faculty->is_active
             ? "{$faculty->name}'s account is now active."
             : "{$faculty->name}'s account has been deactivated.");
+    }
+
+    /**
+     * Content a faculty account owns. Deleting the account would cascade-delete
+     * some of it (class quizzes with students' attempts, imports, mock exams)
+     * or leave the rest without an author, so such accounts can only be
+     * deactivated. [table, column pointing at the faculty user]
+     */
+    private const FACULTY_CONTENT = [
+        ['questions', 'created_by'],
+        ['faculty_quizzes', 'faculty_id'],
+        ['question_import_batches', 'faculty_id'],
+        ['mock_exams', 'created_by'],
+        ['materials', 'uploaded_by'],
+    ];
+
+    /**
+     * Activate, deactivate, or delete several faculty accounts at once from
+     * the Faculty list's "select" checkboxes. Delete only removes accounts
+     * with no content in the system; the rest are reported back untouched.
+     */
+    public function bulkFaculty(Request $request)
+    {
+        $data = $request->validate([
+            'action' => ['required', Rule::in(['activate', 'deactivate', 'delete'])],
+            'faculty_ids' => ['required', 'array', 'min:1'],
+            'faculty_ids.*' => ['integer'],
+        ]);
+
+        $faculty = User::where('role_id', Role::FACULTY)->whereIn('id', $data['faculty_ids'])->get();
+        if ($faculty->isEmpty()) {
+            return back()->with('error', 'No faculty accounts were selected.');
+        }
+
+        $plural = fn (int $n) => $n . ' faculty account' . ($n === 1 ? '' : 's');
+
+        if ($data['action'] !== 'delete') {
+            $active = $data['action'] === 'activate';
+            $ids = $faculty->pluck('id');
+            User::whereIn('id', $ids)->update(['is_active' => $active]);
+            Auditor::log(Auth::user(), 'faculty_bulk_' . $data['action'], ($active ? 'Activated ' : 'Deactivated ') . $plural($ids->count()) . ': ' . $faculty->pluck('name')->implode(', ') . '.');
+
+            return back()->with('status', $plural($ids->count()) . ($active ? ' activated.' : ' deactivated.'));
+        }
+
+        $owners = collect(self::FACULTY_CONTENT)
+            ->filter(fn ($ref) => Schema::hasTable($ref[0]))
+            ->flatMap(fn ($ref) => DB::table($ref[0])->whereIn($ref[1], $faculty->pluck('id'))->distinct()->pluck($ref[1]))
+            ->unique();
+        [$kept, $deletable] = $faculty->partition(fn (User $f) => $owners->contains($f->id));
+
+        if ($deletable->isNotEmpty()) {
+            DB::transaction(fn () => User::whereIn('id', $deletable->pluck('id'))->delete());
+            Auditor::log(Auth::user(), 'faculty_bulk_delete', 'Deleted ' . $plural($deletable->count()) . ': ' . $deletable->pluck('name')->implode(', ') . '.');
+        }
+
+        $message = $deletable->isNotEmpty() ? $plural($deletable->count()) . ' deleted.' : 'No accounts were deleted.';
+        if ($kept->isNotEmpty()) {
+            $message .= ' Kept ' . $kept->pluck('name')->implode(', ') . ' — '
+                . ($kept->count() === 1 ? 'this account has' : 'these accounts have')
+                . ' questions, quizzes, or materials in CPACE. Deactivate instead to block sign-in.';
+        }
+
+        return back()->with($deletable->isNotEmpty() ? 'status' : 'error', $message);
     }
 
     /**

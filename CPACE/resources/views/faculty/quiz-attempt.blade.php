@@ -17,8 +17,8 @@
         .topbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:22px; gap:16px; position:relative; z-index:100; }
         .breadcrumb { display:flex; align-items:center; gap:6px; font-size:12px; color:#aaa; margin-bottom:4px; }
         .breadcrumb a { color:var(--accent); text-decoration:none; }
-        .page-title { font-size:24px; font-weight:700; color:#14283E; }
-        .page-sub { font-size:12px; color:#999; margin-top:2px; }
+        .page-title { font-size:24px; font-weight:600; color:#14283E; line-height:1.25; }
+        .page-sub { font-size:12.5px; font-weight:400; color:#6b7280; margin-top:3px; }
         .topbar-right { display:flex; align-items:center; gap:10px; }
         .btn { display:inline-flex; align-items:center; gap:7px; padding:9px 16px; border-radius:8px; font-size:13px; font-weight:600; font-family:'Poppins',sans-serif; cursor:pointer; border:1px solid #e0e0e0; text-decoration:none; background:#fff; color:#555; }
         .card { background:#fff; border-radius:14px; padding:20px 24px; margin-bottom:18px; }
@@ -26,12 +26,32 @@
         /* Long lists scroll inside the card; the heading stays put. */
         .card.scroll-card { display:flex; flex-direction:column; max-height:640px; }
         .card.scroll-card .scroll-body { overflow-y:auto; min-height:0; padding-right:6px; margin-right:-6px; }
-        .summary { display:flex; gap:32px; flex-wrap:wrap; }
-        .summary b { display:block; font-size:28px; font-weight:700; color:#1a1a1a; line-height:1.1; }
-        .summary span { font-size:11.5px; color:#999; }
-        .banner { border-radius:12px; padding:14px 16px; font-size:13px; display:flex; gap:11px; align-items:flex-start; margin-bottom:18px; background:#fdeceb; border:1px solid #f5cdc9; color:#8d2b22; }
-        .banner i { margin-top:2px; }
-        .split { display:grid; grid-template-columns:1fr 320px; gap:18px; align-items:start; }
+        /* Result summary: four evenly spaced figures, label above value */
+        .card.summary-card { padding:6px 8px; }
+        .summary { display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); }
+        .sum-item { padding:16px 22px; min-width:0; }
+        .sum-item + .sum-item { border-left:1px solid #f0f1f4; }
+        .sum-label { font-size:11px; font-weight:600; letter-spacing:.5px; text-transform:uppercase; color:#9ca3af; margin-bottom:6px; }
+        .sum-value { font-size:26px; font-weight:600; color:#1f2937; line-height:1.15; font-variant-numeric:tabular-nums; }
+        .sum-value small { font-size:15px; font-weight:500; color:#9ca3af; }
+        .sum-value.is-date { font-size:17px; line-height:1.5; }
+        .sum-note { font-size:12px; font-weight:400; color:#9ca3af; margin-top:3px; }
+        .sum-bar { height:5px; border-radius:4px; background:#eef0f3; margin-top:9px; overflow:hidden; }
+        .sum-bar span { display:block; height:100%; border-radius:4px; background:currentColor; }
+        @media (max-width:760px) {
+            .summary { grid-template-columns:repeat(2, minmax(0, 1fr)); }
+            .sum-item:nth-child(3) { border-left:0; }
+            .sum-item:nth-child(n+3) { border-top:1px solid #f0f1f4; }
+        }
+
+        /* Proctoring result: a slim bar, not a full-width alert */
+        .risk-bar { display:flex; align-items:center; gap:12px; flex-wrap:wrap; background:#fff; border:1px solid #eceef2; border-left:4px solid var(--rk, #d97706); border-radius:12px; padding:12px 16px; margin-bottom:18px; font-size:13px; color:#374151; }
+        .risk-bar.risk-high { --rk:#c0392b; } .risk-bar.risk-medium { --rk:#d97706; } .risk-bar.risk-low { --rk:#6b7280; }
+        .risk-ico { width:30px; height:30px; border-radius:50%; background:color-mix(in srgb, var(--rk) 12%, #fff); color:var(--rk); display:flex; align-items:center; justify-content:center; font-size:13px; flex-shrink:0; }
+        .risk-level { font-size:11px; font-weight:700; letter-spacing:.4px; text-transform:uppercase; color:var(--rk); background:color-mix(in srgb, var(--rk) 10%, #fff); padding:3px 10px; border-radius:20px; }
+        .risk-text { font-weight:500; color:#374151; }
+        .risk-text b { font-weight:600; color:#1f2937; }
+        .split { display:grid; grid-template-columns:minmax(0, 1fr) 320px; gap:18px; align-items:start; }
         .shots { display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:12px; margin-top:14px; }
         .shot { border:1px solid #e3e5ea; border-radius:10px; overflow:hidden; background:#fff; }
         .shot.evt { border-color:var(--accent); }
@@ -49,7 +69,7 @@
         .tl-row.severe::before { background:var(--accent); }
         .tl-when { font-size:11px; color:#7a8296; margin-top:2px; }
         .pick-bar { display:flex; align-items:center; gap:14px; margin-top:12px; padding:9px 12px; background:#f7f8fa; border:1px solid #e3e5ea; border-radius:10px; font-size:12.5px; }
-        @media (max-width: 1000px) { .split { grid-template-columns:1fr; } }
+        @media (max-width: 1000px) { .split { grid-template-columns:minmax(0, 1fr); } }
         .good { color:#059669 !important; } .mid { color:#d97706 !important; } .bad { color:var(--accent) !important; }
     </style>
 </head>
@@ -82,12 +102,32 @@
         </div>
     </div>
 
-    <div class="card">
+    @php
+        $scoreTone = $p >= 75 ? 'good' : ($p >= 50 ? 'mid' : 'bad');
+        $scoreColor = ['good' => '#059669', 'mid' => '#d97706', 'bad' => '#c0392b'][$scoreTone];
+    @endphp
+    <div class="card summary-card">
         <div class="summary">
-            <div><b class="{{ $p >= 75 ? 'good' : ($p >= 50 ? 'mid' : 'bad') }}">{{ round($p, 1) }}%</b><span>Score</span></div>
-            <div><b>{{ $attempt->score }} / {{ $attempt->total_points }}</b><span>Points</span></div>
-            <div><b>{{ $answered }} / {{ $quiz->items->count() }}</b><span>Answered</span></div>
-            <div><b style="font-size:16px;line-height:1.9;">{{ $attempt->submitted_at?->format('M j, g:i A') }}</b><span>Submitted</span></div>
+            <div class="sum-item">
+                <div class="sum-label">Score</div>
+                <div class="sum-value" style="color:{{ $scoreColor }};">{{ round($p, 1) }}<small>%</small></div>
+                <div class="sum-bar" style="color:{{ $scoreColor }};"><span style="width:{{ max(0, min(100, $p)) }}%"></span></div>
+            </div>
+            <div class="sum-item">
+                <div class="sum-label">Points</div>
+                <div class="sum-value">{{ $attempt->score }}<small> / {{ $attempt->total_points }}</small></div>
+                <div class="sum-note">earned</div>
+            </div>
+            <div class="sum-item">
+                <div class="sum-label">Answered</div>
+                <div class="sum-value">{{ $answered }}<small> / {{ $quiz->items->count() }}</small></div>
+                <div class="sum-note">{{ $answered === $quiz->items->count() ? 'every question' : ($quiz->items->count() - $answered) . ' left blank' }}</div>
+            </div>
+            <div class="sum-item">
+                <div class="sum-label">Submitted</div>
+                <div class="sum-value is-date">{{ $attempt->submitted_at?->format('M j, Y') }}</div>
+                <div class="sum-note">{{ $attempt->submitted_at?->format('g:i A') }}</div>
+            </div>
         </div>
     </div>
 
@@ -100,11 +140,11 @@
             </x-hint>
         @endif
         @if($attempt->flag_count > 0)
-            <div class="banner">
-                <i class="fas fa-flag"></i>
-                <div>
-                    <strong>{{ $risk['label'] }} — {{ $attempt->flag_count }} {{ \Illuminate\Support\Str::plural('flag', $attempt->flag_count) }} raised during this sitting.</strong>
-                    <x-tip label="Risk breakdown">
+            <div class="risk-bar risk-{{ $risk['level'] }}">
+                <span class="risk-ico"><i class="fas fa-flag"></i></span>
+                <span class="risk-level">{{ $risk['label'] }}</span>
+                <span class="risk-text"><b>{{ $attempt->flag_count }}</b> {{ \Illuminate\Support\Str::plural('flag', $attempt->flag_count) }} raised during this sitting</span>
+                <x-tip label="Risk breakdown">
                         <table>
                             @foreach($risk['rows'] as $row)
                                 <tr><td>{{ $row['label'] }}</td><td>×{{ $row['count'] }}</td><td><strong>{{ $row['points'] }} pts</strong></td></tr>
@@ -113,7 +153,6 @@
                         </table>
                         <span class="tip-note">Flags are signals, not proof — review the timeline and captures before drawing a conclusion.</span>
                     </x-tip>
-                </div>
             </div>
         @endif
     @endif

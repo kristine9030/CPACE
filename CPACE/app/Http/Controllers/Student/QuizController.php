@@ -14,6 +14,7 @@ use App\Services\RivalTierService;
 use App\Services\SpacedRepetitionScheduler;
 use App\Services\StreakService;
 use App\Services\WeaknessDetector;
+use App\Support\Auditor;
 use App\Support\CurriculumScope;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -543,6 +544,8 @@ class QuizController extends Controller
                 report($e);
             }
         }
+
+        Auditor::log(Auth::user(), 'quiz_submitted', "Submitted a {$session->session_type} quiz ({$correctCount}/{$questions->count()} correct).", 'QuizSession', $session->id);
 
         return redirect()->route('quiz.results', $session->id);
     }

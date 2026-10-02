@@ -6,7 +6,9 @@ use App\Models\Role;
 use App\Models\User;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
@@ -101,6 +103,8 @@ class FacultyTestBankTest extends TestCase
             $table->string('question_type')->default('mcq');
             $table->string('difficulty')->default('moderate');
             $table->text('explanation')->nullable();
+            $table->string('image_path')->nullable();
+            $table->json('table_data')->nullable();
             $table->boolean('is_active')->default(true);
             $table->timestamps();
         });
@@ -426,6 +430,160 @@ class FacultyTestBankTest extends TestCase
         ]);
 
         $this->actingAs($student)->get(route('faculty.test-bank'))->assertForbidden();
+    }
+
+    // ── Pictures and tables on a question ──
+
+    private function mcqPayload(int $topicId, array $extra = []): array
+    {
+        return $extra + [
+            'topic_id' => $topicId, 'question_text' => 'Using the trial balance below, what is the total debit?',
+            'question_type' => 'mcq', 'difficulty' => 'Medium',
+            'choice_a' => '10,000', 'choice_b' => '12,500', 'choice_c' => '15,000', 'choice_d' => '20,000',
+            'correct_answer' => 'b', 'is_active' => '1',
+        ];
+    }
+
+    public function test_a_question_can_be_created_with_a_picture_and_a_table(): void
+    {
+        Storage::fake('public');
+        $faculty = $this->faculty();
+        $topicId = $this->topic($faculty);
+
+        $this->actingAs($faculty)->post(route('faculty.question.store'), $this->mcqPayload($topicId, [
+            'image' => UploadedFile::fake()->image('ledger.png', 400, 300),
+            'table_json' => json_encode(['header' => true, 'total' => true, 'rows' => [
+                ['Account', 'Debit', 'Credit'], ['Cash', '10,000', ''], ['Sales', '', '10,000'], ['Total', '10,000', '10,000'],
+            ]]),
+        ]))->assertRedirect(route('faculty.test-bank'));
+
+        $q = \App\Models\Question::firstOrFail();
+        $this->assertStringStartsWith('question-images/', $q->image_path);
+        Storage::disk('public')->assertExists($q->image_path);
+        $this->assertTrue($q->table_data['header']);
+        $this->assertTrue($q->table_data['total']);
+        $this->assertSame(['Cash', '10,000', ''], $q->table_data['rows'][1]);
+        $this->assertTrue($q->hasExhibit());
+    }
+
+    public function test_a_question_without_a_picture_or_table_is_saved_as_before(): void
+    {
+        $faculty = $this->faculty();
+        $topicId = $this->topic($faculty);
+
+        $this->actingAs($faculty)->post(route('faculty.question.store'), $this->mcqPayload($topicId, ['table_json' => '']))
+            ->assertRedirect(route('faculty.test-bank'));
+
+        $q = \App\Models\Question::firstOrFail();
+        $this->assertNull($q->image_path);
+        $this->assertNull($q->table_data);
+        $this->assertFalse($q->hasExhibit());
+    }
+
+    public function test_editing_can_replace_the_table_and_remove_the_picture(): void
+    {
+        Storage::fake('public');
+        $faculty = $this->faculty();
+        $topicId = $this->topic($faculty);
+        $this->actingAs($faculty)->post(route('faculty.question.store'), $this->mcqPayload($topicId, [
+            'image' => UploadedFile::fake()->image('a.jpg'),
+            'table_json' => json_encode(['rows' => [['A', 'B'], ['1', '2']]]),
+        ]));
+        $q = \App\Models\Question::firstOrFail();
+
+        // Editing without touching the exhibit keeps it
+        $this->actingAs($faculty)->put(route('faculty.question.update', $q->id), $this->mcqPayload($topicId, ['question_text' => 'Reworded question text here']));
+        $this->assertNotNull($q->fresh()->image_path);
+        $this->assertNotNull($q->fresh()->table_data);
+
+        // New table, picture removed
+        $this->actingAs($faculty)->put(route('faculty.question.update', $q->id), $this->mcqPayload($topicId, [
+            'remove_image' => '1',
+            'table_json' => json_encode(['rows' => [['X', 'Y'], ['9', '8']]]),
+        ]));
+        $fresh = $q->fresh();
+        $this->assertNull($fresh->image_path);
+        $this->assertSame([['X', 'Y'], ['9', '8']], $fresh->table_data['rows']);
+
+        // Clearing the table field removes the table
+        $this->actingAs($faculty)->put(route('faculty.question.update', $q->id), $this->mcqPayload($topicId, ['table_json' => '']));
+        $this->assertNull($q->fresh()->table_data);
+    }
+
+    public function test_only_real_images_and_readable_tables_are_accepted(): void
+    {
+        Storage::fake('public');
+        $faculty = $this->faculty();
+        $topicId = $this->topic($faculty);
+
+        $this->actingAs($faculty)->post(route('faculty.question.store'), $this->mcqPayload($topicId, [
+            'image' => UploadedFile::fake()->create('notes.pdf', 100, 'application/pdf'),
+        ]))->assertSessionHasErrors('image');
+
+        $this->actingAs($faculty)->post(route('faculty.question.store'), $this->mcqPayload($topicId, [
+            'image' => UploadedFile::fake()->image('huge.png')->size(5000),
+        ]))->assertSessionHasErrors('image');
+
+        $this->actingAs($faculty)->post(route('faculty.question.store'), $this->mcqPayload($topicId, ['table_json' => '{not json']))
+            ->assertSessionHasErrors('table_json');
+
+        $this->assertSame(0, DB::table('questions')->count());
+    }
+
+    public function test_the_table_is_cleaned_before_it_is_stored(): void
+    {
+        $clean = \App\Support\QuestionExhibit::sanitizeTable([
+            'header' => true, 'total' => true,
+            'rows' => [['Item', '', 'Amount'], ['', '', ''], ['<b>Cash</b>', '', '1,000'], ['Note']],
+        ]);
+
+        $this->assertSame([['Item', 'Amount'], ['<b>Cash</b>', '1,000'], ['Note', '']], $clean['rows'], 'empty rows/columns dropped, short rows padded');
+        $this->assertNull(\App\Support\QuestionExhibit::sanitizeTable(['rows' => [['', ''], ['', '']]]));
+        $this->assertNull(\App\Support\QuestionExhibit::sanitizeTable('nonsense'));
+        $this->assertFalse(\App\Support\QuestionExhibit::sanitizeTable(['total' => true, 'rows' => [['only row', '1']]])['total'], 'a single row cannot be a total row');
+        $this->assertNull(\App\Support\QuestionExhibit::validImagePath('../../.env'));
+        $this->assertSame('question-images/abc.png', \App\Support\QuestionExhibit::validImagePath('question-images/abc.png'));
+    }
+
+    public function test_students_see_the_table_with_cells_escaped_and_numbers_aligned(): void
+    {
+        $question = new \App\Models\Question([
+            'question_text' => 'x',
+            'image_path' => 'question-images/ledger.png',
+            'table_data' => ['header' => true, 'total' => true, 'rows' => [
+                ['Account', 'Amount'], ['<script>alert(1)</script>', '(1,500.00)'], ['Total', '10,000'],
+            ]],
+        ]);
+
+        $html = view('partials.question-exhibit', ['item' => $question])->render();
+
+        $this->assertStringNotContainsString('<script>alert(1)</script>', $html);
+        $this->assertStringContainsString('&lt;script&gt;alert(1)&lt;/script&gt;', $html);
+        $this->assertStringContainsString('<th>Account</th>', $html);
+        $this->assertStringContainsString('class="num">(1,500.00)</td>', $html);
+        $this->assertStringContainsString('class="qx-total"', $html);
+        $this->assertStringContainsString('storage/question-images/ledger.png', $html);
+
+        $this->assertSame('', trim(view('partials.question-exhibit', ['item' => new \App\Models\Question(['question_text' => 'plain'])])->render()));
+    }
+
+    public function test_a_mock_exam_item_keeps_the_picture_and_table_of_its_source_question(): void
+    {
+        $question = new \App\Models\Question([
+            'topic_id' => 1, 'question_text' => 'q', 'question_type' => 'mcq', 'difficulty' => 'easy',
+            'image_path' => 'question-images/a.png', 'table_data' => ['rows' => [['A', 'B']]],
+        ]);
+        $question->id = 5;
+        $question->setRelation('choices', collect());
+
+        $payload = \App\Models\MockExamItem::payloadFromQuestion($question, 0);
+        $this->assertSame('question-images/a.png', $payload['image_path']);
+        $this->assertSame([['A', 'B']], $payload['table_data']['rows']);
+
+        $plain = new \App\Models\Question(['topic_id' => 1, 'question_text' => 'q', 'question_type' => 'mcq', 'difficulty' => 'easy']);
+        $plain->id = 6;
+        $plain->setRelation('choices', collect());
+        $this->assertArrayNotHasKey('image_path', \App\Models\MockExamItem::payloadFromQuestion($plain, 0));
     }
 
     private function faculty(string $email = 'faculty@example.com'): User

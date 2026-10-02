@@ -82,11 +82,20 @@ class Topic extends Model
      */
     public static function buildTree(Collection $flat, ?int $parentId = null): Collection
     {
-        return $flat->where('parent_id', $parentId)->map(function (Topic $topic) use ($flat) {
-            $topic->setRelation('children', static::buildTree($flat, $topic->id));
+        // Group children by parent once, then walk down. (Re-scanning the
+        // whole list for every topic was O(n²) — about a second for a
+        // ~1,000-topic TOS.) Roots are keyed 0; topic ids start at 1.
+        $byParent = $flat->groupBy(fn (Topic $topic) => (int) ($topic->parent_id ?? 0));
 
-            return $topic;
-        })->values();
+        $attach = function (int $id) use (&$attach, $byParent, $flat): Collection {
+            return $byParent->get($id, $flat->make())->map(function (Topic $topic) use (&$attach) {
+                $topic->setRelation('children', $attach($topic->id));
+
+                return $topic;
+            })->values();
+        };
+
+        return $attach((int) ($parentId ?? 0));
     }
 
     /**

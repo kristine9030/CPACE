@@ -79,6 +79,7 @@
                     <span>{{ $item->points }} pt{{ $item->points === 1 ? '' : 's' }}</span>
                 </div>
                 <div class="q-text">{{ $item->question_text }}</div>
+                @include('partials.question-exhibit', ['item' => $item])
                 <div class="choices">
                     @foreach($item->choices as $choice)
                         <label class="choice">

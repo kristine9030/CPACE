@@ -1,0 +1,14 @@
+{
+  "id": "cpace-staging-env",
+  "name": "CPACE — Staging",
+  "values": [
+    { "key": "baseUrl", "value": "http://localhost/CPACE/CPACE/public", "enabled": true },
+    { "key": "studentEmail", "value": "student@cpace.test", "enabled": true },
+    { "key": "studentPassword", "value": "Student123", "enabled": true },
+    { "key": "token", "value": "", "enabled": true },
+    { "key": "subjectId", "value": "", "enabled": true },
+    { "key": "sessionId", "value": "", "enabled": true },
+    { "key": "noteId", "value": "", "enabled": true }
+  ],
+  "_postman_variable_scope": "environment"
+}

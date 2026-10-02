@@ -236,6 +236,106 @@ class ChairFacultyPerformanceReportTest extends TestCase
         ]);
     }
 
+    public function test_the_faculty_page_is_one_list_with_account_and_contribution_together(): void
+    {
+        $chair = $this->chair();
+        $faculty = $this->faculty('me@example.com');
+        $subjectId = DB::table('subjects')->insertGetId(['code' => 'FAR', 'name' => 'Financial Accounting', 'created_at' => now(), 'updated_at' => now()]);
+        DB::table('faculty_subjects')->insert(['faculty_id' => $faculty->id, 'subject_id' => $subjectId, 'assigned_at' => now()]);
+        \App\Support\CurriculumScope::flush();
+
+        // Both old entry points show the same single page — no tabs.
+        foreach (['chair.faculty', 'chair.faculty.performance'] as $route) {
+            $this->actingAs($chair)->get(route($route))
+                ->assertOk()
+                ->assertDontSee('mtab-bar', false)
+                ->assertDontSee('role="tablist"', false)
+                ->assertSee('id="facultyList"', false)
+                // One row carries the account (email, Active) and the contribution status.
+                ->assertSeeInOrder(['me@example.com', 'FAR', 'Active', 'No questions yet', 'Assign subjects', 'Edit account'])
+                // Summary cards + the list only: no to-do queue, subject risk, or charts.
+                ->assertSee('Questions Written')->assertSee('Faculty List')
+                ->assertDontSee('Needs Your Attention')
+                ->assertDontSee('Subject Risk')
+                ->assertDontSee('<canvas', false);
+        }
+    }
+
+    public function test_bulk_deactivate_and_activate_selected_faculty(): void
+    {
+        $chair = $this->chair();
+        $a = $this->faculty('a@example.com');
+        $b = $this->faculty('b@example.com');
+        $untouched = $this->faculty('c@example.com');
+
+        $this->actingAs($chair)->post(route('chair.faculty.bulk'), ['action' => 'deactivate', 'faculty_ids' => [$a->id, $b->id]])
+            ->assertRedirect()->assertSessionHas('status', '2 faculty accounts deactivated.');
+        $this->assertFalse((bool) $a->fresh()->is_active);
+        $this->assertFalse((bool) $b->fresh()->is_active);
+        $this->assertTrue((bool) $untouched->fresh()->is_active);
+
+        $this->actingAs($chair)->post(route('chair.faculty.bulk'), ['action' => 'activate', 'faculty_ids' => [$a->id]])
+            ->assertSessionHas('status', '1 faculty account activated.');
+        $this->assertTrue((bool) $a->fresh()->is_active);
+    }
+
+    public function test_bulk_delete_removes_only_faculty_with_no_content(): void
+    {
+        $chair = $this->chair();
+        $empty = $this->faculty('empty@example.com');
+        $author = $this->faculty('author@example.com');
+        $subjectId = DB::table('subjects')->insertGetId(['code' => 'FAR', 'name' => 'Financial Accounting', 'created_at' => now(), 'updated_at' => now()]);
+        $topicId = DB::table('topics')->insertGetId(['subject_id' => $subjectId, 'curriculum_version_id' => $this->activeId, 'name' => 'T', 'created_at' => now(), 'updated_at' => now()]);
+        DB::table('questions')->insert(['topic_id' => $topicId, 'created_by' => $author->id, 'question_text' => 'Q', 'created_at' => now(), 'updated_at' => now()]);
+
+        $this->actingAs($chair)->post(route('chair.faculty.bulk'), ['action' => 'delete', 'faculty_ids' => [$empty->id, $author->id, $chair->id]])
+            ->assertRedirect()
+            ->assertSessionHas('status', fn ($msg) => str_starts_with($msg, '1 faculty account deleted.') && str_contains($msg, 'Kept Test Faculty'));
+
+        $this->assertNull(User::find($empty->id));
+        $this->assertNotNull(User::find($author->id), 'a faculty member with questions is kept');
+        $this->assertNotNull(User::find($chair->id), 'non-faculty ids are ignored');
+    }
+
+    public function test_bulk_delete_with_only_content_owners_deletes_nothing(): void
+    {
+        $chair = $this->chair();
+        $author = $this->faculty('author@example.com');
+        $subjectId = DB::table('subjects')->insertGetId(['code' => 'FAR', 'name' => 'Financial Accounting', 'created_at' => now(), 'updated_at' => now()]);
+        $topicId = DB::table('topics')->insertGetId(['subject_id' => $subjectId, 'curriculum_version_id' => $this->activeId, 'name' => 'T', 'created_at' => now(), 'updated_at' => now()]);
+        DB::table('questions')->insert(['topic_id' => $topicId, 'created_by' => $author->id, 'question_text' => 'Q', 'created_at' => now(), 'updated_at' => now()]);
+
+        $this->actingAs($chair)->post(route('chair.faculty.bulk'), ['action' => 'delete', 'faculty_ids' => [$author->id]])
+            ->assertSessionHas('error', fn ($msg) => str_starts_with($msg, 'No accounts were deleted.'));
+        $this->assertNotNull(User::find($author->id));
+    }
+
+    public function test_bulk_action_is_validated(): void
+    {
+        $chair = $this->chair();
+        $faculty = $this->faculty('a@example.com');
+
+        $this->actingAs($chair)->post(route('chair.faculty.bulk'), ['action' => 'promote', 'faculty_ids' => [$faculty->id]])
+            ->assertSessionHasErrors('action');
+        $this->actingAs($chair)->post(route('chair.faculty.bulk'), ['action' => 'delete', 'faculty_ids' => []])
+            ->assertSessionHasErrors('faculty_ids');
+        $this->assertNotNull(User::find($faculty->id));
+    }
+
+    public function test_the_summary_shows_subject_coverage_instead_of_accuracy(): void
+    {
+        $chair = $this->chair();
+        DB::table('subjects')->insert(['code' => 'FAR', 'name' => 'Financial Accounting', 'created_at' => now(), 'updated_at' => now()]);
+        \App\Support\CurriculumScope::flush();
+
+        $this->actingAs($chair)->get(route('chair.faculty'))
+            ->assertOk()
+            ->assertSee('Subjects Covered')
+            ->assertSee('No one is writing questions for')
+            ->assertDontSee('Student Accuracy')
+            ->assertSee('id="facultySelectAll"', false);
+    }
+
     private function faculty(string $email): User
     {
         return User::create([

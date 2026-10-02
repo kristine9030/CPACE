@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     @include('partials.mock-exam-styles')
     <style>
-        .split { display:grid; grid-template-columns:1fr 340px; gap:18px; align-items:start; }
+        .split { display:grid; grid-template-columns:minmax(0, 1fr) 340px; gap:18px; align-items:start; }
         .shots { display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:12px; }
         .shot { border:1px solid var(--line); border-radius:10px; overflow:hidden; background:#fff; }
         .shot.evt { border-color:var(--red); }
@@ -49,7 +49,7 @@
                           border-radius:50%; background:var(--amber); }
         .tl-row.severe::before { background:var(--red); }
         .tl-when { font-size:11px; color:var(--muted); margin-top:2px; }
-        @media (max-width: 1000px) { .split { grid-template-columns:1fr; } }
+        @media (max-width: 1000px) { .split { grid-template-columns:minmax(0, 1fr); } }
     </style>
 </head>
 <body>

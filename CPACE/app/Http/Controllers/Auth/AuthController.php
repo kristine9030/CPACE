@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Mail\ResetPasswordMail;
 use App\Models\Role;
 use App\Models\User;
+use App\Support\Auditor;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -49,6 +50,7 @@ class AuthController extends Controller
             }
 
             $user->forceFill(['last_login_at' => now()])->save();
+            Auditor::log($user, 'login', 'Logged in.');
 
             return redirect()->intended($this->homeFor($user));
         }
@@ -270,6 +272,8 @@ class AuthController extends Controller
      */
     public function logout(Request $request)
     {
+        Auditor::log($request->user(), 'logout', 'Logged out.');
+
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();

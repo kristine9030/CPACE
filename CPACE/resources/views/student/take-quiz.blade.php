@@ -894,6 +894,7 @@
                         <div class="q-card">
                             <div class="q-card-label">{{ $typeLabel[$question->question_type] ?? 'Question' }}</div>
                             <div class="q-text">{{ $question->question_text }}</div>
+                            @include('partials.question-exhibit', ['item' => $question])
                         </div>
 
                         <div class="choices">

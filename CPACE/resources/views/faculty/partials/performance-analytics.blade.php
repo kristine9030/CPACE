@@ -1,20 +1,5 @@
 <!-- ANALYTICS (swapped in place via AJAX) -->
 <div id="perfAnalytics">
-    @if(!empty($insights))
-        <div class="insights-head"><i class="fas fa-lightbulb"></i> What this view means for you</div>
-        <div class="insights-grid">
-            @foreach($insights as $insight)
-                <div class="insight-card tone-{{ $insight['tone'] }}">
-                    <div class="insight-icon"><i class="fas {{ $insight['icon'] }}"></i></div>
-                    <div>
-                        <div class="insight-title">{{ $insight['title'] }}</div>
-                        <div class="insight-text">{{ $insight['text'] }}</div>
-                    </div>
-                </div>
-            @endforeach
-        </div>
-    @endif
-
     <div class="analytics-row">
         <div class="chart-card">
             <h4>Weekly Accuracy Trend</h4>

@@ -7,14 +7,17 @@ use App\Http\Controllers\Controller;
 
 use App\Models\CurriculumVersion;
 use App\Models\Question;
+use App\Support\QuestionExhibit;
 use App\Models\QuestionVariant;
 use App\Models\Subject;
 use App\Models\Topic;
 use App\Services\AiQuestionAssistantService;
 use App\Services\BrandedXlsxReport;
 use App\Services\QuestionParaphraser;
+use App\Support\Auditor;
 use App\Support\CurriculumScope;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -240,6 +243,8 @@ class TestBankController extends Controller
                 'is_correct' => (bool) $c->is_correct,
             ])->values(),
             'explanation'    => $q->explanation,
+            'image_url'      => $q->exhibitImageUrl(),
+            'table'          => $q->table_data,
             'variants_count' => $q->variants_count,
         ]);
 
@@ -360,7 +365,7 @@ class TestBankController extends Controller
             return redirect()->route('faculty.test-bank')->with('warning', self::ARCHIVED_MESSAGE);
         }
 
-        DB::transaction(function () use ($data, $request) {
+        $question = DB::transaction(function () use ($data, $request) {
             $question = Question::create([
                 'topic_id'      => $data['topic_id'],
                 'created_by'    => Auth::id(),
@@ -369,10 +374,14 @@ class TestBankController extends Controller
                 'difficulty'    => self::DIFFICULTY_MAP[$data['difficulty']],
                 'explanation'   => $data['explanation'] ?? null,
                 'is_active'     => $request->boolean('is_active'),
-            ]);
+            ] + array_filter($this->exhibitFields($request), fn ($v) => $v !== null));
 
             $this->saveChoices($question, $data);
+
+            return $question;
         });
+
+        Auditor::log(Auth::user(), 'question_added', "Added a question to \"{$topic->name}\".", 'Question', $question->id);
 
         return redirect()->route('faculty.test-bank')->with('status', 'Question added to the test bank.');
     }
@@ -471,7 +480,7 @@ class TestBankController extends Controller
                 'difficulty'    => self::DIFFICULTY_MAP[$data['difficulty']],
                 'explanation'   => $data['explanation'] ?? null,
                 'is_active'     => $request->boolean('is_active'),
-            ] + $review);
+            ] + $review + $this->exhibitFields($request));
 
             $this->replaceChoices($question, $data);
         });
@@ -618,6 +627,35 @@ class TestBankController extends Controller
      * Validate the submitted question. MCQ needs 4 choices + a correct one;
      * True/False needs the boolean answer.
      */
+    /**
+     * The picture/table columns to write, from what the form sent. Fields the
+     * form did not send are left out, so they stay as they were.
+     *
+     * @return array<string, mixed>
+     */
+    private function exhibitFields(Request $request): array
+    {
+        $fields = [];
+
+        if ($request->hasFile('image')) {
+            $fields['image_path'] = QuestionExhibit::storeImage($request->file('image'));
+        } elseif ($request->boolean('remove_image')) {
+            // The file is kept on disk: quizzes and mock exams made from this
+            // question hold their own reference to it.
+            $fields['image_path'] = null;
+        }
+
+        if ($request->has('table_json')) {
+            $json = trim((string) $request->input('table_json'));
+            if ($json !== '' && ! is_array(json_decode($json, true))) {
+                throw ValidationException::withMessages(['table_json' => 'The table could not be read. Please re-enter it.']);
+            }
+            $fields['table_data'] = $json === '' ? null : QuestionExhibit::sanitizeTable($json);
+        }
+
+        return $fields;
+    }
+
     private function validateQuestion(Request $request): array
     {
         $rules = [
@@ -626,6 +664,9 @@ class TestBankController extends Controller
             'question_type' => 'required|in:mcq,true_false',
             'difficulty'    => 'required|in:Easy,Medium,Hard',
             'explanation'   => 'nullable|string',
+            'image'         => 'nullable|image|mimes:jpg,jpeg,png,webp|max:' . QuestionExhibit::MAX_IMAGE_KILOBYTES,
+            'remove_image'  => 'nullable|boolean',
+            'table_json'    => 'nullable|string|max:30000',
         ];
 
         if ($request->input('question_type') === 'mcq') {

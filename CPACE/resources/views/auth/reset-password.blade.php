@@ -25,7 +25,7 @@
 
         .container {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
             gap: 0;
             width: 100%;
             max-width: 1200px;
@@ -221,7 +221,7 @@
         /* ── Small tablet / large mobile: 641px – 768px ── */
         @media (max-width: 768px) {
             .container {
-                grid-template-columns: 1fr;
+                grid-template-columns: minmax(0, 1fr);
                 min-height: auto;
             }
 
@@ -250,7 +250,7 @@
             }
 
             .container {
-                grid-template-columns: 1fr;
+                grid-template-columns: minmax(0, 1fr);
                 min-height: auto;
                 border-radius: 8px;
             }

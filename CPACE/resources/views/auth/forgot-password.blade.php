@@ -67,7 +67,7 @@
 
         .container {
             display: grid;
-            grid-template-columns: 1.05fr 1fr;
+            grid-template-columns: 1.05fr minmax(0, 1fr);
             width: 100%;
             max-width: 1080px;
             min-height: 620px;
@@ -490,7 +490,7 @@
         @media (max-width: 820px) {
             body { padding: 24px 16px; }
             .container {
-                grid-template-columns: 1fr;
+                grid-template-columns: minmax(0, 1fr);
                 min-height: 0;
                 max-width: 460px;
             }

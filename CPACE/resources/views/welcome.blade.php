@@ -307,9 +307,9 @@
         .why .deco-ring { border-color: rgba(255,255,255,.14); }
         .why .deco-tile { border-color: rgba(255,255,255,.15); }
         .why .deco-glow { background: radial-gradient(circle, rgba(255,255,255,.07) 0%, rgba(255,255,255,0) 70%); }
-        .why-grid { display: grid; grid-template-columns: 360px 1fr; gap: 62px; align-items: start; }
+        .why-grid { display: grid; grid-template-columns: 360px minmax(0, 1fr); gap: 62px; align-items: start; }
         .why-right { border-left: 1px solid var(--line); padding-left: 62px; }
-        .feat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 42px 58px; max-width: 690px; }
+        .feat-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 42px 58px; max-width: 690px; }
         .feat { display: flex; gap: 16px; }
         .feat-ico {
             width: 44px; height: 44px; border-radius: 50%; flex: 0 0 auto;
@@ -321,7 +321,7 @@
 
         /* ─── HOW IT WORKS ────────────────────────────────────── */
         .how { padding: 88px 0 96px; background: var(--soft); position: relative; overflow: hidden; }
-        .how-grid { display: grid; grid-template-columns: 400px 1fr; gap: 60px; align-items: center; }
+        .how-grid { display: grid; grid-template-columns: 400px minmax(0, 1fr); gap: 60px; align-items: center; }
 
         .steps { margin-top: 34px; }
         .step { display: flex; gap: 16px; position: relative; padding-bottom: 24px; }
@@ -348,7 +348,7 @@
             opacity: .92;
         }
         .mock {
-            position: relative; z-index: 1; display: grid; grid-template-columns: 128px 1fr;
+            position: relative; z-index: 1; display: grid; grid-template-columns: 128px minmax(0, 1fr);
             background: #fff; border-radius: 12px; overflow: hidden;
             box-shadow: 0 30px 70px rgba(20,32,48,.16); font-size: 11px;
         }
@@ -370,7 +370,7 @@
         .mock-hello { font-size: 10.5px; font-weight: 700; color: var(--navy); }
         .mock-hello + span { font-size: 7.5px; color: var(--muted); display: block; margin-top: 2px; }
 
-        .mock-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 11px; }
+        .mock-cards { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; margin-top: 11px; }
         .mock-card { background: #fff; border: 1px solid #EFF1F4; border-radius: 8px; padding: 10px; }
         .mock-card h6 { font-size: 8px; font-weight: 600; color: var(--navy); margin-bottom: 8px; }
         .mock-card h6 span { float: right; color: var(--muted); font-weight: 400; }
@@ -396,7 +396,7 @@
         .weak em { font-style: normal; color: var(--muted); width: 20px; text-align: right; }
 
         .mock-reco { font-size: 8px; font-weight: 600; color: var(--navy); margin: 12px 0 8px; }
-        .reco-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        .reco-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
         .reco {
             background: #fff; border: 1px solid #EFF1F4; border-radius: 8px; padding: 9px;
         }
@@ -407,8 +407,8 @@
 
         /* ─── FEATURES ────────────────────────────────────────── */
         .features { padding: 88px 0 92px; background: #fff; position: relative; overflow: hidden; }
-        .features-grid { display: grid; grid-template-columns: 368px 1fr; gap: 56px; align-items: center; }
-        .device-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 26px; max-width: 745px; margin-left: auto; }
+        .features-grid { display: grid; grid-template-columns: 368px minmax(0, 1fr); gap: 56px; align-items: center; }
+        .device-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 26px; max-width: 745px; margin-left: auto; }
         .device-item figcaption h4 { font-size: .78rem; font-weight: 600; color: var(--navy); margin: 16px 0 6px; }
         .device-item figcaption p { font-size: .7rem; line-height: 1.65; color: var(--body); }
 
@@ -460,17 +460,17 @@
             content: ''; position: absolute; inset: -20% -10%; z-index: 3; pointer-events: none;
             background: repeating-linear-gradient(112deg, rgba(255,255,255,.05) 0 2px, transparent 2px 90px);
         }
-        .impact-grid { display: grid; grid-template-columns: 330px 1fr; gap: 56px; align-items: center; }
+        .impact-grid { display: grid; grid-template-columns: 330px minmax(0, 1fr); gap: 56px; align-items: center; }
         .impact h3 { font-size: clamp(1.25rem, 2.1vw, 1.6rem); font-weight: 700; color: #fff; line-height: 1.28; letter-spacing: -.015em; }
         .impact p { font-size: .72rem; line-height: 1.7; color: rgba(255,255,255,.82); margin-top: 12px; max-width: 300px; }
-        .stat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 22px; max-width: 790px; margin-left: auto; }
+        .stat-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 22px; max-width: 790px; margin-left: auto; }
         .stat i { font-size: .8rem; color: rgba(255,255,255,.6); display: block; margin-bottom: 12px; }
         .stat b { display: block; font-size: clamp(1.5rem, 2.6vw, 2rem); font-weight: 700; color: #fff; letter-spacing: -.02em; }
         .stat span { display: block; font-size: .68rem; color: rgba(255,255,255,.82); margin-top: 5px; }
 
         /* ─── STORIES ─────────────────────────────────────────── */
         .stories { padding: 76px 0 84px; background: var(--soft); position: relative; overflow: hidden; }
-        .stories-grid { display: grid; grid-template-columns: 330px 1fr; gap: 56px; align-items: center; }
+        .stories-grid { display: grid; grid-template-columns: 330px minmax(0, 1fr); gap: 56px; align-items: center; }
 
         .carousel { position: relative; }
         .carousel-viewport { overflow: hidden; }
@@ -539,7 +539,7 @@
         }
         .foot-top {
             position: relative; display: grid;
-            grid-template-columns: 1.6fr 1fr 1fr 1.7fr;
+            grid-template-columns: 1.6fr minmax(0, 1fr) minmax(0, 1fr) 1.7fr;
             gap: 48px; padding-bottom: 52px;
         }
 
@@ -627,7 +627,7 @@
         .foot-disclose[open] .chev { transform: rotate(180deg); color: rgba(255,255,255,.7); }
 
         .foot-note {
-            display: grid; grid-template-columns: 1fr 1fr; gap: 20px 48px;
+            display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px 48px;
             padding-bottom: 26px;
             animation: discloseIn .24s ease both;
         }
@@ -695,7 +695,7 @@
             outline: none; border-color: var(--red);
             box-shadow: 0 0 0 3px rgba(123,29,29,.10);
         }
-        .rpt-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .rpt-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
         /* Honeypot: off-screen rather than display:none, which some bots skip. */
         .rpt-hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
         .rpt-err { font-size: .68rem; color: var(--red); margin-top: 5px; display: none; }
@@ -710,7 +710,7 @@
         .rpt-ok span { display: block; font-size: .72rem; color: var(--body); margin-top: 7px; }
         @media (max-width: 560px) {
             .rpt-modal { padding: 26px 20px 22px; }
-            .rpt-row { grid-template-columns: 1fr; }
+            .rpt-row { grid-template-columns: minmax(0, 1fr); }
         }
 
         /* Grid and flex children default to min-width:auto, which lets a wide
@@ -781,7 +781,7 @@
 
         /* ─── RESPONSIVE ──────────────────────────────────────── */
         @media (max-width: 1080px) {
-            .why-grid, .how-grid, .features-grid, .impact-grid, .stories-grid { grid-template-columns: 1fr; gap: 42px; }
+            .why-grid, .how-grid, .features-grid, .impact-grid, .stories-grid { grid-template-columns: minmax(0, 1fr); gap: 42px; }
             .why-right { border-left: none; padding-left: 0; }
             /* Dead centre from here down (the viewport is now narrower than the
                1320px column, so there is nothing to align to) and the floor may
@@ -810,31 +810,31 @@
             .hero-slashes .hs-4 { bottom: -8%; right: -16%; width: 36%; height: 15%; }
             .hero-slashes .hs-3, .hero-slashes .hs-5 { display: none; }
             .hero-mini .mini { border-right: none; padding: 0 22px 0 0; }
-            .stat-row { grid-template-columns: repeat(2, 1fr); gap: 26px; }
-            .device-row { grid-template-columns: 1fr; }
+            .stat-row { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 26px; }
+            .device-row { grid-template-columns: minmax(0, 1fr); }
             .story { flex: 0 0 100%; padding-right: 0; }
             .car-btn.prev { left: 6px; } .car-btn.next { right: 6px; }
             .cta-inner { justify-content: center; text-align: center; }
-            .foot-top { grid-template-columns: 1fr 1fr; gap: 38px; }
-            .foot-note { grid-template-columns: 1fr; gap: 22px; }
+            .foot-top { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 38px; }
+            .foot-note { grid-template-columns: minmax(0, 1fr); gap: 22px; }
         }
         @media (max-width: 560px) {
             .container { padding: 0 20px; }
             .nav-inner { padding-left: 20px; padding-right: 20px; }
             .nav-brand img { height: 34px; }
             .nav-actions .btn { padding: .62rem 1.15rem; font-size: .72rem; }
-            .feat-grid { grid-template-columns: 1fr; gap: 28px; }
-            .stat-row { grid-template-columns: 1fr 1fr; }
+            .feat-grid { grid-template-columns: minmax(0, 1fr); gap: 28px; }
+            .stat-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
             .hero-photo, .hero-photo-fg {
                 width: 112%;
                 width: min(max(112%, calc(50svh * 16 / 9)), calc(82svh * 16 / 9));
             }
             .hero-mini { gap: 18px; }
-            .mock { grid-template-columns: 1fr; }
+            .mock { grid-template-columns: minmax(0, 1fr); }
             .mock-side { display: none; }
-            .mock-cards, .reco-row { grid-template-columns: 1fr; }
+            .mock-cards, .reco-row { grid-template-columns: minmax(0, 1fr); }
             footer { padding-top: 48px; }
-            .foot-top { grid-template-columns: 1fr; gap: 32px; padding-bottom: 38px; }
+            .foot-top { grid-template-columns: minmax(0, 1fr); gap: 32px; padding-bottom: 38px; }
             .foot-bottom { justify-content: center; text-align: center; }
         }
     </style>

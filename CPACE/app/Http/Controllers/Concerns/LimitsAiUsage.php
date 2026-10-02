@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Concerns;
 
+use App\Models\AiUsageLog;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
 
@@ -24,6 +25,14 @@ trait LimitsAiUsage
         }
 
         RateLimiter::hit($key, 86400);
+
+        // Historical record for the Super Admin dashboard's AI usage report
+        // — the rate-limit cache above only ever knows "today, this user".
+        try {
+            AiUsageLog::create(['user_id' => Auth::id(), 'feature' => $feature, 'created_at' => now()]);
+        } catch (\Throwable $e) {
+            report($e);
+        }
 
         return false;
     }

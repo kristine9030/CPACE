@@ -27,7 +27,7 @@
         --viz-muted:#898781; --viz-ink:#52514e;
     }
 
-    .viz-grid-layout { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+    .viz-grid-layout { display:grid; grid-template-columns:minmax(0, 1fr) minmax(0, 1fr); gap:18px; }
     .viz-card { background:var(--viz-surface); border:1px solid #eee; border-radius:14px; padding:20px; min-width:0; }
     .viz-card h4 { font-size:13px; font-weight:600; color:#1a1a1a; margin-bottom:4px; display:flex; align-items:center; gap:7px; }
     .viz-card h4 i { color:var(--primary); font-size:13px; }
@@ -58,7 +58,7 @@
     .viz-legend span { display:inline-flex; align-items:center; gap:6px; font-size:10.5px; color:var(--viz-ink); }
     .viz-legend i.swatch { width:10px; height:10px; border-radius:3px; display:inline-block; }
 
-    @media(max-width:1050px) { .viz-grid-layout { grid-template-columns:1fr; } }
+    @media(max-width:1050px) { .viz-grid-layout { grid-template-columns:minmax(0, 1fr); } }
 </style>
 <script>
 window.Viz = (function () {

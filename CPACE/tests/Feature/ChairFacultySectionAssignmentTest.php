@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Http\Controllers\Chair\SectionManagementController;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Database\Schema\Blueprint;
@@ -197,10 +198,8 @@ class ChairFacultySectionAssignmentTest extends TestCase
             'subjects' => [$subjectId],
         ])->assertRedirect(route('chair.faculty'));
 
-        $response = $this->actingAs($chair)->get(route('chair.sections'));
-
-        $response->assertOk();
-        $sections = collect($response->viewData('sections'));
+        // Section counts are shown on the Students page via this catalog.
+        $sections = SectionManagementController::catalog()['sections'];
         $this->assertSame(1, $sections->firstWhere('name', 'BSA-3A')->faculty_count);
         $this->assertSame(1, $sections->firstWhere('name', 'BSA-3B')->faculty_count);
     }
@@ -217,45 +216,8 @@ class ChairFacultySectionAssignmentTest extends TestCase
         ])->assertSessionHasErrors();
     }
 
-    public function test_chair_can_add_a_new_section_from_the_sections_page(): void
-    {
-        $chair = $this->chair();
-
-        $this->actingAs($chair)->post(route('chair.sections.store'), ['name' => 'BSA-4C', 'year_level' => 4])
-            ->assertRedirect();
-
-        $this->assertDatabaseHas('sections', ['name' => 'BSA-4C', 'year_level' => 4]);
-    }
-
-    public function test_a_section_cannot_be_created_without_a_year_level(): void
-    {
-        $chair = $this->chair();
-
-        $this->actingAs($chair)->post(route('chair.sections.store'), ['name' => 'BSA-4C'])
-            ->assertSessionHasErrors('year_level');
-
-        $this->assertFalse(DB::table('sections')->where('name', 'BSA-4C')->exists());
-    }
-
-    public function test_a_duplicate_section_name_is_rejected(): void
-    {
-        $chair = $this->chair();
-        DB::table('sections')->insert(['name' => 'BSA-4C', 'year_level' => 4, 'is_active' => true, 'created_at' => now(), 'updated_at' => now()]);
-
-        $this->actingAs($chair)->post(route('chair.sections.store'), ['name' => 'BSA-4C', 'year_level' => 4])
-            ->assertSessionHasErrors('name');
-    }
-
-    public function test_chair_can_edit_a_sections_name_and_year_level(): void
-    {
-        $chair = $this->chair();
-        $sectionId = DB::table('sections')->insertGetId(['name' => 'BSA-4C', 'year_level' => 4, 'is_active' => true, 'created_at' => now(), 'updated_at' => now()]);
-
-        $this->actingAs($chair)->put(route('chair.sections.update', $sectionId), ['name' => 'BSA-4D', 'year_level' => 5])
-            ->assertRedirect();
-
-        $this->assertDatabaseHas('sections', ['id' => $sectionId, 'name' => 'BSA-4D', 'year_level' => 5]);
-    }
+    // Creating/editing/renaming sections (the BSA 3101 naming format) is
+    // covered in ChairSectionNamingTest.
 
     public function test_chair_can_toggle_a_section_inactive(): void
     {

@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     @include('partials.mock-exam-styles')
     <style>
-        .split { display:grid; grid-template-columns:1fr 320px; gap:18px; align-items:start; }
+        .split { display:grid; grid-template-columns:minmax(0, 1fr) 320px; gap:18px; align-items:start; }
         .item { padding:14px; border:1px solid var(--line); border-radius:10px; margin-bottom:10px; }
         .item-head { display:flex; gap:10px; align-items:flex-start; font-size:13px; }
         .item-n { width:26px; height:26px; border-radius:7px; background:var(--primary-light); color:var(--primary);
@@ -29,7 +29,7 @@
         .modal { position:fixed; inset:0; background:rgba(15,20,30,.55); display:none; align-items:center; justify-content:center; z-index:900; }
         .modal.on { display:flex; }
         .modal-box { background:#fff; border-radius:14px; padding:24px; width:min(520px, 92vw); }
-        @media (max-width: 1000px) { .split { grid-template-columns:1fr; } }
+        @media (max-width: 1000px) { .split { grid-template-columns:minmax(0, 1fr); } }
     </style>
 </head>
 <body>
@@ -82,7 +82,7 @@
 
                 <div class="card">
                     <div class="card-title"><i class="fas fa-sliders"></i> Exam settings</div>
-                    <div style="display:grid;grid-template-columns:1fr 220px 160px;gap:14px;margin-top:14px;">
+                    <div style="display:grid;grid-template-columns:minmax(0, 1fr) 220px 160px;gap:14px;margin-top:14px;">
                         <div class="field" style="margin:0;">
                             <label>Title</label>
                             <input type="text" name="title" value="{{ old('title', $exam->title) }}" @disabled($readOnly)>

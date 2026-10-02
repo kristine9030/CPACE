@@ -11,13 +11,16 @@ use Illuminate\Database\Eloquent\Model;
  */
 class FacultyQuizItem extends Model
 {
+    use \App\Models\Concerns\HasExhibit;
+
     protected $fillable = [
         'quiz_id', 'source_question_id', 'question_text', 'question_type',
-        'choices', 'explanation', 'points', 'sort_order',
+        'choices', 'explanation', 'points', 'sort_order', 'image_path', 'table_data',
     ];
 
     protected $casts = [
         'choices' => 'array',
+        'table_data' => 'array',
         'points' => 'integer',
         'sort_order' => 'integer',
     ];

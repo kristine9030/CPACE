@@ -197,13 +197,13 @@
         /* ── WORKSPACE GRID ─────────────────────────────────────────────── */
         .workspace {
             display: grid;
-            grid-template-columns: 292px 1fr;
+            grid-template-columns: 292px minmax(0, 1fr);
             gap: 20px;
             align-items: start;
         }
         /* Preview stays hidden until a note is opened */
         .workspace .preview-panel { display: none; }
-        .workspace.preview-open { grid-template-columns: 292px minmax(360px, 445px) 1fr; }
+        .workspace.preview-open { grid-template-columns: 292px minmax(360px, 445px) minmax(0, 1fr); }
         .workspace.preview-open .preview-panel { display: flex; }
 
         .panel {
@@ -669,7 +669,7 @@
         .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
             outline: none; border-color: var(--brand);
         }
-        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+        .form-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; }
         .form-hint { font-size: 11px; color: #aaa; margin-top: 5px; }
         .field-error { font-size: 11.5px; color: var(--red); margin-top: 5px; display: none; }
         .modal-foot {
@@ -842,17 +842,17 @@
 
         /* ── RESPONSIVE ─────────────────────────────────────────────────── */
         @media (max-width: 1350px) {
-            .workspace { grid-template-columns: 250px 1fr; }
-            .workspace.preview-open { grid-template-columns: 250px 1fr 1.15fr; }
+            .workspace { grid-template-columns: 250px minmax(0, 1fr); }
+            .workspace.preview-open { grid-template-columns: 250px minmax(0, 1fr) 1.15fr; }
         }
         @media (max-width: 1120px) {
-            .workspace { grid-template-columns: 1fr; }
-            .workspace.preview-open { grid-template-columns: 1fr 1.2fr; }
+            .workspace { grid-template-columns: minmax(0, 1fr); }
+            .workspace.preview-open { grid-template-columns: minmax(0, 1fr) 1.2fr; }
             .folders-panel { grid-column: 1 / -1; max-height: 320px; }
         }
         @media (max-width: 768px) {
             .main-content { margin-left: 0; padding: 20px 16px 90px; }
-            .workspace { grid-template-columns: 1fr; }
+            .workspace { grid-template-columns: minmax(0, 1fr); }
             .folders-panel, .list-panel, .preview-panel { max-height: none; }
             .list-panel .notes-scroll { max-height: 420px; }
             .search-box { display: none; }

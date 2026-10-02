@@ -1,4 +1,4 @@
-@extends('help.layout', ['active' => $isChair ? 'support' : 'help'])
+@extends('help.layout', ['active' => $isStaff ? 'support' : 'help'])
 
 @section('title', 'Request #' . $report->id)
 @section('heading', $report->title())
@@ -7,8 +7,8 @@
 @endsection
 
 @section('actions')
-    <a class="btn btn-ghost" href="{{ $isChair ? route('chair.support.index') : route('help.index') }}">
-        <i class="fas fa-arrow-left"></i> {{ $isChair ? 'Support Inbox' : 'Help & Support' }}
+    <a class="btn btn-ghost" href="{{ $isStaff ? route($isSuperAdmin ? 'superadmin.support.index' : 'chair.support.index') : route('help.index') }}">
+        <i class="fas fa-arrow-left"></i> {{ $isStaff ? 'Support Inbox' : 'Help & Support' }}
     </a>
 @endsection
 
@@ -38,7 +38,7 @@
     .meta-list li:last-child{border-bottom:none}
     .meta-list span{font-size:11px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;color:var(--muted)}
     .status-form{display:flex;flex-direction:column;gap:10px;margin-top:6px}
-    @media(max-width:1000px){.ticket-grid{grid-template-columns:1fr}}
+    @media(max-width:1000px){.ticket-grid{grid-template-columns:minmax(0, 1fr)}}
     @media(max-width:600px){.bubble{max-width:100%}.msg-avatar{display:none}}
 </style>
 @endpush
@@ -59,7 +59,7 @@
             {{-- The original request is the first message in the thread. --}}
             <div class="msg {{ $requesterIsMe ? 'mine' : '' }}">
                 <div class="msg-avatar">
-                    @if($report->user?->profile_photo)<img src="{{ asset('storage/' . $report->user->profile_photo) }}" alt="">@else{{ $initials($report->name) }}@endif
+                    @if($report->user?->avatarUrl())<img src="{{ $report->user->avatarUrl() }}" alt="">@else{{ $initials($report->name) }}@endif
                 </div>
                 <div class="bubble">
                     <div class="bubble-head">
@@ -73,12 +73,12 @@
             @foreach($report->replies as $reply)
                 @php
                     $mine = (int) $reply->user_id === (int) $viewerId;
-                    $isStaff = $reply->user?->isChair() ?? false;
+                    $isStaff = ($reply->user?->isChair() || $reply->user?->isSuperAdmin()) ?? false;
                     $author = $reply->user?->name ?? 'Former user';
                 @endphp
                 <div class="msg {{ $mine ? 'mine' : '' }}" id="reply-{{ $reply->id }}">
                     <div class="msg-avatar {{ $isStaff ? 'staff' : '' }}">
-                        @if($reply->user?->profile_photo)<img src="{{ asset('storage/' . $reply->user->profile_photo) }}" alt="">@elseif($isStaff)<i class="fas fa-headset"></i>@else{{ $initials($author) }}@endif
+                        @if($reply->user?->avatarUrl())<img src="{{ $reply->user->avatarUrl() }}" alt="">@elseif($isStaff)<i class="fas fa-headset"></i>@else{{ $initials($author) }}@endif
                     </div>
                     <div class="bubble">
                         <div class="bubble-head">
@@ -96,17 +96,17 @@
             @csrf
             @if($report->isResolved())
                 <div class="resolved-note"><i class="fas fa-circle-check"></i>
-                    This request is resolved. {{ $isChair ? 'Replying keeps it resolved unless you change the status.' : 'Replying will reopen it.' }}
+                    This request is resolved. {{ $isStaff ? 'Replying keeps it resolved unless you change the status.' : 'Replying will reopen it.' }}
                 </div>
             @endif
-            <label class="label" for="body">{{ $isChair && ! $requesterIsMe ? 'Reply to ' . $report->name : 'Add a reply' }}</label>
+            <label class="label" for="body">{{ $isStaff && ! $requesterIsMe ? 'Reply to ' . $report->name : 'Add a reply' }}</label>
             <textarea class="field" id="body" name="body" maxlength="3000" required placeholder="Write your message...">{{ old('body') }}</textarea>
             @error('body')<div class="error-text">{{ $message }}</div>@enderror
             <div class="reply-actions">
                 <span class="hint">
-                    @if($isChair && ! $report->user_id)
+                    @if($isStaff && ! $report->user_id)
                         This visitor wasn’t signed in — your reply is sent to {{ $report->email }} by email.
-                    @elseif($isChair && ! $requesterIsMe)
+                    @elseif($isStaff && ! $requesterIsMe)
                         {{ $report->name }} is notified in CPAce and by email.
                     @else
                         The CPAce support team is notified right away.
@@ -122,17 +122,20 @@
         <ul class="meta-list">
             <li><span>Status</span><div><span class="pill pill-{{ $report->status }}">{{ $report->statusLabel() }}</span></div></li>
             <li><span>Category</span>{{ $report->categoryLabel() }}</li>
-            @if($isChair)
+            @if($isStaff)
                 <li><span>From</span>{{ $report->name }}<small style="color:var(--muted)">{{ $report->email }} · {{ $report->requesterRoleLabel() }}</small></li>
                 @if($report->page_url)<li><span>Page</span>{{ $report->page_url }}</li>@endif
                 @if($report->user_agent)<li><span>Browser</span><small>{{ $report->user_agent }}</small></li>@endif
             @endif
             <li><span>Last activity</span>{{ ($report->last_activity_at ?? $report->created_at)->format('M j, Y g:i A') }}</li>
+            @if($isStaff && $report->isForSuperAdmin())
+                <li><span>Handled by</span>{{ $report->isEscalated() ? 'Super Admin — escalated by the Program Chair' : 'Super Admin and Program Chair' }}@if($report->isEscalated())<small style="color:var(--muted)">{{ $report->escalated_at->format('M j, Y g:i A') }}</small>@endif</li>
+            @endif
             @if($report->resolved_at)<li><span>Resolved</span>{{ $report->resolved_at->format('M j, Y g:i A') }}</li>@endif
         </ul>
 
-        @if($isChair)
-            <form class="status-form" method="POST" action="{{ route('chair.support.status', $report) }}">
+        @if($isStaff)
+            <form class="status-form" method="POST" action="{{ route($isSuperAdmin ? 'superadmin.support.status' : 'chair.support.status', $report) }}">
                 @csrf @method('PATCH')
                 <label class="label" for="status" style="margin-top:12px">Change status</label>
                 <select class="field" id="status" name="status">
@@ -143,6 +146,14 @@
                 <button class="btn btn-ghost" type="submit"><i class="fas fa-check"></i> Update status</button>
                 <span class="hint">Marking it Resolved notifies the requester.</span>
             </form>
+            @if($isChair && ! $report->isForSuperAdmin())
+                <form class="status-form" method="POST" action="{{ route('chair.support.escalate', $report) }}" style="margin-top:14px;padding-top:14px;border-top:1px solid #f3ebea"
+                      data-confirm="The Super Admin will be notified and can reply on this request." data-confirm-title="Escalate to the Super Admin?" data-confirm-ok="Yes, escalate" data-confirm-icon="question">
+                    @csrf
+                    <button class="btn btn-ghost" type="submit"><i class="fas fa-arrow-up-right-from-square"></i> Escalate to Super Admin</button>
+                    <span class="hint">For problems you can’t settle yourself — sign-in or system issues.</span>
+                </form>
+            @endif
         @endif
     </aside>
 </div>

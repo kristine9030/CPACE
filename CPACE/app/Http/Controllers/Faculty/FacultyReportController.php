@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Faculty;
 
 use App\Http\Controllers\Controller;
 
+use App\Models\FacultyQuiz;
+use App\Models\FacultyQuizAttempt;
 use App\Models\Role;
 use App\Models\Subject;
 use App\Services\BrandedXlsxReport;
@@ -42,7 +44,12 @@ class FacultyReportController extends Controller
         'at_risk'          => 'At-Risk Student Report',
         'subject_mastery'  => 'Subject Mastery Report',
         'question_quality' => 'Question Quality Report',
+        'quiz_results'     => 'Quiz Results Report',
+        'student_report'   => 'Individual Student Report',
     ];
+
+    /** Class-quiz score that counts as passing, same as the quiz results page. */
+    private const PASSING_PERCENT = 75;
 
     /**
      * Render the report builder + live preview.
@@ -73,6 +80,8 @@ class FacultyReportController extends Controller
         $colSpan = match ($type) {
             'subject_mastery' => 6,
             'question_quality' => 8,
+            'quiz_results' => 4,
+            'student_report' => 6,
             default => 9,
         };
 
@@ -84,14 +93,51 @@ class FacultyReportController extends Controller
             'Scope: ' . $data['scopeLabel'] . ' · ' . $data['rangeLabel'],
         ], $colSpan);
 
-        $row = $report->writeSummaryStrip($sheet, $row, [
-            'Students' => $data['stats']['students'],
-            'Avg. Accuracy' => $data['stats']['accuracy'] . '%',
-            'At Risk' => $data['stats']['at_risk'],
-            'Weak Topics' => $data['stats']['weak_topics'],
-        ]);
+        $quizReport = $data['quizReport'];
+        $studentReport = $data['studentReport'];
+
+        $summary = match ($type) {
+            'quiz_results' => $quizReport && $quizReport['quiz'] ? [
+                'Assigned' => $quizReport['assigned'],
+                'Submitted' => $quizReport['submitted'],
+                'Average best score' => $quizReport['average'] === null ? '—' : $quizReport['average'] . '%',
+            ] : ['Quiz' => 'None selected'],
+            'student_report' => $studentReport && $studentReport['student'] ? [
+                'Quizzes' => $studentReport['total'],
+                'Taken' => $studentReport['taken'],
+                'Average' => $studentReport['average'] === null ? '—' : $studentReport['average'] . '%',
+                'Best' => $studentReport['best'] === null ? '—' : $studentReport['best'] . '%',
+            ] : ['Student' => 'None selected'],
+            default => [
+                'Students' => $data['stats']['students'],
+                'Avg. Accuracy' => $data['stats']['accuracy'] . '%',
+                'At Risk' => $data['stats']['at_risk'],
+                'Weak Topics' => $data['stats']['weak_topics'],
+            ],
+        };
+        $row = $report->writeSummaryStrip($sheet, $row, $summary);
 
         switch ($type) {
+            case 'quiz_results':
+                $rows = [];
+                foreach ($quizReport['rows'] ?? [] as $r) {
+                    $rows[] = [$r['name'], $r['section'] ?: '-', $r['best'] === null ? '—' : $r['best'] . '%', $r['submitted_at'] ? $r['submitted_at']->format('Y-m-d H:i') : '—'];
+                }
+                $report->writeTable($sheet, $row, ['Student', 'Group', 'Best score', 'Submitted'], $rows, [1 => 28, 2 => 16, 3 => 14, 4 => 20]);
+                break;
+
+            case 'student_report':
+                $rows = [];
+                foreach ($studentReport['rows'] ?? [] as $r) {
+                    $rows[] = [
+                        $r['title'], $r['subject'], $r['due_at'] ? $r['due_at']->format('Y-m-d') : '—',
+                        $r['submitted_at'] ? $r['submitted_at']->format('Y-m-d H:i') : '—',
+                        $r['percent'] === null ? '—' : $r['score'] . ' / ' . $r['total'] . ' (' . $r['percent'] . '%)', $r['status'],
+                    ];
+                }
+                $report->writeTable($sheet, $row, ['Quiz', 'Subject', 'Due', 'Submitted', 'Score', 'Result'], $rows, [1 => 34, 2 => 12, 3 => 12, 4 => 20, 5 => 20, 6 => 16]);
+                break;
+
             case 'subject_mastery':
                 $rows = [];
                 foreach ($data['mastery'] as $subject) {
@@ -200,8 +246,185 @@ class FacultyReportController extends Controller
             'questions'     => $filters['report'] === 'question_quality'
                                 ? $this->questionQuality($subjectIds) : collect(),
             'recommendations' => $this->recommendations($stats, $weakTopics, $atRisk),
+            'quizOptions'   => $filters['report'] === 'quiz_results' ? $this->quizOptions() : [],
+            'quizReport'    => $filters['report'] === 'quiz_results'
+                                ? $this->quizResults($filters['quiz'], $filters['group']) : null,
+            'studentOptions' => $filters['report'] === 'student_report' ? $this->studentOptions($subjectIds) : [],
+            'studentReport' => $filters['report'] === 'student_report'
+                                ? $this->studentReportData($filters['student']) : null,
             'activeQuery'   => $this->activeQuery($filters),
             'generatedAt'   => now(),
+        ];
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Class-quiz reports
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /** This faculty member's published or closed class quizzes, newest first (for the quiz picker). */
+    private function quizOptions(): array
+    {
+        return FacultyQuiz::where('faculty_id', Auth::id())
+            ->where('status', '!=', FacultyQuiz::STATUS_DRAFT)
+            ->with('subject:id,code')
+            ->orderByDesc('id')
+            ->get()
+            ->map(fn (FacultyQuiz $q) => ['id' => $q->id, 'title' => $q->title, 'subject' => $q->subject?->code])
+            ->all();
+    }
+
+    /**
+     * Quiz Results Report: every student the quiz was meant for (the faculty's
+     * sections for that subject), with their best submitted score or "—".
+     */
+    private function quizResults(?int $quizId, string $group): array
+    {
+        $quiz = FacultyQuiz::where('faculty_id', Auth::id())
+            ->where('status', '!=', FacultyQuiz::STATUS_DRAFT)
+            ->with('subject:id,code,name')
+            ->when($quizId, fn ($q) => $q->where('id', $quizId))
+            ->orderByDesc('id')
+            ->first();
+
+        if (! $quiz) {
+            return ['quiz' => null, 'rows' => collect(), 'sections' => [], 'assigned' => 0, 'submitted' => 0, 'average' => null];
+        }
+
+        $names = $quiz->subject_id ? Auth::user()->sectionNamesForSubject((int) $quiz->subject_id) : null;
+
+        $roster = DB::table('users')
+            ->leftJoin('student_profiles', 'student_profiles.user_id', '=', 'users.id')
+            ->where('users.role_id', Role::STUDENT)
+            ->where('users.is_active', true)
+            ->when($names !== null, fn ($q) => $q->whereIn('student_profiles.section', $names))
+            ->select('users.id', 'users.first_name', 'users.last_name', 'student_profiles.section')
+            ->get()
+            ->keyBy('id');
+
+        $attempts = FacultyQuizAttempt::where('quiz_id', $quiz->id)->whereNotNull('submitted_at')->get()->keyBy('student_id');
+
+        // A student outside those sections who still sat the quiz belongs in the report too.
+        $outside = $attempts->keys()->diff($roster->keys());
+        if ($outside->isNotEmpty()) {
+            $roster = $roster->union(DB::table('users')
+                ->leftJoin('student_profiles', 'student_profiles.user_id', '=', 'users.id')
+                ->whereIn('users.id', $outside)
+                ->select('users.id', 'users.first_name', 'users.last_name', 'student_profiles.section')
+                ->get()->keyBy('id'));
+        }
+
+        $rows = $roster->map(function ($u) use ($attempts) {
+            $a = $attempts->get($u->id);
+
+            return [
+                'id' => (int) $u->id,
+                'name' => trim("{$u->first_name} {$u->last_name}"),
+                'section' => $u->section,
+                'best' => $a ? (int) round((float) $a->percent) : null,
+                'submitted_at' => $a?->submitted_at,
+            ];
+        })->sortBy(fn ($r) => mb_strtolower($r['name']))->values();
+
+        $sections = $rows->pluck('section')->filter()->unique()->sort()->values()->all();
+        if ($group !== 'all' && $group !== 'at_risk') {
+            $rows = $rows->where('section', $group)->values();
+        }
+
+        $submitted = $rows->whereNotNull('best');
+
+        return [
+            'quiz' => $quiz,
+            'rows' => $rows,
+            'sections' => $sections,
+            'assigned' => $rows->count(),
+            'submitted' => $submitted->count(),
+            'average' => $submitted->isNotEmpty() ? (int) round($submitted->avg('best')) : null,
+        ];
+    }
+
+    /** Students this faculty member can pick for an individual report (their sections), by name. */
+    private function studentOptions(array $subjectIds): array
+    {
+        $names = [];
+        foreach ($subjectIds as $subjectId) {
+            $forSubject = Auth::user()->sectionNamesForSubject((int) $subjectId);
+            if ($forSubject === null) {
+                $names = null; // unrestricted on at least one subject: the whole roster
+                break;
+            }
+            $names = array_merge($names, $forSubject);
+        }
+
+        return DB::table('users')
+            ->leftJoin('student_profiles', 'student_profiles.user_id', '=', 'users.id')
+            ->where('users.role_id', Role::STUDENT)
+            ->where('users.is_active', true)
+            ->when($names !== null, fn ($q) => $q->whereIn('student_profiles.section', $names ?: ['']))
+            ->orderBy('users.first_name')->orderBy('users.last_name')
+            ->limit(500)
+            ->select('users.id', 'users.first_name', 'users.last_name', 'student_profiles.section')
+            ->get()
+            ->map(fn ($u) => ['id' => (int) $u->id, 'name' => trim("{$u->first_name} {$u->last_name}"), 'section' => $u->section])
+            ->all();
+    }
+
+    /** Individual Student Report: every class quiz of this faculty member and this student's score on each. */
+    private function studentReportData(?int $studentId): array
+    {
+        $user = $studentId
+            ? DB::table('users')
+                ->leftJoin('student_profiles', 'student_profiles.user_id', '=', 'users.id')
+                ->where('users.role_id', Role::STUDENT)->where('users.id', $studentId)
+                ->select('users.id', 'users.first_name', 'users.last_name', 'users.email', 'student_profiles.section')
+                ->first()
+            : null;
+
+        if (! $user) {
+            return ['student' => null, 'rows' => collect(), 'total' => 0, 'taken' => 0, 'average' => null, 'best' => null];
+        }
+
+        $quizzes = FacultyQuiz::where('faculty_id', Auth::id())
+            ->where('status', '!=', FacultyQuiz::STATUS_DRAFT)
+            ->with('subject:id,code')
+            ->orderByDesc('id')
+            ->get();
+        $attempts = FacultyQuizAttempt::where('student_id', $user->id)
+            ->whereIn('quiz_id', $quizzes->pluck('id'))->whereNotNull('submitted_at')
+            ->get()->keyBy('quiz_id');
+
+        $rows = $quizzes->map(function (FacultyQuiz $q) use ($attempts) {
+            $a = $attempts->get($q->id);
+            $percent = $a ? (int) round((float) $a->percent) : null;
+            $status = match (true) {
+                $a !== null => $percent >= self::PASSING_PERCENT ? 'Passed' : 'Below passing',
+                $q->status === FacultyQuiz::STATUS_CLOSED || ($q->due_at && $q->due_at->isPast()) => 'Missed',
+                default => 'Not taken yet',
+            };
+
+            return [
+                'title' => $q->title,
+                'subject' => $q->subject?->code ?? '—',
+                'due_at' => $q->due_at,
+                'submitted_at' => $a?->submitted_at,
+                'score' => $a?->score,
+                'total' => $a?->total_points,
+                'percent' => $percent,
+                'status' => $status,
+            ];
+        });
+        $taken = $rows->whereNotNull('percent');
+
+        return [
+            'student' => [
+                'name' => trim("{$user->first_name} {$user->last_name}"),
+                'email' => $user->email,
+                'section' => $user->section,
+            ],
+            'rows' => $rows,
+            'total' => $rows->count(),
+            'taken' => $taken->count(),
+            'average' => $taken->isNotEmpty() ? (int) round($taken->avg('percent')) : null,
+            'best' => $taken->isNotEmpty() ? (int) $taken->max('percent') : null,
         ];
     }
 
@@ -225,6 +448,11 @@ class FacultyReportController extends Controller
 
         $group = (string) $request->input('group', 'all');
 
+        $quiz = $request->input('quiz');
+        $quiz = is_numeric($quiz) ? (int) $quiz : null;
+        $student = $request->input('student');
+        $student = is_numeric($student) ? (int) $student : null;
+
         // "Current term" is treated as the last 120 days; All time = no floor.
         $from = match ($range) {
             '7'   => Carbon::now()->subDays(7),
@@ -244,6 +472,8 @@ class FacultyReportController extends Controller
             'scope'   => $scope,
             'range'   => $range,
             'group'   => $group,
+            'quiz'    => $quiz,
+            'student' => $student,
             'from'    => $from,
             'include' => $include,
         ];
@@ -269,6 +499,8 @@ class FacultyReportController extends Controller
             'scope'  => $filters['scope'],
             'range'  => $filters['range'] !== 'term' ? $filters['range'] : null,
             'group'  => $filters['group'] !== 'all' ? $filters['group'] : null,
+            'quiz'   => $filters['quiz'],
+            'student' => $filters['student'],
         ], fn ($v) => $v !== null && $v !== '');
     }
 

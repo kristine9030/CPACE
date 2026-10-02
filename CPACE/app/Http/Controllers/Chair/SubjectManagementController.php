@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers\Chair;
 
+use App\Http\Controllers\Concerns\SubjectTheme;
 use App\Http\Controllers\Controller;
 use App\Models\CurriculumAudit;
+use App\Models\CurriculumImportBatch;
 use App\Models\CurriculumVersion;
 use App\Models\Subject;
 use App\Models\Topic;
@@ -12,15 +14,20 @@ use App\Support\CurriculumAuditor;
 use App\Support\CurriculumScope;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
 
 class SubjectManagementController extends Controller
 {
+    use SubjectTheme;
+
     /**
      * The Subject & Curriculum page. Subjects are shared by every curriculum;
      * the topic trees belong to one curriculum version, chosen with
      * ?version=. With no choice the draft is shown when one is in progress
      * (that's where the chair is working), otherwise the active curriculum.
+     *
+     * Subjects show as folders; ?subject= opens one to its faculty and topics.
      */
     public function index(Request $request)
     {
@@ -39,18 +46,45 @@ class SubjectManagementController extends Controller
             'topics' => fn ($query) => $query->inCurriculum($versionId)->withCount('questions')->orderBy('sort_order')->orderBy('name'),
         ])->orderBy('id')->get();
 
-        $subjects->each(function (Subject $subject) {
-            $subject->setRelation('topicTree', Topic::buildTree($subject->topics));
-        });
+        // Only the opened subject shows its topic tree; the cards just count.
+        $openSubject = $request->filled('subject') ? $subjects->firstWhere('id', (int) $request->query('subject')) : null;
+        $openSubject?->setRelation('topicTree', Topic::buildTree($openSubject->topics));
+
+        // Where this curriculum's topics came from: the TOS file last imported
+        // into it, and an import still waiting for the chair's review.
+        $imports = $version && Schema::hasTable('curriculum_import_batches')
+            ? CurriculumImportBatch::where('curriculum_version_id', $version->id)->orderByDesc('id')->get()
+            : collect();
 
         return view('chair.subjects', [
             'subjects' => $subjects,
+            'pendingImport' => $imports->firstWhere('status', CurriculumImportBatch::STATUS_PENDING),
+            'lastImport' => $imports->firstWhere('status', CurriculumImportBatch::STATUS_COMMITTED),
+            'openSubject' => $openSubject,
+            'looks' => $subjects->mapWithKeys(fn (Subject $subject) => [$subject->id => $this->subjectLook($subject)]),
             'versions' => $versions,
             'version' => $version,
             'readOnly' => $version !== null && ! $version->isEditable(),
             'audits' => $version ? $version->audits()->with(['user', 'subject'])->limit(15)->get() : collect(),
             'suggestedBatch' => $this->suggestedFirstBatch($versions),
         ]);
+    }
+
+    /**
+     * Folder colour + icon. The six CPALE subjects use the same colours as
+     * their Mock Exam folders; any other subject uses the colour set on it.
+     *
+     * @return array{base:string,dark:string,icon:string}
+     */
+    private function subjectLook(Subject $subject): array
+    {
+        $code = strtoupper((string) $subject->code);
+        $custom = preg_match('/^#[0-9a-f]{6}$/i', (string) $subject->color) ? $subject->color : null;
+        $theme = isset(self::SUBJECT_COLORS[$code]) || ! $custom
+            ? self::theme($code)
+            : ['base' => $custom, 'dark' => self::darken($custom, 0.32)];
+
+        return ['base' => $theme['base'], 'dark' => $theme['dark'], 'icon' => self::subjectIcon($code)];
     }
 
     public function storeSubject(Request $request)

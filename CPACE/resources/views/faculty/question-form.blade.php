@@ -32,13 +32,15 @@
         .btn-ghost:hover { background:#f5f5f5; }
 
         /* FORM LAYOUT */
-        .form-layout { display:grid; grid-template-columns:1fr 320px; gap:20px; align-items:start; }
+        .form-layout { display:grid; grid-template-columns:minmax(0, 1fr) 320px; gap:20px; align-items:start; }
 
         /* CARDS */
         .card { background:white; border-radius:14px; padding:24px; margin-bottom:20px; }
         .card:last-child { margin-bottom:0; }
         .card-title { font-size:14px; font-weight:700; color:#1a1a1a; margin-bottom:18px; display:flex; align-items:center; gap:8px; }
         .card-title i { color:var(--accent); }
+        /* Quiet step numbers: just a hint of the order to fill the form in */
+        .card-title .step-no { width:22px; height:22px; border-radius:50%; background:#f3f4f6; border:1px solid #e5e7eb; color:#9ca3af; font-size:11px; font-weight:600; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; }
 
         /* FORM FIELDS */
         .form-group { margin-bottom:18px; }
@@ -53,8 +55,8 @@
         input[type=text]:focus, textarea:focus, select:focus { border-color:var(--primary); }
         textarea { resize:vertical; min-height:110px; line-height:1.6; }
 
-        .form-row { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
-        .form-row-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; }
+        .form-row { display:grid; grid-template-columns:minmax(0, 1fr) minmax(0, 1fr); gap:14px; }
+        .form-row-3 { display:grid; grid-template-columns:minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr); gap:14px; }
 
         /* ANSWER CHOICES */
         .choices-list { display:flex; flex-direction:column; gap:10px; }
@@ -116,11 +118,11 @@
         /* ── RESPONSIVE ── */
         @media (max-width: 768px) {
             /* form layout: content+sidebar → single column */
-            .form-layout { grid-template-columns: 1fr !important; }
+            .form-layout { grid-template-columns: minmax(0, 1fr) !important; }
             /* 2-col form row → stack */
-            .form-row { grid-template-columns: 1fr !important; }
+            .form-row { grid-template-columns: minmax(0, 1fr) !important; }
             /* 3-col form row → stack */
-            .form-row-3 { grid-template-columns: 1fr !important; }
+            .form-row-3 { grid-template-columns: minmax(0, 1fr) !important; }
             /* choice items: ensure they wrap properly */
             .choice-item { flex-wrap: wrap; gap: 8px; }
             .correct-label { font-size: 10px; }
@@ -161,7 +163,7 @@
         </div>
     </div>
 
-    <form action="{{ $editMode ? route('faculty.question.update', $question->id) : route('faculty.question.store') }}" method="POST" id="questionForm"
+    <form action="{{ $editMode ? route('faculty.question.update', $question->id) : route('faculty.question.store') }}" method="POST" id="questionForm" enctype="multipart/form-data"
           data-confirm="{{ $editMode
               ? 'Your changes go live immediately and affect quizzes generated from this point on.'
               : 'This question is added to the test bank and can be served to students right away.' }}"
@@ -200,7 +202,7 @@
 
                 <!-- QUESTION TEXT -->
                 <div class="card">
-                    <div class="card-title"><i class="fas fa-question-circle"></i> Question</div>
+                    <div class="card-title"><span class="step-no" aria-hidden="true">1</span> <i class="fas fa-question-circle"></i> Question</div>
                     <div class="form-group">
                         <label>Question Text <span class="req">*</span></label>
                         <textarea name="question_text" placeholder="Enter the full question here..." id="questionText">{{ old('question_text', $editMode ? $question->question_text : '') }}</textarea>
@@ -224,9 +226,11 @@
                     </div>
                 </div>
 
+                @include('faculty.partials.question-exhibit-fields')
+
                 <!-- ANSWER CHOICES (MCQ) -->
                 <div class="card" id="mcqSection">
-                    <div class="card-title"><i class="fas fa-list-ul"></i> Answer Choices</div>
+                    <div class="card-title"><span class="step-no" aria-hidden="true">3</span> <i class="fas fa-list-ul"></i> Answer Choices</div>
                     <p style="font-size:12px;color:#aaa;margin-bottom:14px;">Select the radio button next to the correct answer.</p>
                     <div class="choices-list">
                         @foreach(['a' => 'A', 'b' => 'B', 'c' => 'C', 'd' => 'D'] as $key => $label)
@@ -243,7 +247,7 @@
 
                 <!-- TRUE/FALSE (hidden by default) -->
                 <div class="card" id="tfSection" style="display:none;">
-                    <div class="card-title"><i class="fas fa-check-square"></i> True / False Answer</div>
+                    <div class="card-title"><span class="step-no" aria-hidden="true">3</span> <i class="fas fa-check-square"></i> True / False Answer</div>
                     <div class="radio-group">
                         <label class="radio-option"><input type="radio" name="tf_answer" value="true" {{ old('tf_answer', $tfCorrect === 'True' ? 'true' : '') === 'true' ? 'checked' : '' }}><span>True</span></label>
                         <label class="radio-option"><input type="radio" name="tf_answer" value="false" {{ old('tf_answer', $tfCorrect === 'False' ? 'false' : '') === 'false' ? 'checked' : '' }}><span>False</span></label>
@@ -252,7 +256,7 @@
 
                 <!-- EXPLANATION -->
                 <div class="card">
-                    <div class="card-title"><i class="fas fa-lightbulb"></i> Explanation / Rationale</div>
+                    <div class="card-title"><span class="step-no" aria-hidden="true">4</span> <i class="fas fa-lightbulb"></i> Explanation / Rationale</div>
                     <div class="form-group">
                         <label>Explanation <span style="font-size:11px;color:#aaa;">(shown after answering)</span></label>
                         <textarea name="explanation" placeholder="Explain why the correct answer is correct. This helps students understand the concept." style="min-height:90px;">{{ old('explanation', $editMode ? $question->explanation : '') }}</textarea>
