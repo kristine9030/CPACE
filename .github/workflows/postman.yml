@@ -69,7 +69,12 @@ jobs:
             const body = { type: 'api', title: \`Postman — \${process.env.REF_NAME} @ \${process.env.SHA}\`, payload };
             fs.writeFileSync('upload-body.json', JSON.stringify(body));
           "
-          curl -sf -X POST "${{ secrets.CPACE_APP_URL }}/api/test-reports" \
+          http_status=$(curl -s -o response.json -w "%{http_code}" -X POST "${{ secrets.CPACE_APP_URL }}/api/test-reports" \
             -H "Authorization: Bearer ${{ secrets.CPACE_TEST_REPORTS_TOKEN }}" \
             -H "Content-Type: application/json" \
-            --data-binary @upload-body.json
+            --data-binary @upload-body.json)
+          echo "Response (HTTP $http_status):"
+          cat response.json
+          if [ "$http_status" -lt 200 ] || [ "$http_status" -ge 300 ]; then
+            exit 1
+          fi
