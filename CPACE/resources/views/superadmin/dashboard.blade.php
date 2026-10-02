@@ -130,7 +130,7 @@
                             <div class="activity-dot"></div>
                             <div>
                                 <div class="activity-text"><b>{{ $entry->actor_name ?? 'System' }}</b> — {{ $entry->description ?? $entry->action }}</div>
-                                <div class="activity-time">{{ optional($entry->created_at)->diffForHumans() }}</div>
+                                <div class="activity-time" title="{{ optional($entry->created_at)->diffForHumans() }}">{{ optional($entry->created_at)->format('Y-m-d H:i:s') }}</div>
                             </div>
                         </div>
                     @endforeach
