@@ -51,14 +51,15 @@
 
         .search-wrap { position:relative; }
         .search-wrap i { position:absolute; left:14px; top:50%; transform:translateY(-50%); color:#aaa; font-size:15px; }
-        .search-wrap input {
+        /* Scoped under the topbar: the chair sidebar's shared input[type=text] rule loads later and would otherwise reset the left padding over the icon. */
+        .messages-topbar .search-wrap input {
             width:280px; padding:11px 16px 11px 40px;
             border:1px solid #e0e0e0; border-radius:24px;
             font-size:14px; font-family:'Poppins',sans-serif;
             background:#fff; color:#555; outline:none;
         }
-        .search-wrap input:focus { border-color:var(--primary); }
-        .search-wrap input::placeholder { color:#bbb; }
+        .messages-topbar .search-wrap input:focus { border-color:var(--primary); }
+        .messages-topbar .search-wrap input::placeholder { color:#bbb; }
 
         .notif-btn {
             position:relative; width:44px; height:44px;
@@ -116,8 +117,8 @@
         .cl-icon-btn { width:38px; height:38px; border-radius:50%; border:none; background:#f0f2f5; color:var(--fb-blue); font-size:15px; cursor:pointer; transition:background .15s; }
         .cl-icon-btn:hover { background:#e4e6eb; }
         .cl-search { position:relative; }
-        .cl-search input { width:100%; border:none; background:#f0f2f5; border-radius:20px; padding:11px 16px 11px 38px; font-size:14px; font-family:'Poppins',sans-serif; outline:none; }
-        .cl-search input:focus { background:#e8eaed; }
+        .chat-list-pane .cl-search input { width:100%; border:none; background:#f0f2f5; border-radius:20px; padding:11px 16px 11px 38px; font-size:14px; font-family:'Poppins',sans-serif; outline:none; }
+        .chat-list-pane .cl-search input:focus { background:#e8eaed; }
         .cl-search i { position:absolute; left:14px; top:50%; transform:translateY(-50%); color:#65676b; font-size:13px; }
 
         .cl-items { flex:1; overflow-y:auto; padding:8px; }
@@ -196,7 +197,7 @@
         .pp-member-av img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
         .pp-member-more { background:#f0f2f5; color:#65676b; }
 
-        .pp-media-grid { display:grid; grid-template-columns:repeat(3, 1fr); gap:6px; }
+        .pp-media-grid { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:6px; }
         .pp-media-thumb { display:block; aspect-ratio:1; border-radius:8px; overflow:hidden; }
         .pp-media-thumb img { width:100%; height:100%; object-fit:cover; }
 
@@ -220,6 +221,295 @@
             .pp-close-wrap { display:flex; justify-content:flex-end; }
         }
 
+        /* ── Chair: Chats | Announcements switch ── */
+        .msg-switch { display:inline-flex; gap:4px; margin-top:12px; padding:4px; background:#fff; border-radius:12px; box-shadow:0 1px 3px rgba(16,24,40,.08); }
+        .msg-switch a { display:inline-flex; align-items:center; gap:8px; padding:8px 16px; border-radius:9px; color:#6b7280; font-size:13px; font-weight:600; text-decoration:none; transition:background .15s, color .15s; }
+        .msg-switch a:hover { background:#f6f6f8; color:#333; }
+        .msg-switch a.on { background:var(--primary); color:#fff; box-shadow:0 3px 10px rgba(123,29,29,.25); }
+
+        /* ── Announcements board ── */
+        .an-board { flex:1; overflow-y:auto; padding:6px 28px 32px; background:#f4f5f7; }
+        .an-head { display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-bottom:16px; }
+        .an-head h2 { font-size:20px; font-weight:700; color:#1a1a1a; }
+        .an-head p { font-size:13px; color:#8a8f98; margin-top:2px; }
+        .an-btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:11px 20px; border:0; border-radius:11px; font:600 13px 'Poppins',sans-serif; cursor:pointer; transition:background .15s, box-shadow .15s; }
+        .an-btn.primary { background:var(--primary); color:#fff; box-shadow:0 4px 12px rgba(123,29,29,.22); }
+        .an-btn.primary:hover { background:var(--primary-hover); }
+        .an-btn.ghost { background:#f1f2f4; color:#4b5563; }
+        .an-btn.ghost:hover { background:#e7e9ec; }
+        .an-toolbar { display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; margin:14px 0 16px; }
+        .an-filters { display:flex; gap:8px; flex-wrap:wrap; }
+        .an-pill { display:inline-flex; align-items:center; gap:8px; padding:9px 16px; border-radius:22px; background:#fff; color:#555; font-size:13px; font-weight:600; text-decoration:none; border:1px solid #e8eaee; transition:all .15s; }
+        .an-pill:hover { border-color:#d3d6dc; }
+        .an-pill i { color:#9ca3af; font-size:12px; }
+        .an-pill span { min-width:22px; height:20px; padding:0 7px; border-radius:10px; background:#f1f2f4; color:#6b7280; font-size:11px; font-weight:700; display:inline-flex; align-items:center; justify-content:center; }
+        .an-pill.on { background:var(--primary); border-color:var(--primary); color:#fff; }
+        .an-pill.on i { color:rgba(255,255,255,.85); }
+        .an-pill.on span { background:rgba(255,255,255,.22); color:#fff; }
+
+        /* the list: one announcement per row, click to open */
+        .an-rows { display:flex; flex-direction:column; background:#fff; border-radius:16px; overflow:hidden; box-shadow:0 1px 2px rgba(16,24,40,.04), 0 4px 14px rgba(16,24,40,.06); }
+        .an-row { display:grid; grid-template-columns:42px minmax(0, 1fr) 190px 150px 92px 18px; gap:16px; align-items:center; padding:15px 20px; border-bottom:1px solid #f1f1f4; cursor:pointer; transition:background .12s; }
+        .an-row:last-child { border-bottom:0; }
+        .an-row:hover, .an-row:focus-visible { background:#fbf7f7; outline:none; }
+        .an-ic { width:42px; height:42px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:16px; }
+        .an-ic.students { background:#dbeafe; color:#1d4ed8; }
+        .an-ic.faculty { background:#ede9fe; color:#6d28d9; }
+        .an-main { min-width:0; }
+        .an-title { font-size:14px; font-weight:600; color:#1a1a1a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:flex; align-items:center; gap:8px; }
+        .an-clip { flex-shrink:0; display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:10px; background:#f3f4f6; color:#6b7280; font-size:10.5px; font-weight:600; }
+        .an-msg { font-size:12.5px; color:#8a8f98; margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .an-aud { display:inline-flex; align-items:center; gap:6px; padding:3px 10px; border-radius:13px; font-size:11px; font-weight:700; }
+        .an-aud.students { background:#dbeafe; color:#1d4ed8; }
+        .an-aud.faculty { background:#ede9fe; color:#6d28d9; }
+        .an-to small, .an-seen small { display:block; margin-top:5px; font-size:11.5px; color:#8a8f98; }
+        .an-seen small b { color:#1a1a1a; }
+        .an-bar { height:6px; border-radius:6px; background:#eceef1; overflow:hidden; }
+        .an-bar.lg { height:8px; margin:12px 0 4px; }
+        .an-bar span { display:block; height:100%; border-radius:6px; background:#10b981; transition:width .3s; }
+        .an-when { font-size:12.5px; color:#374151; text-align:right; }
+        .an-when small { display:block; margin-top:2px; font-size:11px; color:#9ca3af; }
+        .an-go { color:#c4c8cf; font-size:12px; }
+        .an-row:hover .an-go { color:var(--primary); }
+
+        .an-empty { display:flex; flex-direction:column; align-items:center; gap:8px; text-align:center; padding:64px 20px; background:#fff; border-radius:16px; color:#8a8f98; font-size:13px; box-shadow:0 1px 2px rgba(16,24,40,.04), 0 4px 14px rgba(16,24,40,.06); }
+        .an-empty > i { width:64px; height:64px; border-radius:50%; background:#f3f4f6; color:#c4c8cf; display:flex; align-items:center; justify-content:center; font-size:24px; margin-bottom:6px; }
+        .an-empty strong { font-size:16px; color:#1a1a1a; }
+        .an-empty .an-btn { margin-top:12px; }
+        .an-pager { display:flex; justify-content:center; align-items:center; gap:10px; margin-top:20px; font-size:12.5px; color:#6b7280; }
+        .an-pager a, .an-pager .off { padding:8px 15px; border:1px solid #e5e7eb; border-radius:10px; background:#fff; color:#4b5563; text-decoration:none; }
+        .an-pager a:hover { border-color:#d1d5db; }
+        .an-pager .off { color:#c4c8cf; }
+
+        /* ── Popups (open an announcement / make one) ── */
+        .an-modal { background:#fff; border-radius:18px; width:100%; max-width:660px; max-height:92vh; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 24px 60px rgba(0,0,0,.25); }
+        .an-modal.an-detail { max-width:720px; }
+        .an-m-head { display:flex; align-items:center; gap:14px; padding:18px 22px; background:#faf7f7; border-bottom:1px solid #f0eaea; }
+        .an-m-ic { width:44px; height:44px; border-radius:12px; background:var(--primary-light); color:var(--primary); display:flex; align-items:center; justify-content:center; font-size:17px; flex-shrink:0; }
+        .an-m-head h3 { font-size:17px; font-weight:700; color:#1a1a1a; margin:0; word-break:break-word; }
+        .an-m-head p { font-size:12px; color:#8a8f98; margin-top:2px; }
+        .an-x { margin-left:auto; width:36px; height:36px; border:0; border-radius:10px; background:#f1f1f3; color:#666; cursor:pointer; flex-shrink:0; }
+        .an-x:hover { background:#e6e6e9; }
+        .an-m-body { padding:20px 22px; overflow-y:auto; }
+        .an-m-foot { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; padding:14px 22px; background:#faf7f7; border-top:1px solid #f0eaea; }
+        .an-m-actions { display:flex; gap:10px; }
+        .an-sendto { font-size:12.5px; color:#6b7280; display:flex; align-items:center; gap:8px; }
+        .an-sendto i { color:var(--primary); }
+        .an-sendto strong { color:#1a1a1a; font-weight:600; }
+        .an-sendto strong.zero { color:#b91c1c; }
+
+        /* the opened announcement */
+        .d-msg { font-size:14px; color:#374151; line-height:1.7; white-space:pre-line; word-break:break-word; padding-bottom:4px; }
+        .d-link { margin-top:12px; font-size:12px; color:#6b7280; }
+        .d-link i { color:var(--primary); margin-right:6px; }
+        .d-files { margin-top:18px; }
+        .d-label { font-size:12px; font-weight:700; color:#374151; margin-bottom:8px; }
+        .d-file-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(230px, 1fr)); gap:10px; }
+        .d-file { display:flex; align-items:center; gap:12px; padding:10px 12px; border:1px solid #eceef1; border-radius:12px; text-decoration:none; color:inherit; transition:border-color .15s, background .15s; }
+        .d-file:hover { border-color:#e0c3c8; background:#fdf8f8; }
+        .d-file .ic { width:40px; height:40px; border-radius:10px; color:#fff; display:flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0; }
+        .d-file img { width:40px; height:40px; border-radius:10px; object-fit:cover; flex-shrink:0; }
+        .d-file .nm { min-width:0; }
+        .d-file .nm b { display:block; font-size:12.5px; font-weight:600; color:#1f2937; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .d-file .nm small { display:block; font-size:11px; color:#9ca3af; margin-top:1px; }
+        .d-seen { margin-top:22px; padding-top:20px; border-top:1px solid #f1f1f4; }
+        .d-seen-head { display:flex; align-items:flex-end; justify-content:space-between; gap:12px; }
+        .d-seen-head h4 { font-size:14px; font-weight:700; color:#1a1a1a; }
+        .d-seen-head p { font-size:12px; color:#8a8f98; margin-top:2px; }
+        .d-big { display:flex; align-items:baseline; gap:6px; }
+        .d-big b { font-size:26px; color:#059669; line-height:1; }
+        .d-big span { font-size:13px; color:#9ca3af; }
+        .d-tools { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin:14px 0 10px; }
+        .d-tools .s { position:relative; width:220px; max-width:100%; }
+        .d-tools .s i { position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#a3a8b0; font-size:12px; pointer-events:none; }
+        .an-modal .d-tools .an-input { padding:8px 12px 8px 33px; font-size:12.5px; }
+        .d-tab { border:1.5px solid #e5e7eb; background:#fff; border-radius:18px; padding:6px 13px; font:500 12px 'Poppins',sans-serif; color:#4b5563; cursor:pointer; display:inline-flex; align-items:center; gap:7px; transition:all .15s; }
+        .d-tab span { font-size:10.5px; font-weight:700; color:#9ca3af; }
+        .d-tab:hover { border-color:#d1d5db; }
+        .d-tab.on { background:var(--primary); border-color:var(--primary); color:#fff; font-weight:600; }
+        .d-tab.on span { color:rgba(255,255,255,.8); }
+        .d-people { max-height:280px; overflow-y:auto; display:grid; gap:6px; }
+        .d-person { display:flex; align-items:center; gap:12px; padding:9px 12px; border:1px solid #eef0f3; border-radius:10px; background:#fff; }
+        .d-person .av { width:32px; height:32px; border-radius:50%; background:#c4c8cf; color:#fff; font-size:11px; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+        .d-person .av.seen { background:var(--primary); }
+        .d-person .who { min-width:0; flex:1; }
+        .d-person .who b { display:block; font-size:12.5px; font-weight:600; color:#1f2937; }
+        .d-person .who small { display:block; font-size:11px; color:#9ca3af; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .d-person .st { font-size:11.5px; font-weight:600; white-space:nowrap; }
+        .d-person .st.seen { color:#059669; }
+        .d-person .st.not { color:#9ca3af; }
+
+        /* the form */
+        .an-field { margin-bottom:18px; }
+        .an-label { display:flex; align-items:center; justify-content:space-between; gap:10px; font-size:12.5px; font-weight:600; color:#374151; margin-bottom:8px; }
+        .an-label.sm { font-size:12px; margin-bottom:6px; }
+        .an-label small { font-weight:400; font-size:11px; color:#9ca3af; }
+        .an-modal .an-input { width:100%; border:1px solid #e5e7eb; border-radius:11px; padding:10px 13px; font:13px 'Poppins',sans-serif; color:#1a1a1a; background:#fff; outline:none; margin:0; transition:border-color .15s, box-shadow .15s; }
+        .an-modal .an-input::placeholder { color:#a3a8b0; }
+        .an-modal .an-input:focus { border-color:var(--primary); box-shadow:0 0 0 3px rgba(123,29,29,.1); }
+        .an-modal textarea.an-input { resize:vertical; min-height:110px; line-height:1.6; }
+        .an-modal select.an-input { appearance:none; -webkit-appearance:none; cursor:pointer; padding-right:34px;
+            background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+            background-repeat:no-repeat; background-position:right 13px center; }
+        .an-two { display:grid; grid-template-columns:minmax(0, 1fr) minmax(0, 1fr); gap:14px; }
+
+        .an-aud-pick { display:grid; grid-template-columns:minmax(0, 1fr) minmax(0, 1fr); gap:12px; }
+        .an-aud-opt { position:relative; cursor:pointer; display:block; }
+        .an-aud-opt input { position:absolute; opacity:0; inset:0; width:100%; height:100%; margin:0; cursor:pointer; }
+        .an-aud-opt .b { display:flex; align-items:center; gap:12px; padding:13px 15px; border:1.5px solid #e5e7eb; border-radius:13px; transition:all .15s; }
+        .an-aud-opt .b i { width:36px; height:36px; border-radius:10px; background:#f3f4f6; color:#6b7280; display:flex; align-items:center; justify-content:center; font-size:15px; flex-shrink:0; transition:all .15s; }
+        .an-aud-opt strong { display:block; font-size:13.5px; color:#1a1a1a; font-weight:600; }
+        .an-aud-opt small { display:block; font-size:11.5px; color:#8a8f98; margin-top:1px; }
+        .an-aud-opt:hover .b { border-color:#d1d5db; }
+        .an-aud-opt input:focus-visible + .b { box-shadow:0 0 0 3px rgba(123,29,29,.18); }
+        .an-aud-opt input:checked + .b { border-color:var(--primary); background:#fdf6f7; box-shadow:0 0 0 3px rgba(123,29,29,.08); }
+        .an-aud-opt input:checked + .b i { background:var(--primary); color:#fff; }
+
+        .an-chips { display:flex; gap:8px; flex-wrap:wrap; }
+        .an-chips.tight { gap:6px; }
+        .an-chip { position:relative; cursor:pointer; }
+        .an-chip input { position:absolute; opacity:0; inset:0; width:100%; height:100%; margin:0; cursor:pointer; }
+        .an-chip span { display:inline-flex; align-items:center; padding:8px 15px; border:1.5px solid #e5e7eb; border-radius:20px; font-size:12.5px; font-weight:500; color:#4b5563; background:#fff; transition:all .15s; }
+        .an-chip:hover span { border-color:#d1d5db; background:#fafafa; }
+        .an-chip input:focus-visible + span { box-shadow:0 0 0 3px rgba(123,29,29,.18); }
+        .an-chip input:checked + span { border-color:var(--primary); background:var(--primary); color:#fff; font-weight:600; }
+
+        .an-panel { display:none; margin-top:12px; padding:14px; background:#f9fafb; border:1px solid #eef0f3; border-radius:13px; }
+        .an-panel.on { display:block; }
+        .an-pick-tools { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+        .an-pick-tools .s { position:relative; flex:1; }
+        .an-pick-tools .s i { position:absolute; left:13px; top:50%; transform:translateY(-50%); color:#a3a8b0; font-size:12px; pointer-events:none; }
+        .an-modal .an-pick-tools .an-input { padding:9px 12px 9px 34px; font-size:12.5px; }
+        .an-link { background:none; border:0; color:var(--primary); font:600 12px 'Poppins',sans-serif; cursor:pointer; padding:4px 2px; white-space:nowrap; }
+        .an-link:hover { text-decoration:underline; }
+        .an-list { max-height:220px; overflow:auto; display:grid; gap:6px; }
+        .an-person { display:flex; align-items:center; gap:11px; padding:8px 11px; background:#fff; border:1px solid #eef0f3; border-radius:10px; cursor:pointer; }
+        .an-person[hidden], .an-none[hidden] { display:none; }
+        .an-person:hover { border-color:#d8dce2; }
+        .an-person.is-on { border-color:#e7c6cb; background:#fdf6f7; }
+        .an-person input { width:16px; height:16px; accent-color:var(--primary); flex-shrink:0; margin:0; }
+        .an-person .av { width:30px; height:30px; border-radius:50%; background:var(--primary); color:#fff; font-size:10.5px; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+        .an-person .who { min-width:0; }
+        .an-person .who b { display:block; font-size:12.5px; font-weight:600; color:#1f2937; }
+        .an-person .who small { display:block; font-size:11px; color:#9ca3af; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .an-none { padding:16px; text-align:center; color:#9ca3af; font-size:12px; }
+
+        .an-drop { display:flex; align-items:center; gap:12px; flex-wrap:wrap; padding:12px 14px; border:1.5px dashed #d9dde3; border-radius:13px; background:#fafbfc; transition:border-color .15s, background .15s; }
+        .an-drop.over { border-color:var(--primary); background:#fdf6f7; }
+        .an-drop .hint { font-size:11.5px; color:#9ca3af; }
+        .an-attach { display:inline-flex; align-items:center; gap:8px; padding:8px 14px; border:1px solid #e5e7eb; border-radius:10px; background:#fff; color:#374151; font:600 12.5px 'Poppins',sans-serif; cursor:pointer; transition:border-color .15s, color .15s; }
+        .an-attach:hover { border-color:var(--primary); color:var(--primary); }
+        .an-files { display:grid; gap:8px; margin-top:10px; }
+        .an-files:empty { display:none; }
+        .an-file { display:flex; align-items:center; gap:12px; padding:8px 10px; border:1px solid #eceef1; border-radius:11px; background:#fff; }
+        .an-file img { width:38px; height:38px; border-radius:9px; object-fit:cover; flex-shrink:0; }
+        .an-file .ic { width:38px; height:38px; border-radius:9px; background:#f3f4f6; color:#6b7280; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+        .an-file .nm { min-width:0; flex:1; }
+        .an-file .nm b { display:block; font-size:12.5px; font-weight:600; color:#1f2937; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .an-file .nm small { font-size:11px; color:#9ca3af; }
+        .an-file .rm { width:28px; height:28px; border:0; border-radius:8px; background:#f1f2f4; color:#6b7280; cursor:pointer; flex-shrink:0; }
+        .an-file .rm:hover { background:#fde8e8; color:#b91c1c; }
+        .an-ferr { margin-top:8px; font-size:12px; color:#b91c1c; line-height:1.5; }
+
+        @media (max-width:980px) {
+            .an-row { grid-template-columns:42px minmax(0, 1fr) 150px 90px 16px; }
+            .an-to { display:none; }
+        }
+        @media (max-width:700px) {
+            .an-board { padding:6px 16px 28px; }
+            .an-row { grid-template-columns:42px minmax(0, 1fr) 16px; row-gap:10px; padding:14px 16px; }
+            .an-seen { grid-column:2 / 3; grid-row:2; }
+            .an-when { grid-column:2 / 3; grid-row:3; text-align:left; }
+            .an-when small { display:inline; margin-left:6px; }
+            .an-go { grid-column:3; grid-row:1; }
+            .an-two, .an-aud-pick { grid-template-columns:minmax(0, 1fr); }
+            .an-head .an-btn { width:100%; }
+            .an-m-foot { flex-direction:column; align-items:stretch; }
+            .an-m-actions .an-btn { flex:1; }
+        }
+
+        /* ── Chair: title and Chats | Announcements switch on one row ── */
+        .msg-titlerow { display:flex; align-items:center; gap:22px; flex-wrap:wrap; }
+        .msg-titlerow .page-title { margin-bottom:6px; }
+        .msg-titlerow .msg-switch { margin-top:0; }
+
+        /* ── Chat list header: clear actions, filters ── */
+        .cl-head-top { margin-bottom:12px; }
+        .cl-actions-row { display:flex; gap:8px; margin-bottom:12px; }
+        .cl-btn { flex:1; display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:10px 12px; border:0; border-radius:11px; font:600 13px 'Poppins',sans-serif; cursor:pointer; transition:background .15s; }
+        .cl-btn.primary { background:var(--primary); color:#fff; box-shadow:0 3px 10px rgba(123,29,29,.22); }
+        .cl-btn.primary:hover { background:var(--primary-hover); }
+        .cl-btn.ghost { background:#f0f2f5; color:#4b5563; }
+        .cl-btn.ghost:hover { background:#e4e6eb; }
+        .cl-pills { display:flex; gap:6px; flex-wrap:wrap; margin-top:12px; }
+        .cl-pill { border:1.5px solid #e5e7eb; background:#fff; border-radius:18px; padding:6px 13px; font:500 12.5px 'Poppins',sans-serif; color:#4b5563; cursor:pointer; transition:all .15s; }
+        .cl-pill:hover { border-color:#d1d5db; }
+        .cl-pill.on { background:var(--primary); border-color:var(--primary); color:#fff; font-weight:600; }
+        .cl-name { gap:8px; }
+        .cl-name .nm { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .cl-chip { flex-shrink:0; padding:2px 8px; border-radius:10px; font-size:10px; font-weight:700; letter-spacing:.2px; }
+        .cl-chip.group { background:#e8f0fb; color:#3b6fb0; }
+        .cl-avatar { width:48px; height:48px; font-size:15px; }
+        .cl-empty { display:flex; flex-direction:column; align-items:center; gap:6px; padding:44px 22px; color:#8a8f98; font-size:13px; line-height:1.5; }
+        .cl-empty[hidden] { display:none; }
+        .cl-empty i { font-size:30px; color:#d6d9de; margin-bottom:4px; }
+        .cl-empty strong { color:#1a1a1a; font-size:14px; }
+
+        /* ── Nothing open yet: say what to do ── */
+        .thread-empty.welcome { gap:0; padding:24px; text-align:center; color:#6b7280; }
+        .thread-empty.welcome > i { font-size:44px; color:#e5d8d8; margin-bottom:12px; }
+        .thread-empty.welcome h3 { font-size:18px; font-weight:700; color:#1a1a1a; }
+        .thread-empty.welcome p { font-size:13px; margin:4px 0 20px; }
+        .we-cards { display:flex; gap:12px; flex-wrap:wrap; justify-content:center; }
+        .we-card { width:170px; display:flex; flex-direction:column; align-items:center; gap:4px; padding:18px 14px; border:1.5px solid #ececef; border-radius:15px; background:#fff; cursor:pointer; font-family:'Poppins',sans-serif; transition:all .15s; }
+        .we-card:hover { border-color:#e0c3c8; background:#fdf8f8; transform:translateY(-2px); box-shadow:0 8px 20px rgba(16,24,40,.08); }
+        .we-card i { width:44px; height:44px; border-radius:13px; display:flex; align-items:center; justify-content:center; font-size:18px; margin-bottom:6px; }
+        .we-card b { font-size:13.5px; color:#1a1a1a; }
+        .we-card small { font-size:11.5px; color:#8a8f98; }
+
+        /* ── People picker (New message / New group) ── */
+        .modal.wide { max-width:520px; padding:0; overflow:hidden; display:flex; flex-direction:column; max-height:86vh; }
+        .modal.wide .mh { padding:20px 22px 12px; }
+        .modal.wide .mh h3 { margin-bottom:2px; }
+        .modal.wide .mh p { font-size:12px; color:#8a8f98; }
+        .modal.wide .mb { padding:0 22px 6px; overflow-y:auto; }
+        .modal.wide .mf { display:flex; justify-content:flex-end; gap:10px; padding:14px 22px; border-top:1px solid #f0f0f2; background:#fafafb; }
+        .pk-tabs { display:flex; gap:6px; flex-wrap:wrap; margin:8px 0 12px; }
+        .pk-tab { border:1.5px solid #e5e7eb; background:#fff; border-radius:18px; padding:6px 13px; font:500 12.5px 'Poppins',sans-serif; color:#4b5563; cursor:pointer; display:inline-flex; align-items:center; gap:7px; transition:all .15s; }
+        .pk-tab i { font-size:11px; color:#9ca3af; }
+        .pk-tab span { font-size:10.5px; font-weight:700; color:#9ca3af; }
+        .pk-tab:hover { border-color:#d1d5db; }
+        .pk-tab.on { background:var(--primary); border-color:var(--primary); color:#fff; font-weight:600; }
+        .pk-tab.on i, .pk-tab.on span { color:rgba(255,255,255,.85); }
+        .pk-search { position:relative; margin-bottom:10px; }
+        .pk-search i { position:absolute; left:14px; top:50%; transform:translateY(-50%); color:#a3a8b0; font-size:12px; pointer-events:none; }
+        .pk .pk-search input[type=search] { width:100%; padding:10px 14px 10px 36px; border:1px solid #e5e7eb; border-radius:11px; font:13px 'Poppins',sans-serif; background:#fff; outline:none; }
+        .pk .pk-search input[type=search]:focus { border-color:var(--primary); box-shadow:0 0 0 3px rgba(123,29,29,.1); }
+        .pk-bar { display:flex; align-items:center; gap:12px; font-size:12px; color:#6b7280; margin-bottom:8px; }
+        .pk-bar b { color:var(--primary); }
+        .pk-link { background:none; border:0; color:var(--primary); font:600 12px 'Poppins',sans-serif; cursor:pointer; padding:2px; }
+        .pk-link:hover { text-decoration:underline; }
+        .pk-list { max-height:340px; overflow-y:auto; margin:0 -8px; padding:0 8px 8px; }
+        .pk-head { position:sticky; top:0; z-index:1; display:flex; align-items:center; gap:8px; padding:10px 4px 6px; background:#fff; font-size:11px; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:.4px; }
+        .pk-head i { color:#9ca3af; }
+        .pk-head span { font-weight:600; color:#b0b5bc; }
+        .pk-item[hidden], .pk-head[hidden], .pk-none[hidden] { display:none; }
+        .pk-item { display:block; margin:0; }
+        .pk-row { display:flex; align-items:center; gap:12px; width:100%; padding:9px 10px; border:0; border-radius:12px; background:none; text-align:left; font-family:'Poppins',sans-serif; cursor:pointer; transition:background .12s; }
+        .pk-row:hover { background:#f6f6f8; }
+        .pk-item.pk-row:has(input:checked) { background:#fdf6f7; }
+        .pk-row input[type=checkbox] { width:16px; height:16px; accent-color:var(--primary); flex-shrink:0; margin:0; }
+        .pk-av { width:38px; height:38px; border-radius:50%; color:#fff; font-size:12px; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+        .pk-who { flex:1; min-width:0; }
+        .pk-who b { display:block; font-size:13.5px; font-weight:600; color:#1a1a1a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .pk-who small { display:block; font-size:11.5px; color:#8a8f98; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .pk-chip { flex-shrink:0; padding:3px 10px; border-radius:11px; font-size:10.5px; font-weight:700; }
+        .pk-none { padding:26px; text-align:center; color:#9ca3af; font-size:13px; }
+        .group-name { width:100%; padding:11px 14px; border:1px solid #e5e7eb; border-radius:11px; font:13px 'Poppins',sans-serif; outline:none; margin-bottom:6px; }
+        .group-name:focus { border-color:var(--primary); box-shadow:0 0 0 3px rgba(123,29,29,.1); }
+
+        @media (max-width:700px) { .we-card { width:calc(50% - 6px); } }
+
         /* ── Modals ── */
         .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:2000; align-items:center; justify-content:center; padding:20px; }
         .modal-overlay.open { display:flex; }
@@ -238,6 +528,12 @@
         .btn-primary:hover { background:#166fe0; }
         .btn-ghost { background:#f1f1f3; color:#555; border:none; padding:9px 18px; border-radius:9px; font-size:13px; font-weight:600; font-family:'Poppins',sans-serif; cursor:pointer; }
 
+        @media (max-width:700px) {
+            .messages-topbar { padding:16px 16px 12px; gap:12px; }
+            .messages-topbar-right { width:100%; gap:10px; }
+            .messages-topbar .search-wrap { flex:1; min-width:0; }
+            .messages-topbar .search-wrap input { width:100%; }
+        }
         @media (max-width:900px) {
             .chat-list-pane { width:100%; }
             .chat-thread-pane { display:none; }
@@ -270,8 +566,18 @@
 <div class="main main-content messages-page" style="padding:0;">
     <div class="messages-topbar">
         <div>
-            <div class="page-title">Messages</div>
-            <div class="page-subtitle">Chat with faculty, classmates, and the community.</div>
+            <div class="msg-titlerow">
+                <div class="page-title">Messages</div>
+                @if(Auth::user()->isChair())
+                    <div class="msg-switch" role="tablist" aria-label="Messages sections">
+                        <a class="{{ ($announce ?? null) ? '' : 'on' }}" href="{{ route('messages.index') }}"><i class="fas fa-comment-dots"></i> Chats</a>
+                        <a class="{{ ($announce ?? null) ? 'on' : '' }}" href="{{ route('messages.index', ['view' => 'announcements']) }}"><i class="fas fa-bullhorn"></i> Announcements</a>
+                    </div>
+                @endif
+            </div>
+            @unless(Auth::user()->isChair())
+                <div class="page-subtitle">Chat with faculty, classmates, and the community.</div>
+            @endunless
         </div>
         <div class="messages-topbar-right">
             <div class="search-wrap gs-wrap">
@@ -306,21 +612,32 @@
         </div>
     </div>
 <div class="chat-shell">
+@if($announce ?? null)
+    @include('messages.partials.announcements')
+@else
     <div class="chat-list-pane">
         <div class="cl-head">
             <div class="cl-head-top">
                 <div class="cl-title">Chats</div>
-                <div class="cl-actions">
-                    <button type="button" class="cl-icon-btn" title="New Message" onclick="document.getElementById('newMsgModal').classList.add('open')"><i class="fas fa-pen"></i></button>
-                    @if(Auth::user()->hasAlumniAccess() || Auth::user()->isChair())
-                        <button type="button" class="cl-icon-btn" title="New Group" onclick="document.getElementById('newGroupModal').classList.add('open')"><i class="fas fa-users"></i></button>
-                    @endif
-                </div>
+            </div>
+            <div class="cl-actions-row">
+                <button type="button" class="cl-btn primary" onclick="openNewMessage()"><i class="fas fa-pen"></i> New message</button>
+                @if(Auth::user()->hasAlumniAccess() || Auth::user()->isChair())
+                    <button type="button" class="cl-btn ghost" onclick="document.getElementById('newGroupModal').classList.add('open')"><i class="fas fa-users"></i> New group</button>
+                @endif
             </div>
             <div class="cl-search">
                 <i class="fas fa-magnifying-glass"></i>
-                <input type="text" id="chatSearch" placeholder="Search Messenger" oninput="filterPick('chatSearch','clItems')">
+                <input type="text" id="chatSearch" placeholder="Search chats" oninput="filterChats()">
             </div>
+            @if(Auth::user()->isChair())
+                <div class="cl-pills" id="clPills" role="tablist" aria-label="Filter chats">
+                    <button type="button" class="cl-pill on" data-kind="all">All</button>
+                    <button type="button" class="cl-pill" data-kind="faculty">Faculty</button>
+                    <button type="button" class="cl-pill" data-kind="student">Students</button>
+                    <button type="button" class="cl-pill" data-kind="group">Groups</button>
+                </div>
+            @endif
         </div>
         <div class="cl-items" id="clItems">
             @forelse($conversations as $c)
@@ -330,14 +647,17 @@
                     $rowOther = $isGroup ? null : $c->participants->firstWhere('id', '!=', Auth::id());
                     $rowOnline = $rowOther?->last_login_at && $rowOther->last_login_at->diffInMinutes(now()) <= 5;
                     $unread = $c->unreadCountFor(Auth::user());
+                    $rowRole = $rowOther ? \App\Http\Controllers\ChatController::roleMeta($rowOther->role_id) : null;
+                    $kind = $isGroup ? 'group' : ($rowRole['key'] ?? 'staff');
                     $preview = $c->latestMessage ? ($c->latestMessage->sender_id === Auth::id() ? 'You: ' : '') . \Illuminate\Support\Str::limit($c->latestMessage->body, 38) : 'No messages yet';
                 @endphp
-                <a href="{{ route('messages.show', $c->id) }}" class="cl-item {{ $active && $active->id === $c->id ? 'active' : '' }} {{ $unread > 0 ? 'has-unread' : '' }}" data-name="{{ strtolower($name) }}">
+                <a href="{{ route('messages.show', $c->id) }}" class="cl-item {{ $active && $active->id === $c->id ? 'active' : '' }} {{ $unread > 0 ? 'has-unread' : '' }}" data-name="{{ strtolower($name) }}" data-kind="{{ $kind }}">
                     <div class="cl-avatar {{ $isGroup ? 'group' : ($rowOnline ? 'online' : 'offline') }}">
                         @if($isGroup)<i class="fas fa-users"></i>@elseif($rowOther)@include('partials.user-avatar', ['user' => $rowOther])@else{{ strtoupper(substr($name,0,1)) }}@endif
                     </div>
                     <div class="cl-info">
-                        <div class="cl-name">{{ $name }} @if($c->is_default_group)<i class="fas fa-house-chimney" style="font-size:10px;color:#bbb;" title="Default community chat"></i>@endif</div>
+                        <div class="cl-name"><span class="nm">{{ $name }}</span>@if($c->is_default_group)<i class="fas fa-house-chimney" style="font-size:10px;color:#bbb;" title="Default community chat"></i>@endif
+                            @if($rowRole)<span class="cl-chip" style="background:{{ $rowRole['bg'] }};color:{{ $rowRole['color'] }}">{{ $rowRole['label'] }}</span>@elseif($isGroup && ! $c->is_default_group)<span class="cl-chip group">Group</span>@endif</div>
                         <div class="cl-preview">{{ $preview }}</div>
                     </div>
                     <div class="cl-meta">
@@ -346,8 +666,13 @@
                     </div>
                 </a>
             @empty
-                <div class="cl-empty">No conversations yet.</div>
+                <div class="cl-empty">
+                    <i class="fas fa-comments"></i>
+                    <strong>No chats yet</strong>
+                    <span>{{ Auth::user()->isChair() ? 'Message a faculty member or a student to get started.' : 'Start a conversation with the New message button.' }}</span>
+                </div>
             @endforelse
+            <div class="cl-empty" id="clNoMatch" hidden><i class="fas fa-magnifying-glass"></i><strong>No chats match</strong></div>
         </div>
     </div>
 
@@ -411,10 +736,24 @@
                 <button type="submit" class="send-btn" id="sendBtn"><i class="fas fa-thumbs-up"></i></button>
             </form>
         @else
-            <div class="thread-empty">
-                <i class="fas fa-comments"></i>
-                <div>Select a conversation to start chatting.</div>
-            </div>
+            @if(Auth::user()->isChair())
+                @php $contactCounts = $contacts->countBy('key'); @endphp
+                <div class="thread-empty welcome">
+                    <i class="fas fa-comments"></i>
+                    <h3>Start a conversation</h3>
+                    <p>Pick who you want to message, or open a chat on the left.</p>
+                    <div class="we-cards">
+                        <button type="button" class="we-card" onclick="openNewMessage('faculty')"><i class="fas fa-chalkboard-user" style="background:#ede9fe;color:#6d28d9;"></i><b>Faculty</b><small>{{ $contactCounts['faculty'] ?? 0 }} people</small></button>
+                        <button type="button" class="we-card" onclick="openNewMessage('student')"><i class="fas fa-user-graduate" style="background:#dbeafe;color:#1d4ed8;"></i><b>Students</b><small>{{ $contactCounts['student'] ?? 0 }} people</small></button>
+                        <button type="button" class="we-card" onclick="document.getElementById('newGroupModal').classList.add('open')"><i class="fas fa-users" style="background:#f5e8e8;color:var(--primary);"></i><b>Group chat</b><small>Faculty and students</small></button>
+                    </div>
+                </div>
+            @else
+                <div class="thread-empty">
+                    <i class="fas fa-comments"></i>
+                    <div>Select a conversation to start chatting.</div>
+                </div>
+            @endif
         @endif
     </div>
 
@@ -504,6 +843,7 @@
             </div>
         </div>
     @endif
+@endif
 </div>
 </div>
 
@@ -584,54 +924,35 @@
     </div>
 @endif
 
-{{-- New Message modal --}}
+{{-- New Message modal: people sorted by who they are --}}
 <div class="modal-overlay" id="newMsgModal">
-    <div class="modal">
-        <h3>New Message</h3>
-        <input type="text" id="msgSearch" placeholder="Search people..." oninput="filterPick('msgSearch','msgPickList')">
-        <div class="pick-list" id="msgPickList">
-            @foreach($messageable as $u)
-                <form method="POST" action="{{ route('messages.start') }}">
-                    @csrf
-                    <input type="hidden" name="user_id" value="{{ $u->id }}">
-                    <button type="submit" class="pick-item" style="width:100%;border:none;background:none;text-align:left;font-family:'Poppins',sans-serif;" data-name="{{ strtolower($u->name) }}">
-                        <div class="pick-av">{{ strtoupper(substr($u->first_name,0,1)) }}</div>
-                        <span>{{ $u->name }} <small style="color:#aaa;">({{ ucfirst($u->roleName() ?? '') }})</small></span>
-                    </button>
-                </form>
-            @endforeach
+    <div class="modal wide">
+        <div class="mh"><h3>New message</h3><p>Choose who you want to chat with.</p></div>
+        <div class="mb">
+            @include('messages.partials.people-picker', ['people' => $contacts, 'mode' => 'dm', 'id' => 'dmPicker'])
         </div>
-        <div class="modal-actions">
-            <button type="button" class="btn-ghost" onclick="document.getElementById('newMsgModal').classList.remove('open')">Close</button>
-        </div>
+        <div class="mf"><button type="button" class="btn-ghost" onclick="document.getElementById('newMsgModal').classList.remove('open')">Close</button></div>
     </div>
 </div>
 
 @if(Auth::user()->hasAlumniAccess() || Auth::user()->isChair())
     {{-- New Group modal --}}
     <div class="modal-overlay" id="newGroupModal">
-        <div class="modal">
-            <h3>New Group Chat</h3>
-            <form method="POST" action="{{ route('messages.group.create') }}"
+        <div class="modal wide">
+            <form method="POST" action="{{ route('messages.group.create') }}" style="display:contents;"
                   data-confirm="A group conversation will be created and everyone you picked will be added to it."
                   data-confirm-title="Create this group chat?"
                   data-confirm-ok="Yes, create group"
                   data-confirm-icon="question">
                 @csrf
-                <input type="text" name="name" placeholder="Group name" required>
-                <input type="text" id="groupSearch" placeholder="Search students / alumni..." oninput="filterPick('groupSearch','groupPickList')">
-                <div class="pick-list" id="groupPickList">
-                    @foreach($groupCandidates as $u)
-                        <label class="pick-item" data-name="{{ strtolower($u->name) }}">
-                            <input type="checkbox" name="member_ids[]" value="{{ $u->id }}">
-                            <div class="pick-av">{{ strtoupper(substr($u->first_name,0,1)) }}</div>
-                            <span>{{ $u->name }} <small style="color:#aaa;">({{ ucfirst($u->roleName() ?? '') }})</small></span>
-                        </label>
-                    @endforeach
+                <div class="mh"><h3>New group chat</h3><p>Name the group, then tick who should be in it.</p></div>
+                <div class="mb">
+                    <input type="text" class="group-name" name="name" placeholder="Group name" required maxlength="120">
+                    @include('messages.partials.people-picker', ['people' => $groupContacts, 'mode' => 'group', 'id' => 'groupPicker'])
                 </div>
-                <div class="modal-actions">
+                <div class="mf">
                     <button type="button" class="btn-ghost" onclick="document.getElementById('newGroupModal').classList.remove('open')">Cancel</button>
-                    <button type="submit" class="btn-primary"><i class="fas fa-users"></i> Create Group</button>
+                    <button type="submit" class="btn-primary"><i class="fas fa-users"></i> Create group</button>
                 </div>
             </form>
         </div>
@@ -639,6 +960,23 @@
 @endif
 
 <script>
+/* Chat list: the search box and (for the chair) the Faculty / Students / Groups pills work together. */
+function filterChats() {
+    const q = (document.getElementById('chatSearch')?.value || '').toLowerCase();
+    const kind = document.querySelector('#clPills .cl-pill.on')?.dataset.kind || 'all';
+    let shown = 0;
+    document.querySelectorAll('#clItems .cl-item').forEach(el => {
+        const ok = el.dataset.name.includes(q) && (kind === 'all' || el.dataset.kind === kind);
+        el.style.display = ok ? '' : 'none';
+        if (ok) shown++;
+    });
+    const none = document.getElementById('clNoMatch');
+    if (none) none.hidden = shown > 0 || !document.querySelector('#clItems .cl-item');
+}
+document.querySelectorAll('#clPills .cl-pill').forEach(btn => btn.addEventListener('click', () => {
+    document.querySelectorAll('#clPills .cl-pill').forEach(b => b.classList.toggle('on', b === btn));
+    filterChats();
+}));
 function filterPick(inputId, listId) {
     const q = document.getElementById(inputId).value.toLowerCase();
     document.getElementById(listId).querySelectorAll('[data-name]').forEach(function (el) {

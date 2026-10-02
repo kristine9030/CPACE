@@ -110,7 +110,7 @@ class HelpCenter
                 ['icon' => 'fa-user-graduate',    'label' => 'Students',            'hint' => 'Enrol, import and manage',        'url' => route('chair.students')],
                 ['icon' => 'fa-chalkboard-user',  'label' => 'Faculty Accounts',    'hint' => 'Provision and assign faculty',    'url' => route('chair.faculty')],
                 ['icon' => 'fa-file-pen',         'label' => 'Mock Exams',          'hint' => 'Review, publish and monitor',     'url' => route('chair.mock-exams')],
-                ['icon' => 'fa-bullhorn',         'label' => 'Communications',      'hint' => 'Announce to students or faculty', 'url' => route('chair.communications')],
+                ['icon' => 'fa-bullhorn',         'label' => 'Announcements',       'hint' => 'Announce to students or faculty', 'url' => route('messages.index', ['view' => 'announcements'])],
             ],
             'faqs' => [
                 'Accounts' => [

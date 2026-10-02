@@ -399,9 +399,9 @@ class GlobalSearchController extends Controller
                   ->orWhere('message', 'LIKE', $like);
             })->limit(5)->get();
         foreach ($comms as $c) {
-            $this->addResult($results, 'Communications', 'fa-bullhorn', '#f59e0b',
+            $this->addResult($results, 'Announcements', 'fa-bullhorn', '#f59e0b',
                 $c->title, mb_substr((string)$c->message, 0, 100),
-                route('chair.communications'));
+                route('messages.index', ['view' => 'announcements']));
         }
 
         // ── Notifications ──
@@ -465,27 +465,21 @@ class GlobalSearchController extends Controller
             ],
             [
                 'keywords' => 'subjects assignments topics faculty coverage',
-                'title' => 'Subject Assignments',
+                'title' => 'Subjects & Curriculum',
                 'desc' => 'Assign faculty to subjects, manage topics and coverage',
                 'icon' => 'fa-layer-group', 'color' => '#7B1D1D', 'url' => route('chair.subjects'),
             ],
             [
                 'keywords' => 'communications announcements messages broadcast',
-                'title' => 'Communications',
-                'desc' => 'Send announcements and messages to students, faculty, or alumni',
-                'icon' => 'fa-bullhorn', 'color' => '#f59e0b', 'url' => route('chair.communications'),
+                'title' => 'Announcements',
+                'desc' => 'Make an announcement for students or faculty (in Messages)',
+                'icon' => 'fa-bullhorn', 'color' => '#f59e0b', 'url' => route('messages.index', ['view' => 'announcements']),
             ],
             [
                 'keywords' => 'class level performance analytics readiness scores',
                 'title' => 'Class-Level Performance',
                 'desc' => 'Class-wide performance analytics, readiness scores, subject mastery',
                 'icon' => 'fa-chart-line', 'color' => '#10b981', 'url' => route('chair.analytics.performance'),
-            ],
-            [
-                'keywords' => 'test bank coverage analytics question gaps',
-                'title' => 'Test Bank Coverage',
-                'desc' => 'Test bank coverage analysis, question distribution across subjects and topics',
-                'icon' => 'fa-table-cells-large', 'color' => '#7B1D1D', 'url' => route('chair.analytics.test-bank-coverage'),
             ],
         ];
 

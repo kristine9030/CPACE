@@ -14,6 +14,52 @@ use Illuminate\Support\Facades\Storage;
 
 class ChatController extends Controller
 {
+    /** Order the people pickers list roles in. */
+    public const ROLE_ORDER = ['faculty', 'student', 'alumni', 'staff'];
+
+    /**
+     * How a person is labelled in Messages: a key (for filtering), the label
+     * shown on the tag, and its colours. Read from role_id so listing people
+     * never needs a query per person.
+     *
+     * @return array{key:string,label:string,color:string,bg:string}
+     */
+    public static function roleMeta(?int $roleId): array
+    {
+        return match ($roleId) {
+            Role::FACULTY => ['key' => 'faculty', 'label' => 'Faculty', 'color' => '#6d28d9', 'bg' => '#ede9fe'],
+            Role::STUDENT => ['key' => 'student', 'label' => 'Student', 'color' => '#1d4ed8', 'bg' => '#dbeafe'],
+            Role::ALUMNI => ['key' => 'alumni', 'label' => 'Alumni', 'color' => '#b45309', 'bg' => '#fef3c7'],
+            Role::ADMIN => ['key' => 'staff', 'label' => 'Program Chair', 'color' => '#7B1D1D', 'bg' => '#f5e8e8'],
+            default => ['key' => 'staff', 'label' => 'Admin', 'color' => '#475569', 'bg' => '#e8ecf1'],
+        };
+    }
+
+    /**
+     * People as picker rows, grouped by role (faculty first) then by name.
+     *
+     * @param  \Illuminate\Support\Collection<int, User>  $users
+     */
+    private function contactRows($users)
+    {
+        return $users->map(function (User $u) {
+            $role = self::roleMeta($u->role_id);
+            $meta = match ($role['key']) {
+                'student' => collect(['Year ' . ($u->studentProfile?->year_level ?: '—'), $u->studentProfile?->section ?: 'No section'])->join(' · '),
+                'faculty' => $u->assignedSubjects->pluck('code')->join(', ') ?: 'No subjects yet',
+                default => $role['label'],
+            };
+
+            return $role + [
+                'id' => $u->id,
+                'name' => $u->name,
+                'initials' => strtoupper(mb_substr((string) $u->first_name, 0, 1) . mb_substr((string) $u->last_name, 0, 1)),
+                'email' => $u->email,
+                'meta' => $meta,
+            ];
+        })->sortBy(fn (array $row) => [array_search($row['key'], self::ROLE_ORDER, true), mb_strtolower($row['name'])])->values();
+    }
+
     /** Extensions users are allowed to share in a chat. */
     private const ALLOWED_EXTENSIONS = 'pdf,doc,docx,ppt,pptx,xls,xlsx,csv,txt,rtf,odt,jpg,jpeg,png,gif,webp,zip,rar';
 
@@ -98,13 +144,15 @@ class ChatController extends Controller
         // Anyone active except the current user — used by the "New Message" picker.
         $messageable = User::where('is_active', true)
             ->where('id', '!=', $user->id)
+            ->with(['studentProfile', 'assignedSubjects:id,code'])
             ->orderBy('first_name')
             ->get();
 
-        // Alumni/chair can start a group chat and pick from students + alumni.
-        $groupCandidates = User::whereIn('role_id', [Role::STUDENT, Role::ALUMNI])
+        // Alumni can start a group chat with students + alumni; the chair can also add faculty.
+        $groupCandidates = User::whereIn('role_id', $user->isChair() ? [Role::FACULTY, Role::STUDENT, Role::ALUMNI] : [Role::STUDENT, Role::ALUMNI])
             ->where('is_active', true)
             ->where('id', '!=', $user->id)
+            ->with(['studentProfile', 'assignedSubjects:id,code'])
             ->orderBy('first_name')
             ->get();
 
@@ -118,11 +166,20 @@ class ChatController extends Controller
             ? $groupCandidates->reject(fn (User $u) => $active->participants->contains('id', $u->id))->values()
             : collect();
 
+        // The Program Chair's announcements (formerly the Communications page)
+        // share this page: ?view=announcements swaps the chat panes for them.
+        $announce = ($user->isChair() && ! $active && request()->query('view') === 'announcements')
+            ? app(\App\Http\Controllers\Chair\CommunicationController::class)->boardData(request())
+            : null;
+
         return view('messages.index', [
+            'announce' => $announce,
             'conversations' => $conversations,
             'active' => $active,
             'messages' => $messages,
             'messageable' => $messageable,
+            'contacts' => $this->contactRows($messageable),
+            'groupContacts' => $this->contactRows($groupCandidates),
             'groupCandidates' => $groupCandidates,
             'addableCandidates' => $addableCandidates,
             'unreadNotifications' => $unreadNotifications,

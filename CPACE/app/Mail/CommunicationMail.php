@@ -21,6 +21,8 @@ class CommunicationMail extends Mailable
         public string $body,
         public string $priority,
         public ?string $ctaUrl = null,
+        /** File names attached to the announcement (opened inside CPACE, not attached to the email). */
+        public array $attachmentNames = [],
     ) {
     }
 

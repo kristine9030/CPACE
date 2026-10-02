@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class NotificationController extends Controller
 {
@@ -25,9 +26,19 @@ class NotificationController extends Controller
                 'senders.profile_photo as sender_photo',
                 'senders.avatar_color as sender_avatar_color'
             )
+            ->when(Schema::hasColumn('users', 'avatar'), fn ($q) => $q->addSelect('senders.avatar as sender_avatar'))
             ->paginate(15);
 
-        return view('notifications.index', compact('notifications', 'unreadCount'));
+        // Files attached to announcements, keyed by announcement, for the rows below.
+        $files = collect();
+        $communicationIds = $notifications->getCollection()->pluck('communication_id')->filter()->unique();
+        if ($communicationIds->isNotEmpty() && Schema::hasTable('communication_attachments')) {
+            $files = \App\Models\CommunicationAttachment::whereIn('communication_id', $communicationIds)->get()
+                ->groupBy('communication_id')
+                ->map(fn ($group) => $group->map->forDisplay()->all());
+        }
+
+        return view('notifications.index', compact('notifications', 'unreadCount', 'files'));
     }
 
     public function read(int $id)
