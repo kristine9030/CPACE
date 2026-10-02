@@ -14,7 +14,13 @@ test('Program Chair dashboard renders its key widgets', async ({ page }) => {
   await expect(page).toHaveURL(/\/chair\/dashboard/);
 
   await expect(page.locator('.stat-card').first()).toBeVisible();
+
+  // "Class-Level Performance" and "Faculty Workload" live in tab panels that
+  // are hidden until their headline stat-card is clicked open.
+  await page.locator('.stat-link[data-open-tab="pane-performance"]').click();
   await expect(page.locator('.card-title', { hasText: 'Class-Level Performance' })).toBeVisible();
+
+  await page.locator('.stat-link[data-open-tab="pane-faculty"]').click();
   await expect(page.locator('.card-title', { hasText: 'Faculty Workload' })).toBeVisible();
 });
 
