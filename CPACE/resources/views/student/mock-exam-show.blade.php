@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     @include('partials.mock-exam-styles')
     <style>
-        .facts { display:grid; grid-template-columns:repeat(3, 1fr); gap:14px; margin-top:16px; }
+        .facts { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:14px; margin-top:16px; }
         .fact { background:#f8f9fb; border-radius:11px; padding:14px 16px; }
         .fact .n { font-size:21px; font-weight:700; color:var(--ink); font-family:'Montserrat',sans-serif; }
         .fact .l { font-size:11.5px; color:var(--muted); margin-top:2px; }
@@ -28,7 +28,7 @@
         .perm-t { font-size:13px; font-weight:600; color:var(--ink); }
         .perm-s { font-size:11.5px; color:var(--muted); margin-top:2px; }
         .countdown-big { font-family:'Montserrat',monospace; font-size:24px; font-weight:700; color:var(--primary); }
-        @media (max-width: 700px) { .facts { grid-template-columns:1fr; } }
+        @media (max-width: 700px) { .facts { grid-template-columns:minmax(0, 1fr); } }
     </style>
 </head>
 <body>

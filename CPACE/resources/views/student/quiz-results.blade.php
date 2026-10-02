@@ -382,6 +382,7 @@
                         <i class="fas {{ $isCorrect ? 'fa-check' : 'fa-times' }}"></i>
                     </div>
                     <div class="rq-text">{{ $i + 1 }}. {{ $question->question_text }}</div>
+                @include('partials.question-exhibit', ['item' => $question])
                 </div>
                 <div class="opts-list">
                     @foreach($question->choices as $choice)

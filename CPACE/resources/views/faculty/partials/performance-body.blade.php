@@ -4,117 +4,8 @@
 @endphp
 
 <!-- DYNAMIC BODY (swapped in place via AJAX) -->
-<div class="perf-layout a2" id="perfBody">
-    <!-- LEFT COLUMN: student table, with Class Weak Topics right below it -->
-    <div class="left-col">
-    <div class="table-card">
-        <div class="table-head-bar">
-            <span class="count">Showing <strong>{{ $pagination['total'] }}</strong> student{{ $pagination['total'] === 1 ? '' : 's' }}</span>
-        </div>
-        <table>
-            <thead>
-                <tr>
-                    <th>Student</th>
-                    <th>Avg. Score</th>
-                    <th>Subjects Covered</th>
-                    <th>Quizzes</th>
-                    <th>Trend</th>
-                    <th>Last Active</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse($students as $st)
-                <tr>
-                    <td>
-                        <div class="student-cell">
-                            <div class="student-av" style="background:{{ $st['color'] }};">{{ $st['initials'] }}</div>
-                            <div>
-                                <div class="student-name">{{ $st['name'] }}</div>
-                                <div class="student-email">{{ $st['email'] }}</div>
-                            </div>
-                        </div>
-                    </td>
-                    <td>
-                        <div class="score-cell">
-                            <span class="score-num" style="color:{{ $st['score'] >= 75 ? '#059669' : ($st['score'] >= 60 ? '#d97706' : '#c0392b') }};">{{ $st['score'] }}%</span>
-                            <div class="score-bar-bg">
-                                <div class="score-bar-fill" style="width:{{ $st['score'] }}%;background:{{ $st['score'] >= 75 ? '#10b981' : ($st['score'] >= 60 ? '#f59e0b' : '#c0392b') }};"></div>
-                            </div>
-                        </div>
-                    </td>
-                    <td>
-                        <div class="subj-dots">
-                            @forelse($st['subjects'] as $code)
-                                <div class="subj-dot" style="background:{{ ($subjColors[$code] ?? '#888') }}20;color:{{ $subjColors[$code] ?? '#888' }};">{{ $code }}</div>
-                            @empty
-                                <span style="font-size:11px;color:#ccc;">—</span>
-                            @endforelse
-                        </div>
-                    </td>
-                    <td style="font-size:13px;font-weight:600;color:#1a1a1a;">{{ $st['quizzes'] }}</td>
-                    <td>
-                        @if($st['trend'] === 'up')
-                            <span class="trend-badge t-up"><i class="fas fa-arrow-up"></i> Up</span>
-                        @elseif($st['trend'] === 'down')
-                            <span class="trend-badge t-down"><i class="fas fa-arrow-down"></i> Down</span>
-                        @elseif($st['trend'] === 'new')
-                            <span class="trend-badge t-new"><i class="fas fa-star"></i> New</span>
-                        @else
-                            <span class="trend-badge t-flat"><i class="fas fa-minus"></i> Flat</span>
-                        @endif
-                    </td>
-                    <td><span class="last-active">{{ $st['last_active'] ? \Illuminate\Support\Carbon::parse($st['last_active'])->diffForHumans() : '—' }}</span></td>
-                    <td><button type="button" class="view-btn" onclick="openStudent({{ $st['id'] }})"><i class="fas fa-eye"></i> View</button></td>
-                </tr>
-                @empty
-                <tr class="empty-row"><td colspan="7"><i class="fas fa-inbox" style="font-size:22px;display:block;margin-bottom:8px;color:#ddd;"></i>No students match the current filters.</td></tr>
-                @endforelse
-            </tbody>
-        </table>
-        @if($pagination['total'] > 0)
-        <div class="pagination">
-            <span class="pag-info">Showing {{ $pagination['from'] }}–{{ $pagination['to'] }} of {{ $pagination['total'] }} students</span>
-            <div class="pag-btns">
-                <a href="{{ route('faculty.performance', array_merge($activeQuery, ['page' => $pagination['current'] - 1])) }}"
-                   class="pag-btn {{ $pagination['current'] <= 1 ? 'disabled' : '' }}"><i class="fas fa-chevron-left"></i></a>
-                @for($p = 1; $p <= $pagination['last']; $p++)
-                    <a href="{{ route('faculty.performance', array_merge($activeQuery, ['page' => $p])) }}"
-                       class="pag-btn {{ $p === $pagination['current'] ? 'active' : '' }}">{{ $p }}</a>
-                @endfor
-                <a href="{{ route('faculty.performance', array_merge($activeQuery, ['page' => $pagination['current'] + 1])) }}"
-                   class="pag-btn {{ $pagination['current'] >= $pagination['last'] ? 'disabled' : '' }}"><i class="fas fa-chevron-right"></i></a>
-            </div>
-        </div>
-        @endif
-    </div>
-
-    <!-- WEAKEST TOPICS — moved right under the student list -->
-    <div class="side-card">
-        <div class="side-title"><i class="fas fa-chart-bar" style="margin-right:6px;color:var(--accent);"></i>Class Weak Topics</div>
-        @if($weakTopics->isNotEmpty())
-        <div class="chart-box-sm" id="classWeakChartBox"><div class="chart-inner" id="classWeakChartInner"><canvas id="chartClassWeak"></canvas></div></div>
-        @endif
-        <div class="weak-list-scroll">
-            @forelse($weakTopics as $t)
-            <div class="weak-item" style="align-items:flex-start;">
-                <div class="weak-icon" style="background:{{ ($subjColors[$t->subject_code] ?? '#888') }}20;color:{{ $subjColors[$t->subject_code] ?? '#888' }};">
-                    <i class="fas {{ $subjIcons[$t->subject_code] ?? 'fa-book' }}"></i>
-                </div>
-                <span class="weak-name">
-                    {{ $t->topic }}<br><span class="weak-sub">{{ $t->subject_code }}</span>
-                    <div class="weak-why">{{ $t->why }}</div>
-                    @if($t->miss)<div class="weak-why weak-miss">{{ $t->miss }}</div>@endif
-                </span>
-                <span class="weak-rate">{{ $t->accuracy }}%</span>
-            </div>
-            @empty
-                <div class="muted-empty">Not enough attempts yet to rank topics.</div>
-            @endforelse
-        </div>
-        <a href="{{ route('faculty.test-bank') }}" style="display:flex;align-items:center;justify-content:center;gap:6px;font-size:12px;color:var(--accent);text-decoration:none;margin-top:14px;font-weight:600;">Add Questions for These Topics <i class="fas fa-arrow-right"></i></a>
-    </div>
-
+<div class="perf-pair a2" id="perfBody">
+    <!-- Class Strong Topics | Score Distribution: where the class is doing well -->
     <!-- STRONGEST TOPICS — same rule as the weak list: pooled class accuracy at 75%+ -->
     <div class="side-card">
         <div class="side-title"><i class="fas fa-trophy" style="margin-right:6px;color:#10b981;"></i>Class Strong Topics</div>
@@ -135,42 +26,9 @@
             @endforelse
         </div>
     </div>
-    </div>
 
-    <!-- RIGHT PANEL -->
-    <div class="right-panel">
-        <!-- AT RISK -->
-        <div class="side-card">
-            <div class="side-title" style="color:var(--accent);"><i class="fas fa-exclamation-triangle" style="margin-right:6px;"></i>At-Risk Students</div>
-            @forelse($atRisk as $r)
-            <div class="at-risk-item">
-                <div class="at-risk-av" style="background:{{ $r['color'] }};">{{ $r['initials'] }}</div>
-                <div style="flex:1">
-                    <div class="at-risk-name">{{ $r['name'] }}</div>
-                    <div class="at-risk-sub">{{ $r['subjects'] ? implode(', ', $r['subjects']) : 'No subject' }} &bull; {{ $r['quizzes'] }} quizzes</div>
-                </div>
-                <div><div class="at-risk-score">{{ $r['score'] }}%</div></div>
-            </div>
-            @empty
-                <div class="muted-empty"><i class="fas fa-check-circle" style="color:#10b981;margin-right:5px;"></i>No at-risk students in this view.</div>
-            @endforelse
-            @if($atRisk->isNotEmpty())
-            <form method="POST" action="{{ route('faculty.performance.remind') }}"
-                  data-confirm="All {{ $atRisk->count() }} at-risk student(s) in this view will receive a study reminder email."
-                  data-confirm-title="Send study reminders?"
-                  data-confirm-ok="Yes, send reminders"
-                  data-confirm-icon="question"
-                  data-loading="Sending reminders...">
-                @csrf
-                @foreach($activeQuery as $k => $v)<input type="hidden" name="{{ $k }}" value="{{ $v }}">@endforeach
-                <input type="hidden" name="scope" value="at_risk">
-                <button type="submit" class="btn btn-ghost" style="width:100%;justify-content:center;margin-top:12px;font-size:12px;"><i class="fas fa-envelope"></i> Send Reminder to All</button>
-            </form>
-            @endif
-        </div>
-
-        <!-- SCORE DISTRIBUTION -->
-        <div class="side-card">
+    <!-- SCORE DISTRIBUTION -->
+    <div class="side-card">
             <div class="side-title">Score Distribution</div>
             @if($distribution['total'] === 0)
                 <div class="muted-empty">No scored quizzes in this view.</div>
@@ -187,7 +45,6 @@
             </div>
             @endforeach
             @endif
-        </div>
     </div>
 
     {{-- Per-student data for the detail modal, plus the class weak-topics chart

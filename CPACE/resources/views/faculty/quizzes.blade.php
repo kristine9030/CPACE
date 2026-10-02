@@ -27,7 +27,7 @@
            side uses on Class Quizzes, so a subject reads as the same card
            whichever side of CPACE you're on. Faculty see their own quiz
            counts by status instead of a to-do count. ── */
-        .classes { display:grid; grid-template-columns:repeat(3, 1fr); gap:22px; }
+        .classes { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:22px; }
 
         .class-card {
             display:flex; flex-direction:column;
@@ -79,10 +79,10 @@
         .empty { background:#fff; border-radius:16px; padding:60px 20px; text-align:center; color:#aaa; font-size:13px; }
         .empty i { font-size:38px; color:#e0d0d0; display:block; margin-bottom:12px; }
 
-        @media (max-width:1240px) { .classes { grid-template-columns:repeat(2, 1fr); } }
+        @media (max-width:1240px) { .classes { grid-template-columns:repeat(2, minmax(0, 1fr)); } }
         @media (max-width:900px) { .main { margin-left:68px; } }
         @media (max-width:768px) { .main { margin-left:0; padding:16px; } .topbar { flex-direction:column; align-items:flex-start; } }
-        @media (max-width:680px) { .classes { grid-template-columns:1fr; } }
+        @media (max-width:680px) { .classes { grid-template-columns:minmax(0, 1fr); } }
     </style>
 </head>
 <body>

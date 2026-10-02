@@ -86,14 +86,14 @@
 
         .counter { font-size:13px; font-weight:700; color:var(--ink); }
         .counter.over { color:var(--red); }
-        .split { display:grid; grid-template-columns:1fr 320px; gap:20px; align-items:start; }
+        .split { display:grid; grid-template-columns:minmax(0, 1fr) 320px; gap:20px; align-items:start; }
         .split > .card:last-child { position:sticky; top:20px; }
         .audit { max-height:420px; overflow-y:auto; }
         .audit-row { padding:10px 0; border-bottom:1px solid #f0f1f4; font-size:12.5px; }
         .audit-row:last-child { border-bottom:none; }
         .audit-who { font-weight:600; color:var(--ink); }
         .audit-when { font-size:11px; color:var(--muted); margin-top:2px; }
-        @media (max-width: 1000px) { .split { grid-template-columns:1fr; } .split > .card:last-child { position:static; } }
+        @media (max-width: 1000px) { .split { grid-template-columns:minmax(0, 1fr); } .split > .card:last-child { position:static; } }
     </style>
 </head>
 <body>
@@ -284,7 +284,7 @@
                     <div class="card">
                         <div class="card-title"><i class="fas fa-calendar-day"></i> Schedule</div>
                         <div class="card-sub">When students sit this exam, and how long they get.</div>
-                        <div style="display:grid;grid-template-columns:1fr 200px;gap:16px;margin-top:16px;">
+                        <div style="display:grid;grid-template-columns:minmax(0, 1fr) 200px;gap:16px;margin-top:16px;">
                             <div class="field">
                                 <label>Exam date and start time</label>
                                 <div class="dt-input-wrap">

@@ -10,9 +10,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     @include('partials.mock-exam-styles')
     <style>
-        .kpis { display:grid; grid-template-columns:repeat(4, 1fr); gap:16px; margin-bottom:18px; }
+        .kpis { display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:16px; margin-bottom:18px; }
         .stat-card { background:#fff; border-radius:14px; padding:18px 20px;
-                     box-shadow:0 2px 6px rgba(15,10,10,.08), 0 10px 22px -10px rgba(15,10,10,.22); }
+                     box-shadow:0 1px 2px rgba(16,24,40,.04), 0 4px 14px rgba(16,24,40,.06); }
         .stat-top { display:flex; justify-content:space-between; align-items:flex-start; }
         .stat-icon { width:40px; height:40px; border-radius:11px; display:flex; align-items:center; justify-content:center; font-size:17px; flex-shrink:0; }
         .si-blue   { background:#dbeafe; color:var(--blue); }
@@ -47,7 +47,7 @@
             70%  { box-shadow:0 0 0 6px rgba(30,158,99,0); }
             100% { box-shadow:0 0 0 0 rgba(30,158,99,0); }
         }
-        @media (max-width: 900px) { .kpis { grid-template-columns:repeat(2, 1fr); } }
+        @media (max-width: 900px) { .kpis { grid-template-columns:repeat(2, minmax(0, 1fr)); } }
     </style>
 </head>
 <body>

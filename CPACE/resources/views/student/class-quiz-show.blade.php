@@ -21,7 +21,7 @@
         .title { font-size:22px; font-weight:700; line-height:1.3; }
         .by { font-size:12.5px; opacity:.8; margin-top:6px; }
         .body { padding:24px 30px 28px; }
-        .facts { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-bottom:20px; }
+        .facts { display:grid; grid-template-columns:repeat(2,minmax(0, 1fr)); gap:10px; margin-bottom:20px; }
         .fact { background:#f8f8f8; border-radius:12px; padding:12px 14px; }
         .fact i { color:#7B1D1D; margin-right:7px; }
         .fact b { display:block; font-size:14px; color:#1a1a1a; margin-top:2px; }
@@ -53,7 +53,7 @@
         .perm-s { font-size:11.5px; color:#6b7280; }
         .perm button { border:1px solid #e0e0e0; background:#fff; border-radius:8px; padding:7px 14px; font-size:12px; font-weight:600; font-family:'Poppins',sans-serif; cursor:pointer; }
         .btn:disabled { opacity:.5; cursor:not-allowed; }
-        @media (max-width:480px) { .facts { grid-template-columns:1fr; } .head, .body { padding-left:20px; padding-right:20px; } }
+        @media (max-width:480px) { .facts { grid-template-columns:minmax(0, 1fr); } .head, .body { padding-left:20px; padding-right:20px; } }
     </style>
 </head>
 <body>

@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasExhibit;
 use Illuminate\Database\Eloquent\Model;
 
 class Question extends Model
 {
+    use HasExhibit;
+
     public const SOURCE_FACULTY = 'faculty';
     public const SOURCE_AI_SUBSTITUTE = 'ai_substitute';
 
@@ -21,6 +24,8 @@ class Question extends Model
         'question_type',
         'difficulty',
         'explanation',
+        'image_path',
+        'table_data',
         'is_active',
         'review_status',
         'reviewed_by',
@@ -29,6 +34,7 @@ class Question extends Model
 
     protected $casts = [
         'is_active' => 'boolean',
+        'table_data' => 'array',
         'reviewed_at' => 'datetime',
     ];
 

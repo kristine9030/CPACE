@@ -27,7 +27,7 @@
         .btn-ghost:hover { background:#f5f5f5; }
         .btn-soft { background:var(--primary-light); color:var(--primary); }
         .flash { background:#d1fae5; border:1px solid #6ee7b7; color:#065f46; padding:10px 14px; border-radius:9px; font-size:13px; margin-bottom:16px; }
-        .report-shell { display:grid; grid-template-columns:280px minmax(600px, 1fr) 290px; gap:18px; align-items:start; }
+        .report-shell { display:grid; grid-template-columns:280px minmax(0, 1fr) 290px; gap:18px; align-items:start; }
         .tool-panel, .export-panel { background:white; border-radius:14px; padding:18px; }
         .panel-title { font-size:13px; font-weight:700; color:#1a1a1a; margin-bottom:14px; display:flex; align-items:center; gap:8px; }
         .field { margin-bottom:14px; }
@@ -37,7 +37,7 @@
         .check-list { display:flex; flex-direction:column; gap:9px; margin-top:2px; }
         .check-row { display:flex; align-items:center; gap:8px; font-size:12px; color:#555; cursor:pointer; }
         .check-row input { width:auto; }
-        .preview-wrap { background:#e5e7eb; border-radius:14px; padding:24px; overflow:auto; min-height:760px; }
+        .preview-wrap { background:#e5e7eb; border-radius:14px; padding:24px; overflow:auto; min-height:760px; min-width:0; }
         .preview-toolbar { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
         .preview-title { font-size:13px; font-weight:700; color:#444; display:flex; align-items:center; gap:8px; }
         .zoom-group { display:flex; align-items:center; gap:8px; font-size:12px; color:#777; }
@@ -54,10 +54,15 @@
         .brand p, .report-meta p { font-size:10px; color:#6b7280; margin-top:3px; }
         .report-meta { text-align:right; }
         .report-meta strong { display:block; font-size:12px; color:#111827; margin-bottom:3px; }
+        .summary-3 { grid-template-columns:repeat(3, minmax(0, 1fr)) !important; }
+        .meta-lines { display:grid; gap:4px; margin-bottom:14px; font-size:11.5px; }
+        .meta-lines div { display:flex; justify-content:space-between; gap:12px; border-bottom:1px dotted #e5e7eb; padding:3px 0; }
+        .meta-lines span { color:#6b7280; } .meta-lines b { font-weight:600; color:#111827; text-align:right; }
+        .report-table th.num, .report-table td.num { text-align:right; }
         .doc-title { margin-bottom:18px; }
         .doc-title h2 { font-size:18px; color:#111827; margin-bottom:5px; }
         .doc-title p { font-size:11px; color:#6b7280; line-height:1.55; }
-        .summary-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:18px; }
+        .summary-grid { display:grid; grid-template-columns:repeat(4,minmax(0, 1fr)); gap:10px; margin-bottom:18px; }
         .summary-box { border:1px solid #e5e7eb; border-radius:8px; padding:10px; }
         .summary-box .num { font-size:18px; font-weight:700; color:#111827; line-height:1; }
         .summary-box .lbl { font-size:9px; color:#6b7280; margin-top:5px; text-transform:uppercase; letter-spacing:.35px; }
@@ -67,13 +72,13 @@
         .section-head span { font-size:9px; color:#9ca3af; }
         .chart-grid { display:grid; grid-template-columns:1.1fr .9fr; gap:14px; }
         .paper-card { border:1px solid #e5e7eb; border-radius:8px; padding:12px; }
-        .bar-row { display:grid; grid-template-columns:46px 1fr 34px; gap:8px; align-items:center; margin-bottom:9px; }
+        .bar-row { display:grid; grid-template-columns:46px minmax(0, 1fr) 34px; gap:8px; align-items:center; margin-bottom:9px; }
         .bar-row:last-child { margin-bottom:0; }
         .bar-label, .bar-val { font-size:10px; color:#4b5563; font-weight:700; }
         .bar-track { height:8px; background:#f3f4f6; border-radius:99px; overflow:hidden; }
         .bar-fill { height:100%; border-radius:99px; }
         .chart-caption { font-size:9px; color:#6b7280; margin-top:7px; line-height:1.5; }
-        .dist-row { display:grid; grid-template-columns:74px 1fr 28px; gap:8px; align-items:center; margin-bottom:8px; }
+        .dist-row { display:grid; grid-template-columns:74px minmax(0, 1fr) 28px; gap:8px; align-items:center; margin-bottom:8px; }
         .dist-row:last-child { margin-bottom:0; }
         .dist-row span { font-size:10px; color:#4b5563; }
         .report-table { width:100%; border-collapse:collapse; border:1px solid #e5e7eb; }
@@ -85,10 +90,10 @@
         .status-amber { background:#fef3c7; color:#b45309; }
         .status-green { background:#d1fae5; color:#047857; }
         .status-gray { background:#eef2f7; color:#475569; }
-        .two-col { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+        .two-col { display:grid; grid-template-columns:minmax(0, 1fr) minmax(0, 1fr); gap:14px; }
         .recommend-list { padding-left:16px; color:#4b5563; font-size:10px; line-height:1.7; }
         .empty-note { font-size:10px; color:#9ca3af; padding:10px; text-align:center; }
-        .signature-row { display:grid; grid-template-columns:1fr 1fr; gap:60px; margin-top:34px; }
+        .signature-row { display:grid; grid-template-columns:minmax(0, 1fr) minmax(0, 1fr); gap:60px; margin-top:34px; }
         .sig-line { border-top:1px solid #9ca3af; padding-top:7px; font-size:10px; color:#4b5563; text-align:center; }
         .paper-foot { margin-top:22px; padding-top:10px; border-top:1px solid #e5e7eb; font-size:9px; color:#9ca3af; display:flex; justify-content:space-between; }
         .export-actions { display:grid; gap:8px; margin-bottom:18px; }
@@ -108,11 +113,11 @@
         @keyframes fadeUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
         .a0{animation:fadeUp .4s ease both} .a1{animation:fadeUp .4s .07s ease both}
         @media (max-width: 1260px) {
-            .report-shell { grid-template-columns:260px 1fr; }
+            .report-shell { grid-template-columns:260px minmax(0, 1fr); }
             .export-panel { grid-column:1 / -1; }
         }
         @media (max-width: 980px) {
-            .report-shell { grid-template-columns:1fr; }
+            .report-shell { grid-template-columns:minmax(0, 1fr); }
             .paper { transform-origin:top left; width:720px; }
         }
         @media (max-width: 768px) {
@@ -124,7 +129,7 @@
         /* ── Chart.js containers ── */
         .chart-canvas-wrap { position:relative; width:100%; margin-bottom:12px; }
         .chart-canvas-wrap canvas { width:100%!important; }
-        .chart-row { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px; }
+        .chart-row { display:grid; grid-template-columns:minmax(0, 1fr) minmax(0, 1fr); gap:14px; margin-bottom:14px; }
         .chart-card { border:1px solid #e5e7eb; border-radius:8px; padding:14px; }
         .chart-card h4 { font-size:11px; font-weight:700; color:#374151; margin-bottom:10px; display:flex; align-items:center; gap:6px; }
         .chart-card h4 i { color:var(--primary); font-size:12px; }
@@ -132,7 +137,7 @@
         .chart-legend { display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
         .chart-legend span { font-size:9px; color:#6b7280; display:flex; align-items:center; gap:4px; }
         .chart-legend span::before { content:''; width:8px; height:8px; border-radius:2px; display:inline-block; }
-        @media (max-width:700px) { .chart-row { grid-template-columns:1fr; } }
+        @media (max-width:700px) { .chart-row { grid-template-columns:minmax(0, 1fr); } }
         /* Print: only the paper, at full width. */
         @media print {
             .sidebar, .topbar, .tool-panel, .export-panel, .preview-toolbar, .flash { display:none !important; }
@@ -159,7 +164,9 @@
     $inc = fn ($key) => in_array($key, $f['include'], true);
     // The include checkboxes drive the Class Performance / At-Risk layouts.
     // Subject Mastery and Question Quality reports render their own body.
-    $isCustomBody = in_array($f['report'], ['subject_mastery', 'question_quality'], true);
+    $isQuiz = $f['report'] === 'quiz_results';
+    $isStudent = $f['report'] === 'student_report';
+    $isCustomBody = in_array($f['report'], ['subject_mastery', 'question_quality', 'quiz_results', 'student_report'], true);
 @endphp
 
 <main class="main">
@@ -192,6 +199,30 @@
                         @endforeach
                     </select>
                 </div>
+                @if($isQuiz)
+                    <div class="field">
+                        <label>Quiz</label>
+                        <select name="quiz" onchange="document.getElementById('reportForm').submit()">
+                            @forelse($quizOptions as $opt)
+                                <option value="{{ $opt['id'] }}" @selected(($quizReport['quiz']->id ?? null) === $opt['id'])>{{ $opt['title'] }}@if($opt['subject']) ({{ $opt['subject'] }})@endif</option>
+                            @empty
+                                <option value="">No published quizzes yet</option>
+                            @endforelse
+                        </select>
+                    </div>
+                @endif
+                @if($isStudent)
+                    <div class="field">
+                        <label>Student</label>
+                        <select name="student" onchange="document.getElementById('reportForm').submit()">
+                            <option value="">Choose a student…</option>
+                            @foreach($studentOptions as $opt)
+                                <option value="{{ $opt['id'] }}" @selected($f['student'] === $opt['id'])>{{ $opt['name'] }}@if($opt['section']) · {{ $opt['section'] }}@endif</option>
+                            @endforeach
+                        </select>
+                    </div>
+                @endif
+                @unless($isQuiz || $isStudent)
                 <div class="field">
                     <label>Subject Scope</label>
                     <select name="scope" onchange="document.getElementById('reportForm').submit()">
@@ -210,16 +241,20 @@
                         <option value="all" @selected($f['range'] === 'all')>All Time</option>
                     </select>
                 </div>
+                @endunless
+                @unless($isStudent)
                 <div class="field">
                     <label>Student Group</label>
                     <select name="group" onchange="document.getElementById('reportForm').submit()">
                         <option value="all" @selected($f['group'] === 'all')>All Sections</option>
-                        @foreach($sections as $section)
+                        @foreach(($isQuiz ? ($quizReport["sections"] ?? []) : $sections) as $section)
                             <option value="{{ $section }}" @selected($f['group'] === $section)>{{ $section }}</option>
                         @endforeach
-                        <option value="at_risk" @selected($f['group'] === 'at_risk')>At-Risk Only</option>
+                        @unless($isQuiz)<option value="at_risk" @selected($f['group'] === 'at_risk')>At-Risk Only</option>@endunless
                     </select>
                 </div>
+                @endunless
+                @unless($isQuiz || $isStudent)
                 <div class="field">
                     <label>Include Sections</label>
                     <div class="check-list">
@@ -230,6 +265,7 @@
                         <label class="check-row"><input type="checkbox" name="include[]" value="recommendations" @checked($inc('recommendations'))> Recommendations</label>
                     </div>
                 </div>
+                @endunless
                 <button type="submit" class="btn btn-soft" style="width:100%;"><i class="fas fa-rotate"></i> Regenerate Preview</button>
             </form>
         </aside>
@@ -259,8 +295,14 @@
                     <div class="report-meta">
                         <strong>{{ $reportLabel }}</strong>
                         <p>Prepared by: {{ Auth::user()->name }}</p>
-                        <p>Scope: {{ $scopeLabel }}</p>
-                        <p>Coverage: {{ $rangeLabel }}@if($f['group'] !== 'all') · {{ $f['group'] === 'at_risk' ? 'At-Risk Only' : $f['group'] }}@endif</p>
+                        @if($isQuiz)
+                            <p>Quiz: {{ $quizReport['quiz']->title ?? '—' }}</p>
+                        @elseif($isStudent)
+                            <p>Student: {{ $studentReport['student']['name'] ?? '—' }}</p>
+                        @else
+                            <p>Scope: {{ $scopeLabel }}</p>
+                            <p>Coverage: {{ $rangeLabel }}@if($f['group'] !== 'all') · {{ $f['group'] === 'at_risk' ? 'At-Risk Only' : $f['group'] }}@endif</p>
+                        @endif
                         <p>Generated: {{ $generatedAt->format('M d, Y g:i A') }}</p>
                     </div>
                 </header>
@@ -270,12 +312,20 @@
                 <tr><td>
 
                 <section class="doc-title">
-                    <h2>Student Performance and Intervention Report</h2>
-                    <p>Quiz activity, accuracy, weak topics, and recommended interventions for the selected subjects.</p>
+                    @if($isQuiz)
+                        <h2>Quiz Results Report</h2>
+                        <p>{{ $quizReport['quiz'] ? 'Every student this quiz was meant for, with their best score.' : 'Choose a published quiz to build this report.' }}</p>
+                    @elseif($isStudent)
+                        <h2>Individual Student Report</h2>
+                        <p>{{ $studentReport['student'] ? 'All of this student\'s scores in your class quizzes.' : 'Choose a student to build this report.' }}</p>
+                    @else
+                        <h2>Student Performance and Intervention Report</h2>
+                        <p>Quiz activity, accuracy, weak topics, and recommended interventions for the selected subjects.</p>
+                    @endif
                 </section>
 
                 {{-- Executive summary (shared) --}}
-                @if($isCustomBody || $inc('summary'))
+                @if(! $isQuiz && ! $isStudent && ($isCustomBody || $inc('summary')))
                     <section class="summary-grid">
                         <div class="summary-box"><div class="num">{{ $stats['students'] }}</div><div class="lbl">Active Students</div></div>
                         <div class="summary-box"><div class="num">{{ $stats['accuracy'] }}%</div><div class="lbl">Class Accuracy</div></div>
@@ -286,6 +336,80 @@
 
                 @if($stats['students'] === 0 && ! $isCustomBody)
                     <div class="paper-card"><p class="empty-note">No completed quiz activity in the selected scope and date range yet. Try widening the date range to “All Time” or changing the subject scope.</p></div>
+                @endif
+
+                {{-- ══ QUIZ RESULTS REPORT ══ --}}
+                @if($isQuiz)
+                    @if(! $quizReport['quiz'])
+                        <div class="paper-card"><p class="empty-note">You have no published or closed class quizzes yet. Publish a quiz and it will appear here.</p></div>
+                    @else
+                        <section class="meta-lines">
+                            <div><span>Quiz</span><b>{{ $quizReport['quiz']->title }}@if($quizReport['quiz']->subject) · {{ $quizReport['quiz']->subject->code }}@endif</b></div>
+                            <div><span>Generated by</span><b>{{ Auth::user()->name }}</b></div>
+                            <div><span>Generated at</span><b>{{ $generatedAt->format('F j, Y \a\t g:i A') }}</b></div>
+                        </section>
+                        <section class="summary-grid summary-3">
+                            <div class="summary-box"><div class="num">{{ $quizReport['assigned'] }}</div><div class="lbl">Assigned</div></div>
+                            <div class="summary-box"><div class="num">{{ $quizReport['submitted'] }}</div><div class="lbl">Submitted</div></div>
+                            <div class="summary-box"><div class="num">{{ $quizReport['average'] === null ? '—' : $quizReport['average'].'%' }}</div><div class="lbl">Average best score</div></div>
+                        </section>
+                        <section class="paper-section">
+                            <div class="section-head"><h3>Results</h3><span>{{ $f['group'] !== 'all' ? $f['group'] : 'All sections' }}</span></div>
+                            <table class="report-table">
+                                <thead><tr><th>Student</th><th>Group</th><th>Submitted</th><th class="num">Best score</th></tr></thead>
+                                <tbody>
+                                    @forelse($quizReport['rows'] as $r)
+                                        <tr>
+                                            <td>{{ $r['name'] }}</td>
+                                            <td>{{ $r['section'] ?: '—' }}</td>
+                                            <td style="color:#6b7280;">{{ $r['submitted_at'] ? $r['submitted_at']->format('M j, g:i A') : '—' }}</td>
+                                            <td class="num"><strong>{{ $r['best'] === null ? '—' : $r['best'].'%' }}</strong></td>
+                                        </tr>
+                                    @empty
+                                        <tr><td colspan="4"><p class="empty-note">No students in this group.</p></td></tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </section>
+                    @endif
+                @endif
+
+                {{-- ══ INDIVIDUAL STUDENT REPORT ══ --}}
+                @if($isStudent)
+                    @if(! $studentReport['student'])
+                        <div class="paper-card"><p class="empty-note">Pick a student on the left to see all of their class quiz scores.</p></div>
+                    @else
+                        <section class="meta-lines">
+                            <div><span>Student</span><b>{{ $studentReport['student']['name'] }}</b></div>
+                            <div><span>Group</span><b>{{ $studentReport['student']['section'] ?: '—' }}</b></div>
+                            <div><span>Generated by</span><b>{{ Auth::user()->name }} · {{ $generatedAt->format('M j, Y g:i A') }}</b></div>
+                        </section>
+                        <section class="summary-grid">
+                            <div class="summary-box"><div class="num">{{ $studentReport['total'] }}</div><div class="lbl">Class quizzes</div></div>
+                            <div class="summary-box"><div class="num">{{ $studentReport['taken'] }}</div><div class="lbl">Taken</div></div>
+                            <div class="summary-box"><div class="num">{{ $studentReport['average'] === null ? '—' : $studentReport['average'].'%' }}</div><div class="lbl">Average score</div></div>
+                            <div class="summary-box"><div class="num">{{ $studentReport['best'] === null ? '—' : $studentReport['best'].'%' }}</div><div class="lbl">Best score</div></div>
+                        </section>
+                        <section class="paper-section">
+                            <div class="section-head"><h3>Class quiz scores</h3><span>{{ $studentReport['taken'] }} of {{ $studentReport['total'] }} taken</span></div>
+                            <table class="report-table">
+                                <thead><tr><th>Quiz</th><th>Subject</th><th>Submitted</th><th class="num">Score</th><th>Result</th></tr></thead>
+                                <tbody>
+                                    @forelse($studentReport['rows'] as $r)
+                                        <tr>
+                                            <td>{{ $r['title'] }}@if($r['due_at'])<div style="font-size:10px;color:#9ca3af;">Due {{ $r['due_at']->format('M j, Y') }}</div>@endif</td>
+                                            <td>{{ $r['subject'] }}</td>
+                                            <td style="color:#6b7280;">{{ $r['submitted_at'] ? $r['submitted_at']->format('M j, g:i A') : '—' }}</td>
+                                            <td class="num">@if($r['percent'] !== null)<strong>{{ $r['percent'] }}%</strong> <span style="color:#9ca3af;">({{ $r['score'] }}/{{ $r['total'] }})</span>@else — @endif</td>
+                                            <td><span class="status status-{{ $r['status'] === 'Passed' ? 'green' : ($r['status'] === 'Below passing' ? 'red' : ($r['status'] === 'Missed' ? 'amber' : 'gray')) }}">{{ $r['status'] }}</span></td>
+                                        </tr>
+                                    @empty
+                                        <tr><td colspan="5"><p class="empty-note">You have no published class quizzes yet.</p></td></tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </section>
+                    @endif
                 @endif
 
                 {{-- ══ CLASS PERFORMANCE SUMMARY ══ --}}
@@ -436,7 +560,7 @@
                                 <h3>{{ $subject['code'] }} — {{ $subject['name'] }}</h3>
                                 <span>Overall accuracy {{ $subject['accuracy'] }}%</span>
                             </div>
-                            <div class="bar-row" style="grid-template-columns:1fr 40px;">
+                            <div class="bar-row" style="grid-template-columns:minmax(0, 1fr) 40px;">
                                 <div class="bar-track"><div class="bar-fill" style="width:{{ $subject['accuracy'] }}%;background:{{ $subject['color'] }};"></div></div>
                                 <div class="bar-val">{{ $subject['accuracy'] }}%</div>
                             </div>
@@ -545,9 +669,20 @@
             </div>
             <div class="mini-stat"><span>Report Type</span><strong>{{ $reportLabel }}</strong></div>
             <div class="mini-stat"><span>Paper Size</span><strong>A4 Portrait</strong></div>
+            @if($isQuiz)
+                <div class="mini-stat"><span>Quiz</span><strong>{{ \Illuminate\Support\Str::limit($quizReport['quiz']->title ?? '—', 22) }}</strong></div>
+                <div class="mini-stat"><span>Assigned</span><strong>{{ $quizReport['assigned'] }}</strong></div>
+                <div class="mini-stat"><span>Submitted</span><strong>{{ $quizReport['submitted'] }}</strong></div>
+            @elseif($isStudent)
+                <div class="mini-stat"><span>Student</span><strong>{{ \Illuminate\Support\Str::limit($studentReport['student']['name'] ?? '—', 22) }}</strong></div>
+                <div class="mini-stat"><span>Quizzes taken</span><strong>{{ $studentReport['taken'] }} / {{ $studentReport['total'] }}</strong></div>
+                <div class="mini-stat"><span>Average score</span><strong>{{ $studentReport['average'] === null ? '—' : $studentReport['average'].'%' }}</strong></div>
+            @else
             <div class="mini-stat"><span>Coverage</span><strong>{{ $rangeLabel }}</strong></div>
             <div class="mini-stat"><span>Active Students</span><strong>{{ $stats['students'] }}</strong></div>
-            @if($f['report'] === 'question_quality')
+            @endif
+            @if($isQuiz || $isStudent)
+            @elseif($f['report'] === 'question_quality')
                 <div class="mini-stat"><span>Questions</span><strong>{{ $questions->count() }}</strong></div>
             @else
                 <div class="mini-stat"><span>At Risk</span><strong>{{ $stats['at_risk'] }}</strong></div>
@@ -555,7 +690,15 @@
 
             <div class="panel-title" style="margin-top:18px;"><i class="fas fa-list-check"></i> Report Outline</div>
             <div class="outline-list">
-                @if($f['report'] === 'subject_mastery')
+                @if($isQuiz)
+                    <div class="outline-item"><i class="fas fa-check-circle"></i><span>Quiz, who generated it and when</span></div>
+                    <div class="outline-item"><i class="fas fa-chart-simple"></i><span>Assigned, submitted and average best score</span></div>
+                    <div class="outline-item"><i class="fas fa-table"></i><span>Results table: every student with a best score</span></div>
+                @elseif($isStudent)
+                    <div class="outline-item"><i class="fas fa-user"></i><span>Student details</span></div>
+                    <div class="outline-item"><i class="fas fa-chart-simple"></i><span>Quizzes taken, average and best score</span></div>
+                    <div class="outline-item"><i class="fas fa-table"></i><span>Every class quiz with the score and result</span></div>
+                @elseif($f['report'] === 'subject_mastery')
                     <div class="outline-item"><i class="fas fa-check-circle"></i><span>Executive summary with key totals</span></div>
                     <div class="outline-item"><i class="fas fa-chart-bar"></i><span>Subject accuracy bar chart</span></div>
                     <div class="outline-item"><i class="fas fa-chart-pie"></i><span>Topic mastery levels doughnut</span></div>
@@ -576,7 +719,21 @@
 
             <div class="panel-title" style="margin-top:18px;"><i class="fas fa-table"></i> Excel Preview</div>
             <div class="csv-preview">
-                @if($f['report'] === 'question_quality')
+                @if($isQuiz)
+                    <div class="csv-row head"><span>Student</span><span>Group</span><span>Best</span><span>—</span></div>
+                    @forelse(($quizReport['rows'] ?? collect())->take(3) as $r)
+                        <div class="csv-row"><span>{{ $r['name'] }}</span><span>{{ $r['section'] ?: '—' }}</span><span>{{ $r['best'] === null ? '—' : $r['best'].'%' }}</span><span>—</span></div>
+                    @empty
+                        <div class="csv-row"><span style="grid-column:1/-1;">No rows</span></div>
+                    @endforelse
+                @elseif($isStudent)
+                    <div class="csv-row head"><span>Quiz</span><span>Subject</span><span>Score</span><span>Result</span></div>
+                    @forelse(($studentReport['rows'] ?? collect())->take(3) as $r)
+                        <div class="csv-row"><span>{{ $r['title'] }}</span><span>{{ $r['subject'] }}</span><span>{{ $r['percent'] === null ? '—' : $r['percent'].'%' }}</span><span>{{ $r['status'] }}</span></div>
+                    @empty
+                        <div class="csv-row"><span style="grid-column:1/-1;">No rows</span></div>
+                    @endforelse
+                @elseif($f['report'] === 'question_quality')
                     <div class="csv-row head"><span>Topic</span><span>Answered</span><span>Correct</span><span>Flag</span></div>
                     @forelse($questions->take(3) as $q)
                         <div class="csv-row"><span>{{ $q['topic'] }}</span><span>{{ $q['answered'] }}</span><span>{{ $q['answered'] ? $q['accuracy'].'%' : '—' }}</span><span>{{ $q['flag'] }}</span></div>
@@ -605,12 +762,23 @@
 </main>
 
 <script>
+    // The A4 sheet is 794px wide. Zoom (which, unlike a transform, changes the layout size) fits it
+    // inside its column so it never slides under the side panels; the +/- buttons adjust from there.
     let zoom = 100;
-    function zoomPaper(delta) {
-        zoom = Math.min(150, Math.max(50, zoom + delta));
+    function applyZoom() {
         document.getElementById('zoomVal').textContent = zoom + '%';
-        document.getElementById('reportPaper').style.transform = 'scale(' + (zoom / 100) + ')';
+        document.getElementById('reportPaper').style.zoom = (zoom / 100);
     }
+    function zoomPaper(delta) {
+        zoom = Math.min(150, Math.max(40, zoom + delta));
+        applyZoom();
+    }
+    (function fitPaper() {
+        const wrap = document.querySelector('.preview-wrap');
+        if (!wrap) return;
+        const room = wrap.clientWidth - 48;
+        if (room > 0 && room < 794) { zoom = Math.max(40, Math.floor(room / 794 * 100)); applyZoom(); }
+    })();
 </script>
 
 <script>

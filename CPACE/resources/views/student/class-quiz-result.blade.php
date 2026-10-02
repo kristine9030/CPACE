@@ -88,6 +88,7 @@
                     <span class="tag t-{{ $state }}">{{ ['right' => 'Correct', 'wrong' => 'Incorrect', 'skip' => 'Not answered'][$state] }}</span>
                 </div>
                 <div class="q-text">{{ $item->question_text }}</div>
+                @include('partials.question-exhibit', ['item' => $item])
                 @foreach($item->choices as $choice)
                     @php $isC = $choice['label'] === $correct; $isP = $choice['label'] === $picked; @endphp
                     <div class="ch {{ $isC ? 'correct' : ($isP ? 'picked-wrong' : '') }}">

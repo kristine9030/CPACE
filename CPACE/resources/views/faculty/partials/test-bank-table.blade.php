@@ -5,18 +5,18 @@
     </label>
     <span class="count">Showing {{ $questions->firstItem() ?? 0 }}–{{ $questions->lastItem() ?? 0 }} of <strong>{{ number_format($questions->total()) }}</strong> questions</span>
 </div>
-<table id="testBankTable">
+<table id="testBankTable" class="tb-table">
+    <colgroup>
+        <col style="width:48px"><col><col style="width:140px"><col style="width:110px"><col style="width:150px"><col style="width:90px">
+    </colgroup>
     <thead>
         <tr>
-            <th><input type="checkbox" class="row-checkbox" id="headCheckbox"></th>
-            <th>#</th>
+            <th class="col-check"><input type="checkbox" class="row-checkbox" id="headCheckbox"></th>
             <th>Question</th>
-            <th>Subject</th>
-            <th>Topic</th>
             <th>Type</th>
             <th>Difficulty</th>
             <th>Status</th>
-            <th>Actions</th>
+            <th class="col-actions">Actions</th>
         </tr>
     </thead>
     <tbody>
@@ -29,46 +29,52 @@
 
         @forelse($questions as $q)
         <tr>
-            <td><input type="checkbox" class="row-checkbox q-checkbox" value="{{ $q->id }}"></td>
-            <td style="color:#aaa;font-size:12px;">{{ $q->id }}</td>
+            <td class="col-check"><input type="checkbox" class="row-checkbox q-checkbox" value="{{ $q->id }}"></td>
             <td>
-                <div class="q-text">{{ \Illuminate\Support\Str::limit($q->question_text, 70) }}</div>
-                <div class="q-meta">{{ $diffLabel[$q->difficulty] }} difficulty</div>
+                <div class="q-text" title="{{ $q->question_text }}">{{ \Illuminate\Support\Str::limit($q->question_text, 110) }}</div>
+                <div class="q-meta">
+                    <span class="subj-badge {{ $subjectClass[$q->subject_code] ?? 'b-far' }}">{{ $q->subject_code }}</span>
+                    <span class="q-topic" title="{{ $q->topic_name }}">{{ $q->topic_name }}</span>
+                    @if($q->exhibitImageUrl())<i class="fas fa-image q-flag" title="Has a picture"></i>@endif
+                    @if(! empty($q->table_data['rows']))<i class="fas fa-table q-flag" title="Has a table"></i>@endif
+                    <span class="q-id">#{{ $q->id }}</span>
+                </div>
             </td>
-            <td><span class="subj-badge {{ $subjectClass[$q->subject_code] ?? 'b-far' }}">{{ $q->subject_code }}</span></td>
-            <td style="font-size:12px;color:#666;">{{ $q->topic_name }}</td>
             <td><span class="type-badge">{{ $typeLabel[$q->question_type] ?? $q->question_type }}</span></td>
             <td><span class="diff-badge {{ $diffClass[$q->difficulty] }}">{{ $diffLabel[$q->difficulty] }}</span></td>
             <td>
                 @if($q->is_active)
                     <span class="status-pill sp-active"><i class="fas fa-circle" style="font-size:6px;"></i> Active</span>
                 @elseif($q->isPendingAiReview())
-                    <a href="{{ route('faculty.test-bank.ai-review') }}" class="status-pill" style="background:#ede9fe;color:#7c3aed;text-decoration:none;" title="Drafted by AI because this topic was short of its TOS item count. Hidden from students until approved."><i class="fas fa-robot" style="font-size:9px;"></i> AI · Needs review</a>
+                    <a href="{{ route('faculty.test-bank.ai-review') }}" class="status-pill sp-ai" title="Drafted by AI because this topic was short of its TOS item count. Hidden from students until approved."><i class="fas fa-robot" style="font-size:9px;"></i> AI · Needs review</a>
                 @elseif($q->source === 'ai_substitute' && $q->review_status === 'rejected')
                     <span class="status-pill sp-draft" title="AI substitute rejected on review"><i class="fas fa-robot" style="font-size:9px;"></i> AI · Rejected</span>
                 @else
                     <span class="status-pill sp-draft"><i class="fas fa-circle" style="font-size:6px;"></i> Draft</span>
                 @endif
             </td>
-            <td style="white-space:nowrap;">
-                <a href="{{ route('faculty.question.variants', $q->id) }}" class="action-btn ab-var" title="Manage variants (alternative wordings)">
-                    <i class="fas fa-shuffle"></i>@if($q->variants_count)<span class="var-count">{{ $q->variants_count }}</span>@endif
-                </a>
-                <a href="{{ route('faculty.question.edit', $q->id) }}" class="action-btn ab-edit" style="margin-left:4px;" title="Edit"><i class="fas fa-pen"></i></a>
-                <form method="POST" action="{{ route('faculty.question.destroy', $q->id) }}" style="display:inline;"
-                      data-confirm="This question and all of its variants will be permanently removed from the test bank."
-                      data-confirm-title="Delete this question?"
-                      data-confirm-ok="Yes, delete it"
-                      data-confirm-danger>
-                    @csrf
-                    @method('DELETE')
-                    <button type="submit" class="action-btn ab-del" style="margin-left:4px;" title="Delete"><i class="fas fa-trash"></i></button>
-                </form>
+            <td class="col-actions">
+                <div class="row-menu">
+                    <button type="button" class="row-dots" onclick="toggleRowMenu(event, this)" aria-label="Actions for question {{ $q->id }}"><i class="fas fa-ellipsis"></i></button>
+                    <div class="row-dropdown">
+                        <a href="{{ route('faculty.question.edit', $q->id) }}"><i class="fas fa-pen"></i> Edit question</a>
+                        <a href="{{ route('faculty.question.variants', $q->id) }}"><i class="fas fa-shuffle"></i> Manage variants @if($q->variants_count) <span class="rd-count">{{ $q->variants_count }}</span>@endif</a>
+                        <form method="POST" action="{{ route('faculty.question.destroy', $q->id) }}"
+                              data-confirm="This question and all of its variants will be permanently removed from the test bank."
+                              data-confirm-title="Delete this question?"
+                              data-confirm-ok="Yes, delete it"
+                              data-confirm-danger>
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="danger"><i class="fas fa-trash"></i> Delete question</button>
+                        </form>
+                    </div>
+                </div>
             </td>
         </tr>
         @empty
         <tr>
-            <td colspan="9" style="text-align:center;color:#aaa;padding:40px;">
+            <td colspan="6" style="text-align:center;color:#aaa;padding:40px;">
                 No questions found. <a href="{{ route('faculty.question.create') }}" style="color:var(--accent);font-weight:600;">Add a question</a>.
             </td>
         </tr>

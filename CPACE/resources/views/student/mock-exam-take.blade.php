@@ -30,7 +30,7 @@
         /* No text selection inside the exam: stops Edge's "Copilot" text-
            selection popup (and any other browser selection toolbar) from
            appearing over a highlighted question/choice. */
-        .wrap { max-width:1180px; margin:0 auto; padding:22px; display:grid; grid-template-columns:1fr 220px; gap:20px; align-items:start; -webkit-user-select:none; user-select:none; }
+        .wrap { max-width:1180px; margin:0 auto; padding:22px; display:grid; grid-template-columns:minmax(0, 1fr) 220px; gap:20px; align-items:start; -webkit-user-select:none; user-select:none; }
         .q-card { background:#fff; border:1px solid var(--line); border-radius:13px; padding:22px 24px; margin-bottom:14px; }
         .q-num { font-size:11.5px; font-weight:700; color:var(--primary); letter-spacing:.5px; text-transform:uppercase; }
         .q-text { font-size:14.5px; line-height:1.65; color:var(--ink); margin:8px 0 16px; }
@@ -42,7 +42,7 @@
         .opt .lbl { font-weight:700; color:var(--primary); min-width:17px; }
 
         .palette { position:sticky; top:82px; background:#fff; border:1px solid var(--line); border-radius:13px; padding:16px; }
-        .palette-grid { display:grid; grid-template-columns:repeat(5, 1fr); gap:7px; margin-top:12px; max-height:340px; overflow-y:auto; }
+        .palette-grid { display:grid; grid-template-columns:repeat(5, minmax(0, 1fr)); gap:7px; margin-top:12px; max-height:340px; overflow-y:auto; }
         .pal { aspect-ratio:1; border:1px solid var(--line); border-radius:7px; background:#fff; cursor:pointer;
                font-size:11.5px; font-weight:600; color:var(--muted); font-family:'Poppins',sans-serif; }
         .pal.done { background:var(--primary); border-color:var(--primary); color:#fff; }
@@ -54,7 +54,7 @@
         .warn-overlay h2 { font-size:24px; margin-bottom:10px; }
         .warn-overlay p { font-size:14px; opacity:.9; max-width:480px; margin:0 auto 18px; line-height:1.7; }
 
-        @media (max-width: 900px) { .wrap { grid-template-columns:1fr; } .palette { position:static; } }
+        @media (max-width: 900px) { .wrap { grid-template-columns:minmax(0, 1fr); } .palette { position:static; } }
     </style>
 </head>
 <body>
@@ -75,6 +75,7 @@
             <div class="q-card" id="q{{ $i + 1 }}">
                 <div class="q-num">Question {{ $i + 1 }} of {{ $items->count() }}</div>
                 <div class="q-text">{{ $item->question_text }}</div>
+                @include('partials.question-exhibit', ['item' => $item])
                 @foreach((array) $item->choices as $choice)
                     @php $label = $choice['label'] ?? ''; @endphp
                     <label class="opt {{ ($answers[(string) $item->id] ?? null) === $label ? 'picked' : '' }}">

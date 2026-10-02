@@ -51,7 +51,7 @@ class CurriculumQuestionCopier
                         continue;
                     }
 
-                    $copy = new Question([
+                    $copy = new Question(\App\Support\QuestionExhibit::attributesOf($source) + [
                         'topic_id' => $toTopicId,
                         'created_by' => $source->created_by,
                         'question_text' => $source->question_text,

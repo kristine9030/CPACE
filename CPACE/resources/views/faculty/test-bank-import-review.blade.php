@@ -44,9 +44,9 @@
         .badge-ai   { background:#ede9fe; color:#7c3aed; }
         .badge-check { background:#fef3c7; color:#b45309; }
 
-        .row2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px; }
-        .row3 { display:grid; grid-template-columns:2fr 1fr 1fr; gap:14px; margin-bottom:14px; }
-        @media (max-width:900px) { .row2, .row3 { grid-template-columns:1fr; } }
+        .row2 { display:grid; grid-template-columns:minmax(0, 1fr) minmax(0, 1fr); gap:14px; margin-bottom:14px; }
+        .row3 { display:grid; grid-template-columns:2fr minmax(0, 1fr) minmax(0, 1fr); gap:14px; margin-bottom:14px; }
+        @media (max-width:900px) { .row2, .row3 { grid-template-columns:minmax(0, 1fr); } }
 
         label.small { display:block; font-size:11px; font-weight:600; color:#888; text-transform:uppercase; letter-spacing:.3px; margin-bottom:6px; }
         textarea, select, input[type=text] {

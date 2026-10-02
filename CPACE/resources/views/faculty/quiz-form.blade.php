@@ -35,7 +35,7 @@
         .btn-ghost:hover { background:#f5f5f5; }
         .btn:disabled { opacity:.5; cursor:not-allowed; }
 
-        .layout { display:grid; grid-template-columns:1fr 340px; gap:20px; align-items:start; }
+        .layout { display:grid; grid-template-columns:minmax(0, 1fr) 340px; gap:20px; align-items:start; }
         .card { background:#fff; border-radius:14px; padding:22px 24px; margin-bottom:18px; }
         .card-title { font-size:14px; font-weight:700; color:#1a1a1a; margin-bottom:16px; display:flex; align-items:center; justify-content:space-between; gap:10px; }
         .card-title i { color:var(--accent); margin-right:6px; }
@@ -53,7 +53,7 @@
         }
         input:focus, textarea:focus, select:focus { border-color:var(--primary); }
         textarea { resize:vertical; min-height:80px; line-height:1.6; }
-        .form-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+        .form-row { display:grid; grid-template-columns:minmax(0, 1fr) minmax(0, 1fr); gap:12px; }
 
         .toggle-row { display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-top:1px solid #f4f4f4; }
         .toggle-row:first-of-type { border-top:none; }
@@ -102,7 +102,7 @@
         .q-empty i { font-size:30px; color:#e6d5d5; display:block; margin-bottom:8px; }
 
         /* Summary side */
-        .summary { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px; }
+        .summary { display:grid; grid-template-columns:minmax(0, 1fr) minmax(0, 1fr); gap:10px; margin-bottom:16px; }
         .sum { background:#f8f8f8; border-radius:10px; padding:12px; text-align:center; }
         .sum b { display:block; font-size:20px; color:#1a1a1a; }
         .sum span { font-size:11px; color:#999; }
@@ -163,7 +163,7 @@
         .modal-empty { padding:40px; text-align:center; color:#bbb; font-size:13px; }
 
         @media (max-width:900px) { .main { margin-left:68px; } }
-        @media (max-width:768px) { .main { margin-left:0; padding:16px; } .layout { grid-template-columns:1fr; } .form-row { grid-template-columns:1fr; } .topbar { flex-direction:column; align-items:flex-start; } }
+        @media (max-width:768px) { .main { margin-left:0; padding:16px; } .layout { grid-template-columns:minmax(0, 1fr); } .form-row { grid-template-columns:minmax(0, 1fr); } .topbar { flex-direction:column; align-items:flex-start; } }
     </style>
 </head>
 <body>
@@ -438,6 +438,7 @@
                         </select>
                         <input type="number" data-field="points" min="1" max="100" value="${it.points || 1}" title="Points" ${LOCKED ? 'readonly' : ''}> <span class="choice-hint">pts</span>
                         ${it.source_question_id ? '<span class="q-src"><i class="fas fa-database"></i> Test Bank</span>' : ''}
+                        ${(it.image_path || (it.table_data && it.table_data.rows)) ? '<span class="q-src" title="This question keeps its picture or table"><i class="fas fa-paperclip"></i> ' + (it.image_path ? 'Picture' : '') + (it.image_path && it.table_data && it.table_data.rows ? ' + ' : '') + (it.table_data && it.table_data.rows ? 'Table' : '') + '</span>' : ''}
                         <span class="spacer"></span>
                         ${LOCKED ? '' : `
                         <button type="button" class="icon-btn" data-move="-1" title="Move up" ${i === 0 ? 'disabled' : ''}><i class="fas fa-arrow-up"></i></button>
@@ -546,6 +547,7 @@
             itemsJson.value = JSON.stringify(items.map(it => ({
                 question_text: it.question_text, question_type: it.question_type, points: it.points,
                 explanation: it.explanation, source_question_id: it.source_question_id,
+                image_path: it.image_path || null, table_data: it.table_data || null,
                 choices: it.choices.map(c => ({ label: c.label, text: c.text, is_correct: !!c.is_correct })),
             })));
             form.requestSubmit ? form.requestSubmit() : form.submit();
@@ -614,6 +616,7 @@
             const item = {
                 question_text: q.question_text, question_type: q.question_type === 'true_false' ? 'true_false' : 'mcq',
                 points: 1, explanation: q.explanation || '', source_question_id: q.id,
+                image_path: q.image_path || null, table_data: q.table_data || null,
                 choices: q.choices.map(c => ({ label: c.label, text: c.text, is_correct: !!c.is_correct })),
             };
             relabel(item);
@@ -735,6 +738,7 @@
                     const item = {
                         question_text: q.question_text, question_type: q.question_type === 'true_false' ? 'true_false' : 'mcq',
                         points: 1, explanation: q.explanation || '', source_question_id: q.id,
+                image_path: q.image_path || null, table_data: q.table_data || null,
                         choices: q.choices.map(c => ({ label: c.label, text: c.text, is_correct: !!c.is_correct })),
                     };
                     relabel(item);

@@ -263,8 +263,8 @@
                         <div class="banner-teacher">
                             @foreach($faculty->take(3) as $teacher)
                                 <span class="t-avatar">
-                                    @if($teacher->profile_photo)
-                                        <img src="{{ asset('storage/' . $teacher->profile_photo) }}" alt="">
+                                    @if($teacher->avatarUrl())
+                                        <img src="{{ $teacher->avatarUrl() }}" alt="">
                                     @else
                                         {{ strtoupper(substr($teacher->first_name ?? 'C', 0, 1)) }}{{ strtoupper(substr($teacher->last_name ?? 'F', 0, 1)) }}
                                     @endif

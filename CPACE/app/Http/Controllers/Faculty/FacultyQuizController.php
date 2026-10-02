@@ -181,6 +181,8 @@ class FacultyQuizController extends Controller
         return view('faculty.quiz-form', [
             'quiz' => $quiz,
             'items' => $quiz->items->map(fn ($item) => [
+                'image_path' => $item->image_path,
+                'table_data' => $item->table_data,
                 'question_text' => $item->question_text,
                 'question_type' => $item->question_type,
                 'choices' => $item->choices,
@@ -204,7 +206,7 @@ class FacultyQuizController extends Controller
         // scores keep meaning something; settings (deadline etc.) stay editable.
         $locked = $quiz->attempts()->exists();
         $items = $locked
-            ? $quiz->items->map(fn ($i) => $i->only(['question_text', 'question_type', 'choices', 'explanation', 'points', 'source_question_id']))->all()
+            ? $quiz->items->map(fn ($i) => $i->only(['question_text', 'question_type', 'choices', 'explanation', 'points', 'source_question_id', 'image_path', 'table_data']))->all()
             : $this->parseItems($request);
 
         if ($publish) {
@@ -552,6 +554,8 @@ class FacultyQuizController extends Controller
             'question_type' => $q->question_type,
             'difficulty' => $q->difficulty,
             'explanation' => $q->explanation,
+            'image_path' => $q->image_path,
+            'table_data' => $q->table_data,
             'topic' => $q->topic_name,
             'subject' => $q->subject_code,
             'choices' => $q->choices->sortBy('choice_label')->values()->map(fn ($c) => [
@@ -646,6 +650,8 @@ class FacultyQuizController extends Controller
                 'question_type' => $q->question_type,
                 'difficulty' => $q->difficulty,
                 'explanation' => $q->explanation,
+                'image_path' => $q->image_path,
+                'table_data' => $q->table_data,
                 'choices' => $q->choices->sortBy('choice_label')->values()->map(fn ($c) => [
                     'label' => $c->choice_label,
                     'text' => $c->choice_text,
@@ -828,7 +834,10 @@ class FacultyQuizController extends Controller
                 'explanation' => trim((string) ($row['explanation'] ?? '')) ?: null,
                 'points' => max(1, min(100, $points)),
                 'source_question_id' => ! empty($row['source_question_id']) ? (int) $row['source_question_id'] : null,
-            ];
+            ] + \App\Support\QuestionExhibit::attributesOf((object) [
+                'image_path' => $row['image_path'] ?? null,
+                'table_data' => \App\Support\QuestionExhibit::sanitizeTable($row['table_data'] ?? null),
+            ]);
         }
 
         return $items;

@@ -317,6 +317,8 @@ class QuizApiController extends Controller
         return [
             'id'            => $q->id,
             'question_text' => $q->question_text,
+            'image_url'     => $q->exhibitImageUrl(),
+            'table'         => $q->table_data,
             'question_type' => $q->question_type,
             'difficulty'    => $q->difficulty,
             'explanation'   => $q->explanation,

@@ -65,19 +65,19 @@
 
         /* STATS ROW */
         .stats-row {
-            display:grid; grid-template-columns:repeat(4,1fr);
+            display:grid; grid-template-columns:repeat(4,minmax(0, 1fr));
             gap:18px; margin-bottom:26px;
         }
         .stat-card {
             background:white; border-radius:14px; padding:20px 22px;
             display:flex; flex-direction:column; height:100%;
             text-decoration:none; color:inherit;
-            box-shadow:0 2px 6px rgba(15,10,10,.08), 0 10px 22px -10px rgba(15,10,10,.22);
+            box-shadow:0 1px 2px rgba(16,24,40,.04), 0 4px 14px rgba(16,24,40,.06);
             transition:transform .18s ease, box-shadow .18s ease;
         }
         a.stat-card:hover {
             transform:translateY(-3px);
-            box-shadow:0 4px 10px rgba(15,10,10,.1), 0 16px 30px -10px rgba(15,10,10,.3);
+            box-shadow:0 2px 4px rgba(16,24,40,.05), 0 8px 20px rgba(16,24,40,.09);
         }
 
         /* ANALYTICS SECTION */
@@ -85,6 +85,7 @@
         .doughnut-legend { display:flex; flex-direction:column; gap:10px; }
         .dl-row { display:flex; align-items:center; gap:9px; font-size:12.5px; color:#555; }
         .dl-row .dl-swatch { width:10px; height:10px; border-radius:3px; flex-shrink:0; }
+        .dl-row { flex-wrap:wrap; min-width:0; }
         .dl-row .dl-val { margin-left:auto; font-weight:700; color:#1a1a1a; }
 
         /* Donut card: chart pinned to a sane size on the left, legend fills
@@ -126,18 +127,18 @@
             display:grid; grid-template-columns:minmax(0, 1fr) 340px;
             gap:18px; align-items:start;
         }
-        @media (max-width:1100px) { .main-grid { grid-template-columns:1fr; } }
+        @media (max-width:1100px) { .main-grid { grid-template-columns:minmax(0, 1fr); } }
 
         /* CARDS — a real shadow (not just a hairline border) so every card
            reads as a raised surface no matter what colour sits behind it. */
         .card {
             background:white; border-radius:14px; padding:22px;
-            box-shadow:0 2px 6px rgba(15,10,10,.08), 0 10px 22px -10px rgba(15,10,10,.22);
+            box-shadow:0 1px 2px rgba(16,24,40,.04), 0 4px 14px rgba(16,24,40,.06);
         }
         .card + .card { margin-top:18px; }
 
         .viz-card {
-            box-shadow:0 2px 6px rgba(15,10,10,.08), 0 10px 22px -10px rgba(15,10,10,.22);
+            box-shadow:0 1px 2px rgba(16,24,40,.04), 0 4px 14px rgba(16,24,40,.06);
             border-color:transparent;
         }
         .card-head {
@@ -206,7 +207,7 @@
         .stack { display:flex; flex-direction:column; gap:18px; min-width:0; }
         .stack > .card + .card { margin-top:0; }
         @media (max-width:1200px) { .dash-grid-3 { grid-template-columns:repeat(2, minmax(0, 1fr)); } }
-        @media (max-width:768px)  { .dash-grid-3 { grid-template-columns:1fr; } }
+        @media (max-width:768px)  { .dash-grid-3 { grid-template-columns:minmax(0, 1fr); } }
 
         /* Insight tip: a lightbulb in the tone of the chart's most urgent
            insight, pinned to the right of the chart title. */
@@ -577,6 +578,7 @@
                         ];
                         $diffClass = ['Easy' => 'd-easy', 'Medium' => 'd-medium', 'Hard' => 'd-hard'];
                     @endphp
+<div style="overflow-x:auto;max-width:100%;">
                     <table>
                         <thead>
                             <tr>
@@ -622,6 +624,7 @@
                             @endforelse
                         </tbody>
                     </table>
+</div>
                 </div>
 
                 <!-- STUDENT ACTIVITY -->

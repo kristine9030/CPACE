@@ -69,7 +69,7 @@
         .insight-title { font-size:12.5px; font-weight:700; color:#1a1a1a; margin-bottom:3px; }
         .insight-text { font-size:11.5px; color:#777; line-height:1.5; }
 
-        .layout { display:grid; grid-template-columns:1fr 360px; gap:20px; align-items:start; }
+        .layout { display:grid; grid-template-columns:minmax(0, 1fr) 360px; gap:20px; align-items:start; }
         .card { background:#fff; border-radius:14px; overflow:hidden; }
         .card-head { padding:16px 20px; border-bottom:1px solid #f2f2f2; font-size:13.5px; font-weight:700; color:#222; display:flex; justify-content:space-between; align-items:center; }
         .card-head small { font-weight:500; color:#aaa; font-size:11px; }
@@ -99,7 +99,7 @@
         .bar span { display:block; height:100%; border-radius:4px; }
         .item-meta { display:flex; justify-content:space-between; font-size:11px; color:#999; margin-top:5px; }
 
-        .charts-row { display:grid; grid-template-columns:1fr 1fr 320px; gap:20px; margin-bottom:20px; align-items:stretch; }
+        .charts-row { display:grid; grid-template-columns:minmax(0, 1fr) minmax(0, 1fr) 320px; gap:20px; margin-bottom:20px; align-items:stretch; }
         .chart-card { background:#fff; border-radius:14px; padding:18px 20px; }
         .chart-card h4 { font-size:13px; font-weight:700; color:#222; margin-bottom:14px; }
         .chart-card .chart-wrap { position:relative; height:220px; }
@@ -108,9 +108,9 @@
         .donut-legend span { display:inline-flex; align-items:center; gap:6px; }
         .donut-legend i { width:9px; height:9px; border-radius:3px; display:inline-block; }
 
-        @media (max-width:1100px) { .stats-row { grid-template-columns:repeat(3,1fr); } .layout { grid-template-columns:1fr; } .charts-row { grid-template-columns:1fr; } }
+        @media (max-width:1100px) { .stats-row { grid-template-columns:repeat(3,minmax(0, 1fr)); } .layout { grid-template-columns:minmax(0, 1fr); } .charts-row { grid-template-columns:minmax(0, 1fr); } }
         @media (max-width:900px) { .main { margin-left:68px; } }
-        @media (max-width:768px) { .main { margin-left:0; padding:16px; } .stats-row { grid-template-columns:repeat(2,1fr); } .card { overflow-x:auto; } .topbar { flex-direction:column; align-items:flex-start; } }
+        @media (max-width:768px) { .main { margin-left:0; padding:16px; } .stats-row { grid-template-columns:repeat(2,minmax(0, 1fr)); } .card { overflow-x:auto; } .topbar { flex-direction:column; align-items:flex-start; } }
     </style>
 </head>
 <body>

@@ -33,6 +33,7 @@
             <b>Q{{ $i + 1 }}</b>{{ $item->question_text }}
             <span class="ar-tag {{ $state }}">{{ $state === 'ok' ? 'Correct' : ($state === 'no' ? 'Wrong' : 'Not answered') }}</span>
         </div>
+        @include('partials.question-exhibit', ['item' => $item])
         @foreach((array) $item->choices as $choice)
             @php $label = (string) ($choice['label'] ?? ''); @endphp
             <div class="ar-choice {{ $label === $correct ? 'right' : ($label === $picked ? 'wrong' : '') }}">

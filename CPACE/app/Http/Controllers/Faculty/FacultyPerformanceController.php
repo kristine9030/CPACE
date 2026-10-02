@@ -57,6 +57,8 @@ class FacultyPerformanceController extends Controller
         $filters = $this->filters($request, $this->assignedSubjectIds(Auth::user()));
 
         $rows = $this->studentRows($filters);          // every qualifying student
+        // The leaderboard ranks the whole filtered class, so searching the table below never reshuffles it.
+        $leaderboard = $this->leaderboard($rows, $filters['subject_ids']);
         $search = trim((string) $filters['search']);
         if ($search !== '') {
             $needle = mb_strtolower($search);
@@ -108,6 +110,7 @@ class FacultyPerformanceController extends Controller
 
         $data = [
             'stats'        => $stats,
+            'leaderboard'  => $leaderboard,
             'students'     => $pageRows,
             'details'      => $details,
             'pagination'   => $pagination,
@@ -327,6 +330,59 @@ class FacultyPerformanceController extends Controller
         }
 
         return $rows->values();
+    }
+
+    /** Answered questions a student needs before they are ranked, so one lucky 3/3 quiz cannot top the board. */
+    public const LEADERBOARD_MIN_ITEMS = 10;
+
+    private const LEADERBOARD_SIZE = 10;
+
+    /**
+     * The top students by accuracy for the current filters, each with where
+     * they are strong and where they are weak (accuracy per subject, best and
+     * weakest subject, and their weakest topics) so the board reads as a
+     * coaching view, not only a ranking.
+     *
+     * @param  \Illuminate\Support\Collection  $rows        rows from studentRows()
+     * @param  array<int>|null                   $subjectIds  limits the subject breakdown to the filtered subjects
+     * @return array{entries: array<int, array<string, mixed>>, ranked: int, unranked: int, min_items: int}
+     */
+    private function leaderboard($rows, ?array $subjectIds): array
+    {
+        $eligible = $rows->filter(fn ($r) => $r['attempted'] >= self::LEADERBOARD_MIN_ITEMS)
+            ->sortBy([['score', 'desc'], ['attempted', 'desc'], ['id', 'asc']])
+            ->values();
+        $top = $eligible->take(self::LEADERBOARD_SIZE)->values();
+
+        $details = $this->studentDetails($top->pluck('id')->all());
+        $users = \App\Models\User::whereIn('id', $top->pluck('id'))->get()->keyBy('id');
+
+        $entries = $top->map(function (array $row, int $i) use ($details, $users, $subjectIds) {
+            $detail = $details[$row['id']] ?? ['subjects' => [], 'weak' => []];
+            $codes = $subjectIds === null ? null : Subject::whereIn('id', $subjectIds)->pluck('code')->all();
+            $subjects = collect($detail['subjects'] ?? [])
+                ->when($codes !== null, fn ($c) => $c->filter(fn ($s) => in_array($s['code'], $codes, true)))
+                ->sortByDesc('accuracy')->values();
+
+            $best = $subjects->first();
+            $worst = $subjects->count() > 1 ? $subjects->last() : null;
+
+            return $row + [
+                'rank'      => $i + 1,
+                'avatar'    => $users->get($row['id'])?->avatarUrl(),
+                'subject_scores' => $subjects->all(),
+                'best'      => $best,
+                'worst'     => ($worst && $best && $worst['accuracy'] < $best['accuracy']) ? $worst : null,
+                'weak_topics' => collect($detail['weak'] ?? [])->take(2)->pluck('topic')->all(),
+            ];
+        })->all();
+
+        return [
+            'entries'   => $entries,
+            'ranked'    => $eligible->count(),
+            'unranked'  => $rows->count() - $eligible->count(),
+            'min_items' => self::LEADERBOARD_MIN_ITEMS,
+        ];
     }
 
     /**

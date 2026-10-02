@@ -24,8 +24,8 @@
         .btn-ghost { background:white; color:#555; border:1px solid #e0e0e0; }
         .btn-ghost:hover { background:#f5f5f5; }
 
-        .layout { display:grid; grid-template-columns:1fr 380px; gap:20px; align-items:start; width:100%; }
-        @media (max-width:960px) { .layout { grid-template-columns:1fr; } }
+        .layout { display:grid; grid-template-columns:minmax(0, 1fr) 380px; gap:20px; align-items:start; width:100%; }
+        @media (max-width:960px) { .layout { grid-template-columns:minmax(0, 1fr); } }
 
         .card { background:white; border-radius:14px; padding:26px; }
         .field { margin-bottom:20px; }
@@ -42,7 +42,7 @@
         .drop-zone.has-file i { color:var(--green); }
         input[type=file] { display:none; }
 
-        .format-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:8px; margin-top:16px; }
+        .format-grid { display:grid; grid-template-columns:repeat(5,minmax(0, 1fr)); gap:8px; margin-top:16px; }
         .format-chip { border:1px solid #eee; border-radius:9px; padding:10px 6px; text-align:center; font-size:11px; color:#777; text-decoration:none; display:block; transition:all .15s; cursor:pointer; }
         .format-chip i { display:block; font-size:16px; margin-bottom:5px; color:var(--primary); }
         .format-chip:hover { border-color:var(--primary); background:var(--primary-light); }
