@@ -41,6 +41,7 @@ class FacultySettingsController extends Controller
             'email'        => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
             'photo'        => ['nullable', 'image', 'max:2048'],
             'avatar_color' => ['nullable', 'string', Rule::in(self::AVATAR_COLORS)],
+            'avatar'       => ['nullable', 'string', Rule::in(\App\Models\User::availableAvatars())],
             'remove_photo' => ['nullable', 'boolean'],
         ]);
 

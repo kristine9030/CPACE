@@ -39,6 +39,7 @@ class User extends Authenticatable
         'email',
         'password',
         'profile_photo',
+        'avatar',
         'avatar_color',
         'is_active',
         'email_verified',
@@ -204,6 +205,63 @@ class User extends Authenticatable
     /**
      * The Program Chair is the Admin role for the BSA program.
      */
+    /**
+     * The avatar pictures shipped in public/images/AVATARS, by file name.
+     *
+     * @return list<string>
+     */
+    public static function availableAvatars(): array
+    {
+        static $files = null;
+
+        if ($files === null) {
+            $found = glob(public_path('images/AVATARS/*.{png,jpg,jpeg,webp,svg}'), GLOB_BRACE) ?: [];
+            $files = array_map('basename', $found);
+            natcasesort($files);
+            $files = array_values($files);
+        }
+
+        return $files;
+    }
+
+    /**
+     * Where a user's picture is: their uploaded photo, else the avatar they
+     * picked, else one the system assigned (stable per account, so a user who
+     * never customises keeps the same face).
+     */
+    public static function avatarUrlFor(?string $photo, ?string $avatar, ?int $id): ?string
+    {
+        if ($photo) {
+            return asset('storage/' . $photo);
+        }
+
+        return self::presetUrlFor($avatar, $id);
+    }
+
+    public static function presetUrlFor(?string $avatar, ?int $id): ?string
+    {
+        $all = self::availableAvatars();
+        if ($all === []) {
+            return null;
+        }
+
+        $file = ($avatar && in_array($avatar, $all, true)) ? $avatar : $all[((int) $id) % count($all)];
+
+        return asset('images/AVATARS/' . rawurlencode($file));
+    }
+
+    /** Uploaded photo, chosen avatar or the system default; null only if no avatars are installed. */
+    public function avatarUrl(): ?string
+    {
+        return self::avatarUrlFor($this->profile_photo, $this->avatar, $this->id);
+    }
+
+    /** The avatar without any uploaded photo, for when the photo is removed. */
+    public function presetAvatarUrl(): ?string
+    {
+        return self::presetUrlFor($this->avatar, $this->id);
+    }
+
     public function isChair(): bool
     {
         return $this->role_id === Role::ADMIN;
