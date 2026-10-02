@@ -125,7 +125,7 @@
     .sidebar .user-profile:hover { background: rgba(255,255,255,0.08); }
     .sidebar .avatar-sm {
         width: 34px; height: 34px;
-        background: rgba(255,255,255,0.18); border-radius: 8px;
+        background: rgba(255,255,255,0.18); border-radius: 50%;
         display: flex; align-items: center; justify-content: center;
         font-weight: 700; font-size: 12px; color: #fff;
         flex-shrink: 0; letter-spacing: 0.5px;
@@ -197,7 +197,7 @@
     .card-link { font-size:12px; color:var(--accent); text-decoration:none; font-weight:500; }
 
     /* STATS */
-    .stats-row { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:22px; }
+    .stats-row { display:grid; grid-template-columns:repeat(4,minmax(0, 1fr)); gap:16px; margin-bottom:22px; }
     .stat-card { background:white; border-radius:14px; padding:20px 22px; }
     .stat-top { display:flex; justify-content:space-between; align-items:flex-start; }
     .stat-icon { width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:18px; }
@@ -239,7 +239,7 @@
     }
 
     /* FORMS */
-    .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+    .form-grid { display:grid; grid-template-columns:minmax(0, 1fr) minmax(0, 1fr); gap:16px; }
     .form-group { margin-bottom:16px; }
     .form-group.full { grid-column:1 / -1; }
     label { display:block; font-size:12px; font-weight:600; color:#444; margin-bottom:6px; }
@@ -250,7 +250,7 @@
     input:focus, select:focus { outline:none; border-color:var(--primary); }
     .hint { font-size:11px; color:#aaa; margin-top:5px; }
 
-    .role-picker { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+    .role-picker { display:grid; grid-template-columns:repeat(3,minmax(0, 1fr)); gap:10px; }
     .role-opt { position:relative; }
     .role-opt input { position:absolute; opacity:0; }
     .role-opt span { display:flex; flex-direction:column; align-items:center; gap:6px; padding:14px 10px; border:1.5px solid #e6e6ea; border-radius:10px; cursor:pointer; font-size:12px; font-weight:600; color:#555; text-align:center; transition:all .15s; }
@@ -308,19 +308,21 @@
         .sidebar .sidebar-logo { justify-content: center; padding: 24px 0 22px; }
         .sidebar .user-profile { justify-content: center; padding: 8px 0; }
         .main { margin-left: 68px; }
-        .stats-row, .form-grid, .role-picker { grid-template-columns: 1fr; }
+        .stats-row, .form-grid, .role-picker { grid-template-columns: minmax(0, 1fr); }
     }
 
     @media (max-width: 768px) {
         .sidebar { display: none !important; }
+        /* wide tables scroll inside their card instead of widening the page */
+        .main .card { overflow-x: auto; }
         .main { margin-left: 0 !important; padding: 16px !important; }
         .topbar { flex-direction: column; align-items: flex-start; gap: 10px; }
         .topbar-right { width: 100%; justify-content: flex-end; flex-wrap: wrap; gap: 8px; }
         .page-title { font-size: 20px !important; }
-        .stats-row { grid-template-columns: repeat(2, 1fr) !important; }
+        .stats-row { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
     }
     @media (max-width: 480px) {
-        .stats-row { grid-template-columns: 1fr !important; }
+        .stats-row { grid-template-columns: minmax(0, 1fr) !important; }
         .page-sub { display: none; }
     }
 </style>
@@ -344,6 +346,9 @@
 
         <li class="nav-label">Accounts</li>
         <li><a href="{{ route('superadmin.users') }}" class="{{ $active === 'users' ? 'active' : '' }}"><i class="fas fa-users-gear"></i><span>Users</span></a></li>
+
+        <li class="nav-label">Support</li>
+        <li><a href="{{ route('superadmin.support.index') }}" class="{{ $active === 'support' ? 'active' : '' }}"><i class="fas fa-headset"></i><span>Support Inbox</span></a></li>
 
         <li class="nav-label">Audit</li>
         <li><a href="{{ route('superadmin.activity-log') }}" class="{{ $active === 'activity-log' ? 'active' : '' }}"><i class="fas fa-list-check"></i><span>Activity Log</span></a></li>
@@ -370,6 +375,7 @@
                 <i class="fas fa-chevron-down chevron-icon"></i>
             </div>
             <div class="user-dropdown" id="userDropdown">
+                <button type="button" class="js-open-profile-modal"><i class="fas fa-user"></i><span>Profile Settings</span></button>
                 <form method="POST" action="{{ route('logout') }}"
                           data-confirm="You will be signed out of CPACE and returned to the login page."
                           data-confirm-title="Log out of CPACE?"
@@ -382,6 +388,10 @@
         </div>
     </div>
 </aside>
+
+@include('partials.sidebar-common')
+
+@include('partials.profile-modal')
 
 <script>
 (function () {

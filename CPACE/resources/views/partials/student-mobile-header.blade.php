@@ -96,11 +96,11 @@
     .welcome-banner h2 { font-size: 20px !important; }
 
     /* metrics 2-up on mobile */
-    .metrics-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 12px !important; }
+    .metrics-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 12px !important; }
 
     /* content stacks to single column */
-    .content-grid  { grid-template-columns: 1fr !important; }
-    .bottom-grid   { grid-template-columns: 1fr !important; }
+    .content-grid  { grid-template-columns: minmax(0, 1fr) !important; }
+    .bottom-grid   { grid-template-columns: minmax(0, 1fr) !important; }
     .content-grid .right-panel { grid-column: 1 !important; }
 
     /* search bar hidden — no space for it on mobile */

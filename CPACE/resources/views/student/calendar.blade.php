@@ -220,7 +220,7 @@
         /* ─── LAYOUT ─── */
         .cal-layout {
             display: grid;
-            grid-template-columns: 1fr 320px;
+            grid-template-columns: minmax(0, 1fr) 320px;
             gap: 18px;
             align-items: start;
         }
@@ -346,7 +346,7 @@
         /* ─── WEEK STRIP ─── */
         .week-strip {
             display: grid;
-            grid-template-columns: 52px repeat(7, 1fr);
+            grid-template-columns: 52px repeat(7, minmax(0, 1fr));
             gap: 8px;
             margin-bottom: 16px;
         }
@@ -472,7 +472,7 @@
         /* ─── TIME GRID (WEEK / DAY) ─── */
         .time-grid {
             display: grid;
-            grid-template-columns: 52px 1fr;
+            grid-template-columns: 52px minmax(0, 1fr);
         }
 
         .hours-col {
@@ -491,12 +491,12 @@
 
         .grid-cols {
             display: grid;
-            grid-template-columns: repeat(7, 1fr);
+            grid-template-columns: repeat(7, minmax(0, 1fr));
             position: relative;
             border-left: 1px solid #f1f3f5;
         }
 
-        .grid-cols.single { grid-template-columns: 1fr; }
+        .grid-cols.single { grid-template-columns: minmax(0, 1fr); }
 
         .grid-col {
             position: relative;
@@ -601,7 +601,7 @@
 
         .month-head {
             display: grid;
-            grid-template-columns: repeat(7, 1fr);
+            grid-template-columns: repeat(7, minmax(0, 1fr));
             margin-bottom: 6px;
         }
 
@@ -616,7 +616,7 @@
 
         .month-week {
             display: grid;
-            grid-template-columns: repeat(7, 1fr);
+            grid-template-columns: repeat(7, minmax(0, 1fr));
         }
 
         .month-cell {
@@ -675,7 +675,7 @@
         /* ─── BOTTOM STATS BAR ─── */
         .stats-bar {
             display: grid;
-            grid-template-columns: repeat(6, 1fr);
+            grid-template-columns: repeat(6, minmax(0, 1fr));
             background: white;
             border-radius: 14px;
             border: 1px solid var(--line);
@@ -1103,7 +1103,7 @@
 
         .form-grid-2 {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
             gap: 10px;
         }
 
@@ -1184,8 +1184,9 @@
 
         /* ─── RESPONSIVE ─── */
         @media (max-width: 1300px) {
-            .cal-layout { grid-template-columns: 1fr; }
-            .stats-bar { grid-template-columns: repeat(3, 1fr); gap: 10px; }
+            .cal-layout { grid-template-columns: minmax(0, 1fr); }
+            .cal-left, .cal-right { min-width: 0; }
+            .stats-bar { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
             .stat-cell + .stat-cell { border-left: none; }
         }
 
@@ -1194,9 +1195,9 @@
             .page-header-right { width: 100%; flex-wrap: wrap; }
             .search-wrap { flex: 1; min-width: 0; }
             .search-wrap input { width: 100%; }
-            .week-strip { grid-template-columns: repeat(7, 1fr); }
+            .week-strip { grid-template-columns: repeat(7, minmax(0, 1fr)); }
             .strip-icon { display: none; }
-            .stats-bar { grid-template-columns: repeat(2, 1fr); }
+            .stats-bar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
             .cal-toolbar { gap: 8px; }
             .card { padding: 16px; }
         }

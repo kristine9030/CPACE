@@ -452,7 +452,7 @@
         .drm-label { padding: 10px 14px 4px; font-size: 10.5px; font-weight: 700; letter-spacing: .6px; text-transform: uppercase; color: var(--ink-3); }
         .drm-custom { border-top: 1px solid var(--line); padding: 2px 14px 14px; }
         .drm-custom .drm-label { padding-left: 0; padding-right: 0; }
-        .drm-dates { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .drm-dates { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
         .drm-custom label { display: flex; flex-direction: column; gap: 4px; font-size: 11.5px; font-weight: 600; color: var(--ink-2); }
         .drm-custom input, .drm-custom select {
             width: 100%; padding: 8px 9px; border: 1px solid var(--line); border-radius: 8px;
@@ -538,7 +538,7 @@
            the .kpi-* names this page already uses. */
         .kpi-grid {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(4, minmax(0, 1fr));
             gap: 18px;
             margin-bottom: 22px;
         }
@@ -676,7 +676,7 @@
         /* ─── ROW GRIDS ─── */
         .row-2 {
             display: grid;
-            grid-template-columns: 1.6fr 1fr 0.7fr;
+            grid-template-columns: 1.6fr minmax(0, 1fr) 0.7fr;
             gap: 18px;
             margin-bottom: 18px;
             align-items: stretch;
@@ -684,7 +684,7 @@
 
         .row-3 {
             display: grid;
-            grid-template-columns: 1.5fr 1fr;
+            grid-template-columns: 1.5fr minmax(0, 1fr);
             gap: 18px;
             margin-bottom: 18px;
             align-items: stretch;
@@ -692,7 +692,7 @@
 
         .row-4 {
             display: grid;
-            grid-template-columns: 1.8fr 1fr;
+            grid-template-columns: 1.8fr minmax(0, 1fr);
             gap: 18px;
             align-items: stretch;
         }
@@ -1000,7 +1000,7 @@
         /* ─── MINI STAT 2x2 GRID ─── */
         .mini-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
             grid-auto-rows: 1fr;
             gap: 14px;
         }
@@ -1094,7 +1094,11 @@
         .hm-card {
             display: flex;
             flex-direction: column;
+            min-width: 0;
+            max-width: 100%;
         }
+        .card:has(> .quiz-table) { overflow-x: auto; }
+        @media (max-width: 768px) { .heatmap-scroll { overflow-x: auto; } .mini-head { flex-wrap: wrap; min-width: 0; } }
 
         .heatmap-scroll {
             overflow: hidden;
@@ -1241,14 +1245,14 @@
 
         /* ─── RESPONSIVE ─── */
         @media (max-width: 1500px) {
-            .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+            .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         }
 
         @media (max-width: 1200px) {
-            .row-2 { grid-template-columns: 1fr 1fr; }
+            .row-2 { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
             .row-2 .exam-card { grid-column: 1 / -1; min-height: 180px; }
-            .row-3 { grid-template-columns: 1fr 1fr; }
-            .row-4 { grid-template-columns: 1fr; }
+            .row-3 { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+            .row-4 { grid-template-columns: minmax(0, 1fr); }
         }
 
         @media (max-width: 768px) {
@@ -1256,13 +1260,13 @@
             .page-header-right { width: 100%; flex-wrap: wrap; }
             .search-wrap { flex: 1; min-width: 0; }
             .search-wrap input { width: 100%; }
-            .kpi-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
-            .row-2, .row-3 { grid-template-columns: 1fr; }
+            .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+            .row-2, .row-3 { grid-template-columns: minmax(0, 1fr); }
             .quiz-table { display: block; overflow-x: auto; }
         }
 
         @media (max-width: 480px) {
-            .kpi-grid { grid-template-columns: 1fr; }
+            .kpi-grid { grid-template-columns: minmax(0, 1fr); }
             .kpi-illust { width: 78px; height: 78px; }
             .card { padding: 14px; }
         }

@@ -878,7 +878,7 @@
         /* LAYOUT */
         .achievements-layout {
             display: grid;
-            grid-template-columns: 1fr 340px;
+            grid-template-columns: minmax(0, 1fr) 340px;
             gap: 25px;
             align-items: start;
             position: relative;
@@ -986,7 +986,7 @@
         /* BADGE GRID */
         .badge-grid {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(4, minmax(0, 1fr));
             gap: 16px;
         }
 
@@ -1656,7 +1656,7 @@
         /* Stepped podium: 2nd — 1st — 3rd standing on their blocks */
         .lb-card .podium {
             display: grid;
-            grid-template-columns: 1fr 1.15fr 1fr;
+            grid-template-columns: minmax(0, 1fr) 1.15fr minmax(0, 1fr);
             align-items: end;
             gap: 10px;
             padding: 30px 0 0;
@@ -1843,7 +1843,7 @@
 
         @media (max-width: 1300px) {
             .achievements-layout {
-                grid-template-columns: 1fr;
+                grid-template-columns: minmax(0, 1fr);
             }
             .status-banner {
                 flex-direction: column;
@@ -1868,7 +1868,7 @@
 
         @media (max-width: 900px) {
             .badge-grid {
-                grid-template-columns: repeat(2, 1fr);
+                grid-template-columns: repeat(2, minmax(0, 1fr));
             }
         }
 
@@ -1882,13 +1882,13 @@
             .status-banner { padding: 20px; gap: 18px; }
             .banner-stats { flex-direction: column; gap: 12px; }
             .stat-box { min-width: unset; width: 100%; }
-            .badge-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+            .badge-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
         }
 
         @media (max-width: 480px) {
             .main-content { padding: 16px 12px; }
             .header-title { font-size: 20px; }
-            .badge-grid { grid-template-columns: 1fr; }
+            .badge-grid { grid-template-columns: minmax(0, 1fr); }
             .panel { padding: 18px; }
             .badge-tabs { gap: 6px; }
             .badge-tab { padding: 6px 12px; font-size: 12px; }

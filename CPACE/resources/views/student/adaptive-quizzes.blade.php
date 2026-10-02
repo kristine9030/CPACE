@@ -434,7 +434,7 @@
         /* ── layout for step + supporting rail ── */
         .flow-layout {
             display: grid;
-            grid-template-columns: 1fr 320px;
+            grid-template-columns: minmax(0, 1fr) 320px;
             gap: 28px;
             align-items: start;
         }
@@ -494,7 +494,7 @@
         /* CHOOSE MODE GRID */
         .choose-mode-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
             gap: 14px;
         }
 
@@ -551,7 +551,7 @@
         .mode-description { font-size: 12px; color: var(--muted); line-height: 1.45; }
 
         /* SESSION TYPE */
-        .session-type-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+        .session-type-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; }
         .stype-card {
             background: #fff;
             border: 2px solid var(--line);
@@ -668,7 +668,7 @@
 
         .subject-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(3, minmax(0, 1fr));
             gap: 16px;
         }
         .subject-grid.locked { opacity: .6; pointer-events: none; }
@@ -825,7 +825,7 @@
 
         .stats-grid-sidebar {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
             gap: 15px;
             margin-top: 22px;
             padding-top: 22px;
@@ -878,7 +878,7 @@
 
         .continue-grid {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(4, minmax(0, 1fr));
             gap: 18px;
         }
         .continue-card {
@@ -1014,7 +1014,7 @@
 
         /* ROOM MODE PICKER — Ranked (locked/objective) vs Practice (user-set difficulty) */
         .room-mode-picker {
-            display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+            display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px;
             margin-top: 10px;
         }
         .room-mode-card {
@@ -1036,14 +1036,14 @@
         }
         .room-mode-card:not(.active) .rm-diff-select { opacity: .5; pointer-events: none; }
         @media (max-width: 640px) {
-            .room-mode-picker { grid-template-columns: 1fr; }
+            .room-mode-picker { grid-template-columns: minmax(0, 1fr); }
         }
 
         /* RESPONSIVE */
         @media (max-width: 1150px) {
-            .flow-layout { grid-template-columns: 1fr; }
-            .subject-grid { grid-template-columns: repeat(2, 1fr); }
-            .continue-grid { grid-template-columns: repeat(2, 1fr); }
+            .flow-layout { grid-template-columns: minmax(0, 1fr); }
+            .subject-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .continue-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         }
         @media (max-width: 768px) {
             .main-content { margin-left: 0; padding: 20px 16px 130px; }
@@ -1054,16 +1054,16 @@
             .header-right { width: 100%; flex-wrap: wrap; }
             .search-box { flex: 1; min-width: 0; }
             .header-title { font-size: 22px; }
-            .choose-mode-grid { grid-template-columns: 1fr; }
-            .session-type-row { grid-template-columns: 1fr; }
-            .subject-grid { grid-template-columns: repeat(2, 1fr); }
-            .continue-grid { grid-template-columns: 1fr; }
+            .choose-mode-grid { grid-template-columns: minmax(0, 1fr); }
+            .session-type-row { grid-template-columns: minmax(0, 1fr); }
+            .subject-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .continue-grid { grid-template-columns: minmax(0, 1fr); }
             .pipe-label { font-size: 11px; }
             .pipe-sub { display: none; }
             .pipeline { padding: 18px 14px; }
         }
         @media (max-width: 480px) {
-            .subject-grid { grid-template-columns: 1fr; }
+            .subject-grid { grid-template-columns: minmax(0, 1fr); }
             .pipe-dot { width: 38px; height: 38px; font-size: 14px; }
             .pipe-step:not(:last-child)::after { top: 18px; }
         }

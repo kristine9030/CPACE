@@ -180,7 +180,7 @@
     .sidebar .avatar-sm {
         width: 34px; height: 34px;
         background: rgba(255,255,255,0.18);
-        border-radius: 8px;
+        border-radius: 50%;
         display: flex; align-items: center; justify-content: center;
         font-weight: 700; font-size: 12px; color: #fff;
         flex-shrink: 0;
@@ -301,7 +301,7 @@
     .sp-modal-body { padding: 22px; }
     .sp-avatar-row { display: flex; align-items: center; gap: 16px; margin-bottom: 18px; }
     .sp-avatar-preview {
-        width: 64px; height: 64px; border-radius: 14px;
+        width: 64px; height: 64px; border-radius: 50%;
         background: #7B1D1D; color: #fff;
         display: flex; align-items: center; justify-content: center;
         font-weight: 700; font-size: 20px; overflow: hidden; position: relative; flex-shrink: 0;
@@ -444,6 +444,8 @@
     </div>
 </aside>
 
+@include('partials.sidebar-common')
+
 {{-- Shared profile-edit modal — any "Profile Settings" link/button with the
      class js-open-profile-modal (topbar dropdowns, sidebar footer menu, the
      Settings page itself) opens this instead of navigating away. --}}
@@ -472,27 +474,13 @@
                         <label class="sp-upload-btn" for="spPhotoInput"><i class="fas fa-camera"></i> Change photo</label>
                         <input type="file" name="photo" id="spPhotoInput" accept="image/*" style="display:none;">
                         @if(Auth::user()->profile_photo)
-                            <button type="button" class="sp-avatar-remove" id="spRemovePhoto"><i class="fas fa-xmark"></i> Remove photo, use color avatar</button>
+                            <button type="button" class="sp-avatar-remove" id="spRemovePhoto"><i class="fas fa-xmark"></i> Remove photo, use my avatar</button>
                         @endif
                     </div>
                 </div>
 
-                <label class="sp-swatch-label">Avatar color <span style="color:#aaa;font-weight:400;">(used when there's no photo)</span></label>
-                <div class="sp-swatches" id="spSwatches">
-                    @php
-                        $avatarColors = [
-                            'maroon' => '#7B1D1D', 'crimson' => '#c0392b', 'blue' => '#2563eb',
-                            'teal' => '#0d9488', 'green' => '#059669', 'purple' => '#7c3aed',
-                            'pink' => '#db2777', 'orange' => '#d97706', 'navy' => '#1e3a5f', 'slate' => '#475569',
-                        ];
-                        $currentColor = Auth::user()->avatar_color ?? 'maroon';
-                    @endphp
-                    @foreach($avatarColors as $key => $hex)
-                        <button type="button" class="sp-swatch {{ $currentColor === $key ? 'selected' : '' }}" data-color="{{ $key }}" data-hex="{{ $hex }}" style="background: {{ $hex }};" title="{{ ucfirst($key) }}"></button>
-                    @endforeach
-                    <input type="hidden" name="avatar_color" id="spAvatarColorInput" value="{{ old('avatar_color', $currentColor) }}">
-                    <input type="hidden" name="remove_photo" id="spRemovePhotoInput" value="0">
-                </div>
+                @include('partials.avatar-picker', ['p' => 'sp'])
+                <input type="hidden" name="remove_photo" id="spRemovePhotoInput" value="0">
 
                 <div class="sp-row-2">
                     <div class="sp-field">
@@ -588,7 +576,7 @@
                     const selected = document.querySelector('#spSwatches .sp-swatch[data-color="' + hex + '"]');
                     const bg = selected ? selected.dataset.hex : '#7B1D1D';
                     const initials = '{{ strtoupper(substr(Auth::user()->first_name,0,1)) }}{{ strtoupper(substr(Auth::user()->last_name,0,1)) }}';
-                    avatarPreview.innerHTML = '<span class="avatar-default" style="background:' + bg + ';">' + initials + '</span>';
+                    avatarPreview.innerHTML = '<img src="' + {!! json_encode(Auth::user()->presetAvatarUrl()) !!} + '" alt="">';
                 }
                 removeBtn.style.display = 'none';
             });

@@ -96,7 +96,7 @@
            the subject identity, a round icon badge hanging off its edge,
            and a white body below with the teacher and what's due. Every
            enrolled subject gets one, even a class with nothing posted yet. */
-        .classes { display:grid; grid-template-columns:repeat(3, 1fr); gap:22px; }
+        .classes { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:22px; }
 
         .class-card {
             display:flex; flex-direction:column;
@@ -169,10 +169,10 @@
         @media (prefers-reduced-motion: reduce) { .bob, .twinkle { animation:none; } }
 
         @media (max-width:1240px) {
-            .classes { grid-template-columns:repeat(2, 1fr); }
+            .classes { grid-template-columns:repeat(2, minmax(0, 1fr)); }
         }
         @media (max-width:680px) {
-            .classes { grid-template-columns:1fr; }
+            .classes { grid-template-columns:minmax(0, 1fr); }
             .header-title { font-size:22px; }
         }
     </style>
