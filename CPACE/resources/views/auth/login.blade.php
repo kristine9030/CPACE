@@ -938,9 +938,6 @@
                             <button type="button" class="demo-btn" onclick="fillDemo('adrian.cornado@cpace.edu', '123_Adrian')">
                                 <i class="fas fa-user-clock"></i> Alumni
                             </button>
-                            <button type="button" class="demo-btn" onclick="fillDemo('superadmin@cpace.test', 'SuperAdmin123')">
-                                <i class="fas fa-user-shield"></i> Super Admin
-                            </button>
                         </div>
                     </div>
                 </div>
