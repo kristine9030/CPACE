@@ -22,3 +22,6 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Raw JMeter result logs (large; regenerate with testing/jmeter/cpace-load-test.jmx)
+/testing/jmeter/results/
