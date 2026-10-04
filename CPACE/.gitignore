@@ -25,3 +25,7 @@ Thumbs.db
 
 # Raw JMeter result logs (large; regenerate with testing/jmeter/cpace-load-test.jmx)
 /testing/jmeter/results/
+/testing/jmeter/results_local/
+.env.*
+!.env.example
+

@@ -1,0 +1,9 @@
+# Root .gitignore for CPACE repository
+*.log
+~$*
+.DS_Store
+Thumbs.db
+
+# Manuscript working backups and temporary lock files
+documents/CAPSTONE MANUSCRIPTS/*BACKUP*
+documents/CAPSTONE MANUSCRIPTS/~$*
