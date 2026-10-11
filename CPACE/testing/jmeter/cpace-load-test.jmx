@@ -15,6 +15,14 @@
             <stringProp name="Argument.name">PROTOCOL</stringProp>
             <stringProp name="Argument.value">${__P(protocol,https)}</stringProp>
           </elementProp>
+          <elementProp name="PORT" elementType="Argument">
+            <stringProp name="Argument.name">PORT</stringProp>
+            <stringProp name="Argument.value">${__P(port,)}</stringProp>
+          </elementProp>
+          <elementProp name="PATH_PREFIX" elementType="Argument">
+            <stringProp name="Argument.name">PATH_PREFIX</stringProp>
+            <stringProp name="Argument.value">${__P(path_prefix,)}</stringProp>
+          </elementProp>
           <elementProp name="STUDENT_EMAIL" elementType="Argument">
             <stringProp name="Argument.name">STUDENT_EMAIL</stringProp>
             <stringProp name="Argument.value">${__P(student_email,)}</stringProp>
@@ -36,6 +44,7 @@
       <hashTree/>
       <ConfigTestElement guiclass="HttpDefaultsGui" testclass="ConfigTestElement" testname="HTTP Request Defaults" enabled="true">
         <stringProp name="HTTPSampler.domain">${HOST}</stringProp>
+        <stringProp name="HTTPSampler.port">${PORT}</stringProp>
         <stringProp name="HTTPSampler.protocol">${PROTOCOL}</stringProp>
         <stringProp name="HTTPSampler.connect_timeout">10000</stringProp>
         <stringProp name="HTTPSampler.response_timeout">15000</stringProp>
@@ -63,7 +72,7 @@
           <OnceOnlyController guiclass="OnceOnlyControllerGui" testclass="OnceOnlyController" testname="Once Only Controller" enabled="true"/>
           <hashTree>
             <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="GET Login Page" enabled="true">
-              <stringProp name="HTTPSampler.path">/login</stringProp>
+              <stringProp name="HTTPSampler.path">${PATH_PREFIX}/login</stringProp>
               <stringProp name="HTTPSampler.method">GET</stringProp>
               <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
               <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
@@ -80,7 +89,7 @@
               <hashTree/>
             </hashTree>
             <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="POST Authenticate" enabled="true">
-              <stringProp name="HTTPSampler.path">/login</stringProp>
+              <stringProp name="HTTPSampler.path">${PATH_PREFIX}/login</stringProp>
               <stringProp name="HTTPSampler.method">POST</stringProp>
               <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
               <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
@@ -122,13 +131,13 @@
           </hashTree>
         </hashTree>
 
-        <ConstantTimer guiclass="ConstantTimerGui" testclass="ConstantTimer" testname="Think Time (1s)" enabled="true">
-          <stringProp name="ConstantTimer.delay">1000</stringProp>
+        <ConstantTimer guiclass="ConstantTimerGui" testclass="ConstantTimer" testname="Think Time" enabled="true">
+          <stringProp name="ConstantTimer.delay">${__P(thinktime,1000)}</stringProp>
         </ConstantTimer>
         <hashTree/>
 
         <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Dashboard" enabled="true">
-          <stringProp name="HTTPSampler.path">/dashboard</stringProp>
+          <stringProp name="HTTPSampler.path">${PATH_PREFIX}/dashboard</stringProp>
           <stringProp name="HTTPSampler.method">GET</stringProp>
           <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
           <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
@@ -136,7 +145,7 @@
         <hashTree/>
 
         <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Spaced Repetition Calendar" enabled="true">
-          <stringProp name="HTTPSampler.path">/calendar</stringProp>
+          <stringProp name="HTTPSampler.path">${PATH_PREFIX}/calendar</stringProp>
           <stringProp name="HTTPSampler.method">GET</stringProp>
           <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
           <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
@@ -144,7 +153,7 @@
         <hashTree/>
 
         <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Adaptive Quiz Engine" enabled="true">
-          <stringProp name="HTTPSampler.path">/adaptive-quizzes</stringProp>
+          <stringProp name="HTTPSampler.path">${PATH_PREFIX}/adaptive-quizzes</stringProp>
           <stringProp name="HTTPSampler.method">GET</stringProp>
           <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
           <boolProp name="HTTPSampler.use_keepalive">true</boolProp>

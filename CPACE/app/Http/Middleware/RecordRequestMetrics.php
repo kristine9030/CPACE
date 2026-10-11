@@ -52,34 +52,50 @@ class RecordRequestMetrics
         $isAiRoute = in_array($request->route()?->getName(), self::AI_ROUTES, true);
         $prefix = $isAiRoute ? 'metrics.ai_' : 'metrics.';
 
-        Cache::increment("metrics.requests.{$today}");
-        Cache::put("metrics.requests.{$today}", Cache::get("metrics.requests.{$today}", 0), $ttl);
+        $this->bumpCounter("metrics.requests.{$today}", $ttl);
 
         if ($response->getStatusCode() >= 500) {
-            Cache::increment("metrics.errors.{$today}");
-            Cache::put("metrics.errors.{$today}", Cache::get("metrics.errors.{$today}", 0), $ttl);
+            $this->bumpCounter("metrics.errors.{$today}", $ttl);
         }
 
         // Daily response-time average, kept as a sum/count pair rather than a
         // running average — cheap to update atomically without reading first.
         // AI routes use their own "ai_"-prefixed keys, kept separate from the
         // app's own response-time metrics (see AI_ROUTES above).
-        Cache::increment("{$prefix}duration_sum.{$today}", $durationMs);
-        Cache::put("{$prefix}duration_sum.{$today}", Cache::get("{$prefix}duration_sum.{$today}", 0), $ttl);
-        Cache::increment("{$prefix}duration_count.{$today}");
-        Cache::put("{$prefix}duration_count.{$today}", Cache::get("{$prefix}duration_count.{$today}", 0), $ttl);
+        $this->bumpCounter("{$prefix}duration_sum.{$today}", $ttl, $durationMs);
+        $this->bumpCounter("{$prefix}duration_count.{$today}", $ttl);
 
         // Each sample carries the route name (falling back to the raw path for
         // unnamed routes) alongside its duration, so the Performance page can
         // break the p95/p99 tail down by endpoint instead of just one number.
+        // This is the one metric backed by a read-modify-write of a whole array,
+        // which under the file cache driver needs an exclusive lock — acquired
+        // non-blocking (->get() tries once and gives up immediately) so a busy
+        // moment just skips recording this one sample instead of queuing real
+        // requests behind the lock. Dashboard stat, not business data: losing an
+        // occasional sample is harmless, blocking a request on it is not.
         $samplesKey = $isAiRoute ? 'metrics.ai_durations' : 'metrics.durations';
-        $samples = Cache::get($samplesKey, []);
-        $samples[] = ['route' => $request->route()?->getName() ?? $request->path(), 'ms' => $durationMs];
-        if (count($samples) > self::MAX_SAMPLES) {
-            $samples = array_slice($samples, -self::MAX_SAMPLES);
-        }
-        Cache::put($samplesKey, $samples, now()->addDay());
+        Cache::lock("{$samplesKey}.lock", 2)->get(function () use ($samplesKey, $request, $durationMs) {
+            $samples = Cache::get($samplesKey, []);
+            $samples[] = ['route' => $request->route()?->getName() ?? $request->path(), 'ms' => $durationMs];
+            if (count($samples) > self::MAX_SAMPLES) {
+                $samples = array_slice($samples, -self::MAX_SAMPLES);
+            }
+            Cache::put($samplesKey, $samples, now()->addDay());
+        });
 
         return $response;
+    }
+
+    /**
+     * Atomically bump a rolling daily counter without reading it first.
+     * Cache::add() only writes (and sets the TTL) the first time the key
+     * doesn't exist yet; increment() alone bumps the value in place on every
+     * other request — no read-modify-write cycle, no extra lock acquisition.
+     */
+    private function bumpCounter(string $key, \DateTimeInterface $ttl, int $by = 1): void
+    {
+        Cache::add($key, 0, $ttl);
+        Cache::increment($key, $by);
     }
 }
