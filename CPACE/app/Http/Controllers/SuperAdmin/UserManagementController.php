@@ -147,6 +147,11 @@ class UserManagementController extends Controller
     public function resendOtp(int $id)
     {
         $user = User::findOrFail($id);
+
+        if ($user->role_id === Role::SUPER_ADMIN) {
+            return back()->with('error', 'Super Admin passwords cannot be reissued this way — if the account email is unreachable, there is no way to recover it. Change the password from Profile Settings instead.');
+        }
+
         $tempPassword = $this->generateOneTimePassword();
 
         $user->forceFill(['password' => Hash::make($tempPassword), 'temp_password' => $tempPassword])->save();
