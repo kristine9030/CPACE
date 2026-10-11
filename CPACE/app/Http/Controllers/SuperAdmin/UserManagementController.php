@@ -98,7 +98,7 @@ class UserManagementController extends Controller
                 'password'           => Hash::make($tempPassword),
                 'is_active'          => true,
                 'email_verified'     => true,
-                'setup_completed_at' => in_array($roleId, [Role::STUDENT, Role::FACULTY], true) ? null : now(),
+                'setup_completed_at' => in_array($roleId, [Role::STUDENT, Role::FACULTY, Role::ADMIN], true) ? null : now(),
                 'temp_password'      => $tempPassword,
             ]);
 

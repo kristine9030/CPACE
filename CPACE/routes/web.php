@@ -5,6 +5,7 @@ use App\Http\Controllers\Student\AchievementController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Auth\AccountSetupController;
 use App\Http\Controllers\Auth\FacultyAccountSetupController;
+use App\Http\Controllers\Auth\ChairAccountSetupController;
 use App\Http\Controllers\Student\CalendarController;
 use App\Http\Controllers\Student\DashboardController;
 use App\Http\Controllers\Faculty\FacultyDashboardController;
@@ -154,6 +155,10 @@ Route::middleware(['auth', 'no-back-cache'])->group(function () {
 
     // Program Chair Routes (Admin role)
     Route::prefix('chair')->name('chair.')->middleware('chair')->group(function () {
+        // First-login forced password change (replaces the OTP from the Super Admin)
+        Route::get('/account-setup', [ChairAccountSetupController::class, 'show'])->name('account-setup');
+        Route::post('/account-setup', [ChairAccountSetupController::class, 'store'])->name('account-setup.store');
+
         Route::get('/dashboard', [ProgramChairController::class, 'dashboard'])->name('dashboard');
         Route::get('/dashboard/data', [ProgramChairController::class, 'dashboardData'])->name('dashboard.data');
 

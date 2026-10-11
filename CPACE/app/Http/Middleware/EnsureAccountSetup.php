@@ -17,15 +17,19 @@ class EnsureAccountSetup
         $user = $request->user();
 
         if ($user && $user->needsSetup() && ! $this->isAllowed($request)) {
-            return redirect()->route($user->isFaculty() ? 'faculty.account-setup' : 'account-setup');
+            return redirect()->route(match (true) {
+                $user->isFaculty() => 'faculty.account-setup',
+                $user->isChair() => 'chair.account-setup',
+                default => 'account-setup',
+            });
         }
 
         return $next($request);
     }
 
     /**
-     * Routes a not-yet-set-up student/faculty is still allowed to hit, so we
-     * don't trap them in a redirect loop.
+     * Routes a not-yet-set-up student/faculty/chair is still allowed to hit,
+     * so we don't trap them in a redirect loop.
      */
     private function isAllowed(Request $request): bool
     {
@@ -35,6 +39,8 @@ class EnsureAccountSetup
             'onboarding.welcome',
             'faculty.account-setup',
             'faculty.account-setup.store',
+            'chair.account-setup',
+            'chair.account-setup.store',
             'logout',
         );
     }

@@ -279,6 +279,29 @@ class AuthenticationTest extends TestCase
         $this->assertNull($fresh->temp_password);
     }
 
+    public function test_a_chair_needing_setup_is_redirected_to_the_chair_setup_page(): void
+    {
+        $chair = $this->user(Role::ADMIN, 'newchair@example.com', setupComplete: false);
+
+        $this->actingAs($chair)->get(route('chair.dashboard'))
+            ->assertRedirect(route('chair.account-setup'));
+    }
+
+    public function test_completing_chair_account_setup_clears_the_temp_password(): void
+    {
+        $chair = $this->user(Role::ADMIN, 'chairsetup@example.com', setupComplete: false);
+        DB::table('users')->where('id', $chair->id)->update(['temp_password' => 'ABC12345']);
+
+        $this->actingAs($chair)->post(route('chair.account-setup.store'), [
+            'password' => 'NewPassw0rd',
+            'password_confirmation' => 'NewPassw0rd',
+        ])->assertRedirect(route('chair.dashboard'));
+
+        $fresh = $chair->fresh();
+        $this->assertNotNull($fresh->setup_completed_at);
+        $this->assertNull($fresh->temp_password);
+    }
+
     public function test_logout_ends_the_session(): void
     {
         $user = $this->user(Role::STUDENT, 'logout@example.com');
