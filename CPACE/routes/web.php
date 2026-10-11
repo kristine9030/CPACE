@@ -107,6 +107,7 @@ Route::middleware(['auth', 'no-back-cache'])->group(function () {
 
     // Profile Settings (name, email, photo, avatar) for the roles without a settings page of their own
     Route::post('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::post('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
 
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::post('/notifications/read-all', [NotificationController::class, 'readAll'])->name('notifications.read-all');

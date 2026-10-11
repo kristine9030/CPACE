@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 /**
  * "Profile Settings" for roles that have no settings page of their own
@@ -42,5 +44,25 @@ class ProfileController extends Controller
         $user->update($data);
 
         return back()->with('status', 'Profile updated successfully.');
+    }
+
+    public function updatePassword(Request $request)
+    {
+        $request->validate([
+            'current_password' => ['required', 'string'],
+            'new_password'      => ['required', 'string', 'min:8', 'confirmed'],
+        ]);
+
+        $user = Auth::user();
+
+        if (! Hash::check($request->current_password, $user->password)) {
+            throw ValidationException::withMessages([
+                'current_password' => 'The current password is incorrect.',
+            ]);
+        }
+
+        $user->update(['password' => Hash::make($request->new_password)]);
+
+        return back()->with('status', 'Password changed successfully.');
     }
 }

@@ -142,6 +142,38 @@ class AvatarTest extends TestCase
         ])->assertSessionHasErrors('avatar');
     }
 
+    public function test_a_chair_can_change_their_password_from_the_profile_modal(): void
+    {
+        $chair = User::create([
+            'role_id' => Role::ADMIN, 'first_name' => 'Chair', 'last_name' => 'User',
+            'email' => 'chair-pw@example.com', 'password' => Hash::make('OldPassw0rd'), 'is_active' => true, 'setup_completed_at' => now(),
+        ]);
+
+        $this->actingAs($chair)->post(route('profile.password'), [
+            'current_password' => 'OldPassw0rd',
+            'new_password' => 'NewPassw0rd',
+            'new_password_confirmation' => 'NewPassw0rd',
+        ])->assertRedirect()->assertSessionHasNoErrors();
+
+        $this->assertTrue(Hash::check('NewPassw0rd', $chair->fresh()->password));
+    }
+
+    public function test_changing_password_rejects_the_wrong_current_password(): void
+    {
+        $chair = User::create([
+            'role_id' => Role::ADMIN, 'first_name' => 'Chair', 'last_name' => 'User',
+            'email' => 'chair-pw2@example.com', 'password' => Hash::make('OldPassw0rd'), 'is_active' => true, 'setup_completed_at' => now(),
+        ]);
+
+        $this->actingAs($chair)->post(route('profile.password'), [
+            'current_password' => 'WrongPassword',
+            'new_password' => 'NewPassw0rd',
+            'new_password_confirmation' => 'NewPassw0rd',
+        ])->assertSessionHasErrors('current_password');
+
+        $this->assertTrue(Hash::check('OldPassw0rd', $chair->fresh()->password));
+    }
+
     private function faculty(string $email = 'fac@example.com'): User
     {
         return User::create([
