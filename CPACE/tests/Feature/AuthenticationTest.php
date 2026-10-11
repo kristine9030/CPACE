@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Schema;
+use Laravel\Socialite\Facades\Socialite;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
@@ -23,7 +24,7 @@ class AuthenticationTest extends TestCase
      * the migration file disagrees with this but the model is authoritative).
      */
     private const TABLES = [
-        'password_reset_tokens', 'student_profiles',
+        'password_reset_tokens', 'student_profiles', 'activity_logs',
         'notifications', 'messages', 'conversation_participants', 'conversations', 'users',
     ];
 
@@ -99,6 +100,18 @@ class AuthenticationTest extends TestCase
         Schema::create('password_reset_tokens', function (Blueprint $table) {
             $table->string('email')->primary();
             $table->string('token');
+            $table->timestamp('created_at')->nullable();
+        });
+        Schema::create('activity_logs', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('actor_id')->nullable();
+            $table->string('actor_name')->nullable();
+            $table->string('actor_role', 20)->nullable();
+            $table->string('action', 60);
+            $table->text('description')->nullable();
+            $table->string('subject_type', 60)->nullable();
+            $table->unsignedBigInteger('subject_id')->nullable();
+            $table->string('ip_address', 45)->nullable();
             $table->timestamp('created_at')->nullable();
         });
     }
@@ -300,6 +313,25 @@ class AuthenticationTest extends TestCase
         $fresh = $chair->fresh();
         $this->assertNotNull($fresh->setup_completed_at);
         $this->assertNull($fresh->temp_password);
+    }
+
+    public function test_a_google_login_records_an_activity_log_entry(): void
+    {
+        $chair = $this->user(Role::ADMIN, 'googlechair@example.com');
+
+        $socialUser = \Mockery::mock(\Laravel\Socialite\Two\User::class);
+        $socialUser->shouldReceive('getEmail')->andReturn($chair->email);
+        $provider = \Mockery::mock(\Laravel\Socialite\Two\GoogleProvider::class);
+        $provider->shouldReceive('user')->andReturn($socialUser);
+        Socialite::shouldReceive('driver')->with('google')->andReturn($provider);
+
+        $this->get('/auth/google/callback')->assertRedirect(route('chair.dashboard'));
+
+        $this->assertDatabaseHas('activity_logs', [
+            'actor_id' => $chair->id,
+            'action' => 'login',
+        ]);
+        $this->assertNotNull($chair->fresh()->last_login_at);
     }
 
     public function test_logout_ends_the_session(): void

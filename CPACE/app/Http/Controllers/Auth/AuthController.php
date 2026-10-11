@@ -128,6 +128,7 @@ class AuthController extends Controller
         Auth::login($user);
         $request->session()->regenerate();
         $user->forceFill(['last_login_at' => now()])->save();
+        Auditor::log($user, 'login', 'Signed up and logged in.');
 
         return redirect()->intended($this->homeFor($user));
     }
@@ -196,6 +197,7 @@ class AuthController extends Controller
         }
 
         $user->forceFill(['last_login_at' => now()])->save();
+        Auditor::log($user, 'login', "Logged in via {$provider}.");
 
         return redirect()->intended($this->homeFor($user));
     }
