@@ -7,3 +7,6 @@ Thumbs.db
 # Manuscript working backups and temporary lock files
 documents/CAPSTONE MANUSCRIPTS/*BACKUP*
 documents/CAPSTONE MANUSCRIPTS/~$*
+
+# Local MySQL corruption backups (never belong in the repo)
+mysql_corrupt_backup_*/
