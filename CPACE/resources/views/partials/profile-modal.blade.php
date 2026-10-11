@@ -40,6 +40,24 @@
                     <button type="submit" class="cp-btn cp-save">Save changes</button>
                 </div>
             </form>
+
+            <div class="cp-divider"></div>
+
+            <h4 class="cp-subhead">Change password</h4>
+            @if ($errors->any() && old('current_password') !== null)
+                <div class="cp-errors">@foreach ($errors->all() as $error)<div>{{ $error }}</div>@endforeach</div>
+            @endif
+            <form method="POST" action="{{ route('profile.password') }}" id="cpPasswordForm">
+                @csrf
+                <div class="cp-field"><label>Current password</label><input type="password" name="current_password" required></div>
+                <div class="cp-row">
+                    <div class="cp-field"><label>New password</label><input type="password" name="new_password" required minlength="8"></div>
+                    <div class="cp-field"><label>Confirm new password</label><input type="password" name="new_password_confirmation" required minlength="8"></div>
+                </div>
+                <div class="cp-foot">
+                    <button type="submit" class="cp-btn cp-save"><i class="fas fa-key"></i> Change password</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -73,6 +91,8 @@
     .cp-status { display:none; margin-bottom:14px; padding:10px 14px; border-radius:8px; font-size:12.5px; background:#ecfdf5; color:#047857; }
     .cp-status.show { display:block; }
     .cp-errors { margin-bottom:14px; padding:10px 14px; border-radius:8px; font-size:12.5px; background:#fef2f2; color:#b91c1c; }
+    .cp-divider { height:1px; background:#f0f0f0; margin:20px 0 18px; }
+    .cp-subhead { font-size:13.5px; font-weight:600; color:#1a1a1a; margin:0 0 14px; }
 </style>
 
 <script>
@@ -118,6 +138,7 @@
     }
 
     document.getElementById('cpForm').addEventListener('submit', function () { sessionStorage.setItem('cpModalReopen', '1'); });
+    document.getElementById('cpPasswordForm').addEventListener('submit', function () { sessionStorage.setItem('cpModalReopen', '1'); });
     if (sessionStorage.getItem('cpModalReopen') === '1') {
         sessionStorage.removeItem('cpModalReopen');
         @if (session('status'))
