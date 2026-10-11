@@ -341,6 +341,6 @@ class User extends Authenticatable
      */
     public function needsSetup(): bool
     {
-        return ($this->isStudent() || $this->isFaculty()) && $this->setup_completed_at === null;
+        return ($this->isStudent() || $this->isFaculty() || $this->isChair()) && $this->setup_completed_at === null;
     }
 }
