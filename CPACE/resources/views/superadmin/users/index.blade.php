@@ -91,10 +91,12 @@
                                 <td class="cell-mono">{{ $user->created_at?->format('M j, Y') }}</td>
                                 <td>
                                     <div class="row-actions">
-                                        <form method="POST" action="{{ route('superadmin.users.resend-otp', $user->id) }}">
-                                            @csrf
-                                            <button type="submit" class="btn btn-ghost btn-sm" title="Resend one-time password"><i class="fas fa-key"></i></button>
-                                        </form>
+                                        @if ($user->role_id !== \App\Models\Role::SUPER_ADMIN)
+                                            <form method="POST" action="{{ route('superadmin.users.resend-otp', $user->id) }}">
+                                                @csrf
+                                                <button type="submit" class="btn btn-ghost btn-sm" title="Resend one-time password"><i class="fas fa-key"></i></button>
+                                            </form>
+                                        @endif
                                         @if ($user->id !== Auth::id())
                                             <form method="POST" action="{{ route('superadmin.users.toggle-active', $user->id) }}"
                                                 data-confirm="{{ $user->is_active ? 'Deactivate this account? They will be logged out and unable to sign back in.' : 'Reactivate this account?' }}"

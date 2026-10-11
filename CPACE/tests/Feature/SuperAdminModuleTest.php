@@ -189,6 +189,21 @@ class SuperAdminModuleTest extends TestCase
         $this->assertDatabaseHas('users', ['email' => 'second-admin@example.com', 'role_id' => Role::SUPER_ADMIN]);
     }
 
+    public function test_resending_otp_for_a_super_admin_account_is_refused(): void
+    {
+        Mail::fake();
+        $superAdmin = $this->makeUser(Role::SUPER_ADMIN);
+        $otherSuperAdmin = $this->makeUser(Role::SUPER_ADMIN, 'other-admin@example.com');
+        $oldPassword = $otherSuperAdmin->password;
+
+        $this->actingAs($superAdmin)->post(route('superadmin.users.resend-otp', $otherSuperAdmin->id))
+            ->assertRedirect()
+            ->assertSessionHas('error');
+
+        $this->assertSame($oldPassword, $otherSuperAdmin->fresh()->password);
+        Mail::assertNothingSent();
+    }
+
     public function test_a_super_admin_cannot_deactivate_their_own_account(): void
     {
         $superAdmin = $this->makeUser(Role::SUPER_ADMIN);
