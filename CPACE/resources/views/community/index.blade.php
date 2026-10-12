@@ -189,6 +189,7 @@
         .quote-attr { display:block; margin-top:10px; font-size:12.5px; font-weight:700; font-style:normal; color:var(--primary); }
 
         .attachment { display:flex; align-items:center; gap:12px; padding:12px 14px; background:#fafafb; border:1px solid var(--line); border-radius:12px; margin-top:12px; text-decoration:none; transition:border-color .15s, background .15s; }
+        button.attachment { width:100%; font:inherit; text-align:left; cursor:pointer; }
         .attachment:hover { background:#fff; border-color:#e0cfcf; }
         .att-icon { width:40px; height:40px; border-radius:10px; display:grid; place-items:center; font-size:16px; color:#fff; flex-shrink:0; }
         .att-info { flex:1; min-width:0; }
@@ -299,6 +300,39 @@
             .quick-btn span { display:none; }
         }
         @media (prefers-reduced-motion:reduce) { .hero-track { transition:none; } }
+
+        /* View modal — in-page preview for Resource Library attachments, no download affordance */
+        .mat-modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+            display: none; align-items: center; justify-content: center;
+            z-index: 5500; padding: 30px;
+        }
+        .mat-modal-overlay.open { display: flex; }
+        .mat-modal {
+            background: #fff; border-radius: 14px;
+            width: 100%; max-width: 980px; height: calc(100vh - 60px);
+            display: flex; flex-direction: column; overflow: hidden;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+        }
+        .mat-modal-head {
+            display: flex; align-items: center; justify-content: space-between; gap: 14px;
+            padding: 16px 22px; border-bottom: 1px solid #f0f0f0; flex-shrink: 0;
+        }
+        .mat-modal-title-wrap { display: flex; align-items: center; gap: 12px; min-width: 0; }
+        .mat-modal-icon { width:42px; height:42px; border-radius:10px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:18px; color:#fff; }
+        .mat-modal-title { font-size: 15.5px; font-weight: 600; color: #232327; }
+        .mat-modal-sub { font-size: 11.5px; color: #999; margin-top: 2px; }
+        .mat-modal-body {
+            flex: 1; background: #eef0f3; overflow: auto;
+            display: flex; align-items: stretch; justify-content: center;
+        }
+        .mat-modal-body iframe { width: 100%; height: 100%; border: none; background: #fff; }
+        .mat-modal-body img { max-width: 100%; max-height: 100%; margin: auto; object-fit: contain; }
+        .mat-preview-fallback { margin: auto; text-align: center; padding: 50px 30px; color: #77777d; }
+        .mat-preview-fallback i { font-size: 48px; margin-bottom: 16px; display: block; }
+        .mat-preview-fallback p { font-size: 14px; margin-bottom: 6px; color: #3a3a3f; font-weight: 500; }
+        .mat-modal-close { width:34px; height:34px; border-radius:8px; border:none; background:#f2f2f4; color:#55555b; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:14px; }
+        .mat-modal-close:hover { background:#e6e6ea; }
     </style>
 </head>
 <body>
@@ -607,17 +641,31 @@
                 @endforeach
 
                 @if($post->resource)
-                    @php $rmeta = $post->resource->iconMeta(); @endphp
-                    {{-- Library files are view-only (no download route), so this
-                         opens the same viewer as the Resource Library's View button. --}}
-                    <a class="attachment" href="{{ $post->resource->viewerUrl() }}" target="_blank" rel="noopener">
+                    @php
+                        $rmeta = $post->resource->iconMeta();
+                        $rViewUrl = in_array($post->resource->file_category, ['word', 'excel', 'powerpoint'], true)
+                            ? $post->resource->previewUrl()
+                            : $post->resource->url();
+                        $rData = [
+                            'title'         => $post->resource->title,
+                            'file_category' => $post->resource->file_category,
+                            'original_name' => $post->resource->original_name,
+                            'icon'          => $rmeta['icon'],
+                            'color'         => $rmeta['color'],
+                            'view_url'      => $rViewUrl,
+                        ];
+                    @endphp
+                    {{-- Library files are view-only (no download route), so this opens
+                         the same in-page viewer as the Resource Library's View button
+                         instead of a new tab. --}}
+                    <button type="button" class="attachment" data-act="view-resource" data-resource='@json($rData)'>
                         <div class="att-icon" style="background:{{ $rmeta['color'] }};"><i class="fas {{ $rmeta['icon'] }}"></i></div>
                         <div class="att-info">
                             <div class="att-title">{{ $post->resource->title }} <span class="role-badge" style="margin-left:4px;"><i class="fas fa-book" style="margin-right:3px;"></i>Library</span></div>
                             <div class="att-meta">{{ strtoupper($post->resource->file_category) }} · {{ $post->resource->humanSize() }} · {{ $post->resource->downloads_count }} view{{ $post->resource->downloads_count === 1 ? '' : 's' }}</div>
                         </div>
                         <span class="att-go" aria-hidden="true"><i class="fas fa-eye"></i></span>
-                    </a>
+                    </button>
                 @endif
 
                 @if($likeCount || $commentCount)
@@ -761,6 +809,22 @@
 </div>
 </main>
 
+<div class="mat-modal-overlay" id="resModal">
+    <div class="mat-modal">
+        <div class="mat-modal-head">
+            <div class="mat-modal-title-wrap">
+                <div class="mat-modal-icon" id="resModalIcon"><i class="fas fa-file"></i></div>
+                <div style="min-width:0;">
+                    <div class="mat-modal-title" id="resModalTitle"></div>
+                    <div class="mat-modal-sub" id="resModalSub"></div>
+                </div>
+            </div>
+            <button class="mat-modal-close" id="resModalClose" title="Close"><i class="fas fa-xmark"></i></button>
+        </div>
+        <div class="mat-modal-body" id="resModalBody"></div>
+    </div>
+</div>
+
 @include('partials.chat-widget', ['contacts' => $contacts])
 @include('partials.global-search')
 
@@ -903,6 +967,84 @@ document.addEventListener('click', function (e) {
         document.querySelectorAll('.menu-dropdown.open').forEach(function (m) { m.classList.remove('open'); });
     }
 });
+
+// ── Resource Library attachment viewer (in-page, no download) ───────────
+(function () {
+    const OFFICE_CATEGORIES = ['word', 'excel', 'powerpoint'];
+    const esc = s => String(s ?? '').replace(/[&<>"']/g, c =>
+        ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+    const IS_PUBLIC_HOST = (() => {
+        const h = window.location.hostname;
+        return h !== 'localhost' && h !== '127.0.0.1' &&
+            !/^192\.168\.|^10\.|^172\.(1[6-9]|2[0-9]|3[0-1])\.|\.test$|\.local$/.test(h);
+    })();
+
+    function resourcePreviewBody(r) {
+        if (!r.view_url) {
+            return `
+                <div class="mat-preview-fallback">
+                    <i class="fas fa-file-circle-exclamation"></i>
+                    <p>Preview unavailable</p>
+                    <span>This file can't be previewed right now.</span>
+                </div>`;
+        }
+        if (r.file_category === 'pdf' || r.file_category === 'text') {
+            const src = r.file_category === 'pdf' ? r.view_url + '#toolbar=0&navpanes=0' : r.view_url;
+            return `<iframe src="${esc(src)}" title="${esc(r.title)}"></iframe>`;
+        }
+        if (r.file_category === 'image') {
+            return `<img src="${esc(r.view_url)}" alt="${esc(r.title)}">`;
+        }
+        if (OFFICE_CATEGORIES.includes(r.file_category) && IS_PUBLIC_HOST) {
+            const viewerUrl = 'https://view.officeapps.live.com/op/embed.aspx?src=' + encodeURIComponent(r.view_url);
+            return `<iframe src="${viewerUrl}" title="${esc(r.title)}"></iframe>`;
+        }
+        if (OFFICE_CATEGORIES.includes(r.file_category)) {
+            return `
+                <div class="mat-preview-fallback">
+                    <i class="fas ${r.icon}" style="color:${r.color};"></i>
+                    <p>${esc(r.original_name || r.title)}</p>
+                    <span>Preview isn't available on a local/private server — Office Online needs a public URL.</span>
+                </div>`;
+        }
+        return `
+            <div class="mat-preview-fallback">
+                <i class="fas ${r.icon}" style="color:${r.color};"></i>
+                <p>${esc(r.original_name || r.title)}</p>
+                <span>This file type can't be previewed in-browser.</span>
+            </div>`;
+    }
+
+    function openResourceModal(r) {
+        document.getElementById('resModalIcon').style.background = r.color;
+        document.getElementById('resModalIcon').innerHTML = `<i class="fas ${r.icon}"></i>`;
+        document.getElementById('resModalTitle').textContent = r.title;
+        document.getElementById('resModalSub').textContent = (r.file_category || '').toUpperCase();
+        document.getElementById('resModalBody').innerHTML = resourcePreviewBody(r);
+        document.getElementById('resModal').classList.add('open');
+    }
+
+    function closeResourceModal() {
+        document.getElementById('resModal').classList.remove('open');
+        document.getElementById('resModalBody').innerHTML = '';
+    }
+
+    document.querySelectorAll('[data-act="view-resource"]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const r = JSON.parse(btn.dataset.resource);
+            openResourceModal(r);
+        });
+    });
+
+    const closeBtn = document.getElementById('resModalClose');
+    if (closeBtn) closeBtn.addEventListener('click', closeResourceModal);
+    const overlay = document.getElementById('resModal');
+    if (overlay) overlay.addEventListener('click', e => { if (e.target === e.currentTarget) closeResourceModal(); });
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && overlay && overlay.classList.contains('open')) closeResourceModal();
+    });
+})();
 </script>
 
     @include('partials.alerts')
