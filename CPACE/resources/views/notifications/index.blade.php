@@ -152,7 +152,7 @@
     @include('partials.alumni-sidebar', ['active' => 'notifications'])
 @else
     @include('partials.sidebar', ['active' => 'notifications'])
-    @include('partials.student-bottom-nav', ['active' => 'more'])
+    @include('partials.student-bottom-nav', ['active' => 'notifications'])
     @include('partials.student-mobile-header')
 @endif
 

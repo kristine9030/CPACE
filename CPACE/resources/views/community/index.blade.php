@@ -311,6 +311,8 @@
     @include('partials.faculty-sidebar', ['active' => ''])
 @else
     @include('partials.sidebar', ['active' => 'community'])
+    @include('partials.student-bottom-nav', ['active' => 'community'])
+    @include('partials.student-mobile-header')
 @endif
 
 @php
