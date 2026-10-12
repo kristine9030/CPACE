@@ -812,18 +812,17 @@
             .nav-actions { margin-left: auto; margin-right: 12px; }
             .mobile-menu { padding-left: max(28px, env(safe-area-inset-left)); padding-right: max(28px, env(safe-area-inset-right)); }
             .mobile-menu a { padding: .95rem 0; font-size: .95rem; }
-            .hero { padding: 122px 0 64px; }
+            .hero { min-height: 0; padding: 112px 0 48px; }
             .why, .how, .features, .stories { padding-top: 64px; padding-bottom: 68px; }
             .device-row { max-width: 440px; margin: 0 auto; }
             .mock-wrap { max-width: 640px; margin: 0 auto; }
-            /* The photo gets its own band under the copy (16:9 of the width)
-               instead of sitting behind the text, so nothing overlaps. */
-            .hero { padding-bottom: calc(100vw * 9 / 16 + 24px); align-items: flex-start; }
+            /* The building photo is the hero's background again, anchored to the bottom
+               and kept faint enough that the copy on top stays easy to read. */
             .hero-photo, .hero-photo-fg {
-                left: 50%; width: 100%; max-width: 900px;
+                left: 60%; width: 150%; max-width: none; bottom: 22%;
             }
-            .hero-photo { opacity: .9; }
-            .hero-photo-fg { opacity: 1; }
+            .hero-photo { opacity: .42; }
+            .hero-photo-fg { opacity: .5; }
             .hero-slashes { display: none; }
             .hero-mini .mini { border-right: none; padding: 0 22px 0 0; }
             .stat-row { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 26px; }
@@ -859,15 +858,18 @@
             .hero { padding-top: 108px; }
             .hero-head { font-size: 1.45rem; }
             .hero-sub { font-size: .95rem; max-width: none; }
-            .hero-cta { flex-direction: column; align-items: stretch; }
-            .btn { font-size: .85rem; min-height: 46px; justify-content: center; }
-            .hero-cta { gap: 12px; }
-            .hero-cta .btn { width: 100%; padding: 0 1.5rem; }
-            .nav-actions .btn { min-height: 40px; padding: 0 1.1rem; font-size: .78rem; }
-            .hero-mini { flex-direction: column; align-items: flex-start; }
-            .hero-mini { margin-top: 36px; gap: 16px 0; }
-            .hero-mini .mini { padding: 0 18px 0 0; width: 100%; }
-            .mini-txt { font-size: .78rem; }
+            /* Compact buttons: the two hero actions share one row. */
+            .btn { font-size: .78rem; min-height: 40px; justify-content: center; }
+            .hero-cta { flex-direction: row; align-items: center; gap: 10px; margin-top: 20px; }
+            .hero-cta .btn { flex: 1 1 0; width: auto; min-width: 0; padding: 0 .9rem; white-space: nowrap; }
+            .nav-actions .btn { min-height: 36px; padding: 0 1rem; font-size: .72rem; }
+            /* Three compact features in one row: small icon above a short label. */
+            .hero-mini { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 26px; align-items: start; }
+            .hero-mini .mini, .hero-mini .mini:first-child {
+                flex-direction: column; align-items: flex-start; gap: 7px; width: auto; padding: 0 4px 0 0; border: none;
+            }
+            .mini-ico { width: 28px; height: 28px; font-size: .62rem; }
+            .mini-txt { font-size: .64rem; line-height: 1.35; }
             .feat h4, .step h4 { font-size: .95rem; }
             .feat p, .step p { font-size: .85rem; }
             .step-num { width: 30px; height: 30px; font-size: .78rem; }
@@ -934,154 +936,98 @@
         @media (max-height: 520px) and (orientation: landscape) {
             .hero { min-height: 0; padding-top: 100px; }
         }
-        /* ═══ APP-STYLE PHONE LAYOUT ═════════════════════════════════
-           Mirrors the CPAce mobile app UI: maroon gradient header, white
-           rounded sheet, gradient buttons, soft cards and the floating pill
-           tab bar with the centre menu button. Look only - no behaviour. */
-        .app-brand, .app-photo, .nav-word,
-        .app-tabs, .app-pop, .app-pop-back { display: none; }
+        /* ─── PHONE: compact sections, cards and footer ───────────────────── */
+        @media (max-width: 560px) {
+            /* The navbar already has Get Started, so the hero keeps just Explore Features. */
+            .hero-cta .btn-red { display: none; }
+            .hero-cta .btn-outline { flex: 0 0 auto; width: auto; min-height: 36px; padding: 0 1.3rem; font-size: .74rem; }
 
-        @media (max-width: 640px) {
-            :root {
-                --app-bg: #F8F9FA; --app-border: #E8ECF0; --app-text: #1e293b; --app-muted: #64748b;
-                --app-grad: linear-gradient(90deg, #4A0A0C, #7B1416, #B52525);
-                --app-grad-d: linear-gradient(135deg, #4A0A0C, #7B1416, #B52525);
-            }
-            html { scroll-padding-top: 64px; }
-            body { font-family: 'Poppins', 'Montserrat', ui-sans-serif, system-ui, sans-serif; background: var(--app-bg); color: var(--app-muted); }
+            .why, .how, .features, .stories { padding: 38px 0 42px; }
+            .impact { padding: 34px 0; }
+            .eyebrow { margin-bottom: 10px; font-size: .62rem; }
+            .sec-title { font-size: 1.3rem; line-height: 1.28; }
+            .sec-text { font-size: .78rem; line-height: 1.6; margin-top: 12px; }
+            .why-grid, .how-grid, .features-grid, .impact-grid, .stories-grid { gap: 24px; }
+            .btn-white { padding: 0 1.1rem; }
+            .why .btn-white { margin-top: 16px !important; }
 
-            /* top bar: floats over the gradient, turns solid maroon on scroll */
-            header.nav, header.nav.scrolled {
-                height: 60px; background: transparent; backdrop-filter: none; -webkit-backdrop-filter: none; box-shadow: none;
-                padding-top: env(safe-area-inset-top);
-                transition: background .25s ease, box-shadow .25s ease;
-            }
-            header.nav.scrolled { background: var(--app-grad); box-shadow: 0 6px 18px rgba(74,10,12,.28); }
-            .nav-brand img, header.nav.scrolled .nav-brand img { display: none; }
-            .nav-word { display: block; font-size: 1.35rem; font-weight: 800; color: #fff; letter-spacing: .5px; line-height: 1; }
-            .burger { display: flex; }
-            .burger span { background: #fff; }
-            .mobile-menu, header.nav.scrolled ~ .mobile-menu { top: calc(60px + env(safe-area-inset-top)); }
-            .nav-actions { margin-right: 8px; }
-            .nav-actions .btn, .nav-actions .btn.btn-red {
-                background: rgba(255,255,255,.16); color: #fff; box-shadow: none;
-                border: 1px solid rgba(255,255,255,.35); border-radius: 999px;
-                min-height: 38px; padding: 0 1rem; font-size: .75rem; font-weight: 600;
-            }
-            .nav-actions .btn:hover { background: rgba(255,255,255,.26); transform: none; }
+            /* Why CPAce */
+            .feat-grid { gap: 16px; }
+            .feat { gap: 12px; }
+            .feat-ico { width: 34px; height: 34px; font-size: .78rem; }
+            .feat h4 { font-size: .8rem; margin-bottom: 3px; }
+            .feat p { font-size: .72rem; line-height: 1.55; }
 
-            /* hero = login screen: gradient + brand, then a white sheet */
-            .hero {
-                display: block; min-height: 0; padding: 0; overflow: hidden;
-                background: linear-gradient(160deg, #4A0A0C 0%, #7B1416 55%, #B52525 100%);
-            }
-            .hero::before, .hero::after {
-                content: ''; position: absolute; border-radius: 50%; pointer-events: none;
-            }
-            .hero::before { top: -60px; right: -70px; width: 220px; height: 220px; background: rgba(255,255,255,.055); }
-            .hero::after  { top: 40px; left: -55px; width: 150px; height: 150px; background: rgba(255,255,255,.045); }
-            .hero-photo, .hero-photo-fg, .hero-slashes, .hero .deco { display: none; }
-            .hero-inner.container { padding: 0; }
-            .app-brand {
-                display: flex; flex-direction: column; align-items: center; text-align: center;
-                padding: calc(76px + env(safe-area-inset-top)) 24px 26px; color: #fff;
-            }
-            .app-brand img { width: 88px; height: 88px; object-fit: contain; margin-bottom: 6px; }
-            .app-brand b { font-size: 2.1rem; font-weight: 800; letter-spacing: .5px; line-height: 1.2; }
-            .app-brand span { font-size: .8rem; color: rgba(255,255,255,.72); margin-top: 4px; }
+            /* How it works */
+            .steps { margin-top: 20px; }
+            .step { gap: 12px; padding-bottom: 16px; }
+            .step-num { width: 24px; height: 24px; font-size: .64rem; }
+            .step::before { left: 11px; top: 26px; }
+            .step h4 { font-size: .78rem; }
+            .step p { font-size: .7rem; line-height: 1.5; }
 
-            .hero-copy {
-                max-width: none; background: #fff; position: relative;
-                border-radius: 32px 32px 0 0; padding: 30px 22px 30px;
-            }
-            .hero-brand { display: none; }
-            .hero-copy .eyebrow { margin-bottom: 10px; }
-            .hero-head { font-size: 1.55rem; font-weight: 700; color: var(--app-text); line-height: 1.3; }
-            .hero-sub { font-size: .88rem; line-height: 1.7; color: var(--app-muted); margin-top: 14px; max-width: none; }
-            .hero-cta { margin-top: 22px; gap: 12px; }
-            .hero-mini {
-                display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px;
-                margin-top: 26px; align-items: stretch;
-            }
-            .hero-mini .mini, .hero-mini .mini:first-child {
-                flex-direction: column; justify-content: flex-start; text-align: center; gap: 8px; width: auto;
-                padding: 14px 6px; background: var(--app-bg); border: 1px solid var(--app-border); border-radius: 16px;
-            }
-            .mini-ico { width: 38px; height: 38px; background: var(--app-grad-d); color: #fff; }
-            .mini-txt { font-size: .68rem; font-weight: 600; color: var(--app-text); line-height: 1.4; }
-            .mini-txt br { display: none; }
-            .app-photo {
-                display: block; width: 100%; height: auto; margin-top: 22px;
-                border-radius: 20px; border: 1px solid var(--app-border);
-                box-shadow: 0 8px 22px rgba(42,18,21,.12);
-            }
+            /* Dashboard preview: keep its real layout, just smaller */
+            .mock-wrap { margin-top: 4px; }
+            .mock-behind { top: 18px; bottom: -12px; left: -10px; right: 12px; }
+            .mock-main { padding: 10px 10px 12px; }
+            .mock-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+            .reco-row { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+            .mock-card { padding: 8px; }
+            .reco { padding: 7px; }
 
-            /* buttons: the app's gradient button, 14px radius, 52px tall */
-            .btn { border-radius: 14px; min-height: 52px; font-size: .95rem; font-weight: 700; letter-spacing: 0; }
-            .btn-pill { border-radius: 14px; }
-            .btn-red { background: var(--app-grad); box-shadow: 0 8px 18px rgba(123,20,22,.28); }
-            .btn-red:hover { background: var(--app-grad); transform: none; }
-            .btn-outline { border: 1.5px solid #A52020; color: #A52020; background: #fff; }
-            .btn-white { color: #7B1416; }
-            .nav-actions .btn, .nav-actions .btn.btn-red { border-radius: 999px; min-height: 38px; font-size: .75rem; font-weight: 600; }
+            /* Features */
+            /* margin:auto made these grid items shrink to their content; fill the column instead */
+            .device-row, .stat-row { width: 100%; max-width: none; margin: 0; }
+            .device-row { gap: 14px; }
+            .device { aspect-ratio: 16 / 8; padding: 12px; border-radius: 12px; }
+            .frame.phone { width: 30%; }
+            .device-item figcaption h4 { font-size: .74rem; margin: 10px 0 3px; }
+            .device-item figcaption p { font-size: .68rem; line-height: 1.5; }
 
-            /* sections */
-            .eyebrow { font-size: .68rem; letter-spacing: .14em; }
-            .sec-title { font-size: 1.5rem; font-weight: 700; color: var(--app-text); }
-            .sec-text { font-size: .88rem; line-height: 1.7; }
-            .why, .how, .features, .stories { padding: 44px 0 48px; }
-            .why-grid, .how-grid, .features-grid, .impact-grid, .stories-grid { gap: 26px; }
+            /* Impact */
+            .impact h3 { font-size: 1.2rem; }
+            .impact p { font-size: .7rem; margin-top: 8px; }
+            .stat-row { gap: 18px 14px; }
+            .stat i { margin-bottom: 6px; font-size: .74rem; }
+            .stat b { font-size: 1.4rem; }
+            .stat span { font-size: .64rem; }
 
-            .why .sec-title { color: #fff; }
-            .why .feat-grid { gap: 12px; }
-            .feat {
-                background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.14);
-                border-radius: 18px; padding: 16px; align-items: center;
-            }
-            .feat-ico { width: 46px; height: 46px; background: rgba(255,255,255,.14); }
-            .why .btn-white { width: 100%; }
+            /* Stories */
+            .story-card { padding: 14px 16px; }
+            .story-head { margin-bottom: 8px; }
+            .story-avatar { width: 30px; height: 30px; font-size: .66rem; }
+            .story-card q { font-size: .72rem; line-height: 1.6; }
+            .dots { margin-top: 14px; }
 
-            .how { background: var(--app-bg); }
-            .steps {
-                background: #fff; border-radius: 20px; padding: 22px 18px; margin-top: 22px;
-                box-shadow: 0 8px 24px rgba(42,18,21,.08);
-            }
-            .step-num { background: var(--app-grad-d); }
-            .mock-wrap { margin-top: 6px; }
-            .mock { border-radius: 16px; }
-            .mock-behind { display: none; }
-
-            .features { background: var(--app-bg); }
-            .device-row { gap: 14px; max-width: none; }
-            .device-item {
-                background: #fff; border-radius: 20px; padding: 14px 14px 18px;
-                box-shadow: 0 8px 24px rgba(42,18,21,.08);
-            }
-            .device { box-shadow: none; border-radius: 14px; }
-            .device-item figcaption { padding: 0 4px; }
-
-            .impact { padding: 40px 0; }
-            .stat-row { gap: 12px; max-width: none; }
-            .stat {
-                background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.14);
-                border-radius: 18px; padding: 16px 14px;
-            }
-            .stat i { margin-bottom: 8px; }
-
-            .stories { background: var(--app-bg); }
-            .story-card { border-radius: 20px; border: none; box-shadow: 0 8px 24px rgba(42,18,21,.10); }
-            .carousel-viewport { padding: 4px 2px 14px; margin: -4px -2px -14px; }
-            .story { padding: 0 6px; }
-            .dots button.on { background: #A52020; }
-
-            .cta-band { padding: 40px 0; }
-
-            .foot-uni { border-radius: 16px; }
-
-            .rpt-back { z-index: 400; }
-        }
-        @media (max-width: 640px) and (max-height: 520px) and (orientation: landscape) {
-            .app-brand { padding-bottom: 14px; }
+            /* CTA + footer */
+            .cta-band { padding: 28px 0; }
+            .cta-inner { gap: 14px; }
+            .cta-inner .wordmark { font-size: 1.3rem; }
+            .cta-copy h4 { font-size: .9rem; }
+            .cta-copy p { font-size: .68rem; }
+            /* Footer: brand on top, the two link lists side by side, then the university card. */
+            footer { padding-top: 30px; }
+            .foot-top { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px 18px; padding-bottom: 22px; }
+            .foot-brand, .foot-col:last-child { grid-column: 1 / -1; }
+            .foot-brand .wordmark { font-size: 1.3rem; }
+            .foot-brand p { font-size: .68rem; line-height: 1.65; margin: 8px 0 12px; max-width: none; }
+            .foot-contact { font-size: .66rem; line-height: 1.8; }
+            .foot-contact i { width: 14px; }
+            .foot-col h5 { font-size: .7rem; margin-bottom: 0; }
+            .foot-col h5::after { margin: 6px 0 10px; width: 20px; }
+            .foot-col li { margin-bottom: 7px; }
+            .foot-col a { font-size: .7rem; }
+            .foot-col a:hover { padding-left: 0; }
+            .foot-uni { padding: 10px 12px; gap: 11px; margin-bottom: 8px; border-radius: 12px; }
+            .foot-uni img { width: 38px; height: 38px; }
+            .foot-uni strong { font-size: .72rem; }
+            .foot-uni .uni-tag { font-size: .5rem; margin-top: 3px; letter-spacing: .06em; }
+            .foot-uni .uni-campus { font-size: .64rem; margin-top: 3px; }
+            .foot-meta { font-size: .64rem; line-height: 1.7; }
+            .foot-disclose > summary { padding: 12px 0; font-size: .66rem; }
+            .foot-note h6 { font-size: .64rem; }
+            .foot-note p { font-size: .62rem; line-height: 1.7; }
+            .foot-bottom { padding: 12px 0 16px; font-size: .6rem; gap: 6px; flex-direction: column; text-align: center; }
         }
     </style>
 </head>
@@ -1092,7 +1038,6 @@
     <div class="container nav-inner">
         <a href="#home" class="nav-brand">
             <img src="{{ asset('images/logo no.2.png') }}" alt="CPAce">
-            <span class="nav-word" aria-hidden="true">CPAce</span>
         </a>
 
         <nav class="nav-links" id="navLinks">
@@ -1132,11 +1077,6 @@
     </div>
 
     <div class="container hero-inner">
-        <div class="app-brand" aria-hidden="true">
-            <img src="{{ asset('images/logo-icon.png') }}" alt="">
-            <b>CPAce</b>
-            <span>CPA Review · Adaptive Learning</span>
-        </div>
         <div class="hero-copy">
             <div class="eyebrow reveal">CPALE Review System</div>
             <h1 class="hero-brand reveal"><img src="{{ asset('images/wordmark-transparent.png') }}" alt="CPAce"></h1>
@@ -1165,7 +1105,6 @@
                     <div class="mini-txt">Focus on<br>Your Weak Areas</div>
                 </div>
             </div>
-            <img class="app-photo" src="{{ asset('images/landing page.png') }}" alt="" loading="lazy">
         </div>
     </div>
 </section>
