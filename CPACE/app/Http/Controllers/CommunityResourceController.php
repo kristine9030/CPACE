@@ -44,6 +44,26 @@ class CommunityResourceController extends Controller
 
         $resources = $query->paginate(12)->withQueryString();
 
+        $resourcesJson = $resources->getCollection()->map(function (CommunityResource $res) {
+            $meta = $res->iconMeta();
+
+            return [
+                'id'            => $res->id,
+                'title'         => $res->title,
+                'file_category' => $res->file_category,
+                'original_name' => $res->original_name,
+                'file_size'     => $res->humanSize(),
+                'uploader_name' => $res->uploader->name ?? 'Former Member',
+                'icon'          => $meta['icon'],
+                'color'         => $meta['color'],
+                // Office Online can't log in, so Word/Excel/PowerPoint get a short-lived signed link;
+                // the modal builds the embed.aspx viewer URL from this so no download affordance shows.
+                'view_url'      => in_array($res->file_category, ['word', 'excel', 'powerpoint'], true)
+                    ? $res->previewUrl()
+                    : $res->url(),
+            ];
+        })->values();
+
         $unreadNotifications = DB::table('notifications')
             ->where('recipient_id', $user->id)
             ->where('is_read', false)
@@ -51,6 +71,7 @@ class CommunityResourceController extends Controller
 
         return view('community.resources', [
             'resources' => $resources,
+            'resourcesJson' => $resourcesJson,
             'subjects' => Subject::where('is_active', true)->orderBy('code')->get(),
             'filters' => [
                 'subject_id' => $request->get('subject_id'),
