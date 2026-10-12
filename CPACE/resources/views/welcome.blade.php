@@ -946,7 +946,6 @@
                 --app-bg: #F8F9FA; --app-border: #E8ECF0; --app-text: #1e293b; --app-muted: #64748b;
                 --app-grad: linear-gradient(90deg, #4A0A0C, #7B1416, #B52525);
                 --app-grad-d: linear-gradient(135deg, #4A0A0C, #7B1416, #B52525);
-                --tab-h: 72px;
             }
             html { scroll-padding-top: 64px; }
             body { font-family: 'Poppins', 'Montserrat', ui-sans-serif, system-ui, sans-serif; background: var(--app-bg); color: var(--app-muted); }
@@ -960,8 +959,10 @@
             header.nav.scrolled { background: var(--app-grad); box-shadow: 0 6px 18px rgba(74,10,12,.28); }
             .nav-brand img, header.nav.scrolled .nav-brand img { display: none; }
             .nav-word { display: block; font-size: 1.35rem; font-weight: 800; color: #fff; letter-spacing: .5px; line-height: 1; }
-            .burger, .mobile-menu { display: none !important; }
-            .nav-actions { margin-right: 0; }
+            .burger { display: flex; }
+            .burger span { background: #fff; }
+            .mobile-menu, header.nav.scrolled ~ .mobile-menu { top: calc(60px + env(safe-area-inset-top)); }
+            .nav-actions { margin-right: 8px; }
             .nav-actions .btn, .nav-actions .btn.btn-red {
                 background: rgba(255,255,255,.16); color: #fff; box-shadow: none;
                 border: 1px solid rgba(255,255,255,.35); border-radius: 999px;
@@ -1075,56 +1076,7 @@
 
             .cta-band { padding: 40px 0; }
 
-            footer { padding-bottom: calc(var(--tab-h) + 34px + env(safe-area-inset-bottom)); }
             .foot-uni { border-radius: 16px; }
-
-            /* floating pill tab bar - same as the app */
-            .app-tabs {
-                display: block; position: fixed; left: 0; right: 0; bottom: 0; z-index: 250;
-                padding: 8px 12px max(10px, env(safe-area-inset-bottom)); pointer-events: none;
-            }
-            .app-tabs-card {
-                pointer-events: auto; height: var(--tab-h); background: #fff; border-radius: 36px;
-                display: flex; align-items: center; padding: 0 4px;
-                box-shadow: 0 -2px 18px rgba(0,0,0,.10), 0 8px 24px rgba(0,0,0,.10);
-            }
-            .app-tabs .tab {
-                flex: 1; min-width: 0; margin: 0 2px; padding: 8px 2px; border-radius: 22px;
-                display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
-                color: #9CA3AF; font-size: .66rem; font-weight: 500; line-height: 1.1; white-space: nowrap;
-                transition: background .2s, color .2s;
-            }
-            .app-tabs .tab i { font-size: 1.12rem; }
-            .app-tabs .tab.active { background: var(--app-grad-d); color: #fff; box-shadow: 0 4px 10px rgba(123,20,22,.35); }
-            .app-fab {
-                flex: 0 0 58px; width: 58px; height: 58px; margin: 0 6px; border: none; border-radius: 50%; cursor: pointer;
-                background: var(--app-grad-d); display: grid; place-items: center;
-                box-shadow: 0 4px 12px rgba(123,20,22,.42); transition: transform .2s;
-            }
-            .app-fab.open { transform: rotate(45deg); }
-            .app-fab .dots { display: grid; grid-template-columns: 11px 11px; gap: 5px; }
-            .app-fab .dots i { width: 11px; height: 11px; border-radius: 3px; background: #fff; display: block; }
-
-            .app-pop-back {
-                display: block; position: fixed; inset: 0; z-index: 240; background: rgba(0,0,0,.30);
-                opacity: 0; pointer-events: none; transition: opacity .18s;
-            }
-            .app-pop-back.open { opacity: 1; pointer-events: auto; }
-            .app-pop {
-                display: flex; position: fixed; z-index: 245; left: 40px; right: 40px;
-                bottom: calc(var(--tab-h) + 28px + max(10px, env(safe-area-inset-bottom)));
-                background: #fff; border-radius: 40px; padding: 14px 10px;
-                box-shadow: 0 8px 28px rgba(0,0,0,.18);
-                opacity: 0; transform: translateY(16px) scale(.92); pointer-events: none;
-                transition: opacity .18s, transform .22s cubic-bezier(.3,1.4,.5,1);
-            }
-            .app-pop.open { opacity: 1; transform: none; pointer-events: auto; }
-            .app-pop a { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 5px; }
-            .app-pop a i {
-                width: 42px; height: 42px; border-radius: 50%; display: grid; place-items: center;
-                background: var(--app-grad-d); color: #fff; font-size: 1rem;
-            }
-            .app-pop a span { font-size: .62rem; font-weight: 500; color: #1F2937; text-align: center; }
 
             .rpt-back { z-index: 400; }
         }
@@ -1763,24 +1715,6 @@
     </div>
 </div>
 
-<!-- ══ APP TAB BAR (phones only) ══ -->
-<div class="app-pop-back" id="appPopBack"></div>
-<div class="app-pop" id="appPop" role="menu">
-    <a href="#how-it-works" role="menuitem"><i class="fas fa-route"></i><span>How It Works</span></a>
-    <a href="{{ route('login') }}" role="menuitem"><i class="fas fa-right-to-bracket"></i><span>Log in</span></a>
-    <a href="{{ route('forgot-password') }}" role="menuitem"><i class="fas fa-key"></i><span>Password</span></a>
-    <a href="#report" data-report-open role="menuitem"><i class="fas fa-flag"></i><span>Report</span></a>
-</div>
-<nav class="app-tabs" id="appTabs" aria-label="Main">
-    <div class="app-tabs-card">
-        <a href="#home" class="tab active"><i class="fas fa-house"></i><span>Home</span></a>
-        <a href="#features" class="tab"><i class="fas fa-bolt"></i><span>Features</span></a>
-        <button type="button" class="app-fab" id="appFab" aria-label="More" aria-expanded="false"><span class="dots"><i></i><i></i><i></i><i></i></span></button>
-        <a href="#about" class="tab"><i class="fas fa-circle-info"></i><span>About</span></a>
-        <a href="#contact" class="tab"><i class="fas fa-envelope"></i><span>Contact</span></a>
-    </div>
-</nav>
-
 <script>
     // Navbar shadow on scroll
     const navbar = document.getElementById('navbar');
@@ -1805,7 +1739,7 @@
     // html{scroll-padding-top}. The mobile menu is included so both menus
     // always agree on where you are.
     const NAV_OFFSET = 78;
-    const navLinks = [...document.querySelectorAll('#navLinks a, #mobileMenu a, #appTabs a.tab')];
+    const navLinks = [...document.querySelectorAll('#navLinks a, #mobileMenu a')];
     const sections = [...new Set(navLinks.map(a => a.getAttribute('href')))]
         .filter(h => h && h.length > 1 && h.startsWith('#'))
         .map(h => document.querySelector(h))
@@ -1918,20 +1852,6 @@
             rptSubmit.innerHTML = 'Send report <i class="fas fa-paper-plane"></i>';
         }
     });
-
-    // Phone tab bar: the centre button opens the quick-links popup.
-    const appFab = document.getElementById('appFab');
-    const appPop = document.getElementById('appPop');
-    const appPopBack = document.getElementById('appPopBack');
-    function setPop(open) {
-        appPop.classList.toggle('open', open);
-        appPopBack.classList.toggle('open', open);
-        appFab.classList.toggle('open', open);
-        appFab.setAttribute('aria-expanded', open);
-    }
-    appFab.addEventListener('click', () => setPop(!appPop.classList.contains('open')));
-    appPopBack.addEventListener('click', () => setPop(false));
-    appPop.querySelectorAll('a').forEach(a => a.addEventListener('click', () => setPop(false)));
 
     // Testimonial carousel
     const track   = document.getElementById('track');
