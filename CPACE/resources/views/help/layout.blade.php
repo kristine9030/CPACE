@@ -83,8 +83,9 @@
     @include('partials.alumni-sidebar', ['active' => $active])
 @else
     @include('partials.sidebar', ['active' => $active])
-    @include('partials.student-bottom-nav', ['active' => 'more'])
+    @include('partials.student-bottom-nav', ['active' => 'help'])
     @include('partials.student-mobile-header')
+    @include('partials.global-search')
 @endif
 
 <main class="help-main">

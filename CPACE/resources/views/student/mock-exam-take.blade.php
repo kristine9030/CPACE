@@ -55,6 +55,21 @@
         .warn-overlay p { font-size:14px; opacity:.9; max-width:480px; margin:0 auto 18px; line-height:1.7; }
 
         @media (max-width: 900px) { .wrap { grid-template-columns:minmax(0, 1fr); } .palette { position:static; } }
+        @media (max-width: 640px) {
+            .exam-bar { padding:10px 14px; gap:8px 12px; }
+            .exam-bar .t { font-size:13px; }
+            .exam-bar .s { font-size:11px; }
+            .timer { font-size:17px; padding:6px 12px; margin-left:auto; }
+            .wrap { padding:12px; gap:12px; }
+            .q-card { padding:16px; border-radius:14px; }
+            .q-text { font-size:14.5px; }
+            .opt { padding:13px 12px; min-height:48px; align-items:center; }
+            .palette { padding:14px; }
+            .palette-grid { grid-template-columns:repeat(6, minmax(0, 1fr)); max-height:none; }
+            .pal { min-height:40px; }
+            .warn-overlay { padding:20px; }
+            .warn-overlay h2 { font-size:20px; }
+        }
     </style>
 </head>
 <body>

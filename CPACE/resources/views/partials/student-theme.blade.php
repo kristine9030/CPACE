@@ -71,6 +71,8 @@
     html.dark .quote-card,
     html.dark .dropdown-menu,
     html.dark .more-drawer,
+    html.dark .bn-sheet,
+    html.dark .bottom-nav-card,
     html.dark .modal,
     html.dark .modal-content,
     html.dark .panel,
@@ -90,6 +92,11 @@
     }
     html.dark .welcome-banner h2,
     html.dark .welcome-banner p { color: #e7e7ec; }
+
+    html.dark .bn-item .bn-t { color: #e7e7ec; }
+    html.dark .bn-handle { background: #1e1e26; }
+    html.dark .bn-head strong { color: #e7e7ec; }
+    html.dark .bn-exit { background: #2e2e3a; color: #f0c4c4; }
 
     /* --- Headings & text --- */
     html.dark h1, html.dark h2, html.dark h3, html.dark h4, html.dark h5, html.dark h6,

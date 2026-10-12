@@ -47,6 +47,18 @@
         .btn { display:inline-flex; align-items:center; gap:8px; padding:13px 22px; border-radius:12px; border:none; font-size:14px; font-weight:700; font-family:'Poppins',sans-serif; cursor:pointer; background:var(--primary); color:#fff; transition:all .2s; }
         .btn:hover { background:#6a1818; }
         .btn:disabled { opacity:.6; cursor:wait; }
+        @media (max-width: 640px) {
+            .top { padding:10px 14px; }
+            .top-in { gap:10px; }
+            .timer { padding:6px 11px; font-size:13px; }
+            .wrap { padding:14px 12px calc(112px + env(safe-area-inset-bottom)); }
+            .q { padding:18px 16px; border-radius:14px; scroll-margin-top:96px; }
+            .q-text { font-size:15px; }
+            .choice { padding:13px 12px; min-height:52px; }
+            .bottom { padding:10px 12px calc(10px + env(safe-area-inset-bottom)); }
+            .bottom-in { gap:10px; }
+            .btn { padding:14px 20px; min-height:48px; justify-content:center; }
+        }
     </style>
     @include('partials.quiz-brand-header')
 </head>

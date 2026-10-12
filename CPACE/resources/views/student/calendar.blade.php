@@ -1198,8 +1198,49 @@
             .week-strip { grid-template-columns: repeat(7, minmax(0, 1fr)); }
             .strip-icon { display: none; }
             .stats-bar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-            .cal-toolbar { gap: 8px; }
             .card { padding: 16px; }
+
+            /* Toolbar: row 1 = month + Today + arrows, row 2 = Day/Week/Month + filter + add. */
+            .cal-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+            .cal-toolbar .month-label { flex: 1 1 0; min-width: 0; font-size: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+            .cal-toolbar .month-label i { display: none; }
+            .cal-toolbar .today-btn { padding: 8px 2px; flex: 0 0 auto; }
+            .cal-toolbar .nav-btn, .cal-toolbar .tool-btn { width: 40px; height: 40px; flex: 0 0 auto; }
+            /* Two fixed rows: [month  Today  <  >]  then  [Day | Week | Month   filter  +].
+               The empty spacer is the line break; the toggle keeps a minimum width so all
+               three views always stay visible. */
+            .cal-toolbar .toolbar-spacer { display: block; flex: 0 0 100%; height: 0; order: 1; margin: -4px 0; }
+            .cal-toolbar .view-toggle, .cal-toolbar .tool-btn { order: 2; }
+            .view-toggle { flex: 1 1 0; min-width: 170px; display: flex; }
+            .view-toggle button { flex: 1 1 0; min-width: 0; padding: 10px 4px; font-size: 13px; white-space: nowrap; }
+
+            @media (max-width: 340px) {
+                .cal-toolbar { gap: 8px; }
+                .cal-toolbar .month-label { font-size: 16px; }
+                .cal-toolbar .nav-btn, .cal-toolbar .tool-btn { width: 36px; height: 36px; }
+                .view-toggle { min-width: 140px; }
+                .view-toggle button { font-size: 12px; }
+            }
+
+            /* Day pills: seven even, compact tiles. */
+            .week-strip { gap: 5px; }
+            .strip-day { padding: 9px 2px; border-radius: 14px; min-width: 0; }
+            .strip-day .dw { font-size: 10px; }
+            .strip-day .dn { font-size: 17px; }
+            .strip-day .tc { font-size: 9px; line-height: 1.25; text-align: center; }
+            .allday-row { flex-wrap: wrap; gap: 8px; }
+
+            /* Week view: real-width columns you swipe across, hours stay pinned. */
+            .cal-panel[data-panel="week"] { overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 6px; }
+            .cal-panel[data-panel="week"] .time-grid { min-width: 760px; }
+            .cal-panel[data-panel="week"] .hours-col { position: sticky; left: 0; z-index: 6; background: #fff; }
+
+            /* Day view: roomy, readable events. */
+            .grid-cols.single .cal-event { left: 8px; right: 8px; padding: 9px 12px; font-size: 12px; }
+            .grid-cols.single .cal-event .ehead { font-size: 11px; }
+            .grid-cols.single .cal-event .etitle { font-size: 13px; -webkit-line-clamp: 3; }
+            .grid-cols.single .cal-event .etime { font-size: 11px; }
+            .cal-event:hover { transform: none; }
         }
     </style>
 </head>
@@ -1207,7 +1248,7 @@
     <div class="dashboard-container">
         <!-- SIDEBAR -->
         @include('partials.sidebar', ['active' => 'calendar'])
-        @include('partials.student-bottom-nav', ['active' => 'more'])
+        @include('partials.student-bottom-nav', ['active' => 'calendar'])
         @include('partials.student-mobile-header')
 
         <!-- MAIN CONTENT -->
@@ -1695,6 +1736,9 @@
             const startView = new URLSearchParams(location.search).get('view');
             if (startView && ['day', 'week', 'month'].includes(startView)) {
                 setView(startView);
+            } else if (window.matchMedia('(max-width: 768px)').matches) {
+                // A phone shows one day at a time by default - seven columns do not fit.
+                setView('day');
             }
 
             // ── Current-time line (8AM-8PM only, on today's grid) ──────────

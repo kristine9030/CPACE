@@ -265,6 +265,8 @@
         .bottom-nav,
         .more-drawer,
         .more-drawer-overlay,
+        .bn-sheet,
+        .bn-back,
         .mobile-app-header { display: none !important; }
     }
 

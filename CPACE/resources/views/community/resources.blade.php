@@ -85,6 +85,37 @@
         .pagination a, .pagination span { padding:7px 12px; border-radius:8px; font-size:12px; text-decoration:none; color:#666; background:#fff; border:1px solid #eee; }
         .pagination .active span { background:var(--primary); color:#fff; border-color:var(--primary); }
 
+        /* View modal — in-page preview, no download affordance */
+        .mat-modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+            display: none; align-items: center; justify-content: center;
+            z-index: 5500; padding: 30px;
+        }
+        .mat-modal-overlay.open { display: flex; }
+        .mat-modal {
+            background: #fff; border-radius: 14px;
+            width: 100%; max-width: 980px; height: calc(100vh - 60px);
+            display: flex; flex-direction: column; overflow: hidden;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+        }
+        .mat-modal-head {
+            display: flex; align-items: center; justify-content: space-between; gap: 14px;
+            padding: 16px 22px; border-bottom: 1px solid #f0f0f0; flex-shrink: 0;
+        }
+        .mat-modal-title-wrap { display: flex; align-items: center; gap: 12px; min-width: 0; }
+        .mat-modal-icon { width:42px; height:42px; border-radius:10px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:18px; color:#fff; }
+        .mat-modal-title { font-size: 15.5px; font-weight: 600; color: #232327; }
+        .mat-modal-sub { font-size: 11.5px; color: #999; margin-top: 2px; }
+        .mat-modal-body {
+            flex: 1; background: #eef0f3; overflow: auto;
+            display: flex; align-items: stretch; justify-content: center;
+        }
+        .mat-modal-body iframe { width: 100%; height: 100%; border: none; background: #fff; }
+        .mat-modal-body img { max-width: 100%; max-height: 100%; margin: auto; object-fit: contain; }
+        .mat-preview-fallback { margin: auto; text-align: center; padding: 50px 30px; color: #77777d; }
+        .mat-preview-fallback i { font-size: 48px; margin-bottom: 16px; display: block; }
+        .mat-preview-fallback p { font-size: 14px; margin-bottom: 6px; color: #3a3a3f; font-weight: 500; }
+
         @media (max-width:768px) { .main { padding:16px 12px 90px; } .field-row { flex-direction:column; gap:0; } }
     </style>
 </head>
@@ -217,7 +248,7 @@
 
                         <div class="res-foot">
                             <span class="res-downloads"><i class="fas fa-eye"></i> {{ $res->downloads_count }} view{{ $res->downloads_count === 1 ? '' : 's' }}</span>
-                            <a class="res-download-btn" href="{{ $res->viewerUrl() }}" target="_blank" rel="noopener"><i class="fas fa-eye"></i> View</a>
+                            <button type="button" class="res-download-btn" data-act="view" data-id="{{ $res->id }}"><i class="fas fa-eye"></i> View</button>
                         </div>
                     </div>
             @if($loop->last)
@@ -238,6 +269,22 @@
     </div>
 </main>
 
+<div class="mat-modal-overlay" id="matModal">
+    <div class="mat-modal">
+        <div class="mat-modal-head">
+            <div class="mat-modal-title-wrap">
+                <div class="mat-modal-icon" id="matModalIcon"><i class="fas fa-file"></i></div>
+                <div style="min-width:0;">
+                    <div class="mat-modal-title" id="matModalTitle"></div>
+                    <div class="mat-modal-sub" id="matModalSub"></div>
+                </div>
+            </div>
+            <button class="icon-btn" id="matModalClose" title="Close"><i class="fas fa-xmark"></i></button>
+        </div>
+        <div class="mat-modal-body" id="matModalBody"></div>
+    </div>
+</div>
+
 <script>
 (function () {
     const fileInput = document.getElementById('fileInput');
@@ -249,6 +296,89 @@
                 : 'Click to attach a material';
         });
     }
+
+    const RESOURCES = @json($resourcesJson);
+    const OFFICE_CATEGORIES = ['word', 'excel', 'powerpoint'];
+    const esc = s => String(s ?? '').replace(/[&<>"']/g, c =>
+        ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+    // Office Online can only preview a file if it can fetch the URL itself,
+    // so it's useless against localhost/private-network hosts — skip straight
+    // to the fallback there instead of showing a dead iframe.
+    const IS_PUBLIC_HOST = (() => {
+        const h = window.location.hostname;
+        return h !== 'localhost' && h !== '127.0.0.1' &&
+            !/^192\.168\.|^10\.|^172\.(1[6-9]|2[0-9]|3[0-1])\.|\.test$|\.local$/.test(h);
+    })();
+
+    function resourcePreviewBody(r) {
+        if (!r.view_url) {
+            return `
+                <div class="mat-preview-fallback">
+                    <i class="fas fa-file-circle-exclamation"></i>
+                    <p>Preview unavailable</p>
+                    <span>This file can't be previewed right now.</span>
+                </div>`;
+        }
+        if (r.file_category === 'pdf' || r.file_category === 'text') {
+            // #toolbar=0 hides the PDF viewer's download/print buttons.
+            const src = r.file_category === 'pdf' ? r.view_url + '#toolbar=0&navpanes=0' : r.view_url;
+            return `<iframe src="${esc(src)}" title="${esc(r.title)}"></iframe>`;
+        }
+        if (r.file_category === 'image') {
+            return `<img src="${esc(r.view_url)}" alt="${esc(r.title)}">`;
+        }
+        if (OFFICE_CATEGORIES.includes(r.file_category) && IS_PUBLIC_HOST) {
+            const viewerUrl = 'https://view.officeapps.live.com/op/embed.aspx?src=' + encodeURIComponent(r.view_url);
+            return `<iframe src="${viewerUrl}" title="${esc(r.title)}"></iframe>`;
+        }
+        if (OFFICE_CATEGORIES.includes(r.file_category)) {
+            return `
+                <div class="mat-preview-fallback">
+                    <i class="fas ${r.icon}" style="color:${r.color};"></i>
+                    <p>${esc(r.original_name || r.title)}</p>
+                    <span>Preview isn't available on a local/private server — Office Online needs a public URL.</span>
+                </div>`;
+        }
+        return `
+            <div class="mat-preview-fallback">
+                <i class="fas ${r.icon}" style="color:${r.color};"></i>
+                <p>${esc(r.original_name || r.title)}</p>
+                <span>This file type can't be previewed in-browser.</span>
+            </div>`;
+    }
+
+    function openResourceModal(id) {
+        const r = RESOURCES.find(x => x.id === id);
+        if (!r) return;
+
+        document.getElementById('matModalIcon').style.background = r.color;
+        document.getElementById('matModalIcon').innerHTML = `<i class="fas ${r.icon}"></i>`;
+        document.getElementById('matModalTitle').textContent = r.title;
+        document.getElementById('matModalSub').textContent =
+            `${(r.file_category || '').toUpperCase()} · ${r.file_size || ''} · Uploaded by ${r.uploader_name}`;
+        document.getElementById('matModalBody').innerHTML = resourcePreviewBody(r);
+        document.getElementById('matModal').classList.add('open');
+    }
+
+    function closeResourceModal() {
+        document.getElementById('matModal').classList.remove('open');
+        document.getElementById('matModalBody').innerHTML = '';
+    }
+
+    document.querySelectorAll('[data-act="view"]').forEach(btn => {
+        btn.addEventListener('click', () => openResourceModal(Number(btn.dataset.id)));
+    });
+
+    document.getElementById('matModalClose').addEventListener('click', closeResourceModal);
+    document.getElementById('matModal').addEventListener('click', e => {
+        if (e.target === e.currentTarget) closeResourceModal();
+    });
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && document.getElementById('matModal').classList.contains('open')) {
+            closeResourceModal();
+        }
+    });
 })();
 </script>
 

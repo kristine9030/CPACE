@@ -2,11 +2,12 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#7B1D1D">
     <title>CPAce — Adaptive Review. Smarter Preparation.</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <style>
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
@@ -32,7 +33,7 @@
            flush to the bar. 74px is the bar's scrolled height, which is what
            it always is by the time the scroll lands. One declaration covers
            every anchor on the page - nav, hero buttons and footer links. */
-        html { scroll-behavior: smooth; overflow-x: hidden; scroll-padding-top: 74px; }
+        html { scroll-behavior: smooth; overflow-x: hidden; scroll-padding-top: 74px; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; -webkit-tap-highlight-color: transparent; }
         body {
             font-family: 'Montserrat', ui-sans-serif, system-ui, sans-serif;
             color: var(--body);
@@ -129,8 +130,11 @@
 
         .nav-actions { display: flex; align-items: center; gap: 1.2rem; }
 
-        .burger { display: none; flex-direction: column; gap: 5px; cursor: pointer; padding: 6px; }
+        .burger { display: none; flex-direction: column; justify-content: center; gap: 5px; cursor: pointer; padding: 12px 10px; margin-right: -10px; }
         .burger span { width: 22px; height: 2px; background: var(--navy); border-radius: 3px; transition: .25s; }
+        .burger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+        .burger.open span:nth-child(2) { opacity: 0; }
+        .burger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
 
         .mobile-menu {
             position: fixed; top: 86px; left: 0; right: 0; z-index: 199;
@@ -138,6 +142,7 @@
             padding: 14px 28px 20px; display: none; flex-direction: column;
             box-shadow: 0 14px 30px rgba(20,30,45,.1);
             transition: top .25s ease;
+            max-height: calc(100vh - 86px); max-height: calc(100svh - 86px); overflow-y: auto;
         }
         /* The bar shrinks to 74px once scrolled; the panel hangs off it and
            has to follow, or a white gap opens between the two. */
@@ -658,12 +663,12 @@
         .rpt-back {
             position: fixed; inset: 0; z-index: 400;
             background: rgba(12,18,26,.62); backdrop-filter: blur(3px);
-            display: none; align-items: center; justify-content: center;
-            padding: 24px; overflow-y: auto;
+            display: none; align-items: flex-start; justify-content: center;
+            padding: 24px; overflow-y: auto; overscroll-behavior: contain;
         }
         .rpt-back.open { display: flex; }
         .rpt-modal {
-            position: relative; width: 100%; max-width: 520px;
+            position: relative; width: 100%; max-width: 520px; margin: auto;
             background: #fff; border-radius: 16px; padding: 30px 30px 26px;
             box-shadow: 0 30px 80px rgba(12,18,26,.32);
             animation: rptIn .22s ease both;
@@ -709,8 +714,13 @@
         .rpt-ok p { font-size: .82rem; color: var(--navy); font-weight: 600; margin-top: 14px; }
         .rpt-ok span { display: block; font-size: .72rem; color: var(--body); margin-top: 7px; }
         @media (max-width: 560px) {
+            .rpt-back { padding: 14px; }
             .rpt-modal { padding: 26px 20px 22px; }
             .rpt-row { grid-template-columns: minmax(0, 1fr); }
+            /* 16px stops iOS Safari zooming the page when a field is focused. */
+            .rpt-field input, .rpt-field select, .rpt-field textarea { font-size: 16px; }
+            .rpt-actions { flex-direction: column-reverse; align-items: stretch; }
+            .rpt-actions .btn { justify-content: center; }
         }
 
         /* Grid and flex children default to min-width:auto, which lets a wide
@@ -798,17 +808,23 @@
         @media (max-width: 880px) {
             .nav-links { display: none; }
             .burger { display: flex; }
+            .nav-brand { margin-right: 0; }
+            .nav-actions { margin-left: auto; margin-right: 12px; }
+            .mobile-menu { padding-left: max(28px, env(safe-area-inset-left)); padding-right: max(28px, env(safe-area-inset-right)); }
+            .mobile-menu a { padding: .95rem 0; font-size: .95rem; }
             .hero { padding: 122px 0 64px; }
+            .why, .how, .features, .stories { padding-top: 64px; padding-bottom: 68px; }
+            .device-row { max-width: 440px; margin: 0 auto; }
+            .mock-wrap { max-width: 640px; margin: 0 auto; }
+            /* The photo gets its own band under the copy (16:9 of the width)
+               instead of sitting behind the text, so nothing overlaps. */
+            .hero { padding-bottom: calc(100vw * 9 / 16 + 24px); align-items: flex-start; }
             .hero-photo, .hero-photo-fg {
-                width: 100%;
-                width: min(max(100%, calc(46svh * 16 / 9)), calc(78svh * 16 / 9));
+                left: 50%; width: 100%; max-width: 900px;
             }
-            .hero-photo { opacity: .3; }
-            .hero-photo-fg { opacity: .42; }
-            .hero-slashes .hs-1 { top: -8%; right: -16%; width: 42%; height: 26%; }
-            .hero-slashes .hs-2 { top: -8%; right: 26%;  width: 7%;  height: 18%; }
-            .hero-slashes .hs-4 { bottom: -8%; right: -16%; width: 36%; height: 15%; }
-            .hero-slashes .hs-3, .hero-slashes .hs-5 { display: none; }
+            .hero-photo { opacity: .9; }
+            .hero-photo-fg { opacity: 1; }
+            .hero-slashes { display: none; }
             .hero-mini .mini { border-right: none; padding: 0 22px 0 0; }
             .stat-row { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 26px; }
             .device-row { grid-template-columns: minmax(0, 1fr); }
@@ -825,10 +841,6 @@
             .nav-actions .btn { padding: .62rem 1.15rem; font-size: .72rem; }
             .feat-grid { grid-template-columns: minmax(0, 1fr); gap: 28px; }
             .stat-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
-            .hero-photo, .hero-photo-fg {
-                width: 112%;
-                width: min(max(112%, calc(50svh * 16 / 9)), calc(82svh * 16 / 9));
-            }
             .hero-mini { gap: 18px; }
             .mock { grid-template-columns: minmax(0, 1fr); }
             .mock-side { display: none; }
@@ -836,6 +848,288 @@
             footer { padding-top: 48px; }
             .foot-top { grid-template-columns: minmax(0, 1fr); gap: 32px; padding-bottom: 38px; }
             .foot-bottom { justify-content: center; text-align: center; }
+
+            /* Phone typography: the desktop sizes (11-12px) are too small to
+               read comfortably on a handheld. */
+            .nav-actions { margin-right: 4px; }
+            .nav-brand img, header.nav.scrolled .nav-brand img { height: 32px; }
+            .eyebrow { font-size: .68rem; }
+            .sec-title { font-size: 1.55rem; }
+            .sec-text { font-size: .9rem; max-width: none; }
+            .hero { padding-top: 108px; }
+            .hero-head { font-size: 1.45rem; }
+            .hero-sub { font-size: .95rem; max-width: none; }
+            .hero-cta { flex-direction: column; align-items: stretch; }
+            .btn { font-size: .85rem; min-height: 46px; justify-content: center; }
+            .hero-cta { gap: 12px; }
+            .hero-cta .btn { width: 100%; padding: 0 1.5rem; }
+            .nav-actions .btn { min-height: 40px; padding: 0 1.1rem; font-size: .78rem; }
+            .hero-mini { flex-direction: column; align-items: flex-start; }
+            .hero-mini { margin-top: 36px; gap: 16px 0; }
+            .hero-mini .mini { padding: 0 18px 0 0; width: 100%; }
+            .mini-txt { font-size: .78rem; }
+            .feat h4, .step h4 { font-size: .95rem; }
+            .feat p, .step p { font-size: .85rem; }
+            .step-num { width: 30px; height: 30px; font-size: .78rem; }
+            .step::before { left: 14px; top: 34px; }
+            .device-item figcaption h4 { font-size: .92rem; }
+            .device-item figcaption p { font-size: .82rem; }
+            .impact { padding: 48px 0; }
+            .impact h3 { font-size: 1.45rem; }
+            .impact p { font-size: .88rem; max-width: none; }
+            .stat span { font-size: .78rem; }
+            .story-card { padding: 20px; }
+            .story-head h5 { font-size: .88rem; }
+            .story-head small { font-size: .72rem; }
+            .story-card q { font-size: .88rem; }
+            /* Arrows would sit on top of the quote text; swipe + dots replace them. */
+            .car-btn { display: none; }
+            .dots { margin-top: 18px; }
+            .dots button { width: 8px; height: 8px; }
+            .dots button.on { width: 22px; }
+            .cta-inner { flex-direction: column; gap: 18px; }
+            .cta-copy h4 { font-size: 1.1rem; }
+            .cta-copy p { font-size: .85rem; }
+            .cta-inner .btn { width: 100%; padding: 0 1.5rem; }
+            .btn-white, .btn-red, .btn-outline { white-space: normal; text-align: center; }
+            .foot-brand p, .foot-contact { font-size: .82rem; }
+            .foot-col h5 { font-size: .85rem; }
+            .foot-col a { font-size: .86rem; display: inline-block; padding: 3px 0; }
+            .foot-meta { font-size: .8rem; }
+            .foot-disclose > summary { font-size: .8rem; padding: 20px 0; }
+            .foot-note h6 { font-size: .78rem; }
+            .foot-note p { font-size: .76rem; }
+            .foot-bottom { font-size: .74rem; padding-bottom: max(22px, env(safe-area-inset-bottom)); }
+            /* Dashboard preview: shrink the fake UI less aggressively and stop
+               the red plate poking out past the page gutter. */
+            .mock-behind { left: -8px; right: 8px; bottom: -12px; }
+            .mock { font-size: 12px; }
+            .mock-hello { font-size: 13px; }
+            .mock-hello + span { font-size: 10px; }
+            .mock-user { font-size: 10px; }
+            .mock-card h6 { font-size: 10px; }
+            .weak, .donut-bars span { font-size: 9.5px; }
+            .mock-reco { font-size: 10.5px; }
+            .reco h6 { font-size: 10px; }
+            .reco small { font-size: 8.5px; }
+            .reco b { font-size: 9px; padding: 5px 0; }
+            .reco-row { gap: 8px; }
+        }
+        @media (max-width: 360px) {
+            .container { padding: 0 16px; }
+            .nav-inner { padding-left: 16px; padding-right: 16px; }
+            .nav-actions .btn i { display: none; }
+            .nav-actions .btn { padding: 0 .9rem; }
+            .stat-row { gap: 20px 14px; }
+            .hero-head { font-size: 1.32rem; }
+        }
+        /* Notched phones in landscape: keep content out from under the cut-out. */
+        @supports (padding: max(0px)) {
+            @media (max-width: 880px) {
+                .container { padding-left: max(20px, env(safe-area-inset-left)); padding-right: max(20px, env(safe-area-inset-right)); }
+                .nav-inner { padding-left: max(20px, env(safe-area-inset-left)); padding-right: max(20px, env(safe-area-inset-right)); }
+            }
+        }
+        /* Landscape phones are short: let the hero grow with its content. */
+        @media (max-height: 520px) and (orientation: landscape) {
+            .hero { min-height: 0; padding-top: 100px; }
+        }
+        /* ═══ APP-STYLE PHONE LAYOUT ═════════════════════════════════
+           Mirrors the CPAce mobile app UI: maroon gradient header, white
+           rounded sheet, gradient buttons, soft cards and the floating pill
+           tab bar with the centre menu button. Look only - no behaviour. */
+        .app-brand, .app-photo, .nav-word,
+        .app-tabs, .app-pop, .app-pop-back { display: none; }
+
+        @media (max-width: 640px) {
+            :root {
+                --app-bg: #F8F9FA; --app-border: #E8ECF0; --app-text: #1e293b; --app-muted: #64748b;
+                --app-grad: linear-gradient(90deg, #4A0A0C, #7B1416, #B52525);
+                --app-grad-d: linear-gradient(135deg, #4A0A0C, #7B1416, #B52525);
+                --tab-h: 72px;
+            }
+            html { scroll-padding-top: 64px; }
+            body { font-family: 'Poppins', 'Montserrat', ui-sans-serif, system-ui, sans-serif; background: var(--app-bg); color: var(--app-muted); }
+
+            /* top bar: floats over the gradient, turns solid maroon on scroll */
+            header.nav, header.nav.scrolled {
+                height: 60px; background: transparent; backdrop-filter: none; -webkit-backdrop-filter: none; box-shadow: none;
+                padding-top: env(safe-area-inset-top);
+                transition: background .25s ease, box-shadow .25s ease;
+            }
+            header.nav.scrolled { background: var(--app-grad); box-shadow: 0 6px 18px rgba(74,10,12,.28); }
+            .nav-brand img, header.nav.scrolled .nav-brand img { display: none; }
+            .nav-word { display: block; font-size: 1.35rem; font-weight: 800; color: #fff; letter-spacing: .5px; line-height: 1; }
+            .burger, .mobile-menu { display: none !important; }
+            .nav-actions { margin-right: 0; }
+            .nav-actions .btn, .nav-actions .btn.btn-red {
+                background: rgba(255,255,255,.16); color: #fff; box-shadow: none;
+                border: 1px solid rgba(255,255,255,.35); border-radius: 999px;
+                min-height: 38px; padding: 0 1rem; font-size: .75rem; font-weight: 600;
+            }
+            .nav-actions .btn:hover { background: rgba(255,255,255,.26); transform: none; }
+
+            /* hero = login screen: gradient + brand, then a white sheet */
+            .hero {
+                display: block; min-height: 0; padding: 0; overflow: hidden;
+                background: linear-gradient(160deg, #4A0A0C 0%, #7B1416 55%, #B52525 100%);
+            }
+            .hero::before, .hero::after {
+                content: ''; position: absolute; border-radius: 50%; pointer-events: none;
+            }
+            .hero::before { top: -60px; right: -70px; width: 220px; height: 220px; background: rgba(255,255,255,.055); }
+            .hero::after  { top: 40px; left: -55px; width: 150px; height: 150px; background: rgba(255,255,255,.045); }
+            .hero-photo, .hero-photo-fg, .hero-slashes, .hero .deco { display: none; }
+            .hero-inner.container { padding: 0; }
+            .app-brand {
+                display: flex; flex-direction: column; align-items: center; text-align: center;
+                padding: calc(76px + env(safe-area-inset-top)) 24px 26px; color: #fff;
+            }
+            .app-brand img { width: 88px; height: 88px; object-fit: contain; margin-bottom: 6px; }
+            .app-brand b { font-size: 2.1rem; font-weight: 800; letter-spacing: .5px; line-height: 1.2; }
+            .app-brand span { font-size: .8rem; color: rgba(255,255,255,.72); margin-top: 4px; }
+
+            .hero-copy {
+                max-width: none; background: #fff; position: relative;
+                border-radius: 32px 32px 0 0; padding: 30px 22px 30px;
+            }
+            .hero-brand { display: none; }
+            .hero-copy .eyebrow { margin-bottom: 10px; }
+            .hero-head { font-size: 1.55rem; font-weight: 700; color: var(--app-text); line-height: 1.3; }
+            .hero-sub { font-size: .88rem; line-height: 1.7; color: var(--app-muted); margin-top: 14px; max-width: none; }
+            .hero-cta { margin-top: 22px; gap: 12px; }
+            .hero-mini {
+                display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px;
+                margin-top: 26px; align-items: stretch;
+            }
+            .hero-mini .mini, .hero-mini .mini:first-child {
+                flex-direction: column; justify-content: flex-start; text-align: center; gap: 8px; width: auto;
+                padding: 14px 6px; background: var(--app-bg); border: 1px solid var(--app-border); border-radius: 16px;
+            }
+            .mini-ico { width: 38px; height: 38px; background: var(--app-grad-d); color: #fff; }
+            .mini-txt { font-size: .68rem; font-weight: 600; color: var(--app-text); line-height: 1.4; }
+            .mini-txt br { display: none; }
+            .app-photo {
+                display: block; width: 100%; height: auto; margin-top: 22px;
+                border-radius: 20px; border: 1px solid var(--app-border);
+                box-shadow: 0 8px 22px rgba(42,18,21,.12);
+            }
+
+            /* buttons: the app's gradient button, 14px radius, 52px tall */
+            .btn { border-radius: 14px; min-height: 52px; font-size: .95rem; font-weight: 700; letter-spacing: 0; }
+            .btn-pill { border-radius: 14px; }
+            .btn-red { background: var(--app-grad); box-shadow: 0 8px 18px rgba(123,20,22,.28); }
+            .btn-red:hover { background: var(--app-grad); transform: none; }
+            .btn-outline { border: 1.5px solid #A52020; color: #A52020; background: #fff; }
+            .btn-white { color: #7B1416; }
+            .nav-actions .btn, .nav-actions .btn.btn-red { border-radius: 999px; min-height: 38px; font-size: .75rem; font-weight: 600; }
+
+            /* sections */
+            .eyebrow { font-size: .68rem; letter-spacing: .14em; }
+            .sec-title { font-size: 1.5rem; font-weight: 700; color: var(--app-text); }
+            .sec-text { font-size: .88rem; line-height: 1.7; }
+            .why, .how, .features, .stories { padding: 44px 0 48px; }
+            .why-grid, .how-grid, .features-grid, .impact-grid, .stories-grid { gap: 26px; }
+
+            .why .sec-title { color: #fff; }
+            .why .feat-grid { gap: 12px; }
+            .feat {
+                background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.14);
+                border-radius: 18px; padding: 16px; align-items: center;
+            }
+            .feat-ico { width: 46px; height: 46px; background: rgba(255,255,255,.14); }
+            .why .btn-white { width: 100%; }
+
+            .how { background: var(--app-bg); }
+            .steps {
+                background: #fff; border-radius: 20px; padding: 22px 18px; margin-top: 22px;
+                box-shadow: 0 8px 24px rgba(42,18,21,.08);
+            }
+            .step-num { background: var(--app-grad-d); }
+            .mock-wrap { margin-top: 6px; }
+            .mock { border-radius: 16px; }
+            .mock-behind { display: none; }
+
+            .features { background: var(--app-bg); }
+            .device-row { gap: 14px; max-width: none; }
+            .device-item {
+                background: #fff; border-radius: 20px; padding: 14px 14px 18px;
+                box-shadow: 0 8px 24px rgba(42,18,21,.08);
+            }
+            .device { box-shadow: none; border-radius: 14px; }
+            .device-item figcaption { padding: 0 4px; }
+
+            .impact { padding: 40px 0; }
+            .stat-row { gap: 12px; max-width: none; }
+            .stat {
+                background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.14);
+                border-radius: 18px; padding: 16px 14px;
+            }
+            .stat i { margin-bottom: 8px; }
+
+            .stories { background: var(--app-bg); }
+            .story-card { border-radius: 20px; border: none; box-shadow: 0 8px 24px rgba(42,18,21,.10); }
+            .carousel-viewport { padding: 4px 2px 14px; margin: -4px -2px -14px; }
+            .story { padding: 0 6px; }
+            .dots button.on { background: #A52020; }
+
+            .cta-band { padding: 40px 0; }
+
+            footer { padding-bottom: calc(var(--tab-h) + 34px + env(safe-area-inset-bottom)); }
+            .foot-uni { border-radius: 16px; }
+
+            /* floating pill tab bar - same as the app */
+            .app-tabs {
+                display: block; position: fixed; left: 0; right: 0; bottom: 0; z-index: 250;
+                padding: 8px 12px max(10px, env(safe-area-inset-bottom)); pointer-events: none;
+            }
+            .app-tabs-card {
+                pointer-events: auto; height: var(--tab-h); background: #fff; border-radius: 36px;
+                display: flex; align-items: center; padding: 0 4px;
+                box-shadow: 0 -2px 18px rgba(0,0,0,.10), 0 8px 24px rgba(0,0,0,.10);
+            }
+            .app-tabs .tab {
+                flex: 1; min-width: 0; margin: 0 2px; padding: 8px 2px; border-radius: 22px;
+                display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+                color: #9CA3AF; font-size: .66rem; font-weight: 500; line-height: 1.1; white-space: nowrap;
+                transition: background .2s, color .2s;
+            }
+            .app-tabs .tab i { font-size: 1.12rem; }
+            .app-tabs .tab.active { background: var(--app-grad-d); color: #fff; box-shadow: 0 4px 10px rgba(123,20,22,.35); }
+            .app-fab {
+                flex: 0 0 58px; width: 58px; height: 58px; margin: 0 6px; border: none; border-radius: 50%; cursor: pointer;
+                background: var(--app-grad-d); display: grid; place-items: center;
+                box-shadow: 0 4px 12px rgba(123,20,22,.42); transition: transform .2s;
+            }
+            .app-fab.open { transform: rotate(45deg); }
+            .app-fab .dots { display: grid; grid-template-columns: 11px 11px; gap: 5px; }
+            .app-fab .dots i { width: 11px; height: 11px; border-radius: 3px; background: #fff; display: block; }
+
+            .app-pop-back {
+                display: block; position: fixed; inset: 0; z-index: 240; background: rgba(0,0,0,.30);
+                opacity: 0; pointer-events: none; transition: opacity .18s;
+            }
+            .app-pop-back.open { opacity: 1; pointer-events: auto; }
+            .app-pop {
+                display: flex; position: fixed; z-index: 245; left: 40px; right: 40px;
+                bottom: calc(var(--tab-h) + 28px + max(10px, env(safe-area-inset-bottom)));
+                background: #fff; border-radius: 40px; padding: 14px 10px;
+                box-shadow: 0 8px 28px rgba(0,0,0,.18);
+                opacity: 0; transform: translateY(16px) scale(.92); pointer-events: none;
+                transition: opacity .18s, transform .22s cubic-bezier(.3,1.4,.5,1);
+            }
+            .app-pop.open { opacity: 1; transform: none; pointer-events: auto; }
+            .app-pop a { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 5px; }
+            .app-pop a i {
+                width: 42px; height: 42px; border-radius: 50%; display: grid; place-items: center;
+                background: var(--app-grad-d); color: #fff; font-size: 1rem;
+            }
+            .app-pop a span { font-size: .62rem; font-weight: 500; color: #1F2937; text-align: center; }
+
+            .rpt-back { z-index: 400; }
+        }
+        @media (max-width: 640px) and (max-height: 520px) and (orientation: landscape) {
+            .app-brand { padding-bottom: 14px; }
         }
     </style>
 </head>
@@ -846,6 +1140,7 @@
     <div class="container nav-inner">
         <a href="#home" class="nav-brand">
             <img src="{{ asset('images/logo no.2.png') }}" alt="CPAce">
+            <span class="nav-word" aria-hidden="true">CPAce</span>
         </a>
 
         <nav class="nav-links" id="navLinks">
@@ -859,7 +1154,7 @@
             <a href="{{ route('login') }}" class="btn btn-red btn-pill">Get Started <i class="fas fa-arrow-right"></i></a>
         </div>
 
-        <div class="burger" onclick="toggleMenu()" aria-label="Menu"><span></span><span></span><span></span></div>
+        <div class="burger" onclick="toggleMenu()" role="button" tabindex="0" aria-label="Menu" aria-expanded="false" aria-controls="mobileMenu" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleMenu();}"><span></span><span></span><span></span></div>
     </div>
 </header>
 
@@ -885,6 +1180,11 @@
     </div>
 
     <div class="container hero-inner">
+        <div class="app-brand" aria-hidden="true">
+            <img src="{{ asset('images/logo-icon.png') }}" alt="">
+            <b>CPAce</b>
+            <span>CPA Review · Adaptive Learning</span>
+        </div>
         <div class="hero-copy">
             <div class="eyebrow reveal">CPALE Review System</div>
             <h1 class="hero-brand reveal"><img src="{{ asset('images/wordmark-transparent.png') }}" alt="CPAce"></h1>
@@ -913,6 +1213,7 @@
                     <div class="mini-txt">Focus on<br>Your Weak Areas</div>
                 </div>
             </div>
+            <img class="app-photo" src="{{ asset('images/landing page.png') }}" alt="" loading="lazy">
         </div>
     </div>
 </section>
@@ -1462,6 +1763,24 @@
     </div>
 </div>
 
+<!-- ══ APP TAB BAR (phones only) ══ -->
+<div class="app-pop-back" id="appPopBack"></div>
+<div class="app-pop" id="appPop" role="menu">
+    <a href="#how-it-works" role="menuitem"><i class="fas fa-route"></i><span>How It Works</span></a>
+    <a href="{{ route('login') }}" role="menuitem"><i class="fas fa-right-to-bracket"></i><span>Log in</span></a>
+    <a href="{{ route('forgot-password') }}" role="menuitem"><i class="fas fa-key"></i><span>Password</span></a>
+    <a href="#report" data-report-open role="menuitem"><i class="fas fa-flag"></i><span>Report</span></a>
+</div>
+<nav class="app-tabs" id="appTabs" aria-label="Main">
+    <div class="app-tabs-card">
+        <a href="#home" class="tab active"><i class="fas fa-house"></i><span>Home</span></a>
+        <a href="#features" class="tab"><i class="fas fa-bolt"></i><span>Features</span></a>
+        <button type="button" class="app-fab" id="appFab" aria-label="More" aria-expanded="false"><span class="dots"><i></i><i></i><i></i><i></i></span></button>
+        <a href="#about" class="tab"><i class="fas fa-circle-info"></i><span>About</span></a>
+        <a href="#contact" class="tab"><i class="fas fa-envelope"></i><span>Contact</span></a>
+    </div>
+</nav>
+
 <script>
     // Navbar shadow on scroll
     const navbar = document.getElementById('navbar');
@@ -1471,15 +1790,22 @@
 
     // Mobile menu
     function toggleMenu() {
-        document.getElementById('mobileMenu').classList.toggle('open');
+        const open = document.getElementById('mobileMenu').classList.toggle('open');
+        const burger = document.querySelector('.burger');
+        burger.classList.toggle('open', open);
+        burger.setAttribute('aria-expanded', open);
     }
+    // Close the menu if the screen grows past the phone/tablet breakpoint.
+    window.addEventListener('resize', () => {
+        if (window.innerWidth > 880 && document.getElementById('mobileMenu').classList.contains('open')) toggleMenu();
+    });
 
     // Active nav link on scroll. The trip line sits just under the navbar so
     // the highlight flips at the moment a section locks to the bar, matching
     // html{scroll-padding-top}. The mobile menu is included so both menus
     // always agree on where you are.
     const NAV_OFFSET = 78;
-    const navLinks = [...document.querySelectorAll('#navLinks a, #mobileMenu a')];
+    const navLinks = [...document.querySelectorAll('#navLinks a, #mobileMenu a, #appTabs a.tab')];
     const sections = [...new Set(navLinks.map(a => a.getAttribute('href')))]
         .filter(h => h && h.length > 1 && h.startsWith('#'))
         .map(h => document.querySelector(h))
@@ -1593,6 +1919,20 @@
         }
     });
 
+    // Phone tab bar: the centre button opens the quick-links popup.
+    const appFab = document.getElementById('appFab');
+    const appPop = document.getElementById('appPop');
+    const appPopBack = document.getElementById('appPopBack');
+    function setPop(open) {
+        appPop.classList.toggle('open', open);
+        appPopBack.classList.toggle('open', open);
+        appFab.classList.toggle('open', open);
+        appFab.setAttribute('aria-expanded', open);
+    }
+    appFab.addEventListener('click', () => setPop(!appPop.classList.contains('open')));
+    appPopBack.addEventListener('click', () => setPop(false));
+    appPop.querySelectorAll('a').forEach(a => a.addEventListener('click', () => setPop(false)));
+
     // Testimonial carousel
     const track   = document.getElementById('track');
     const stories = track.children.length;
@@ -1627,6 +1967,20 @@
 
     window.addEventListener('resize', () => { buildDots(); render(); });
     buildDots(); render();
+
+    // Swipe left/right on touch screens.
+    let touchX = null, touchY = null;
+    const viewport = document.querySelector('.carousel-viewport');
+    viewport.addEventListener('touchstart', e => {
+        touchX = e.touches[0].clientX; touchY = e.touches[0].clientY;
+    }, { passive: true });
+    viewport.addEventListener('touchend', e => {
+        if (touchX === null) return;
+        const dx = e.changedTouches[0].clientX - touchX;
+        const dy = e.changedTouches[0].clientY - touchY;
+        touchX = touchY = null;
+        if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) slide(dx < 0 ? 1 : -1);
+    }, { passive: true });
 
     // Scroll reveal
     const io = new IntersectionObserver((entries) => {

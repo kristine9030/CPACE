@@ -291,6 +291,7 @@
     </style>
 </head>
 <body>
+@include('partials.student-back', ['pill' => true])
 
 @php
     $score        = (int) round($session->score_percent);

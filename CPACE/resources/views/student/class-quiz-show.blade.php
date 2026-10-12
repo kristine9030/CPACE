@@ -57,6 +57,7 @@
     </style>
 </head>
 <body>
+@include('partials.student-back', ['pill' => true])
 <div class="card">
     <div class="head">
         <div class="kicker">{{ $isOwner ? 'Preview · Class Quiz' : 'Class Quiz' }}{{ $quiz->subject ? ' · ' . $quiz->subject->code : '' }}</div>

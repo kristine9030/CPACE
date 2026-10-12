@@ -539,7 +539,10 @@
             .chat-thread-pane { display:none; }
             body.thread-open .chat-list-pane { display:none; }
             body.thread-open .chat-thread-pane { display:flex; }
-            .chat-profile-pane { display:none !important; }
+            /* Hidden until the (i) button opens it - a blanket display:none here left the
+               conversation info, members and shared media unreachable on phones. */
+            .chat-profile-pane:not(.open) { display:none !important; }
+            .chat-profile-pane.open { display:block !important; width:min(88vw, 340px); z-index:3100; }
             /* The in-thread "back to conversations" arrow only makes sense
                once the list pane is hidden and the thread takes over the
                whole screen — it was stuck at display:none with no rule to
@@ -560,6 +563,8 @@
     @include('partials.faculty-sidebar', ['active' => ''])
 @else
     @include('partials.sidebar', ['active' => 'messages'])
+    @include('partials.student-bottom-nav', ['active' => 'messages'])
+    @include('partials.student-mobile-header')
 @endif
 
 {{-- .main is used by the faculty/chair/alumni sidebars, .main-content by the student sidebar --}}

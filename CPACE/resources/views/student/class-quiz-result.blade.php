@@ -52,6 +52,7 @@
     </style>
 </head>
 <body>
+@include('partials.student-back', ['pill' => true])
 <div class="wrap">
     <div class="hero">
         <div class="ring"><div><b>{{ $pct }}%</b><span>score</span></div></div>

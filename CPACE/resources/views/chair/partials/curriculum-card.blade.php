@@ -82,6 +82,10 @@
             </div>
         </div>
 
+        </aside>
+
+        {{-- Outside the sticky aside: a sticky element is its own stacking context, which trapped
+             this overlay beneath the subject rows and left the sidebar un-dimmed. --}}
         <div class="modal-overlay" id="historyModal" onclick="if (event.target === this) closeModal('historyModal')">
             <div class="modal" style="max-width:560px;">
                 <h3>Change history</h3>
@@ -101,5 +105,5 @@
                 <div class="modal-actions"><button type="button" class="btn btn-ghost" onclick="closeModal('historyModal')">Close</button></div>
             </div>
         </div>
-        </aside>
+
 @endif
