@@ -146,7 +146,7 @@
                             @php $r = $risk[$a->id]; @endphp
                             <tr>
                                 <td>
-                                    <a class="s-name" href="{{ route($prefix . '.mock-exams.attempt', $a) }}">{{ trim($a->student?->first_name . ' ' . $a->student?->last_name) ?: 'Unknown' }}</a>
+                                    <a class="s-name" href="{{ route($prefix . '.mock-exams.attempt', $a) }}">{{ $a->student?->list_name ?: 'Unknown' }}</a>
                                     <div class="s-email">{{ $a->student?->email }}</div>
                                 </td>
                                 <td>

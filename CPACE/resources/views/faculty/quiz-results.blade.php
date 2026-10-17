@@ -294,7 +294,7 @@
                     @foreach($attempts as $a)
                         <tr>
                             <td>
-                                <div class="s-name">{{ $a->student?->name ?? 'Unknown' }}</div>
+                                <div class="s-name">{{ $a->student?->list_name ?? 'Unknown' }}</div>
                                 <div class="s-email">{{ $a->student?->email }}</div>
                             </td>
                             <td>
