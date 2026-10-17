@@ -871,7 +871,7 @@ class StudentManagementController extends Controller
             'score_desc' => $rows->sortByDesc(fn($row) => $row['score'] ?? -1),
             'score_asc' => $rows->sortBy(fn($row) => $row['score'] ?? 101),
             'recent' => $rows->sortByDesc('last_active'),
-            default => $rows->sortBy('name', SORT_NATURAL | SORT_FLAG_CASE),
+            default => $rows->sortBy('list_name', SORT_NATURAL | SORT_FLAG_CASE),
         };
 
         return $rows->values();
