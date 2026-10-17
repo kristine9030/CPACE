@@ -238,13 +238,13 @@ class FacultyLeaderboardTest extends TestCase
             $names = collect($board['entries'])->pluck('name')->all();
             $alma = $board['entries'][0];
 
-            return $names === ['Alma Reviewer', 'Ben Reviewer', 'Cara Reviewer']
+            return $names === ['Reviewer, Alma', 'Reviewer, Ben', 'Reviewer, Cara']
                 && $alma['rank'] === 1 && $alma['score'] === 90
                 && $alma['best']['code'] === 'FAR' && $alma['best']['accuracy'] === 90
                 && $alma['worst']['code'] === 'TAX' && $alma['worst']['accuracy'] === 40;
         });
         $response->assertSee('id="perfLeaderboard"', false)
-            ->assertSee('Alma Reviewer')
+            ->assertSee('Reviewer, Alma')
             ->assertSee('FAR 90%')
             ->assertSee('TAX 40%');
     }
@@ -257,7 +257,7 @@ class FacultyLeaderboardTest extends TestCase
 
         $this->actingAs($faculty)->get(route('faculty.performance'))
             ->assertViewHas('leaderboard', function ($board) {
-                return collect($board['entries'])->pluck('name')->all() === ['Steady Reviewer']
+                return collect($board['entries'])->pluck('name')->all() === ['Reviewer, Steady']
                     && $board['ranked'] === 1 && $board['unranked'] === 1;
             });
     }
@@ -282,7 +282,7 @@ class FacultyLeaderboardTest extends TestCase
         $this->learner('Ben', 20, 14);
 
         $this->actingAs($faculty)->get(route('faculty.performance', ['search' => 'Ben']))
-            ->assertViewHas('leaderboard', fn ($b) => collect($b['entries'])->pluck('name')->all() === ['Alma Reviewer', 'Ben Reviewer'])
+            ->assertViewHas('leaderboard', fn ($b) => collect($b['entries'])->pluck('name')->all() === ['Reviewer, Alma', 'Reviewer, Ben'])
             ->assertViewHas('students', fn ($s) => $s->count() === 1);
     }
 

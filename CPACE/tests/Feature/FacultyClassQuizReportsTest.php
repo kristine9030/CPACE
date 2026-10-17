@@ -245,11 +245,11 @@ class FacultyClassQuizReportsTest extends TestCase
 
         $response->assertViewHas('quizReport', function ($r) {
             return $r['assigned'] === 3 && $r['submitted'] === 2 && $r['average'] === 80
-                && $r['rows']->pluck('name')->all() === ['Alma Reviewer', 'Ben Reviewer', 'Cara Reviewer']
-                && $r['rows']->firstWhere('name', 'Cara Reviewer')['best'] === null;
+                && $r['rows']->pluck('name')->all() === ['Reviewer, Alma', 'Reviewer, Ben', 'Reviewer, Cara']
+                && $r['rows']->firstWhere('name', 'Reviewer, Cara')['best'] === null;
         });
         $response->assertSee('Quiz Results Report')->assertSee('Cost Accounting Quiz 1')->assertSee('Average best score')
-            ->assertSee('90%')->assertDontSee('Zed Reviewer');
+            ->assertSee('90%')->assertDontSee('Reviewer, Zed');
     }
 
     public function test_the_quiz_report_can_be_narrowed_to_a_section_and_only_offers_published_quizzes(): void
