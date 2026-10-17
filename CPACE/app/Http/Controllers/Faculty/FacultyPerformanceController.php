@@ -309,14 +309,16 @@ class FacultyPerformanceController extends Controller
                 $dir = 'new';
             }
 
-            $name = trim("{$user->first_name} {$user->last_name}");
+            $fullName = trim("{$user->first_name} {$user->last_name}");
+            $name = trim("{$user->last_name}, {$user->first_name}");
 
             $rows->push([
                 'id'         => (int) $sid,
                 'name'       => $name,
+                'full_name'  => $fullName,
                 'email'      => $user->email,
-                'initials'   => $this->initials($name),
-                'color'      => $this->avatarColor($name),
+                'initials'   => $this->initials($fullName),
+                'color'      => $this->avatarColor($fullName),
                 'score'      => $score,
                 'attempted'  => $attempted,
                 'quizzes'    => (int) $a->quizzes,
@@ -931,7 +933,7 @@ class FacultyPerformanceController extends Controller
 
             try {
                 Mail::to($r['email'])->send(new StudentReminderMail(
-                    studentName: $r['name'],
+                    studentName: $r['full_name'] ?? $r['name'],
                     facultyName: $sender->name,
                     subjectLine: $subjectLine,
                     bodyMessage: $message($r),

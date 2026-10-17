@@ -219,7 +219,7 @@ class ChairDashboardService
                 return array_merge($row, [
                     // Keyed by subject code; an object in JSON even when empty.
                     'standings' => (object) ($standings[$row['id']] ?? []),
-                    'name' => trim("{$student->first_name} {$student->last_name}"),
+                    'name' => trim("{$student->last_name}, {$student->first_name}"),
                     'email' => $student->email,
                     'initials' => strtoupper(substr((string) $student->first_name, 0, 1).substr((string) $student->last_name, 0, 1)),
                     'last_active' => Carbon::createFromTimestamp($row['last_at'])->diffForHumans(),
@@ -597,7 +597,7 @@ class ChairDashboardService
 
                 return [
                     'id' => (int) $student->id,
-                    'name' => trim("{$student->first_name} {$student->last_name}"),
+                    'name' => trim("{$student->last_name}, {$student->first_name}"),
                     'email' => $student->email,
                     'section' => $student->section,
                     'initials' => strtoupper(substr((string) $student->first_name, 0, 1).substr((string) $student->last_name, 0, 1)),

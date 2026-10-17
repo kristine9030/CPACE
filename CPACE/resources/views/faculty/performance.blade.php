@@ -734,7 +734,7 @@
         // Header: who, and a plain-language status
         $('mAv').textContent = s.initials;
         $('mAv').style.background = s.color;
-        $('mName').textContent = s.name;
+        $('mName').textContent = s.full_name || s.name;
         $('mEmail').textContent = s.email;
         const trend = { up: ['up', 'fa-arrow-trend-up', 'Improving'], down: ['risk', 'fa-arrow-trend-down', 'Slipping'], new: ['neutral', 'fa-star', 'New this fortnight'], flat: ['neutral', 'fa-minus', 'Steady'] }[s.trend] || ['neutral', 'fa-minus', 'Steady'];
         $('mChips').innerHTML =

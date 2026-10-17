@@ -318,7 +318,7 @@ class FacultyReportController extends Controller
 
             return [
                 'id' => (int) $u->id,
-                'name' => trim("{$u->first_name} {$u->last_name}"),
+                'name' => trim("{$u->last_name}, {$u->first_name}"),
                 'section' => $u->section,
                 'best' => $a ? (int) round((float) $a->percent) : null,
                 'submitted_at' => $a?->submitted_at,
@@ -582,7 +582,7 @@ class FacultyReportController extends Controller
             $correct   = (int) $a->correct;
             $score     = $attempted > 0 ? (int) round($correct / $attempted * 100) : 0;
 
-            $name = trim("{$user->first_name} {$user->last_name}");
+            $name = trim("{$user->last_name}, {$user->first_name}");
             $lastActive = $a->last_active ?: $user->last_login_at;
             $daysIdle = $lastActive ? (int) Carbon::parse($lastActive)->diffInDays(now()) : null;
 

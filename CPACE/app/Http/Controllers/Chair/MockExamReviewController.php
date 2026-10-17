@@ -318,7 +318,7 @@ class MockExamReviewController extends Controller
 
             return [
                 'attempt_id' => $attempt->id,
-                'student' => trim($attempt->student?->first_name . ' ' . $attempt->student?->last_name),
+                'student' => trim($attempt->student?->last_name . ', ' . $attempt->student?->first_name),
                 'status' => $attempt->status,
                 'flags' => $attempt->flag_count,
                 'risk_score' => $risk['score'],
@@ -374,8 +374,8 @@ class MockExamReviewController extends Controller
                 : route('faculty.mock-exams.attempt', $a);
 
             return [
-                'a' => ['name' => trim($p['a']->student?->first_name . ' ' . $p['a']->student?->last_name), 'url' => $link($p['a'])],
-                'b' => ['name' => trim($p['b']->student?->first_name . ' ' . $p['b']->student?->last_name), 'url' => $link($p['b'])],
+                'a' => ['name' => trim($p['a']->student?->last_name . ', ' . $p['a']->student?->first_name), 'url' => $link($p['a'])],
+                'b' => ['name' => trim($p['b']->student?->last_name . ', ' . $p['b']->student?->first_name), 'url' => $link($p['b'])],
                 'shared' => $p['shared'],
                 'both_wrong' => $p['both_wrong'],
                 'expected' => $p['expected'],

@@ -630,7 +630,7 @@ class FacultyDashboardController extends Controller
 
         return $sessions->map(function ($s) {
             $score = $s->score_percent !== null ? (int) round($s->score_percent) : null;
-            $name  = trim("{$s->first_name} {$s->last_name}");
+            $name  = trim("{$s->last_name}, {$s->first_name}");
 
             // Icon / tone driven by the achieved score — steps of the page's
             // maroon scale (resources/views/faculty/dashboard.blade.php --m-*).
@@ -745,7 +745,7 @@ class FacultyDashboardController extends Controller
             ->get();
 
         return $agg->map(fn ($r) => [
-            'name'  => trim("{$r->first_name} {$r->last_name}"),
+            'name'  => trim("{$r->last_name}, {$r->first_name}"),
             'score' => (int) $r->attempted > 0 ? (int) round($r->correct / $r->attempted * 100) : 0,
         ])->sortByDesc('score')->take(3)->values();
     }

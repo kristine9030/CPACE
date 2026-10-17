@@ -142,7 +142,7 @@
             <tr>
                 <td class="idx">{{ $i + 1 }}</td>
                 <td>
-                    <div class="name">{{ $row['name'] }}</div>
+                    <div class="name">{{ $row['list_name'] ?? $row['name'] }}</div>
                     <div class="email">{{ $row['email'] }}</div>
                 </td>
                 <td>{!! $row['student_number'] ? e($row['student_number']) : '<span class="muted">—</span>' !!}</td>

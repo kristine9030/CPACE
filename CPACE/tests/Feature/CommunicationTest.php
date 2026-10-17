@@ -422,10 +422,10 @@ class CommunicationTest extends TestCase
         $this->assertSame(2, $json['recipient_count']);
         $this->assertSame(1, $json['seen_count']);
         $byName = collect($json['recipients'])->keyBy('name');
-        $this->assertTrue($byName['Test Reader']['seen']);
-        $this->assertNotNull($byName['Test Reader']['seen_at']);
-        $this->assertFalse($byName['Test Other']['seen']);
-        $this->assertNull($byName['Test Other']['seen_at']);
+        $this->assertTrue($byName['Reader, Test']['seen']);
+        $this->assertNotNull($byName['Reader, Test']['seen_at']);
+        $this->assertFalse($byName['Other, Test']['seen']);
+        $this->assertNull($byName['Other, Test']['seen_at']);
     }
 
     public function test_only_the_sender_can_open_an_announcements_details(): void

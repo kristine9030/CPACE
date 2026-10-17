@@ -796,7 +796,7 @@
                 <option value="disabled" @selected($filters['status'] === 'disabled')>Disabled Accounts</option>
             </select>
             <select name="sort" onchange="this.form.submit()" class="{{ $filters['sort'] !== 'name' ? 'is-set' : '' }}" aria-label="Sort by">
-                <option value="name" @selected($filters['sort'] === 'name')>Sort: Name</option>
+                <option value="name" @selected($filters['sort'] === 'name')>Sort: A-Z</option>
                 <option value="score_asc" @selected($filters['sort'] === 'score_asc')>Sort: Lowest readiness</option>
                 <option value="score_desc" @selected($filters['sort'] === 'score_desc')>Sort: Highest readiness</option>
                 <option value="recent" @selected($filters['sort'] === 'recent')>Sort: Recently active</option>
@@ -868,7 +868,7 @@
                                 <div class="student-cell">
                                     <div class="user-av">{{ $student['initials'] }}</div>
                                     <div>
-                                        <div class="student-name">{{ $student['name'] }}</div>
+                                        <div class="student-name">{{ $student['list_name'] }}</div>
                                         <div class="student-meta">
                                             {{ $student['student_number'] ?: 'No student number' }}
                                             &bull; {{ $student['email'] }}

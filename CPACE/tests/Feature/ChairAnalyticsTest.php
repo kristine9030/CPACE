@@ -434,7 +434,7 @@ class ChairAnalyticsTest extends TestCase
         $from = now()->subDays(29);
 
         $overall = $dashboard->classPerformance($from, now())['leaderboard'];
-        $this->assertSame(['Test Student', 'Rival Student'], $overall->pluck('name')->all());
+        $this->assertSame(['Student, Test', 'Student, Rival'], $overall->pluck('name')->all());
         $this->assertSame([42, 18], $overall->pluck('correct')->all());
 
         // Standing per subject: first overall, but second in FAR behind the rival.
@@ -447,11 +447,11 @@ class ChairAnalyticsTest extends TestCase
         $this->assertArrayNotHasKey('AUD', $rivalStandings);
 
         $farOnly = $dashboard->classPerformance($from, now(), $far)['leaderboard'];
-        $this->assertSame(['Rival Student', 'Test Student'], $farOnly->pluck('name')->all());
+        $this->assertSame(['Student, Rival', 'Student, Test'], $farOnly->pluck('name')->all());
 
         // The section filter narrows the board to that section's students.
         $sectionB = $dashboard->classPerformance($from, now(), null, 'BSA-1B')['leaderboard'];
-        $this->assertSame(['Rival Student'], $sectionB->pluck('name')->all());
+        $this->assertSame(['Student, Rival'], $sectionB->pluck('name')->all());
     }
 
     public function test_a_mixed_quiz_counts_toward_each_subject_it_covers(): void
@@ -471,7 +471,7 @@ class ChairAnalyticsTest extends TestCase
 
         $report = app(\App\Services\ChairDashboardService::class)->classPerformance(now()->subDays(29), now(), $aud, 'BSA-1B');
 
-        $this->assertSame(['Mixed Taker'], $report['leaderboard']->pluck('name')->all());
+        $this->assertSame(['Taker, Mixed'], $report['leaderboard']->pluck('name')->all());
         $this->assertSame(2, $report['kpis']['items']);
         $this->assertSame(50, $report['kpis']['accuracy']);
         $this->assertSame(1, $report['kpis']['quizzes']);
