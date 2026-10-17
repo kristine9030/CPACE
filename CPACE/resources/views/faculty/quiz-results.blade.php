@@ -95,6 +95,14 @@
         .p-prog { background:#fef3c7; color:#d97706; }
         .empty { padding:44px 20px; text-align:center; color:#bbb; font-size:13px; }
 
+        .sub-toolbar { display:flex; gap:10px; padding:12px 20px; border-bottom:1px solid #f2f2f2; flex-shrink:0; }
+        .sub-search { flex:1; position:relative; }
+        .sub-search i { position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#bbb; font-size:12px; }
+        .sub-search input { width:100%; padding:8px 12px 8px 32px; border:1px solid #e5e5e5; border-radius:8px; font-size:12.5px; font-family:'Poppins',sans-serif; }
+        .sub-search input:focus { outline:none; border-color:var(--primary); }
+        .sub-sort { padding:8px 12px; border:1px solid #e5e5e5; border-radius:8px; font-size:12.5px; font-family:'Poppins',sans-serif; color:#555; background:#fff; }
+        .sub-sort:focus { outline:none; border-color:var(--primary); }
+
         .item-row { padding:13px 18px; border-bottom:1px solid #f6f6f6; }
         .item-row:last-child { border-bottom:none; }
         .item-q { font-size:12.5px; color:#333; line-height:1.5; margin-bottom:7px; }
@@ -287,12 +295,27 @@
             @if($attempts->isEmpty())
                 <div class="empty">No student has opened this quiz yet. Share the quiz link to get started.</div>
             @else
+                <div class="sub-toolbar">
+                    <div class="sub-search">
+                        <i class="fas fa-search"></i>
+                        <input type="search" id="subSearch" placeholder="Search name or email">
+                    </div>
+                    <select class="sub-sort" id="subSort">
+                        <option value="name">Sort: A-Z</option>
+                        <option value="score_desc">Sort: Highest score</option>
+                        <option value="score_asc">Sort: Lowest score</option>
+                        <option value="recent">Sort: Most recent</option>
+                    </select>
+                </div>
                 <div class="scroll-body">
-                <table>
+                <table id="subTable">
                     <thead><tr><th>Student</th><th>Status</th><th>Score</th><th>%</th>@if($quiz->monitor_enabled)<th>Integrity</th>@endif<th>Submitted</th><th></th></tr></thead>
                     <tbody>
                     @foreach($attempts as $a)
-                        <tr>
+                        <tr data-name="{{ mb_strtolower($a->student?->list_name ?: 'unknown') }}"
+                            data-email="{{ mb_strtolower($a->student?->email ?: '') }}"
+                            data-score="{{ $a->isSubmitted() ? (float) $a->percent : -1 }}"
+                            data-submitted="{{ ($a->submitted_at ?? $a->started_at)?->timestamp ?? 0 }}">
                             <td>
                                 <div class="s-name">{{ $a->student?->list_name ?? 'Unknown' }}</div>
                                 <div class="s-email">{{ $a->student?->email }}</div>
@@ -331,6 +354,7 @@
                     @endforeach
                     </tbody>
                 </table>
+                <div class="empty" id="subNoMatch" style="display:none;">No students match that search.</div>
                 </div>
             @endif
         </div>
@@ -357,6 +381,42 @@
 </main>
 
 @include('partials.alerts')
+
+<script>
+(function () {
+    const search = document.getElementById('subSearch');
+    const sort   = document.getElementById('subSort');
+    const table  = document.getElementById('subTable');
+    if (!search || !sort || !table) return;
+
+    const tbody = table.querySelector('tbody');
+    const rows  = Array.from(tbody.querySelectorAll('tr'));
+    const noMatch = document.getElementById('subNoMatch');
+
+    function apply() {
+        const q = search.value.trim().toLowerCase();
+        const visible = rows.filter((r) => !q || r.dataset.name.includes(q) || r.dataset.email.includes(q));
+
+        visible.sort((a, b) => {
+            switch (sort.value) {
+                case 'score_desc': return parseFloat(b.dataset.score) - parseFloat(a.dataset.score);
+                case 'score_asc':  return parseFloat(a.dataset.score) - parseFloat(b.dataset.score);
+                case 'recent':     return parseInt(b.dataset.submitted, 10) - parseInt(a.dataset.submitted, 10);
+                default:           return a.dataset.name.localeCompare(b.dataset.name);
+            }
+        });
+
+        rows.forEach((r) => { r.style.display = 'none'; });
+        visible.forEach((r) => { r.style.display = ''; tbody.appendChild(r); });
+
+        if (noMatch) noMatch.style.display = visible.length ? 'none' : '';
+        table.style.display = visible.length ? '' : 'none';
+    }
+
+    search.addEventListener('input', apply);
+    sort.addEventListener('change', apply);
+})();
+</script>
 
 @if($stats['submitted'] > 0)
 <script>
