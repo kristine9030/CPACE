@@ -388,7 +388,7 @@ class FacultyQuizController extends Controller
 
             return [
                 'attempt_id' => $attempt->id,
-                'student' => trim($attempt->student?->first_name . ' ' . $attempt->student?->last_name),
+                'student' => trim($attempt->student?->last_name . ', ' . $attempt->student?->first_name),
                 'submitted' => $attempt->isSubmitted(),
                 'flags' => $attempt->flag_count,
                 'risk_score' => $risk['score'],

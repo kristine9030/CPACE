@@ -868,7 +868,7 @@
                                 <div class="student-cell">
                                     <div class="user-av">{{ $student['initials'] }}</div>
                                     <div>
-                                        <div class="student-name">{{ $student['name'] }}</div>
+                                        <div class="student-name">{{ $student['list_name'] }}</div>
                                         <div class="student-meta">
                                             {{ $student['student_number'] ?: 'No student number' }}
                                             &bull; {{ $student['email'] }}

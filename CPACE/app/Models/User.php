@@ -182,6 +182,20 @@ class User extends Authenticatable
         );
     }
 
+    /**
+     * "Last, First" form used in student list tables/cards for faculty and
+     * program chair accounts (client request) — single-student detail views
+     * keep using the normal `name` accessor.
+     */
+    protected function listName(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => $this->last_name && $this->first_name
+                ? "{$this->last_name}, {$this->first_name}"
+                : $this->name,
+        );
+    }
+
     public function roleName(): ?string
     {
         return $this->role?->name;

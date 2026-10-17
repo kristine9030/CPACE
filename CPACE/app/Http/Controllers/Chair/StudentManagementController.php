@@ -653,7 +653,7 @@ class StudentManagementController extends Controller
         $tableStart = $next;
         $report->writeTable($sheet, $tableStart, $headers, $rows->map(fn ($row) => [
             $row['student_number'] ?: '—',
-            $row['name'],
+            $row['list_name'],
             $row['email'],
             $row['year_level'] ? (Section::YEAR_LABELS[$row['year_level']] ?? 'Year ' . $row['year_level']) : '—',
             $row['section'] ?: 'No section',
@@ -798,6 +798,7 @@ class StudentManagementController extends Controller
                 return [
                     'id' => $student->id,
                     'name' => $student->name,
+                    'list_name' => $student->list_name,
                     'initials' => strtoupper(substr($student->first_name, 0, 1) . substr($student->last_name, 0, 1)),
                     'email' => $student->email,
                     'student_number' => $profile?->student_number,

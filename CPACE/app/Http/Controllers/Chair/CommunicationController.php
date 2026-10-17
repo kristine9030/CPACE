@@ -124,7 +124,9 @@ class CommunicationController extends Controller
                 $seen = (bool) $row->is_read;
 
                 return [
-                    'name' => trim($row->first_name . ' ' . $row->last_name),
+                    'name' => $communication->audience === 'students'
+                        ? trim($row->last_name . ', ' . $row->first_name)
+                        : trim($row->first_name . ' ' . $row->last_name),
                     'initials' => strtoupper(mb_substr((string) $row->first_name, 0, 1) . mb_substr((string) $row->last_name, 0, 1)),
                     'meta' => $communication->audience === 'students'
                         ? collect(['Year ' . ($row->year_level ?: '—'), $row->section ?: 'No section'])->join(' · ')

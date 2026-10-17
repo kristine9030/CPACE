@@ -254,7 +254,7 @@ class ChairAnalyticsService
 
                 return [
                     'id' => $row->id,
-                    'name' => trim($row->first_name.' '.$row->last_name),
+                    'name' => trim($row->last_name.', '.$row->first_name),
                     'email' => $row->email,
                     'section' => $row->section,
                     'attempts' => $attempts,
