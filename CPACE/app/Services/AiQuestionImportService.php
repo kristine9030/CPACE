@@ -22,7 +22,11 @@ class AiQuestionImportService
     private const CLAUDE_COOLDOWN_MINUTES = 5;
     private const GEMINI_COOLDOWN_KEY = 'ai_question_import.gemini_down';
     private const GEMINI_COOLDOWN_MINUTES = 5;
-    private const TIMEOUT_SECONDS = 90;
+    // Kept well under the shared host's reverse-proxy read timeout (commonly
+    // ~60s) so a slow/failed first provider still leaves room to fall back
+    // to the next one inside the same request, without the proxy returning
+    // a raw 504 while PHP is still working in the background.
+    private const TIMEOUT_SECONDS = 25;
     // Keep each AI request well under the model's context window and out of
     // "wall of text" territory that makes it skip/merge questions.
     private const MAX_CHARS_PER_CHUNK = 9000;

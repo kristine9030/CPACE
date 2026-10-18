@@ -9,6 +9,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
@@ -189,6 +190,86 @@ class QuestionImportTest extends TestCase
         $tf = json_decode($items[1]->choices, true);
         $this->assertSame('true_false', $items[1]->question_type);
         $this->assertTrue(collect($tf)->firstWhere('label', 'A')['is_correct']);
+    }
+
+    /**
+     * Uploading a photo has no rule-based path — it only ever goes through
+     * AiQuestionImportService::extractFromImage (Gemini vision, Claude
+     * fallback). Forces the provider keys on so the Gemini branch is taken
+     * here regardless of the environment's real keys (blank in CI).
+     */
+    public function test_uploading_a_photo_stages_questions_from_the_vision_reply(): void
+    {
+        config(['services.gemini.key' => 'test-gemini-key']);
+
+        Http::fake([
+            'https://generativelanguage.googleapis.com/*' => Http::response([
+                'candidates' => [[
+                    'content' => ['parts' => [['text' => json_encode([[
+                        'question_text' => 'What is 2 + 2?',
+                        'question_type' => 'mcq',
+                        'choices' => [
+                            ['text' => '3', 'is_correct' => false],
+                            ['text' => '4', 'is_correct' => true],
+                        ],
+                        'explanation' => 'Basic arithmetic.',
+                        'difficulty' => 'easy',
+                    ]])]]],
+                ]],
+            ], 200),
+        ]);
+
+        $faculty = $this->faculty();
+        $subjectId = $this->subjectFor($faculty);
+        $file = UploadedFile::fake()->image('problem.jpg');
+
+        $response = $this->actingAs($faculty)->post(route('faculty.test-bank.import.store'), [
+            'subject_id' => $subjectId,
+            'file' => $file,
+        ]);
+
+        $batch = DB::table('question_import_batches')->where('faculty_id', $faculty->id)->first();
+        $this->assertNotNull($batch);
+        $response->assertRedirect(route('faculty.test-bank.import.review', $batch->id));
+        $this->assertSame('ready', $batch->status);
+        $this->assertSame('ai', $batch->parse_source);
+
+        $items = DB::table('question_import_items')->where('batch_id', $batch->id)->get();
+        $this->assertCount(1, $items);
+        $this->assertSame('What is 2 + 2?', $items[0]->question_text);
+
+        Http::assertSent(fn ($request) => str_starts_with($request->url(), 'https://generativelanguage.googleapis.com/'));
+    }
+
+    /**
+     * When every AI provider is unreachable, the faculty must get back a
+     * clear "try again" message within the request — never an unhandled
+     * exception or a hang that a reverse proxy would eventually cut off
+     * with a raw 504 while PHP kept waiting in the background.
+     */
+    public function test_uploading_a_photo_fails_gracefully_when_every_ai_provider_is_down(): void
+    {
+        config(['services.gemini.key' => 'test-gemini-key', 'services.anthropic.key' => 'test-claude-key']);
+
+        Http::fake([
+            'https://generativelanguage.googleapis.com/*' => Http::response([], 500),
+            'https://api.anthropic.com/*' => Http::response([], 500),
+        ]);
+
+        $faculty = $this->faculty();
+        $subjectId = $this->subjectFor($faculty);
+        $file = UploadedFile::fake()->image('problem.jpg');
+
+        $response = $this->actingAs($faculty)->post(route('faculty.test-bank.import.store'), [
+            'subject_id' => $subjectId,
+            'file' => $file,
+        ]);
+
+        $batch = DB::table('question_import_batches')->where('faculty_id', $faculty->id)->first();
+        $this->assertNotNull($batch);
+        $response->assertRedirect(route('faculty.test-bank.import'));
+        $this->assertSame('failed', $batch->status);
+        $this->assertNotNull($batch->error_message);
     }
 
     public function test_a_faculty_member_cannot_import_into_a_subject_they_are_not_assigned_to(): void
