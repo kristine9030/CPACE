@@ -240,6 +240,37 @@ class ChairSubjectManagementTest extends TestCase
         $this->assertNotNull(DB::table('topics')->find($withQuestions), 'a topic with test-bank questions must survive a bulk delete');
     }
 
+    public function test_bulk_deleting_a_topic_and_its_subtopic_together_removes_both(): void
+    {
+        $chair = $this->chair();
+        $subjectId = $this->subject();
+        $parentId = DB::table('topics')->insertGetId(['subject_id' => $subjectId, 'name' => 'Parent', 'sort_order' => 1, 'is_active' => true]);
+        $childId = DB::table('topics')->insertGetId(['subject_id' => $subjectId, 'parent_id' => $parentId, 'name' => 'Child', 'sort_order' => 1, 'is_active' => true]);
+
+        // Parent listed before its child — the controller must still resolve
+        // the child first so the parent isn't wrongly skipped as "has subtopics".
+        $this->actingAs($chair)->post(route('chair.subjects.topics.bulk-destroy', $subjectId), [
+            'topic_ids' => [$parentId, $childId],
+        ])->assertRedirect();
+
+        $this->assertNull(DB::table('topics')->find($parentId));
+        $this->assertNull(DB::table('topics')->find($childId));
+    }
+
+    public function test_bulk_deleting_a_parent_without_its_subtopic_skips_the_parent(): void
+    {
+        $chair = $this->chair();
+        $subjectId = $this->subject();
+        $parentId = DB::table('topics')->insertGetId(['subject_id' => $subjectId, 'name' => 'Parent', 'sort_order' => 1, 'is_active' => true]);
+        DB::table('topics')->insert(['subject_id' => $subjectId, 'parent_id' => $parentId, 'name' => 'Child', 'sort_order' => 1, 'is_active' => true]);
+
+        $this->actingAs($chair)->post(route('chair.subjects.topics.bulk-destroy', $subjectId), [
+            'topic_ids' => [$parentId],
+        ])->assertRedirect();
+
+        $this->assertNotNull(DB::table('topics')->find($parentId), 'a parent whose subtopic was not also selected must survive');
+    }
+
     public function test_bulk_deleting_with_no_topics_selected_changes_nothing(): void
     {
         $chair = $this->chair();

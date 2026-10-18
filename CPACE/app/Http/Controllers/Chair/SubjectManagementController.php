@@ -194,19 +194,36 @@ class SubjectManagementController extends Controller
             return back()->with('error', 'No topics were selected.');
         }
 
-        $topics = $subject->topics()->whereIn('id', $ids)->get();
+        $pending = $subject->topics()->whereIn('id', $ids)->get()->keyBy('id');
 
         $removed = [];
         $skipped = [];
-        foreach ($topics as $topic) {
-            if ($this->isArchived($topic) || $topic->questions()->exists() || $topic->children()->exists()) {
-                $skipped[] = $topic->name;
-                continue;
-            }
 
-            $this->audit($topic, CurriculumAudit::ACTION_TOPIC_REMOVED, $topic->name);
-            $topic->delete();
-            $removed[] = $topic->name;
+        // Deletes in passes so a selected subtopic clears the way for its
+        // selected parent in the same request, regardless of selection order.
+        do {
+            $progress = false;
+            foreach ($pending as $id => $topic) {
+                if ($this->isArchived($topic) || $topic->questions()->exists()) {
+                    $skipped[] = $topic->name;
+                    $pending->forget($id);
+                    $progress = true;
+                    continue;
+                }
+                if ($topic->children()->exists()) {
+                    continue;
+                }
+
+                $this->audit($topic, CurriculumAudit::ACTION_TOPIC_REMOVED, $topic->name);
+                $topic->delete();
+                $removed[] = $topic->name;
+                $pending->forget($id);
+                $progress = true;
+            }
+        } while ($progress && $pending->isNotEmpty());
+
+        foreach ($pending as $topic) {
+            $skipped[] = $topic->name;
         }
 
         if (empty($removed)) {
