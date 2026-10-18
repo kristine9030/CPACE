@@ -187,6 +187,40 @@ class SubjectManagementController extends Controller
         return back()->with('status', "Topic “{$name}” was removed from {$subject->code}.");
     }
 
+    public function bulkDestroyTopics(Request $request, Subject $subject)
+    {
+        $ids = collect($request->input('topic_ids', []))->map(fn ($id) => (int) $id)->filter()->unique();
+        if ($ids->isEmpty()) {
+            return back()->with('error', 'No topics were selected.');
+        }
+
+        $topics = $subject->topics()->whereIn('id', $ids)->get();
+
+        $removed = [];
+        $skipped = [];
+        foreach ($topics as $topic) {
+            if ($this->isArchived($topic) || $topic->questions()->exists() || $topic->children()->exists()) {
+                $skipped[] = $topic->name;
+                continue;
+            }
+
+            $this->audit($topic, CurriculumAudit::ACTION_TOPIC_REMOVED, $topic->name);
+            $topic->delete();
+            $removed[] = $topic->name;
+        }
+
+        if (empty($removed)) {
+            return back()->with('error', 'None of the selected topics could be removed — they contain test-bank questions or subtopics, or belong to an archived curriculum.');
+        }
+
+        $message = count($removed) . ' topic' . (count($removed) === 1 ? '' : 's') . ' removed from ' . $subject->code . '.';
+        if (! empty($skipped)) {
+            $message .= ' ' . count($skipped) . ' skipped (contains questions, subtopics, or archived): ' . implode(', ', $skipped) . '.';
+        }
+
+        return back()->with('status', $message);
+    }
+
     /**
      * Default first batch for a new curriculum: next school year's batch, but
      * never at or before the current curriculum's first batch (the new one

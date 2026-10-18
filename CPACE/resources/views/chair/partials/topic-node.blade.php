@@ -2,6 +2,9 @@
 @foreach($topics as $topic)
     <div class="topic-node" style="margin-left: {{ $depth * 18 }}px;">
         <div class="topic-row">
+            @unless($readOnly)
+                <input type="checkbox" class="topic-check" value="{{ $topic->id }}" onchange="updateTopicBulkBar({{ $subject->id }})">
+            @endunless
             @if($topic->children->isNotEmpty())
                 <button type="button" class="topic-toggle" onclick="toggleTopicChildren(this)"><i class="fas fa-chevron-right"></i></button>
             @else

@@ -224,6 +224,7 @@ Route::middleware(['auth', 'no-back-cache'])->group(function () {
         Route::put('/subjects/{subject}/topics/{topic}', [SubjectManagementController::class, 'updateTopic'])->name('subjects.topics.update');
         Route::delete('/subjects/{subject}/topics/{topic}', [SubjectManagementController::class, 'destroyTopic'])->name('subjects.topics.destroy');
         Route::patch('/subjects/{subject}/topics/{topic}/toggle', [SubjectManagementController::class, 'toggleTopic'])->name('subjects.topics.toggle');
+        Route::post('/subjects/{subject}/topics/bulk-destroy', [SubjectManagementController::class, 'bulkDestroyTopics'])->name('subjects.topics.bulk-destroy');
 
         // Curriculum versions: start a draft, publish it, discard it, copy questions forward.
         Route::post('/curriculum', [CurriculumVersionController::class, 'store'])->name('curriculum.store');

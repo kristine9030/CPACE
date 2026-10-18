@@ -60,6 +60,7 @@
         .topic-toggle.open i { transform:rotate(90deg); }
         .topic-toggle i { transition:transform .15s; }
         .topic-toggle-spacer { width:18px;flex-shrink:0; }
+        .topic-check { flex-shrink:0;width:15px;height:15px;cursor:pointer; }
         .topic-order { width:22px;height:22px;flex-shrink:0;border-radius:6px;background:#fff;color:#999;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700; }
         .topic-info { flex:1;min-width:0; } .topic-name { font-size:11px;font-weight:600;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
         .topic-meta { font-size:9.5px;color:#aaa;margin-top:2px; } .topic-actions { display:flex;gap:4px; }
@@ -342,7 +343,13 @@
                 <div class="section-head">
                     <span class="sd-section-title"><i class="fas fa-list-check"></i> Topics <span class="topics-count">{{ $subject->topics->count() }}</span></span>
                     @unless($readOnly)
-                        <span style="display:inline-flex;gap:6px;">
+                        <span style="display:inline-flex;gap:6px;align-items:center;">
+                            @if($subject->topics->isNotEmpty())
+                                <label style="display:inline-flex;align-items:center;gap:4px;font-size:12px;color:#666;cursor:pointer;">
+                                    <input type="checkbox" id="topicSelectAll-{{ $subject->id }}" onchange="toggleAllTopics({{ $subject->id }}, this.checked)"> Select all
+                                </label>
+                                <button type="button" class="add-mini" id="topicBulkDeleteBtn-{{ $subject->id }}" style="display:none;background:#fde8e8;color:#b42318;" onclick="openBulkTopicDelete({{ $subject->id }}, '{{ addslashes($subject->code) }}')"><i class="fas fa-trash"></i> Delete selected (<span id="topicBulkCount-{{ $subject->id }}">0</span>)</button>
+                            @endif
                             @if($version?->isDraft())
                                 <button type="button" class="add-mini" title="Copy this subject's Test Bank questions from the current curriculum into matching topics of this draft" onclick="copyQuestions({{ $subject->id }}, '{{ addslashes($subject->code) }}')"><i class="fas fa-copy"></i> Copy questions</button>
                             @endif
@@ -603,6 +610,7 @@
 {{-- Carrier form for the destructive curriculum actions; the confirmation itself
      is a SweetAlert dialog raised by openTopicDelete / openSubjectDelete / openTopicToggle. --}}
 <form method="POST" id="confirmForm" hidden>@csrf <input type="hidden" name="_method" id="confirmMethod" value="DELETE"></form>
+<form method="POST" id="bulkTopicDeleteForm" hidden>@csrf</form>
 
 <script>
 function getTopicForm() { return document.getElementById('topicForm'); }
@@ -823,6 +831,48 @@ function openSubjectDelete(subjectId, subjectCode) {
             + '<div class="cpace-note">Subjects containing topics or assigned faculty cannot be removed. Unlink those first, or mark the subject inactive.</div>',
         confirmText: 'Yes, remove subject',
         danger: true,
+    });
+}
+
+function toggleAllTopics(subjectId, checked) {
+    document.querySelectorAll(`#topics-data-${subjectId} .topic-check`).forEach(cb => cb.checked = checked);
+    updateTopicBulkBar(subjectId);
+}
+
+function updateTopicBulkBar(subjectId) {
+    const all = document.querySelectorAll(`#topics-data-${subjectId} .topic-check`);
+    const checked = document.querySelectorAll(`#topics-data-${subjectId} .topic-check:checked`);
+    const btn = document.getElementById(`topicBulkDeleteBtn-${subjectId}`);
+    const count = document.getElementById(`topicBulkCount-${subjectId}`);
+    if (btn) btn.style.display = checked.length ? '' : 'none';
+    if (count) count.textContent = checked.length;
+    const selectAll = document.getElementById(`topicSelectAll-${subjectId}`);
+    if (selectAll) selectAll.checked = all.length > 0 && checked.length === all.length;
+}
+
+function openBulkTopicDelete(subjectId, subjectCode) {
+    const ids = Array.from(document.querySelectorAll(`#topics-data-${subjectId} .topic-check:checked`)).map(cb => cb.value);
+    if (!ids.length) return;
+
+    CPACE.confirm({
+        title: `Remove ${ids.length} topic${ids.length === 1 ? '' : 's'}?`,
+        html: `Selected topics will be removed from ${subjectCode}.`
+            + '<div class="cpace-note">Topics containing questions or subtopics are protected and will be skipped.</div>',
+        confirmText: `Yes, remove ${ids.length === 1 ? 'it' : 'them'}`,
+        danger: true,
+    }).then(ok => {
+        if (!ok) return;
+        const f = document.getElementById('bulkTopicDeleteForm');
+        f.action = `/chair/subjects/${subjectId}/topics/bulk-destroy`;
+        f.querySelectorAll('input[name="topic_ids[]"]').forEach(el => el.remove());
+        ids.forEach(id => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'topic_ids[]';
+            input.value = id;
+            f.appendChild(input);
+        });
+        f.submit();
     });
 }
 

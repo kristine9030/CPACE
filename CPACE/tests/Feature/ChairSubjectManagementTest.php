@@ -222,6 +222,47 @@ class ChairSubjectManagementTest extends TestCase
         $this->assertNull(DB::table('topics')->find($topicId));
     }
 
+    public function test_bulk_deleting_topics_removes_eligible_ones_and_skips_protected_ones(): void
+    {
+        $chair = $this->chair();
+        $subjectId = $this->subject();
+        $removableA = DB::table('topics')->insertGetId(['subject_id' => $subjectId, 'name' => 'Removable A', 'sort_order' => 1, 'is_active' => true]);
+        $removableB = DB::table('topics')->insertGetId(['subject_id' => $subjectId, 'name' => 'Removable B', 'sort_order' => 2, 'is_active' => true]);
+        $withQuestions = DB::table('topics')->insertGetId(['subject_id' => $subjectId, 'name' => 'Has Questions', 'sort_order' => 3, 'is_active' => true]);
+        DB::table('questions')->insert(['topic_id' => $withQuestions, 'question_text' => 'x', 'created_at' => now(), 'updated_at' => now()]);
+
+        $this->actingAs($chair)->post(route('chair.subjects.topics.bulk-destroy', $subjectId), [
+            'topic_ids' => [$removableA, $removableB, $withQuestions],
+        ])->assertRedirect();
+
+        $this->assertNull(DB::table('topics')->find($removableA));
+        $this->assertNull(DB::table('topics')->find($removableB));
+        $this->assertNotNull(DB::table('topics')->find($withQuestions), 'a topic with test-bank questions must survive a bulk delete');
+    }
+
+    public function test_bulk_deleting_with_no_topics_selected_changes_nothing(): void
+    {
+        $chair = $this->chair();
+        $subjectId = $this->subject();
+
+        $this->actingAs($chair)->post(route('chair.subjects.topics.bulk-destroy', $subjectId), ['topic_ids' => []])
+            ->assertRedirect();
+    }
+
+    public function test_bulk_deleting_topics_from_another_subject_is_ignored(): void
+    {
+        $chair = $this->chair();
+        $subjectA = $this->subject('FAR');
+        $subjectB = $this->subject('AUD');
+        $foreignTopic = DB::table('topics')->insertGetId(['subject_id' => $subjectB, 'name' => 'Belongs To B', 'sort_order' => 1, 'is_active' => true]);
+
+        $this->actingAs($chair)->post(route('chair.subjects.topics.bulk-destroy', $subjectA), [
+            'topic_ids' => [$foreignTopic],
+        ])->assertRedirect();
+
+        $this->assertNotNull(DB::table('topics')->find($foreignTopic), 'a topic outside the targeted subject must not be touched');
+    }
+
     public function test_a_topic_cannot_be_moved_to_a_subject_it_does_not_belong_to(): void
     {
         $chair = $this->chair();
