@@ -18,7 +18,7 @@ class ChairSubjectManagementTest extends TestCase
      * cleanly from scratch).
      */
     private const TABLES = [
-        'questions', 'topics', 'faculty_subjects', 'subjects',
+        'questions', 'topics', 'faculty_subjects', 'subjects', 'activity_logs',
         'notifications', 'messages', 'conversation_participants', 'conversations', 'users',
     ];
 
@@ -26,6 +26,18 @@ class ChairSubjectManagementTest extends TestCase
     {
         parent::setUp();
 
+        Schema::create('activity_logs', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('actor_id')->nullable();
+            $table->string('actor_name')->nullable();
+            $table->string('actor_role', 20)->nullable();
+            $table->string('action', 60);
+            $table->text('description')->nullable();
+            $table->string('subject_type', 60)->nullable();
+            $table->unsignedBigInteger('subject_id')->nullable();
+            $table->string('ip_address', 45)->nullable();
+            $table->timestamp('created_at')->nullable();
+        });
         Schema::create('users', function (Blueprint $table) {
             $table->id();
             $table->unsignedTinyInteger('role_id');
@@ -128,6 +140,11 @@ class ChairSubjectManagementTest extends TestCase
 
         $topic = DB::table('topics')->where('subject_id', $subjectId)->where('name', 'Revenue Recognition')->first();
         $this->assertNotNull($topic);
+
+        $this->assertTrue(
+            DB::table('activity_logs')->where('action', 'topic_added')->where('actor_id', $chair->id)->exists(),
+            'adding a topic must appear on the Super Admin activity log'
+        );
     }
 
     public function test_a_topic_name_must_be_unique_within_its_subject_but_not_globally(): void

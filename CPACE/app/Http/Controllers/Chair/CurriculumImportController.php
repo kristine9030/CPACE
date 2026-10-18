@@ -10,6 +10,7 @@ use App\Models\CurriculumVersion;
 use App\Models\Subject;
 use App\Models\Topic;
 use App\Services\CurriculumTosParser;
+use App\Support\Auditor;
 use App\Support\CurriculumAuditor;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -204,6 +205,10 @@ class CurriculumImportController extends Controller
         $summary = $total > 0
             ? "Imported {$total} topic(s) into " . $subjects->implode(', ') . '.'
             : 'No new topics were added — everything selected already existed in this curriculum.';
+
+        if ($total > 0) {
+            Auditor::log(Auth::user(), 'topics_imported', "Imported {$total} topic(s) from \"{$batch->original_filename}\" into " . $subjects->implode(', ') . '.', 'CurriculumImportBatch', $batch->id);
+        }
 
         return redirect()->route('chair.subjects', ['version' => $version->id])->with('status', $summary);
     }

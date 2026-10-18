@@ -149,6 +149,10 @@ TXT;
 
         $this->assertSame(1, DB::table('notifications')->where('recipient_id', $faculty->id)->where('title', 'Curriculum topics updated')->count());
         $this->assertSame(1, DB::table('curriculum_audits')->where('action', 'topics_imported')->count());
+        $this->assertTrue(
+            DB::table('activity_logs')->where('action', 'topics_imported')->where('actor_id', $chair->id)->exists(),
+            'importing a TOS must appear on the Super Admin activity log'
+        );
     }
 
     public function test_re_importing_reuses_existing_topics_instead_of_duplicating_them(): void

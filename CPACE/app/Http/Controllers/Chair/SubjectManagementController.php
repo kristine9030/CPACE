@@ -12,6 +12,7 @@ use App\Models\Topic;
 use App\Support\BatchYear;
 use App\Support\CurriculumAuditor;
 use App\Support\CurriculumScope;
+use App\Support\Auditor;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
@@ -128,6 +129,7 @@ class SubjectManagementController extends Controller
         $topic = $subject->topics()->create($version ? $data + ['curriculum_version_id' => $version->id] : $data);
 
         $this->audit($topic, CurriculumAudit::ACTION_TOPIC_ADDED, $topic->name);
+        Auditor::log(Auth::user(), 'topic_added', "Added topic \"{$topic->name}\" to {$subject->code}.", 'Topic', $topic->id);
 
         return back()->with('status', "Topic “{$data['name']}” was added to {$subject->code}.");
     }
@@ -148,6 +150,7 @@ class SubjectManagementController extends Controller
 
         $topic->update($data);
         $this->audit($topic, CurriculumAudit::ACTION_TOPIC_EDITED, $topic->name);
+        Auditor::log(Auth::user(), 'topic_edited', "Edited topic \"{$topic->name}\" in {$subject->code}.", 'Topic', $topic->id);
 
         return back()->with('status', "Topic “{$topic->name}” was updated.");
     }
@@ -182,6 +185,7 @@ class SubjectManagementController extends Controller
 
         $name = $topic->name;
         $this->audit($topic, CurriculumAudit::ACTION_TOPIC_REMOVED, $name);
+        Auditor::log(Auth::user(), 'topic_removed', "Removed topic \"{$name}\" from {$subject->code}.", 'Topic', $topic->id);
         $topic->delete();
 
         return back()->with('status', "Topic “{$name}” was removed from {$subject->code}.");
@@ -234,6 +238,8 @@ class SubjectManagementController extends Controller
         if (! empty($skipped)) {
             $message .= ' ' . count($skipped) . ' skipped (contains questions, subtopics, or archived): ' . implode(', ', $skipped) . '.';
         }
+
+        Auditor::log(Auth::user(), 'topic_removed', 'Bulk removed ' . count($removed) . " topic(s) from {$subject->code}: " . implode(', ', $removed) . '.', 'Subject', $subject->id);
 
         return back()->with('status', $message);
     }
