@@ -19,7 +19,7 @@ use Tests\TestCase;
 class FacultyMaterialTest extends TestCase
 {
     private const TABLES = [
-        'materials', 'topics', 'subjects', 'faculty_subjects',
+        'materials', 'topics', 'subjects', 'faculty_subjects', 'activity_logs',
         'notifications', 'messages', 'conversation_participants', 'conversations', 'users',
     ];
 
@@ -27,6 +27,18 @@ class FacultyMaterialTest extends TestCase
     {
         parent::setUp();
 
+        Schema::create('activity_logs', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('actor_id')->nullable();
+            $table->string('actor_name')->nullable();
+            $table->string('actor_role', 20)->nullable();
+            $table->string('action', 60);
+            $table->text('description')->nullable();
+            $table->string('subject_type', 60)->nullable();
+            $table->unsignedBigInteger('subject_id')->nullable();
+            $table->string('ip_address', 45)->nullable();
+            $table->timestamp('created_at')->nullable();
+        });
         Schema::create('users', function (Blueprint $table) {
             $table->id();
             $table->unsignedTinyInteger('role_id');
@@ -127,6 +139,10 @@ class FacultyMaterialTest extends TestCase
         ])->assertRedirect();
 
         $this->assertSame(1, DB::table('materials')->where('topic_id', $topicId)->count());
+        $this->assertTrue(
+            DB::table('activity_logs')->where('action', 'material_uploaded')->where('actor_id', $faculty->id)->exists(),
+            'uploading a material must appear on the Super Admin activity log'
+        );
     }
 
     public function test_a_faculty_member_cannot_add_a_material_to_a_subject_they_are_not_assigned_to(): void
@@ -172,6 +188,10 @@ class FacultyMaterialTest extends TestCase
         $this->actingAs($faculty)->delete(route('faculty.materials.destroy', $materialId))->assertRedirect();
 
         $this->assertNull(DB::table('materials')->find($materialId));
+        $this->assertTrue(
+            DB::table('activity_logs')->where('action', 'material_deleted')->where('actor_id', $faculty->id)->exists(),
+            'deleting a material must appear on the Super Admin activity log'
+        );
     }
 
     public function test_a_material_saved_as_draft_is_not_active_and_hidden_from_students(): void
