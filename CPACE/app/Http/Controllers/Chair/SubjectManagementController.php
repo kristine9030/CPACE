@@ -12,6 +12,7 @@ use App\Models\Topic;
 use App\Support\BatchYear;
 use App\Support\CurriculumAuditor;
 use App\Support\CurriculumScope;
+use App\Support\Auditor;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
@@ -128,6 +129,7 @@ class SubjectManagementController extends Controller
         $topic = $subject->topics()->create($version ? $data + ['curriculum_version_id' => $version->id] : $data);
 
         $this->audit($topic, CurriculumAudit::ACTION_TOPIC_ADDED, $topic->name);
+        Auditor::log(Auth::user(), 'topic_added', "Added topic \"{$topic->name}\" to {$subject->code}.", 'Topic', $topic->id);
 
         return back()->with('status', "Topic “{$data['name']}” was added to {$subject->code}.");
     }
@@ -148,6 +150,7 @@ class SubjectManagementController extends Controller
 
         $topic->update($data);
         $this->audit($topic, CurriculumAudit::ACTION_TOPIC_EDITED, $topic->name);
+        Auditor::log(Auth::user(), 'topic_edited', "Edited topic \"{$topic->name}\" in {$subject->code}.", 'Topic', $topic->id);
 
         return back()->with('status', "Topic “{$topic->name}” was updated.");
     }
@@ -182,9 +185,63 @@ class SubjectManagementController extends Controller
 
         $name = $topic->name;
         $this->audit($topic, CurriculumAudit::ACTION_TOPIC_REMOVED, $name);
+        Auditor::log(Auth::user(), 'topic_removed', "Removed topic \"{$name}\" from {$subject->code}.", 'Topic', $topic->id);
         $topic->delete();
 
         return back()->with('status', "Topic “{$name}” was removed from {$subject->code}.");
+    }
+
+    public function bulkDestroyTopics(Request $request, Subject $subject)
+    {
+        $ids = collect($request->input('topic_ids', []))->map(fn ($id) => (int) $id)->filter()->unique();
+        if ($ids->isEmpty()) {
+            return back()->with('error', 'No topics were selected.');
+        }
+
+        $pending = $subject->topics()->whereIn('id', $ids)->get()->keyBy('id');
+
+        $removed = [];
+        $skipped = [];
+
+        // Deletes in passes so a selected subtopic clears the way for its
+        // selected parent in the same request, regardless of selection order.
+        do {
+            $progress = false;
+            foreach ($pending as $id => $topic) {
+                if ($this->isArchived($topic) || $topic->questions()->exists()) {
+                    $skipped[] = $topic->name;
+                    $pending->forget($id);
+                    $progress = true;
+                    continue;
+                }
+                if ($topic->children()->exists()) {
+                    continue;
+                }
+
+                $this->audit($topic, CurriculumAudit::ACTION_TOPIC_REMOVED, $topic->name);
+                $topic->delete();
+                $removed[] = $topic->name;
+                $pending->forget($id);
+                $progress = true;
+            }
+        } while ($progress && $pending->isNotEmpty());
+
+        foreach ($pending as $topic) {
+            $skipped[] = $topic->name;
+        }
+
+        if (empty($removed)) {
+            return back()->with('error', 'None of the selected topics could be removed — they contain test-bank questions or subtopics, or belong to an archived curriculum.');
+        }
+
+        $message = count($removed) . ' topic' . (count($removed) === 1 ? '' : 's') . ' removed from ' . $subject->code . '.';
+        if (! empty($skipped)) {
+            $message .= ' ' . count($skipped) . ' skipped (contains questions, subtopics, or archived): ' . implode(', ', $skipped) . '.';
+        }
+
+        Auditor::log(Auth::user(), 'topic_removed', 'Bulk removed ' . count($removed) . " topic(s) from {$subject->code}: " . implode(', ', $removed) . '.', 'Subject', $subject->id);
+
+        return back()->with('status', $message);
     }
 
     /**

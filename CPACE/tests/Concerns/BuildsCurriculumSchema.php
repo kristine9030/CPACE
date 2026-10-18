@@ -21,7 +21,7 @@ trait BuildsCurriculumSchema
     private array $curriculumTables = [
         'student_profiles', 'curriculum_import_items', 'curriculum_import_batches',
         'question_variants', 'question_choices', 'questions', 'topics', 'faculty_subjects', 'subjects',
-        'curriculum_audits', 'curriculum_versions',
+        'curriculum_audits', 'curriculum_versions', 'activity_logs',
         'notifications', 'messages', 'conversation_participants', 'conversations', 'users',
     ];
 
@@ -92,6 +92,18 @@ trait BuildsCurriculumSchema
             $table->unsignedInteger('created_by')->nullable();
             $table->dateTime('published_at')->nullable();
             $table->dateTime('created_at')->nullable();
+        });
+        Schema::create('activity_logs', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('actor_id')->nullable();
+            $table->string('actor_name')->nullable();
+            $table->string('actor_role', 20)->nullable();
+            $table->string('action', 60);
+            $table->text('description')->nullable();
+            $table->string('subject_type', 60)->nullable();
+            $table->unsignedBigInteger('subject_id')->nullable();
+            $table->string('ip_address', 45)->nullable();
+            $table->timestamp('created_at')->nullable();
         });
         Schema::create('curriculum_audits', function (Blueprint $table) {
             $table->increments('id');

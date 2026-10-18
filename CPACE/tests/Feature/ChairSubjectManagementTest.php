@@ -18,7 +18,7 @@ class ChairSubjectManagementTest extends TestCase
      * cleanly from scratch).
      */
     private const TABLES = [
-        'questions', 'topics', 'faculty_subjects', 'subjects',
+        'questions', 'topics', 'faculty_subjects', 'subjects', 'activity_logs',
         'notifications', 'messages', 'conversation_participants', 'conversations', 'users',
     ];
 
@@ -26,6 +26,18 @@ class ChairSubjectManagementTest extends TestCase
     {
         parent::setUp();
 
+        Schema::create('activity_logs', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('actor_id')->nullable();
+            $table->string('actor_name')->nullable();
+            $table->string('actor_role', 20)->nullable();
+            $table->string('action', 60);
+            $table->text('description')->nullable();
+            $table->string('subject_type', 60)->nullable();
+            $table->unsignedBigInteger('subject_id')->nullable();
+            $table->string('ip_address', 45)->nullable();
+            $table->timestamp('created_at')->nullable();
+        });
         Schema::create('users', function (Blueprint $table) {
             $table->id();
             $table->unsignedTinyInteger('role_id');
@@ -128,6 +140,11 @@ class ChairSubjectManagementTest extends TestCase
 
         $topic = DB::table('topics')->where('subject_id', $subjectId)->where('name', 'Revenue Recognition')->first();
         $this->assertNotNull($topic);
+
+        $this->assertTrue(
+            DB::table('activity_logs')->where('action', 'topic_added')->where('actor_id', $chair->id)->exists(),
+            'adding a topic must appear on the Super Admin activity log'
+        );
     }
 
     public function test_a_topic_name_must_be_unique_within_its_subject_but_not_globally(): void
@@ -220,6 +237,78 @@ class ChairSubjectManagementTest extends TestCase
             ->assertRedirect();
 
         $this->assertNull(DB::table('topics')->find($topicId));
+    }
+
+    public function test_bulk_deleting_topics_removes_eligible_ones_and_skips_protected_ones(): void
+    {
+        $chair = $this->chair();
+        $subjectId = $this->subject();
+        $removableA = DB::table('topics')->insertGetId(['subject_id' => $subjectId, 'name' => 'Removable A', 'sort_order' => 1, 'is_active' => true]);
+        $removableB = DB::table('topics')->insertGetId(['subject_id' => $subjectId, 'name' => 'Removable B', 'sort_order' => 2, 'is_active' => true]);
+        $withQuestions = DB::table('topics')->insertGetId(['subject_id' => $subjectId, 'name' => 'Has Questions', 'sort_order' => 3, 'is_active' => true]);
+        DB::table('questions')->insert(['topic_id' => $withQuestions, 'question_text' => 'x', 'created_at' => now(), 'updated_at' => now()]);
+
+        $this->actingAs($chair)->post(route('chair.subjects.topics.bulk-destroy', $subjectId), [
+            'topic_ids' => [$removableA, $removableB, $withQuestions],
+        ])->assertRedirect();
+
+        $this->assertNull(DB::table('topics')->find($removableA));
+        $this->assertNull(DB::table('topics')->find($removableB));
+        $this->assertNotNull(DB::table('topics')->find($withQuestions), 'a topic with test-bank questions must survive a bulk delete');
+    }
+
+    public function test_bulk_deleting_a_topic_and_its_subtopic_together_removes_both(): void
+    {
+        $chair = $this->chair();
+        $subjectId = $this->subject();
+        $parentId = DB::table('topics')->insertGetId(['subject_id' => $subjectId, 'name' => 'Parent', 'sort_order' => 1, 'is_active' => true]);
+        $childId = DB::table('topics')->insertGetId(['subject_id' => $subjectId, 'parent_id' => $parentId, 'name' => 'Child', 'sort_order' => 1, 'is_active' => true]);
+
+        // Parent listed before its child — the controller must still resolve
+        // the child first so the parent isn't wrongly skipped as "has subtopics".
+        $this->actingAs($chair)->post(route('chair.subjects.topics.bulk-destroy', $subjectId), [
+            'topic_ids' => [$parentId, $childId],
+        ])->assertRedirect();
+
+        $this->assertNull(DB::table('topics')->find($parentId));
+        $this->assertNull(DB::table('topics')->find($childId));
+    }
+
+    public function test_bulk_deleting_a_parent_without_its_subtopic_skips_the_parent(): void
+    {
+        $chair = $this->chair();
+        $subjectId = $this->subject();
+        $parentId = DB::table('topics')->insertGetId(['subject_id' => $subjectId, 'name' => 'Parent', 'sort_order' => 1, 'is_active' => true]);
+        DB::table('topics')->insert(['subject_id' => $subjectId, 'parent_id' => $parentId, 'name' => 'Child', 'sort_order' => 1, 'is_active' => true]);
+
+        $this->actingAs($chair)->post(route('chair.subjects.topics.bulk-destroy', $subjectId), [
+            'topic_ids' => [$parentId],
+        ])->assertRedirect();
+
+        $this->assertNotNull(DB::table('topics')->find($parentId), 'a parent whose subtopic was not also selected must survive');
+    }
+
+    public function test_bulk_deleting_with_no_topics_selected_changes_nothing(): void
+    {
+        $chair = $this->chair();
+        $subjectId = $this->subject();
+
+        $this->actingAs($chair)->post(route('chair.subjects.topics.bulk-destroy', $subjectId), ['topic_ids' => []])
+            ->assertRedirect();
+    }
+
+    public function test_bulk_deleting_topics_from_another_subject_is_ignored(): void
+    {
+        $chair = $this->chair();
+        $subjectA = $this->subject('FAR');
+        $subjectB = $this->subject('AUD');
+        $foreignTopic = DB::table('topics')->insertGetId(['subject_id' => $subjectB, 'name' => 'Belongs To B', 'sort_order' => 1, 'is_active' => true]);
+
+        $this->actingAs($chair)->post(route('chair.subjects.topics.bulk-destroy', $subjectA), [
+            'topic_ids' => [$foreignTopic],
+        ])->assertRedirect();
+
+        $this->assertNotNull(DB::table('topics')->find($foreignTopic), 'a topic outside the targeted subject must not be touched');
     }
 
     public function test_a_topic_cannot_be_moved_to_a_subject_it_does_not_belong_to(): void

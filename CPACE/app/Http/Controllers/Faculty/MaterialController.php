@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Material;
 use App\Models\Subject;
 use App\Models\Topic;
+use App\Support\Auditor;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -142,6 +143,10 @@ class MaterialController extends Controller
         $verb = $isActive ? 'published' : 'saved as draft';
         $message = $count > 1 ? "{$count} materials {$verb}." : 'Material ' . $verb . '.';
 
+        $topicName = Topic::find($data['topic_id'])?->name ?? 'a topic';
+        $materialWord = $count > 1 ? "{$count} materials" : 'a material';
+        Auditor::log(Auth::user(), 'material_uploaded', "Uploaded {$materialWord} ({$verb}) to \"{$topicName}\".", 'Topic', (int) $data['topic_id']);
+
         return back()->with('status', $message);
     }
 
@@ -171,7 +176,11 @@ class MaterialController extends Controller
             Storage::disk('public')->delete($material->file_path); // legacy uploads
         }
 
+        $title = $material->title;
+        $topicId = $material->topic_id;
         $material->delete();
+
+        Auditor::log(Auth::user(), 'material_deleted', "Deleted material \"{$title}\".", 'Topic', $topicId);
 
         return back()->with('status', 'Material deleted.');
     }
