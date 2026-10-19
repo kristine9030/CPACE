@@ -408,7 +408,7 @@
             @endforeach
         </div>
 
-        <div class="cur-layout {{ $version ? 'has-aside' : '' }}">
+        <div class="cur-layout {{ ($version || ! $readOnly) ? 'has-aside' : '' }}">
         @include('chair.partials.curriculum-card')
         <div class="cur-content">
         <div class="sj-header">

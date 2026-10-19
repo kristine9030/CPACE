@@ -245,6 +245,25 @@ class CurriculumVersionTest extends TestCase
         $this->assertNotNull(DB::table('questions')->find($keptQuestion));
     }
 
+    public function test_discarding_the_only_curriculum_version_still_leaves_a_working_page(): void
+    {
+        $chair = $this->chair();
+        $this->subject('FAR');
+        $draftId = $this->draft();
+
+        // Simulate the only other version being gone too (e.g. a database
+        // flush that leaves no active curriculum), so discarding the draft
+        // leaves $version null on the next page load.
+        CurriculumVersion::find($this->activeId)->delete();
+
+        $this->actingAs($chair)->delete(route('chair.curriculum.destroy', $draftId))->assertRedirect();
+
+        $this->actingAs($chair)->get(route('chair.subjects'))
+            ->assertOk()
+            ->assertSee('No curriculum yet')
+            ->assertSee('New curriculum');
+    }
+
     public function test_copying_questions_matches_topics_by_their_path_and_leaves_the_originals(): void
     {
         $chair = $this->chair();
