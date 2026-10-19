@@ -1,5 +1,8 @@
 {{-- Curriculum card: which curriculum, where its topics came from, what's next, and its few actions.
-     Shown beside the subjects (see subjects.blade.php); relies on that page's variables. --}}
+     Shown beside the subjects (see subjects.blade.php); relies on that page's variables.
+     When there's no draft and no active version (e.g. a discarded draft left nothing behind),
+     fall back to a "no curriculum yet" card with a way to start one, instead of rendering nothing
+     and silently stranding the chair with no "New curriculum" button anywhere on the page. --}}
 @if($version)
         <aside class="cur-aside">
         @php
@@ -106,4 +109,20 @@
             </div>
         </div>
 
+@elseif(! $readOnly)
+        <aside class="cur-aside">
+        <div class="cur-card">
+            <div class="cur-row">
+                <span class="cur-ic"><i class="fas fa-book-bookmark"></i></span>
+                <div class="cur-info">
+                    <div class="cur-eyebrow">No curriculum yet</div>
+                    <div class="cur-name">Start a curriculum to add topics</div>
+                    <div class="cur-sub">There's no draft or active curriculum right now — create one to begin adding topics for your subjects.</div>
+                </div>
+                <div class="cur-actions">
+                    <button type="button" class="btn btn-primary" onclick="document.getElementById('curriculumModal').classList.add('open')"><i class="fas fa-plus"></i> New curriculum</button>
+                </div>
+            </div>
+        </div>
+        </aside>
 @endif
