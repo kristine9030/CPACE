@@ -400,7 +400,7 @@
     const form = document.getElementById('quizForm');
 
     const esc = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-    const LETTERS = ['A','B','C','D','E','F'];
+    const LETTERS = Array.from({length: 26}, (_, i) => String.fromCharCode(65 + i)); // A..Z
 
     function blankItem(type) {
         return type === 'true_false'
@@ -452,7 +452,7 @@
                     <textarea data-field="question_text" placeholder="Type the question..." ${LOCKED ? 'readonly' : ''}>${esc(it.question_text)}</textarea>
                     <div class="choices">
                         ${choices}
-                        ${!tf && !LOCKED && it.choices.length < 6 ? '<button type="button" class="add-choice" data-add-choice><i class="fas fa-plus"></i> Add choice</button>' : ''}
+                        ${!tf && !LOCKED && it.choices.length < 26 ? '<button type="button" class="add-choice" data-add-choice><i class="fas fa-plus"></i> Add choice</button>' : ''}
                     </div>
                     <div class="expl">
                         <input type="text" data-field="explanation" value="${esc(it.explanation)}" placeholder="Explanation shown after submitting (optional)" ${LOCKED ? 'readonly' : ''}>
@@ -511,7 +511,7 @@
             if (j < 0 || j >= items.length) return;
             [items[i], items[j]] = [items[j], items[i]]; render();
         } else if (btn.hasAttribute('data-add-choice')) {
-            if (it.choices.length >= 6) return;
+            if (it.choices.length >= 26) return;
             it.choices.push({ label:'', text:'', is_correct:false }); relabel(it); render();
             card.querySelector(`[data-choice="${it.choices.length - 1}"]`)?.focus();
         } else if (btn.dataset.removeChoice !== undefined) {

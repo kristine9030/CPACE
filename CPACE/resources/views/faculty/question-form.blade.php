@@ -70,13 +70,15 @@
             display:flex; align-items:center; justify-content:center;
             font-size:12px; font-weight:700;
         }
-        .cl-a { background:#dbeafe; color:#2563eb; }
-        .cl-b { background:#d1fae5; color:#059669; }
-        .cl-c { background:#fef3c7; color:#d97706; }
-        .cl-d { background:#fde8e8; color:var(--accent); }
+        .choice-letter { background:#f3f4f6; color:#555; }
         .choice-item input[type=text] { flex:1; }
         .choice-radio { flex-shrink:0; width:16px; height:16px; accent-color:var(--primary); cursor:pointer; }
         .correct-label { font-size:11px; color:#aaa; white-space:nowrap; }
+        .choice-remove { flex-shrink:0; background:none; border:none; color:#bbb; cursor:pointer; font-size:14px; padding:4px; }
+        .choice-remove:hover { color:var(--accent); }
+        .add-choice-btn { align-self:flex-start; background:none; border:1.5px dashed #ddd; border-radius:8px; color:#777; font-size:12px; font-weight:600; padding:8px 14px; cursor:pointer; display:inline-flex; align-items:center; gap:6px; }
+        .add-choice-btn:hover { border-color:var(--primary); color:var(--primary); }
+        .add-choice-btn:disabled { opacity:.4; cursor:not-allowed; }
 
         /* RADIO GROUP */
         .radio-group { display:flex; gap:12px; flex-wrap:wrap; }
@@ -235,18 +237,9 @@
                 <!-- ANSWER CHOICES (MCQ) -->
                 <div class="card" id="mcqSection">
                     <div class="card-title"><span class="step-no" aria-hidden="true">3</span> <i class="fas fa-list-ul"></i> Answer Choices</div>
-                    <p style="font-size:12px;color:#aaa;margin-bottom:14px;">Select the radio button next to the correct answer.</p>
-                    <div class="choices-list">
-                        @foreach(['a' => 'A', 'b' => 'B', 'c' => 'C', 'd' => 'D'] as $key => $label)
-                        @php $choice = $choicesByLabel[$label] ?? null; @endphp
-                        <div class="choice-item">
-                            <div class="choice-letter cl-{{ $key }}">{{ $label }}</div>
-                            <input type="text" name="choice_{{ $key }}" placeholder="Choice {{ $label }}" value="{{ old('choice_'.$key, $choice->choice_text ?? '') }}">
-                            <input type="radio" class="choice-radio" name="correct_answer" value="{{ $key }}" {{ old('correct_answer', optional($choice)->is_correct ? $key : '') === $key ? 'checked' : '' }} title="Mark as correct">
-                            <span class="correct-label">Correct</span>
-                        </div>
-                        @endforeach
-                    </div>
+                    <p style="font-size:12px;color:#aaa;margin-bottom:14px;">Select the radio button next to the correct answer. You can add choices beyond D if needed.</p>
+                    <div class="choices-list" id="choicesList"></div>
+                    <button type="button" class="add-choice-btn" id="addChoiceBtn" style="margin-top:10px;"><i class="fas fa-plus"></i> Add choice</button>
                 </div>
 
                 <!-- TRUE/FALSE (hidden by default) -->
@@ -392,6 +385,82 @@ function handleTypeChange(type) {
     document.getElementById('tfSection').style.display  = type === 'true_false' ? 'block' : 'none';
 }
 
+/* ── MCQ CHOICES: dynamic A..H list ── */
+const MAX_CHOICES = {{ \App\Http\Controllers\Faculty\TestBankController::MAX_MCQ_CHOICES }};
+const choicesList = document.getElementById('choicesList');
+const addChoiceBtn = document.getElementById('addChoiceBtn');
+
+@php
+    $existingChoices = $editMode && $question->question_type === 'mcq'
+        ? $question->choices->sortBy('choice_label')->map(fn($c) => ['text' => $c->choice_text, 'is_correct' => (bool) $c->is_correct])->values()
+        : collect();
+    $oldChoices = old('choices');
+@endphp
+let choices = @if($oldChoices)
+    @json(collect($oldChoices)->map(fn($t, $i) => ['text' => $t, 'is_correct' => (int) old('correct_index') === (int) $i])->values())
+@elseif($existingChoices->isNotEmpty())
+    @json($existingChoices)
+@else
+    [{text:'', is_correct:true}, {text:'', is_correct:false}, {text:'', is_correct:false}, {text:'', is_correct:false}]
+@endif;
+
+function renderChoices() {
+    const esc = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    choicesList.innerHTML = choices.map((c, i) => {
+        const label = String.fromCharCode(65 + i);
+        return `<div class="choice-item">
+            <div class="choice-letter">${label}</div>
+            <input type="text" data-i="${i}" class="choice-text-input" placeholder="Choice ${label}" value="${esc(c.text)}">
+            <input type="radio" class="choice-radio" name="correct_index_ui" value="${i}" ${c.is_correct ? 'checked' : ''} title="Mark as correct">
+            <span class="correct-label">Correct</span>
+            ${choices.length > 2 ? `<button type="button" class="choice-remove" data-remove="${i}" title="Remove choice"><i class="fas fa-times"></i></button>` : ''}
+        </div>`;
+    }).join('');
+    addChoiceBtn.disabled = choices.length >= MAX_CHOICES;
+}
+
+choicesList.addEventListener('input', ev => {
+    if (ev.target.classList.contains('choice-text-input')) {
+        choices[+ev.target.dataset.i].text = ev.target.value;
+    }
+});
+choicesList.addEventListener('change', ev => {
+    if (ev.target.name === 'correct_index_ui') {
+        choices.forEach((c, i) => c.is_correct = i === +ev.target.value);
+    }
+});
+choicesList.addEventListener('click', ev => {
+    const btn = ev.target.closest('[data-remove]'); if (!btn) return;
+    const i = +btn.dataset.remove;
+    const wasCorrect = choices[i].is_correct;
+    choices.splice(i, 1);
+    if (wasCorrect) choices[0].is_correct = true;
+    renderChoices();
+});
+addChoiceBtn.addEventListener('click', () => {
+    if (choices.length >= MAX_CHOICES) return;
+    choices.push({ text: '', is_correct: false });
+    renderChoices();
+    choicesList.querySelector('.choice-item:last-child .choice-text-input')?.focus();
+});
+
+document.getElementById('questionForm').addEventListener('submit', () => {
+    document.querySelectorAll('input[name="choices[]"], input[name="correct_index"]').forEach(el => el.remove());
+    if (document.getElementById('questionType').value !== 'mcq') return;
+    const form = document.getElementById('questionForm');
+    choices.forEach(c => {
+        const inp = document.createElement('input');
+        inp.type = 'hidden'; inp.name = 'choices[]'; inp.value = c.text;
+        form.appendChild(inp);
+    });
+    const correctIdx = choices.findIndex(c => c.is_correct);
+    const ci = document.createElement('input');
+    ci.type = 'hidden'; ci.name = 'correct_index'; ci.value = correctIdx >= 0 ? correctIdx : 0;
+    form.appendChild(ci);
+});
+
+renderChoices();
+
 const topicMap = @json($subjects->mapWithKeys(fn($s) => [$s->id => $s->topics->map(fn($t) => ['id' => $t->id, 'name' => $t->name])->values()]));
 
 function loadTopics(subjectId) {
@@ -460,12 +529,11 @@ document.getElementById('aiDraftBtn').addEventListener('click', async () => {
             const radio = document.querySelector(`input[name="tf_answer"][value="${data.tf_answer ? 'true' : 'false'}"]`);
             if (radio) radio.checked = true;
         } else if (data.choices) {
-            ['a', 'b', 'c', 'd'].forEach(label => {
-                const c = data.choices[label];
-                if (!c) return;
-                document.querySelector(`input[name="choice_${label}"]`).value = c.text;
-                if (c.is_correct) document.querySelector(`input[name="correct_answer"][value="${label}"]`).checked = true;
-            });
+            choices = Object.keys(data.choices).sort().map(label => ({
+                text: data.choices[label].text || '',
+                is_correct: !!data.choices[label].is_correct,
+            }));
+            renderChoices();
         }
 
         CPACE.toast('AI draft added — review it before saving.', 'success');

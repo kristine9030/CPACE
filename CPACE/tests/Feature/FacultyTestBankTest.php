@@ -153,11 +153,8 @@ class FacultyTestBankTest extends TestCase
             'question_text'  => 'Which financial statement reports assets and liabilities?',
             'question_type'  => 'mcq',
             'difficulty'     => 'Easy',
-            'choice_a'       => 'Income Statement',
-            'choice_b'       => 'Balance Sheet',
-            'choice_c'       => 'Cash Flow Statement',
-            'choice_d'       => 'Statement of Equity',
-            'correct_answer' => 'b',
+            'choices'        => ['Income Statement', 'Balance Sheet', 'Cash Flow Statement', 'Statement of Equity'],
+            'correct_index'  => '1',
             'is_active'      => '1',
         ])->assertRedirect(route('faculty.test-bank'));
 
@@ -171,6 +168,47 @@ class FacultyTestBankTest extends TestCase
         $this->assertSame(1, $choices->where('is_correct', true)->count());
         $this->assertSame('Balance Sheet', $choices->firstWhere('choice_label', 'B')->choice_text);
         $this->assertTrue((bool) $choices->firstWhere('choice_label', 'B')->is_correct);
+    }
+
+    public function test_faculty_can_create_an_mcq_question_with_more_than_four_choices(): void
+    {
+        $faculty = $this->faculty();
+        $topicId = $this->topic($faculty);
+
+        $this->actingAs($faculty)->post(route('faculty.question.store'), [
+            'topic_id'       => $topicId,
+            'question_text'  => 'Which of these is a current asset?',
+            'question_type'  => 'mcq',
+            'difficulty'     => 'Easy',
+            'choices'        => ['Land', 'Goodwill', 'Cash', 'Equipment', 'Patents', 'Inventory'],
+            'correct_index'  => '5', // F — "Inventory"
+            'is_active'      => '1',
+        ])->assertRedirect(route('faculty.test-bank'));
+
+        $question = DB::table('questions')->where('topic_id', $topicId)->first();
+        $choices = DB::table('question_choices')->where('question_id', $question->id)->get();
+        $this->assertCount(6, $choices);
+        $this->assertSame('Inventory', $choices->firstWhere('choice_label', 'F')->choice_text);
+        $this->assertTrue((bool) $choices->firstWhere('choice_label', 'F')->is_correct);
+        $this->assertSame(1, $choices->where('is_correct', true)->count());
+    }
+
+    public function test_an_mcq_submission_with_more_than_the_max_choices_is_rejected(): void
+    {
+        $faculty = $this->faculty();
+        $topicId = $this->topic($faculty);
+
+        $this->actingAs($faculty)->post(route('faculty.question.store'), [
+            'topic_id'      => $topicId,
+            'question_text' => 'Too many choices.',
+            'question_type' => 'mcq',
+            'difficulty'    => 'Easy',
+            'choices'       => range('1', '27'), // 27 — one over the max of 26
+            'correct_index' => '0',
+            'is_active'     => '1',
+        ])->assertSessionHasErrors(['choices']);
+
+        $this->assertSame(0, DB::table('questions')->count());
     }
 
     public function test_faculty_can_create_a_true_false_question(): void
@@ -203,15 +241,13 @@ class FacultyTestBankTest extends TestCase
 
         $this->actingAs($faculty)->post(route('faculty.question.store'), [
             'topic_id'      => $topicId,
-            'question_text' => 'Missing choice_d and a correct answer.',
+            'question_text' => 'Missing a correct answer.',
             'question_type' => 'mcq',
             'difficulty'    => 'Easy',
-            'choice_a'      => 'A',
-            'choice_b'      => 'B',
-            'choice_c'      => 'C',
-            // choice_d and correct_answer omitted
+            'choices'       => ['A', 'B', 'C'],
+            // correct_index omitted
             'is_active'     => '1',
-        ])->assertSessionHasErrors(['choice_d', 'correct_answer']);
+        ])->assertSessionHasErrors(['correct_index']);
 
         $this->assertSame(0, DB::table('questions')->count());
     }
@@ -229,11 +265,8 @@ class FacultyTestBankTest extends TestCase
             'question_text'  => 'Updated wording',
             'question_type'  => 'mcq',
             'difficulty'     => 'Hard',
-            'choice_a'       => 'New A',
-            'choice_b'       => 'New B',
-            'choice_c'       => 'New C',
-            'choice_d'       => 'New D',
-            'correct_answer' => 'c',
+            'choices'        => ['New A', 'New B', 'New C', 'New D'],
+            'correct_index'  => '2',
             'is_active'      => '1',
         ])->assertRedirect(route('faculty.test-bank'));
 
@@ -283,11 +316,8 @@ class FacultyTestBankTest extends TestCase
                 'question_text'  => 'Corrected wording',
                 'question_type'  => 'mcq',
                 'difficulty'     => 'Easy',
-                'choice_a'       => 'Choice A text fixed',
-                'choice_b'       => 'Choice B',
-                'choice_c'       => 'Choice C',
-                'choice_d'       => 'Choice D',
-                'correct_answer' => 'a',
+                'choices'        => ['Choice A text fixed', 'Choice B', 'Choice C', 'Choice D'],
+                'correct_index'  => '0',
                 'is_active'      => '1',
             ])->assertRedirect(route('faculty.test-bank'))->assertSessionHas('status');
 
@@ -330,6 +360,45 @@ class FacultyTestBankTest extends TestCase
         $response->assertViewHas('subjects', fn ($subjects) => $subjects->pluck('code')->all() === ['FAR']);
         $response->assertViewHas('stats', fn ($stats) => $stats['total'] === 1);
         $response->assertViewHas('questions', fn ($questions) => $questions->total() === 1);
+    }
+
+    public function test_the_add_and_edit_question_forms_render_for_mcq_and_true_false(): void
+    {
+        $faculty = $this->faculty();
+        $topicId = $this->topic($faculty);
+        $mcqId = $this->mcqQuestion($topicId, $faculty->id, correct: 'b');
+        $tfId = DB::table('questions')->insertGetId([
+            'topic_id' => $topicId, 'created_by' => $faculty->id,
+            'question_text' => 'TF question', 'question_type' => 'true_false', 'difficulty' => 'easy',
+            'created_at' => now(), 'updated_at' => now(),
+        ]);
+        DB::table('question_choices')->insert([
+            ['question_id' => $tfId, 'choice_label' => 'A', 'choice_text' => 'True', 'is_correct' => true],
+            ['question_id' => $tfId, 'choice_label' => 'B', 'choice_text' => 'False', 'is_correct' => false],
+        ]);
+
+        Schema::create('quiz_sessions', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('student_id');
+            $table->unsignedInteger('total_items')->default(0);
+            $table->unsignedInteger('duration_secs')->nullable();
+        });
+        Schema::create('quiz_answers', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('session_id');
+            $table->unsignedBigInteger('question_id');
+            $table->unsignedBigInteger('selected_choice')->nullable();
+            $table->boolean('is_correct')->default(false);
+        });
+
+        try {
+            $this->actingAs($faculty)->get(route('faculty.question.create'))->assertOk();
+            $this->actingAs($faculty)->get(route('faculty.question.edit', $mcqId))->assertOk();
+            $this->actingAs($faculty)->get(route('faculty.question.edit', $tfId))->assertOk();
+        } finally {
+            Schema::dropIfExists('quiz_answers');
+            Schema::dropIfExists('quiz_sessions');
+        }
     }
 
     public function test_faculty_cannot_open_the_editor_for_a_question_outside_their_assigned_subjects(): void
@@ -439,8 +508,8 @@ class FacultyTestBankTest extends TestCase
         return $extra + [
             'topic_id' => $topicId, 'question_text' => 'Using the trial balance below, what is the total debit?',
             'question_type' => 'mcq', 'difficulty' => 'Medium',
-            'choice_a' => '10,000', 'choice_b' => '12,500', 'choice_c' => '15,000', 'choice_d' => '20,000',
-            'correct_answer' => 'b', 'is_active' => '1',
+            'choices' => ['10,000', '12,500', '15,000', '20,000'],
+            'correct_index' => '1', 'is_active' => '1',
         ];
     }
 
