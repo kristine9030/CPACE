@@ -182,14 +182,23 @@
 
                     <div class="mcq-block" style="display:{{ $item->question_type === 'mcq' ? 'block' : 'none' }};">
                         <label class="small">Choices — mark the correct one</label>
-                        @foreach (['A', 'B', 'C', 'D'] as $label)
+                        @php
+                            $parsedLabels = collect($item->choices ?? [])->pluck('label')->all();
+                            $labelsToShow = collect(\App\Services\QuestionImportParser::CHOICE_LETTERS)
+                                ->filter(fn ($l) => in_array($l, ['A', 'B'], true) || in_array($l, $parsedLabels, true))
+                                ->values();
+                        @endphp
+                        @foreach ($labelsToShow as $label)
                             @php $choiceText = collect($item->choices ?? [])->firstWhere('label', $label)['text'] ?? ''; @endphp
                             <div class="choice-row">
                                 <input type="radio" name="items[{{ $item->id }}][correct_label]" value="{{ $label }}" {{ $correct === $label ? 'checked' : '' }}>
                                 <span class="choice-label">{{ $label }}.</span>
-                                <input type="text" name="items[{{ $item->id }}][choices][{{ $label }}]" value="{{ $choiceText }}" placeholder="Choice {{ $label }} {{ in_array($label, ['C', 'D']) ? '(optional)' : '' }}">
+                                <input type="text" name="items[{{ $item->id }}][choices][{{ $label }}]" value="{{ $choiceText }}" placeholder="Choice {{ $label }} {{ in_array($label, ['A', 'B'], true) ? '' : '(optional)' }}">
                             </div>
                         @endforeach
+                        @if($labelsToShow->count() < count(\App\Services\QuestionImportParser::CHOICE_LETTERS))
+                            <button type="button" class="btn btn-ghost add-choice-row-btn" data-item="{{ $item->id }}" style="margin-top:6px;font-size:12px;"><i class="fas fa-plus"></i> Add another choice</button>
+                        @endif
                     </div>
 
                     <div class="tf-block" style="display:{{ $item->question_type === 'true_false' ? 'block' : 'none' }}; margin-bottom:14px;">
@@ -227,6 +236,26 @@
 
     document.querySelectorAll('.include-toggle input[type=checkbox]').forEach(cb => {
         cb.addEventListener('change', () => cb.closest('.item-card').classList.toggle('excluded', !cb.checked));
+    });
+
+    const MAX_IMPORT_CHOICES = {{ count(\App\Services\QuestionImportParser::CHOICE_LETTERS) }};
+
+    document.querySelectorAll('.add-choice-row-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const itemId = btn.dataset.item;
+            const block = btn.closest('.mcq-block');
+            const rows = block.querySelectorAll('.choice-row');
+            if (rows.length >= MAX_IMPORT_CHOICES) return;
+            const label = String.fromCharCode(65 + rows.length);
+            const row = document.createElement('div');
+            row.className = 'choice-row';
+            row.innerHTML = `<input type="radio" name="items[${itemId}][correct_label]" value="${label}">` +
+                `<span class="choice-label">${label}.</span>` +
+                `<input type="text" name="items[${itemId}][choices][${label}]" placeholder="Choice ${label} (optional)">`;
+            block.insertBefore(row, btn);
+            if (rows.length + 1 >= MAX_IMPORT_CHOICES) btn.remove();
+            row.querySelector('input[type=text]').focus();
+        });
     });
 
     function setType(itemId, type) {

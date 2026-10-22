@@ -490,6 +490,72 @@ class QuestionImportTest extends TestCase
         $this->assertGreaterThanOrEqual(70, $items[0]['confidence']);
     }
 
+    public function test_rule_based_parser_extracts_a_question_with_more_than_four_choices(): void
+    {
+        $parser = new QuestionImportParser();
+        $text = "1) Which of these is a current asset?\n"
+            . "A) Land\n"
+            . "B) Goodwill\n"
+            . "C) Equipment\n"
+            . "D) Patents\n"
+            . "E) Cash\n"
+            . "F) Inventory\n"
+            . "Ans: F\n";
+
+        $items = $parser->parseFreeText($text);
+
+        $this->assertNotNull($items);
+        $this->assertCount(1, $items);
+        $this->assertCount(6, $items[0]['choices']);
+        $this->assertTrue(collect($items[0]['choices'])->firstWhere('label', 'F')['is_correct']);
+    }
+
+    public function test_committing_the_review_form_saves_more_than_four_choices(): void
+    {
+        $faculty = $this->faculty();
+        $subjectId = $this->subjectFor($faculty);
+        $topicId = DB::table('topics')->insertGetId(['subject_id' => $subjectId, 'name' => 'Basics']);
+
+        $batchId = DB::table('question_import_batches')->insertGetId([
+            'faculty_id' => $faculty->id, 'subject_id' => $subjectId,
+            'original_filename' => 'q.txt', 'file_type' => 'txt', 'status' => 'ready',
+            'created_at' => now(), 'updated_at' => now(),
+        ]);
+        $itemId = DB::table('question_import_items')->insertGetId([
+            'batch_id' => $batchId, 'question_text' => 'Which is a current asset?',
+            'question_type' => 'mcq',
+            'choices' => json_encode([
+                ['label' => 'A', 'text' => 'Land', 'is_correct' => false],
+                ['label' => 'B', 'text' => 'Goodwill', 'is_correct' => false],
+                ['label' => 'C', 'text' => 'Equipment', 'is_correct' => false],
+                ['label' => 'D', 'text' => 'Patents', 'is_correct' => false],
+                ['label' => 'E', 'text' => 'Cash', 'is_correct' => true],
+            ]),
+            'confidence' => 90, 'created_at' => now(), 'updated_at' => now(),
+        ]);
+
+        $this->actingAs($faculty)->post(route('faculty.test-bank.import.commit', $batchId), [
+            'items' => [
+                $itemId => [
+                    'include' => '1',
+                    'topic_id' => $topicId,
+                    'question_text' => 'Which is a current asset?',
+                    'question_type' => 'mcq',
+                    'difficulty' => 'Easy',
+                    'choices' => ['A' => 'Land', 'B' => 'Goodwill', 'C' => 'Equipment', 'D' => 'Patents', 'E' => 'Cash'],
+                    'correct_label' => 'E',
+                    'explanation' => '',
+                ],
+            ],
+        ]);
+
+        $question = DB::table('questions')->where('question_text', 'Which is a current asset?')->first();
+        $this->assertNotNull($question);
+        $choices = DB::table('question_choices')->where('question_id', $question->id)->get();
+        $this->assertCount(5, $choices);
+        $this->assertTrue((bool) $choices->firstWhere('choice_label', 'E')->is_correct);
+    }
+
     public function test_rule_based_parser_returns_null_when_nothing_looks_like_a_question(): void
     {
         $parser = new QuestionImportParser();

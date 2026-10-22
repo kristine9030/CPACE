@@ -387,7 +387,7 @@ class AiQuestionImportService
             return null;
         }
 
-        $labels = ['A', 'B', 'C', 'D'];
+        $labels = \App\Services\QuestionImportParser::CHOICE_LETTERS;
         $choices = [];
         $correctCount = 0;
         foreach (array_values($rawChoices) as $i => $c) {
@@ -433,7 +433,7 @@ Find EVERY question present and respond with ONLY a JSON array, no prose, no mar
 Rules:
 - If the source already states the correct answer, use it exactly — do not second-guess it.
 - If the source does NOT state a correct answer (e.g. a bare computation problem), work it out yourself and mark the correct choice/tf_answer, and say so briefly in the explanation (e.g. "Computed: ...").
-- Keep multiple-choice questions to the choices actually given (2-4). Do not invent extra choices.
+- Keep multiple-choice questions to the choices actually given (2-8). Do not invent extra choices.
 - Preserve numbers, currency, dates, and formulas in the question text exactly as given.
 - If a block of text is clearly not a question (headers, page numbers, instructions), skip it.
 - If nothing in the source is a gradable question, return an empty array [].

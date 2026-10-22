@@ -18,6 +18,9 @@ class QuestionImportParser
 {
     public const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp'];
 
+    /** Choice letters recognised while parsing (A..Z — up to 26 choices). */
+    public const CHOICE_LETTERS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'];
+
     /**
      * Extract plain text from a document file. Returns null for images
      * (handled separately via vision) or if extraction fails outright.
@@ -118,7 +121,7 @@ class QuestionImportParser
     }
 
     /**
-     * If a spreadsheet/CSV has a recognisable header (Question, Choice A-D or
+     * If a spreadsheet/CSV has a recognisable header (Question, Choice A-Z or
      * Choices, Answer, Explanation), parse it row-by-row instead of relying
      * on the generic text pattern matcher — much higher confidence.
      *
@@ -142,10 +145,11 @@ class QuestionImportParser
         $col = fn (array $names) => $this->findColumn($header, $names);
 
         $qCol = $col(['question', 'question_text', 'question text']);
-        $aCol = $col(['choice a', 'choice_a', 'option a', 'a']);
-        $bCol = $col(['choice b', 'choice_b', 'option b', 'b']);
-        $cCol = $col(['choice c', 'choice_c', 'option c', 'c']);
-        $dCol = $col(['choice d', 'choice_d', 'option d', 'd']);
+        $choiceColsByLetter = [];
+        foreach (self::CHOICE_LETTERS as $letter) {
+            $lower = strtolower($letter);
+            $choiceColsByLetter[$letter] = $col(["choice {$lower}", "choice_{$lower}", "option {$lower}", $lower]);
+        }
         $ansCol = $col(['answer', 'correct answer', 'correct_answer']);
         $expCol = $col(['explanation', 'rationale']);
         $typeCol = $col(['type', 'question type', 'question_type']);
@@ -169,9 +173,8 @@ class QuestionImportParser
             $topicName = $topicName !== '' ? $topicName : null;
 
             // Gather whichever lettered choice columns actually have content.
-            $choiceCols = ['A' => $aCol, 'B' => $bCol, 'C' => $cCol, 'D' => $dCol];
             $rawChoices = [];
-            foreach ($choiceCols as $label => $colIndex) {
+            foreach ($choiceColsByLetter as $label => $colIndex) {
                 if ($colIndex === null) {
                     continue;
                 }
@@ -199,7 +202,7 @@ class QuestionImportParser
             if ($isTrueFalse) {
                 if ($looksLikeTrueFalse) {
                     $trueLabel = array_search('true', $normalizedPair, true);
-                    $correctLetter = strtoupper(preg_replace('/[^A-Da-d]/', '', $answerRaw));
+                    $correctLetter = strtoupper(preg_replace('/[^A-Za-z]/', '', $answerRaw));
                     $correctLetter = $correctLetter !== '' ? $correctLetter[0] : null;
                     $isTrue = $correctLetter !== null
                         ? $correctLetter === $trueLabel
@@ -224,7 +227,7 @@ class QuestionImportParser
             }
 
             $choices = [];
-            $correctLetter = strtoupper(preg_replace('/[^A-Da-d]/', '', $answerRaw));
+            $correctLetter = strtoupper(preg_replace('/[^A-Za-z]/', '', $answerRaw));
             $correctLetter = $correctLetter !== '' ? $correctLetter[0] : null;
 
             foreach ($rawChoices as $label => $text) {
@@ -342,7 +345,7 @@ class QuestionImportParser
         $topicName = null;
 
         foreach (array_slice($lines, 1) as $line) {
-            if (preg_match('/^([A-D])[\.\)]\s*(.+)$/i', $line, $m)) {
+            if (preg_match('/^([A-Z])[\.\)]\s*(.+)$/i', $line, $m)) {
                 $choices[strtoupper($m[1])] = trim($m[2]);
                 continue;
             }
@@ -351,7 +354,7 @@ class QuestionImportParser
                 if (preg_match('/^(true|false)$/i', $raw)) {
                     $tfAnswer = strtolower($raw) === 'true';
                 } else {
-                    $letter = strtoupper(preg_replace('/[^A-Da-d]/', '', $raw));
+                    $letter = strtoupper(preg_replace('/[^A-Za-z]/', '', $raw));
                     $answerLetter = $letter !== '' ? $letter[0] : null;
                 }
                 continue;

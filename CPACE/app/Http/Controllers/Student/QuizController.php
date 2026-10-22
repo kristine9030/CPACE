@@ -583,7 +583,7 @@ class QuizController extends Controller
      */
     private function presentQuestions($questions, int $sessionId)
     {
-        $labels = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+        $labels = range('A', 'Z');
 
         $questions->transform(function ($question) use ($sessionId, $labels) {
             // True/False keeps its natural order; everything else is shuffled.

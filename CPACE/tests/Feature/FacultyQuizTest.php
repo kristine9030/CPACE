@@ -568,6 +568,31 @@ class FacultyQuizTest extends TestCase
         ])->assertSessionHasErrors('items_json');
     }
 
+    public function test_a_question_can_have_up_to_twenty_six_choices_but_not_more(): void
+    {
+        $faculty = $this->faculty();
+        $letters = range('A', 'Z');
+        $item = [
+            'question_text' => 'Pick one of twenty-six', 'question_type' => 'mcq', 'points' => 1,
+            'choices' => array_map(fn ($l) => ['label' => $l, 'text' => "Option {$l}", 'is_correct' => $l === 'Z'], $letters),
+        ];
+
+        $this->actingAs($faculty)->post(route('faculty.quizzes.store'), [
+            'action' => 'draft',
+            'title' => 'Twenty-six choices',
+            'items_json' => json_encode([$item]),
+        ])->assertSessionDoesntHaveErrors('items_json');
+
+        $overItem = $item;
+        $overItem['choices'][] = ['label' => 'AA', 'text' => 'Option AA', 'is_correct' => false];
+
+        $this->actingAs($faculty)->post(route('faculty.quizzes.store'), [
+            'action' => 'draft',
+            'title' => 'Twenty-seven choices',
+            'items_json' => json_encode([$overItem]),
+        ])->assertSessionHasErrors('items_json');
+    }
+
     public function test_publishing_with_a_deadline_in_the_past_is_rejected(): void
     {
         $faculty = $this->faculty();

@@ -819,8 +819,8 @@ class FacultyQuizController extends Controller
                 ];
             }
 
-            if (count($choices) < 2 || count($choices) > 6) {
-                throw ValidationException::withMessages(['items_json' => "Question {$n} needs between 2 and 6 answer choices."]);
+            if (count($choices) < 2 || count($choices) > 26) {
+                throw ValidationException::withMessages(['items_json' => "Question {$n} needs between 2 and 26 answer choices."]);
             }
             if ($correct !== 1) {
                 throw ValidationException::withMessages(['items_json' => "Question {$n} must have exactly one correct answer."]);

@@ -339,7 +339,7 @@ class QuestionImportController extends Controller
 
         $rows = [];
         $correctLabel = $row['correct_label'] ?? null;
-        foreach (['A', 'B', 'C', 'D'] as $label) {
+        foreach (\App\Services\QuestionImportParser::CHOICE_LETTERS as $label) {
             $text = trim($row['choices'][$label] ?? '');
             if ($text === '') {
                 continue;

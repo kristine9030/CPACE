@@ -13,8 +13,10 @@ use PhpOffice\PhpWord\PhpWord;
  * faculty have something to follow instead of guessing at the expected shape.
  * The content is the same 3 sample questions in every format — only the
  * container differs. Keep this in sync with QuestionImportParser's rules
- * (numbered stem, "A./B./C./D." choices, "Answer:"/"Explanation:" lines for
- * documents; a Question/Choice A-D/Answer header row for spreadsheets).
+ * (numbered stem, "A./B./C./D..." choices, "Answer:"/"Explanation:" lines for
+ * documents; a Question/Choice A-Z/Answer header row for spreadsheets —
+ * choices aren't limited to 4, add more "Choice E", "Choice F", etc. columns
+ * or lettered lines as needed, up to QuestionImportParser::CHOICE_LETTERS).
  */
 class QuestionImportTemplateGenerator
 {
@@ -70,7 +72,7 @@ class QuestionImportTemplateGenerator
     private function txt(): string
     {
         $lines = [
-            "Replace these 3 sample questions with your own — keep the same numbering, choice letters, and \"Answer:\" style.",
+            "Replace these 3 sample questions with your own — keep the same numbering, choice letters, and \"Answer:\" style. Need more than 4 choices? Just keep adding lettered lines (E., F., ...).",
             "The \"Topic:\" line is optional — if it exactly matches one of this subject's Topic names, CPACE will pick it for you; otherwise leave it out and choose the topic on the review screen.\n",
         ];
 
@@ -146,7 +148,7 @@ class QuestionImportTemplateGenerator
         $section = $phpWord->addSection();
 
         $section->addText(
-            'Replace these 3 sample questions with your own — keep the same numbering, choice letters, and "Answer:" style.',
+            'Replace these 3 sample questions with your own — keep the same numbering, choice letters, and "Answer:" style. Need more than 4 choices? Just keep adding lettered lines (E., F., ...).',
             ['italic' => true, 'color' => '888888', 'size' => 10]
         );
         $section->addText(

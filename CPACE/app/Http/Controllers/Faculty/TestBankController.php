@@ -656,6 +656,9 @@ class TestBankController extends Controller
         return $fields;
     }
 
+    /** Multiple-choice questions may have anywhere from 2 to this many choices (A, B, C, ... Z). */
+    public const MAX_MCQ_CHOICES = 26;
+
     private function validateQuestion(Request $request): array
     {
         $rules = [
@@ -671,17 +674,21 @@ class TestBankController extends Controller
 
         if ($request->input('question_type') === 'mcq') {
             $rules += [
-                'choice_a'       => 'required|string',
-                'choice_b'       => 'required|string',
-                'choice_c'       => 'required|string',
-                'choice_d'       => 'required|string',
-                'correct_answer' => 'required|in:a,b,c,d',
+                'choices'        => 'required|array|min:2|max:' . self::MAX_MCQ_CHOICES,
+                'choices.*'      => 'required|string',
+                'correct_index'  => 'required|integer|min:0|max:' . (self::MAX_MCQ_CHOICES - 1),
             ];
         } else {
             $rules['tf_answer'] = 'required|in:true,false';
         }
 
-        return $request->validate($rules);
+        $data = $request->validate($rules);
+
+        if ($data['question_type'] === 'mcq' && (int) $data['correct_index'] >= count($data['choices'])) {
+            throw ValidationException::withMessages(['correct_index' => 'Select which choice is correct.']);
+        }
+
+        return $data;
     }
 
     /** Build the label => [choice_text, is_correct] rows for a question submission. */
@@ -689,10 +696,10 @@ class TestBankController extends Controller
     {
         if ($data['question_type'] === 'mcq') {
             $rows = [];
-            foreach (['a', 'b', 'c', 'd'] as $label) {
-                $rows[strtoupper($label)] = [
-                    'choice_text' => $data["choice_{$label}"],
-                    'is_correct'  => $data['correct_answer'] === $label,
+            foreach (array_values($data['choices']) as $i => $text) {
+                $rows[chr(65 + $i)] = [
+                    'choice_text' => $text,
+                    'is_correct'  => (int) $data['correct_index'] === $i,
                 ];
             }
 
