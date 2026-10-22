@@ -104,7 +104,27 @@ class QuizController extends Controller
             ->limit(4)
             ->get();
 
-        return view('student.adaptive-quizzes', compact('subjects', 'accuracy', 'totalAttempted', 'recentSessions', 'mastery'));
+        // Topics per subject, for Topic Mode's "pick specific topic(s)" picker.
+        // Scoped to this student's curriculum the same way selectQuestions() is.
+        $topicRows = CurriculumScope::restrictForStudent(DB::table('topics'), $studentId)
+            ->whereIn('subject_id', $subjects->pluck('id'))
+            ->where('is_active', true)
+            ->orderBy('subject_id')->orderBy('sort_order')->orderBy('name')
+            ->get(['id', 'subject_id', 'name']);
+
+        $topicQuestionCounts = Question::where('is_active', true)
+            ->whereIn('topic_id', $topicRows->pluck('id'))
+            ->selectRaw('topic_id, COUNT(*) as c')
+            ->groupBy('topic_id')
+            ->pluck('c', 'topic_id');
+
+        $topicsBySubject = $topicRows->groupBy('subject_id')->map(fn ($group) => $group->map(fn ($t) => [
+            'id'             => $t->id,
+            'name'           => $t->name,
+            'question_count' => (int) ($topicQuestionCounts[$t->id] ?? 0),
+        ])->values());
+
+        return view('student.adaptive-quizzes', compact('subjects', 'accuracy', 'totalAttempted', 'recentSessions', 'mastery', 'topicsBySubject'));
     }
 
     /**
@@ -186,6 +206,11 @@ class QuizController extends Controller
             // Optional: focus a Topic-mode quiz on a specific topic (used by
             // the Calendar's "Start as Exam" action on a scheduled review).
             'topic_id'      => ['nullable', Rule::exists('topics', 'id')->where('is_active', true)],
+            // Optional: the Adaptive Quizzes page's Topic Mode picker lets a
+            // student choose one or more specific topics to drill instead of
+            // letting the system auto-pick.
+            'topic_ids'     => ['nullable', 'array'],
+            'topic_ids.*'   => [Rule::exists('topics', 'id')->where('is_active', true)],
             // Live Room: opting into a user-picked practice difficulty instead
             // of the locked, data-derived Assessment/Ranked rivals.
             'is_practice_room'    => 'nullable|boolean',
@@ -227,13 +252,21 @@ class QuizController extends Controller
         $topicIds = CurriculumScope::restrictForStudent(DB::table('topics'), Auth::id())->whereIn('subject_id', $subjectIds)->where('is_active', true)->pluck('id');
         $sessionSubjectId = $subjectIds->count() === 1 ? $subjectIds->first() : null;
 
-        // A requested focus topic is honoured only if it belongs to the subject.
-        $forceTopicId = isset($data['topic_id']) && $topicIds->contains((int) $data['topic_id'])
-            ? (int) $data['topic_id']
-            : null;
+        // A requested focus topic (or topics) is honoured only if it belongs
+        // to the chosen subject(s). `topic_ids[]` (the Topic Mode picker) wins
+        // over the single `topic_id` (the Calendar's "Start as Exam" action).
+        $forceTopicIds = collect($data['topic_ids'] ?? [])
+            ->map(fn ($v) => (int) $v)
+            ->filter(fn ($id) => $topicIds->contains($id))
+            ->unique()
+            ->values();
+
+        if ($forceTopicIds->isEmpty() && isset($data['topic_id']) && $topicIds->contains((int) $data['topic_id'])) {
+            $forceTopicIds = collect([(int) $data['topic_id']]);
+        }
 
         // Mode decides HOW the questions are chosen from the faculty's bank.
-        [$questionIds, $focusTopicId] = $this->selectQuestions($mode, $topicIds, Auth::id(), $count, $forceTopicId);
+        [$questionIds, $focusTopicId] = $this->selectQuestions($mode, $topicIds, Auth::id(), $count, $forceTopicIds);
 
         if ($questionIds->isEmpty()) {
             return back()->with('error', 'No questions are available for that subject yet.');
@@ -292,22 +325,35 @@ class QuizController extends Controller
      * stored questions are never modified - only WHICH ones are served and
      * (later, at render time) the order they appear in.
      */
-    private function selectQuestions(string $mode, $topicIds, int $studentId, int $count = self::QUIZ_LENGTH, ?int $forceTopicId = null): array
+    private function selectQuestions(string $mode, $topicIds, int $studentId, int $count = self::QUIZ_LENGTH, ?\Illuminate\Support\Collection $forceTopicIds = null): array
     {
         // Fresh query builder each call - inRandomOrder()/limit() mutate state.
         $base = fn () => Question::where('is_active', true)->whereIn('topic_id', $topicIds);
+        $forceTopicIds ??= collect();
 
         switch ($mode) {
             case 'topic':
-                // Focus the whole quiz on one topic so the student drills a
-                // single competency. A caller-chosen topic wins; otherwise
+                // Focus the quiz on the topic(s) the student picked, so they
+                // drill a chosen competency. If none were picked, auto-pick:
                 // prefer a weak topic, else the topic with the most questions.
-                $focusTopicId = $forceTopicId ?? $this->pickFocusTopic($topicIds, $studentId);
+                if ($forceTopicIds->isNotEmpty()) {
+                    $pickTopicIds = $forceTopicIds;
+                } else {
+                    $auto = $this->pickFocusTopic($topicIds, $studentId);
+                    $pickTopicIds = $auto ? collect([$auto]) : collect();
+                }
+
                 $ids = $base()
-                    ->where('topic_id', $focusTopicId)
+                    ->whereIn('topic_id', $pickTopicIds)
                     ->inRandomOrder()
                     ->limit($count)
                     ->pluck('id');
+
+                // quiz_sessions.topic_id is a single FK - keep it set only
+                // when the quiz drilled exactly one topic, same NULL-means-
+                // "mixed" convention subject_id already uses for a multi-
+                // subject session.
+                $focusTopicId = $pickTopicIds->count() === 1 ? $pickTopicIds->first() : null;
 
                 return [$ids, $focusTopicId];
 

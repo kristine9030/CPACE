@@ -197,6 +197,88 @@ class QuizFlowTest extends TestCase
         $this->assertSame(0, DB::table('quiz_sessions')->count());
     }
 
+    public function test_the_adaptive_quizzes_page_renders_with_topics_grouped_by_subject(): void
+    {
+        $student = $this->student();
+        $subjectId = DB::table('subjects')->insertGetId(['code' => 'FAR', 'name' => 'Financial Accounting', 'created_at' => now(), 'updated_at' => now()]);
+        $this->topicWithQuestions($subjectId, 'Inventory', 2);
+        $this->topicWithQuestions($subjectId, 'Leases', 0);
+
+        $response = $this->actingAs($student)->get(route('adaptive-quizzes'));
+
+        $response->assertOk();
+        $topicsBySubject = $response->viewData('topicsBySubject');
+        $this->assertCount(2, $topicsBySubject[$subjectId]);
+        $this->assertSame(2, $topicsBySubject[$subjectId]->firstWhere('name', 'Inventory')['question_count']);
+        $this->assertSame(0, $topicsBySubject[$subjectId]->firstWhere('name', 'Leases')['question_count']);
+    }
+
+    public function test_topic_mode_with_chosen_topics_only_draws_from_those_topics(): void
+    {
+        $student = $this->student();
+        $subjectId = DB::table('subjects')->insertGetId(['code' => 'FAR', 'name' => 'Financial Accounting', 'created_at' => now(), 'updated_at' => now()]);
+        $topicA = $this->topicWithQuestions($subjectId, 'Inventory', 3);
+        $topicB = $this->topicWithQuestions($subjectId, 'Leases', 3);
+        $topicC = $this->topicWithQuestions($subjectId, 'Revenue', 3);
+
+        $this->actingAs($student)->post(route('quiz.start'), [
+            'subject_id' => $subjectId,
+            'mode' => 'topic',
+            'count' => 6,
+            'topic_ids' => [$topicA, $topicB],
+        ]);
+
+        $session = DB::table('quiz_sessions')->where('student_id', $student->id)->first();
+        $this->assertNotNull($session);
+        $this->assertNull($session->topic_id, 'two chosen topics should leave the single topic_id FK null, like a multi-subject session does');
+
+        $drawnTopicIds = DB::table('quiz_answers')
+            ->join('questions', 'questions.id', '=', 'quiz_answers.question_id')
+            ->where('quiz_answers.session_id', $session->id)
+            ->pluck('questions.topic_id')
+            ->unique()
+            ->values();
+
+        $this->assertTrue($drawnTopicIds->every(fn ($id) => in_array($id, [$topicA, $topicB], true)));
+        $this->assertFalse($drawnTopicIds->contains($topicC));
+    }
+
+    public function test_topic_mode_with_one_chosen_topic_sets_the_session_topic_id(): void
+    {
+        $student = $this->student();
+        $subjectId = DB::table('subjects')->insertGetId(['code' => 'FAR', 'name' => 'Financial Accounting', 'created_at' => now(), 'updated_at' => now()]);
+        $topicA = $this->topicWithQuestions($subjectId, 'Inventory', 3);
+
+        $this->actingAs($student)->post(route('quiz.start'), [
+            'subject_id' => $subjectId,
+            'mode' => 'topic',
+            'count' => 3,
+            'topic_ids' => [$topicA],
+        ]);
+
+        $session = DB::table('quiz_sessions')->where('student_id', $student->id)->first();
+        $this->assertSame($topicA, $session->topic_id);
+    }
+
+    public function test_topic_mode_ignores_a_chosen_topic_outside_the_selected_subjects(): void
+    {
+        $student = $this->student();
+        $subjectId = DB::table('subjects')->insertGetId(['code' => 'FAR', 'name' => 'Financial Accounting', 'created_at' => now(), 'updated_at' => now()]);
+        $otherSubjectId = DB::table('subjects')->insertGetId(['code' => 'AUD', 'name' => 'Auditing', 'created_at' => now(), 'updated_at' => now()]);
+        $topicInScope = $this->topicWithQuestions($subjectId, 'Inventory', 3);
+        $topicOutOfScope = $this->topicWithQuestions($otherSubjectId, 'Fraud', 3);
+
+        $this->actingAs($student)->post(route('quiz.start'), [
+            'subject_id' => $subjectId,
+            'mode' => 'topic',
+            'count' => 3,
+            'topic_ids' => [$topicInScope, $topicOutOfScope],
+        ]);
+
+        $session = DB::table('quiz_sessions')->where('student_id', $student->id)->first();
+        $this->assertSame($topicInScope, $session->topic_id, 'the out-of-scope topic should be dropped, leaving exactly one in-scope topic');
+    }
+
     public function test_taking_an_already_completed_quiz_redirects_to_its_results(): void
     {
         $student = $this->student();
@@ -288,6 +370,24 @@ class QuizFlowTest extends TestCase
         }
 
         return $subjectId;
+    }
+
+    private function topicWithQuestions(int $subjectId, string $name, int $count): int
+    {
+        $topicId = DB::table('topics')->insertGetId(['subject_id' => $subjectId, 'name' => $name, 'created_at' => now(), 'updated_at' => now()]);
+
+        for ($i = 0; $i < $count; $i++) {
+            $questionId = DB::table('questions')->insertGetId([
+                'topic_id' => $topicId,
+                'question_text' => "$name question $i",
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+            DB::table('question_choices')->insert(['question_id' => $questionId, 'choice_text' => 'Right', 'is_correct' => true, 'created_at' => now(), 'updated_at' => now()]);
+            DB::table('question_choices')->insert(['question_id' => $questionId, 'choice_text' => 'Wrong', 'is_correct' => false, 'created_at' => now(), 'updated_at' => now()]);
+        }
+
+        return $topicId;
     }
 
     private function completedSession(int $studentId): int
