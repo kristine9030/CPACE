@@ -110,9 +110,11 @@
             <div class="page-sub">Questions AI drafted for topics that stayed short of their TOS item count.</div>
         </div>
         <div class="topbar-right">
-            @unless($isChair)
+            @if($isChair)
+                <a href="{{ route('chair.question.create') }}" class="btn btn-ghost"><i class="fas fa-plus"></i> Add Question</a>
+            @else
                 <a href="{{ route('faculty.test-bank') }}" class="btn btn-ghost"><i class="fas fa-arrow-left"></i> Test Bank</a>
-            @endunless
+            @endif
             @include('partials.topbar-actions')
         </div>
     </div>
@@ -121,7 +123,7 @@
         <x-slot:title>Hidden from students until you <strong>approve</strong> them.</x-slot:title>
         AI drafts the missing items when a topic stays below its TOS item count for
         {{ config('curriculum.gap_fill_grace_days') }} days. Check each one against current standards before
-        approving{{ $isChair ? '' : ', or edit it in the Test Bank and publish it yourself' }}.
+        approving, or use <strong>Edit first</strong> to fix it up before publishing.
     </x-hint>
 
     @php
@@ -231,9 +233,7 @@
                                         @csrf
                                         <button class="btn btn-reject"><i class="fas fa-xmark"></i> Reject</button>
                                     </form>
-                                    @unless($isChair)
-                                        <a href="{{ route('faculty.question.edit', $q->id) }}" class="btn btn-ghost"><i class="fas fa-pen"></i> Edit first</a>
-                                    @endunless
+                                    <a href="{{ route($isChair ? 'chair.question.edit' : 'faculty.question.edit', $q->id) }}" class="btn btn-ghost"><i class="fas fa-pen"></i> Edit first</a>
                                 </div>
                             </div>
                         @endforeach

@@ -148,14 +148,24 @@
 </head>
 <body>
 
-@include('partials.faculty-sidebar', ['active' => 'add-question'])
+@php
+    $isChair ??= false;
+    $backRoute = $isChair ? 'chair.ai-review' : 'faculty.test-bank';
+    $backLabel = $isChair ? 'AI Substitute Review' : 'Test Bank';
+@endphp
+
+@if($isChair)
+    @include('partials.chair-sidebar', ['active' => 'ai-review'])
+@else
+    @include('partials.faculty-sidebar', ['active' => 'add-question'])
+@endif
 
 <main class="main">
     <div class="topbar a0">
         <div class="topbar-left">
             <div>
                 <div class="breadcrumb">
-                    <a href="{{ route('faculty.test-bank') }}">Test Bank</a>
+                    <a href="{{ route($backRoute) }}">{{ $backLabel }}</a>
                     <i class="fas fa-chevron-right" style="font-size:9px;"></i>
                     <span>{{ $editMode ? 'Edit Question' : 'Add Question' }}</span>
                 </div>
@@ -164,12 +174,12 @@
             </div>
         </div>
         <div class="topbar-right">
-            <a href="{{ route('faculty.test-bank') }}" class="btn btn-ghost"><i class="fas fa-arrow-left"></i> Back</a>
+            <a href="{{ route($backRoute) }}" class="btn btn-ghost"><i class="fas fa-arrow-left"></i> Back</a>
             @include('partials.topbar-actions')
         </div>
     </div>
 
-    <form action="{{ $editMode ? route('faculty.question.update', $question->id) : route('faculty.question.store') }}" method="POST" id="questionForm" enctype="multipart/form-data"
+    <form action="{{ $editMode ? route($isChair ? 'chair.question.update' : 'faculty.question.update', $question->id) : route($isChair ? 'chair.question.store' : 'faculty.question.store') }}" method="POST" id="questionForm" enctype="multipart/form-data"
           data-confirm="{{ $editMode
               ? 'Your changes go live immediately and affect quizzes generated from this point on.'
               : 'This question is added to the test bank and can be served to students right away.' }}"
@@ -476,7 +486,7 @@ function loadTopics(subjectId) {
     });
 }
 
-const AI_DRAFT_URL = @json(route('faculty.question.ai-draft'));
+const AI_DRAFT_URL = @json(route($isChair ? 'chair.question.ai-draft' : 'faculty.question.ai-draft'));
 const AI_CSRF = @json(csrf_token());
 
 document.getElementById('aiDraftBtn').addEventListener('click', async () => {

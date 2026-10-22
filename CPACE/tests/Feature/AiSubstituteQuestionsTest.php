@@ -5,7 +5,9 @@ namespace Tests\Feature;
 use App\Models\Question;
 use App\Services\AiQuestionAssistantService;
 use App\Services\CurriculumGapFiller;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Tests\Concerns\BuildsCurriculumSchema;
 use Tests\TestCase;
 
@@ -292,6 +294,73 @@ class AiSubstituteQuestionsTest extends TestCase
         $this->assertSame(0, $this->aiCalls);
     }
 
+    public function test_the_chair_sees_an_edit_link_and_an_add_question_button_on_the_review_page(): void
+    {
+        $this->pendingAiQuestion('What is the cash cut-off rule?');
+
+        $this->actingAs($this->chair())->get(route('chair.ai-review'))
+            ->assertOk()
+            ->assertSee('Edit first')
+            ->assertSee(route('chair.question.create'))
+            ->assertSee('Add Question');
+    }
+
+    public function test_the_chair_can_manually_add_a_question_the_same_way_as_a_faculty_member(): void
+    {
+        $chair = $this->chair();
+        $topicId = $this->topic($this->far, $this->activeId, 'Cash');
+
+        $this->actingAs($chair)->get(route('chair.question.create'))->assertOk();
+
+        $this->actingAs($chair)->post(route('chair.question.store'), [
+            'topic_id'      => $topicId,
+            'question_text' => 'A chair-authored question',
+            'question_type' => 'mcq',
+            'difficulty'    => 'Medium',
+            'choices'       => ['Right', 'Wrong 1', 'Wrong 2'],
+            'correct_index' => 0,
+            'is_active'     => '1',
+        ])->assertRedirect(route('chair.ai-review'));
+
+        $question = Question::where('question_text', 'A chair-authored question')->first();
+        $this->assertNotNull($question);
+        $this->assertSame('faculty', $question->source, 'a manually-added question is not flagged as an AI substitute');
+        $this->assertTrue($question->is_active);
+        $this->assertCount(3, $question->choices);
+    }
+
+    public function test_the_chair_can_edit_a_pending_ai_question_before_approving_it(): void
+    {
+        $this->stubQuizAnswerTables();
+        $chair = $this->chair();
+        $id = $this->pendingAiQuestion('An AI drafted question');
+        $topicId = DB::table('questions')->where('id', $id)->value('topic_id');
+
+        try {
+            $this->actingAs($chair)->get(route('chair.question.edit', $id))->assertOk();
+
+            $this->actingAs($chair)->put(route('chair.question.update', $id), [
+                'topic_id'      => $topicId,
+                'question_text' => 'An AI drafted question, corrected by the chair',
+                'question_type' => 'mcq',
+                'difficulty'    => 'Medium',
+                'choices'       => ['Fixed right answer', 'Wrong 1', 'Wrong 2'],
+                'correct_index' => 0,
+                'is_active'     => '1',
+            ])->assertRedirect(route('chair.ai-review'));
+
+            $question = Question::find($id);
+            $this->assertSame('An AI drafted question, corrected by the chair', $question->question_text);
+            $this->assertTrue($question->is_active);
+            // Publishing a pending AI substitute from the edit form counts as approving it.
+            $this->assertSame('approved', $question->review_status);
+            $this->assertSame($chair->id, (int) $question->reviewed_by);
+        } finally {
+            Schema::dropIfExists('quiz_answers');
+            Schema::dropIfExists('quiz_sessions');
+        }
+    }
+
     public function test_the_chair_can_generate_now_and_the_shortlist_shows_on_the_review_page(): void
     {
         $this->faculty($this->far);
@@ -319,6 +388,26 @@ class AiSubstituteQuestionsTest extends TestCase
         ]);
 
         return $id;
+    }
+
+    /**
+     * TestBankController::edit() queries quiz_answers/quiz_sessions for a
+     * question's usage stats; this schema doesn't include those tables, so a
+     * test that visits the edit form stubs them in (mirrors FacultyTestBankTest).
+     */
+    private function stubQuizAnswerTables(): void
+    {
+        Schema::create('quiz_sessions', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedInteger('total_items')->default(0);
+            $table->unsignedInteger('duration_secs')->nullable();
+        });
+        Schema::create('quiz_answers', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('session_id');
+            $table->unsignedBigInteger('question_id');
+            $table->boolean('is_correct')->nullable();
+        });
     }
 
     private function pendingAiQuestion(string $text = 'An AI drafted question'): int

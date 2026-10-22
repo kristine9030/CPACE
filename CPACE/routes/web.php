@@ -258,6 +258,14 @@ Route::middleware(['auth', 'no-back-cache'])->group(function () {
         Route::post('/ai-review/{id}/approve', [AiSubstituteReviewController::class, 'approve'])->name('ai-review.approve');
         Route::post('/ai-review/{id}/reject', [AiSubstituteReviewController::class, 'reject'])->name('ai-review.reject');
         Route::post('/ai-review/generate/{topic}', [AiSubstituteReviewController::class, 'generate'])->middleware('throttle:8,1')->name('ai-review.generate');
+        // Manual question add/edit from the AI Substitute Review page - same
+        // form/engine as the Faculty Test Bank's (TestBankController already
+        // treats a chair as able to manage every subject).
+        Route::get('/ai-review/questions/create', [TestBankController::class, 'create'])->name('question.create');
+        Route::post('/ai-review/questions', [TestBankController::class, 'store'])->name('question.store');
+        Route::post('/ai-review/questions/ai-draft', [TestBankController::class, 'aiDraft'])->middleware('throttle:8,1')->name('question.ai-draft');
+        Route::get('/ai-review/questions/{id}/edit', [TestBankController::class, 'edit'])->name('question.edit');
+        Route::put('/ai-review/questions/{id}', [TestBankController::class, 'update'])->name('question.update');
 
         // Help & Support triage - threads are answered on help.tickets.show
         Route::get('/support', [SupportInboxController::class, 'index'])->name('support.index');

@@ -263,6 +263,7 @@ class TestBankController extends Controller
                 ->with(['topics' => fn ($query) => $query->inCurriculum(CurriculumScope::testBankVersionId())->where('is_active', true)->orderBy('sort_order')])
                 ->orderBy('id')->get(),
             'editMode'    => false,
+            'isChair'     => Auth::user()->isChair(),
         ]);
     }
 
@@ -297,6 +298,16 @@ class TestBankController extends Controller
     private function canManageSubject(\App\Models\User $user, int $subjectId): bool
     {
         return $user->isChair() || $user->assignedSubjects()->where('subjects.id', $subjectId)->exists();
+    }
+
+    /**
+     * Where a create/edit/save redirect goes back to: the chair's AI
+     * Substitute Review page (reached via the chair's own `chair.question.*`
+     * routes) or the faculty's own Test Bank.
+     */
+    private function backRoute(): string
+    {
+        return Auth::user()->isChair() ? 'chair.ai-review' : 'faculty.test-bank';
     }
 
     /**
@@ -359,10 +370,10 @@ class TestBankController extends Controller
         $topic = Topic::findOrFail($data['topic_id']);
 
         if (! $this->canManageSubject(Auth::user(), $topic->subject_id)) {
-            return redirect()->route('faculty.test-bank')->with('warning', self::NOT_ASSIGNED_MESSAGE);
+            return redirect()->route($this->backRoute())->with('warning', self::NOT_ASSIGNED_MESSAGE);
         }
         if ($this->isArchivedTopic($topic)) {
-            return redirect()->route('faculty.test-bank')->with('warning', self::ARCHIVED_MESSAGE);
+            return redirect()->route($this->backRoute())->with('warning', self::ARCHIVED_MESSAGE);
         }
 
         $question = DB::transaction(function () use ($data, $request) {
@@ -383,7 +394,7 @@ class TestBankController extends Controller
 
         Auditor::log(Auth::user(), 'question_added', "Added a question to \"{$topic->name}\".", 'Question', $question->id);
 
-        return redirect()->route('faculty.test-bank')->with('status', 'Question added to the test bank.');
+        return redirect()->route($this->backRoute())->with('status', 'Question added to the test bank.');
     }
 
     /**
@@ -394,7 +405,7 @@ class TestBankController extends Controller
         $question = Question::with('choices')->findOrFail($id);
 
         if (! $this->canManageSubject(Auth::user(), $question->topic->subject_id)) {
-            return redirect()->route('faculty.test-bank')->with('warning', self::NOT_ASSIGNED_MESSAGE);
+            return redirect()->route($this->backRoute())->with('warning', self::NOT_ASSIGNED_MESSAGE);
         }
 
         // Offer the topics of the curriculum this question belongs to, so moving
@@ -409,6 +420,7 @@ class TestBankController extends Controller
             'question'       => $question,
             'currentSubject' => $question->topic->subject_id,
             'stats'          => $this->questionStats($question),
+            'isChair'        => Auth::user()->isChair(),
         ]);
     }
 
@@ -456,10 +468,10 @@ class TestBankController extends Controller
             && $this->canManageSubject(Auth::user(), $newTopic->subject_id);
 
         if (! $canManage) {
-            return redirect()->route('faculty.test-bank')->with('warning', self::NOT_ASSIGNED_MESSAGE);
+            return redirect()->route($this->backRoute())->with('warning', self::NOT_ASSIGNED_MESSAGE);
         }
         if ($this->isArchivedTopic($question->topic) || $this->isArchivedTopic($newTopic)) {
-            return redirect()->route('faculty.test-bank')->with('warning', self::ARCHIVED_MESSAGE);
+            return redirect()->route($this->backRoute())->with('warning', self::ARCHIVED_MESSAGE);
         }
 
         DB::transaction(function () use ($question, $data, $request) {
@@ -485,7 +497,7 @@ class TestBankController extends Controller
             $this->replaceChoices($question, $data);
         });
 
-        return redirect()->route('faculty.test-bank')->with('status', 'Question updated.');
+        return redirect()->route($this->backRoute())->with('status', 'Question updated.');
     }
 
     /**
@@ -496,12 +508,12 @@ class TestBankController extends Controller
         $question = Question::with('topic')->findOrFail($id);
 
         if (! $this->canManageSubject(Auth::user(), $question->topic->subject_id)) {
-            return redirect()->route('faculty.test-bank')->with('warning', self::NOT_ASSIGNED_MESSAGE);
+            return redirect()->route($this->backRoute())->with('warning', self::NOT_ASSIGNED_MESSAGE);
         }
 
         $question->delete();
 
-        return redirect()->route('faculty.test-bank')->with('status', 'Question deleted.');
+        return redirect()->route($this->backRoute())->with('status', 'Question deleted.');
     }
 
     /**
