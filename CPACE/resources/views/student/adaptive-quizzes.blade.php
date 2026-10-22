@@ -753,6 +753,50 @@
             display: flex; align-items: center; justify-content: center; font-size: 11px;
         }
 
+        /* Topic Mode's topic picker - a lighter variant of the subject grid */
+        .topic-picker-wrap {
+            margin-top: 18px;
+            padding-top: 18px;
+            border-top: 1px dashed var(--line);
+        }
+        .topic-picker-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+            gap: 12px;
+        }
+        .topic-cell { display: block; cursor: pointer; margin: 0; }
+        .topic-cell.disabled { cursor: not-allowed; opacity: .55; }
+        .topic-select-card {
+            display: block;
+            background: white;
+            border-radius: 12px;
+            padding: 14px 12px;
+            text-align: center;
+            border: 2px solid var(--line);
+            transition: all 0.2s;
+            font-family: 'Poppins', sans-serif;
+            position: relative;
+        }
+        .topic-cell:not(.disabled):hover .topic-select-card { border-color: var(--accent); }
+        .topic-select-name { display: block; font-size: 13.5px; font-weight: 700; color: var(--ink); margin-bottom: 6px; }
+        .topic-questions-count {
+            font-size: 11px; color: #4b5563; font-weight: 600;
+            background: #f3f4f6; display: inline-block; padding: 3px 10px; border-radius: 20px;
+        }
+        .topic-check:checked + .topic-select-card {
+            border-color: var(--accent);
+            background: var(--accent-soft);
+        }
+        .topic-check:checked + .topic-select-card::after {
+            content: '\f00c';
+            font-family: 'Font Awesome 6 Free'; font-weight: 900;
+            position: absolute; top: 8px; right: 8px;
+            width: 18px; height: 18px; border-radius: 50%;
+            background: var(--accent); color: #fff;
+            display: flex; align-items: center; justify-content: center; font-size: 9px;
+        }
+        .topic-picker-empty { font-size: 13px; color: var(--muted); padding: 8px 0; }
+
         /* rail history list (replaces How It Works) */
         .rail-history-item {
             display: flex; align-items: center; gap: 12px;
@@ -1189,7 +1233,7 @@
                                 <div class="mode-icon"><i class="fas fa-book-open"></i></div>
                                 <div>
                                     <div class="mode-title">Topic Mode</div>
-                                    <div class="mode-description">Drill one topic at a time to build mastery.</div>
+                                    <div class="mode-description">Pick specific topic(s) to drill and build mastery.</div>
                                 </div>
                             </div>
                             <div class="mode-card" data-mode="timed" data-name="Timed" onclick="selectMode(this)">
@@ -1341,6 +1385,19 @@
                                         </span>
                                     </label>
                                 @endforeach
+                            </div>
+
+                            <!-- Topic Mode: pick specific topic(s) to drill. Hidden
+                                 unless Topic Mode is active and at least one subject
+                                 is chosen; leave none checked to auto-pick. -->
+                            <div class="topic-picker-wrap" id="topicPickerWrap" style="display:none;">
+                                <div class="step-desc" style="margin-bottom:14px;">
+                                    <i class="fas fa-book-open"></i> Topic Mode: pick <strong>one or more</strong> specific topics to drill. Leave none checked to let the system auto-pick your weakest topic.
+                                </div>
+                                <div class="subject-toolbar">
+                                    <span class="selected-count none" id="topicSelectedCount"><i class="fas fa-check-circle"></i> 0 topics selected</span>
+                                </div>
+                                <div class="topic-picker-grid" id="topicPickerGrid"></div>
                             </div>
                         </form>
                     </div>
@@ -1541,8 +1598,69 @@
             localStorage.setItem('quizMode', mode);
             document.getElementById('sumMode').textContent = name;
             document.getElementById('pipeSub1').textContent = name;
+            renderTopicPicker();
         }
         function selectMode(element) { applyMode(element.dataset.mode || 'adaptive'); }
+
+        // ── Topic Mode: pick specific topic(s) from the chosen subject(s) ──
+        const TOPICS_BY_SUBJECT = @json($topicsBySubject);
+        const selectedTopicIds = new Set();
+
+        function escapeHtml(s) {
+            return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        }
+
+        function renderTopicPicker() {
+            const wrap = document.getElementById('topicPickerWrap');
+            const grid = document.getElementById('topicPickerGrid');
+            const isTopicMode = document.querySelector('.mode-card.active')?.dataset.mode === 'topic';
+            const subjectIds = Array.from(document.querySelectorAll('.subject-check:checked')).map(c => c.value);
+
+            if (!isTopicMode || subjectIds.length === 0) {
+                wrap.style.display = 'none';
+                grid.innerHTML = '';
+                return;
+            }
+
+            wrap.style.display = '';
+
+            let topics = [];
+            subjectIds.forEach(sid => { topics = topics.concat(TOPICS_BY_SUBJECT[sid] || []); });
+
+            // Drop selections for topics that fell out of scope (subject unchecked).
+            const validIds = new Set(topics.map(t => String(t.id)));
+            Array.from(selectedTopicIds).forEach(id => { if (!validIds.has(id)) selectedTopicIds.delete(id); });
+
+            grid.innerHTML = topics.length
+                ? topics.map(t => `
+                    <label class="topic-cell ${t.question_count === 0 ? 'disabled' : ''}">
+                        <input type="checkbox" name="topic_ids[]" value="${t.id}" class="topic-check" hidden
+                               ${selectedTopicIds.has(String(t.id)) ? 'checked' : ''}
+                               ${t.question_count === 0 ? 'disabled' : ''}
+                               onchange="onTopicCheckChange(this)">
+                        <span class="topic-select-card">
+                            <span class="topic-select-name">${escapeHtml(t.name)}</span>
+                            <span class="topic-questions-count">${t.question_count} Questions</span>
+                        </span>
+                    </label>
+                `).join('')
+                : '<div class="topic-picker-empty">No topics found for the selected subject(s) yet.</div>';
+
+            updateTopicSelectedCount();
+        }
+
+        function onTopicCheckChange(el) {
+            if (el.checked) selectedTopicIds.add(String(el.value));
+            else selectedTopicIds.delete(String(el.value));
+            updateTopicSelectedCount();
+        }
+
+        function updateTopicSelectedCount() {
+            const n = selectedTopicIds.size;
+            const badge = document.getElementById('topicSelectedCount');
+            badge.innerHTML = '<i class="fas fa-check-circle"></i> ' + n + (n === 1 ? ' topic selected' : ' topics selected');
+            badge.classList.toggle('none', n === 0);
+        }
 
         // ── Quiz length ── the student MUST pick a length before any subject can
         // start. The choice is intentionally NOT remembered between visits.
@@ -1631,6 +1749,7 @@
             else                   { sub4.textContent = 'Locked'; }
 
             document.getElementById('startQuizBtn').disabled = !(currentCount && n > 0);
+            renderTopicPicker();
         }
 
         function selectAllSubjects() {
@@ -1663,6 +1782,9 @@
                 ['Subjects', val('sumSubject')],
                 ['Live room', val('sumRoom')],
             ];
+            if (val('sumMode') === 'Topic') {
+                rows.push(['Topics', selectedTopicIds.size ? selectedTopicIds.size + ' chosen' : 'Auto-pick (weakest)']);
+            }
 
             CPACE.confirm({
                 title: 'Start this quiz?',
