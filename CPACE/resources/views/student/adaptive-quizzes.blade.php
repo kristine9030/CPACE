@@ -1705,14 +1705,17 @@
             window.addEventListener('scroll', closeTopicPanelOnScroll, { passive: true, capture: true });
         }
         // Fixed-positioned, so it floats over the page from the trigger's current
-        // screen coords instead of pushing the page (or its card) taller to fit -
-        // just size the list to whatever room is left above the pinned bottom bar.
+        // screen coords instead of pushing the page (or its card) taller to fit.
+        // Opens downward by default; flips to open upward when the trigger sits
+        // low enough (short/wide laptop screens, mainly) that there's genuinely
+        // more room above it than below - same idea as a Bootstrap "dropup".
         function keepTopicPanelVisible() {
             const panel = document.getElementById('tpPanel'), list = document.getElementById('tpList'), trigger = document.getElementById('tpTrigger');
             const triggerRect = trigger.getBoundingClientRect();
             panel.style.left = triggerRect.left + 'px';
             panel.style.width = triggerRect.width + 'px';
-            panel.style.top = (triggerRect.bottom + 8) + 'px';
+            panel.style.top = '';
+            panel.style.bottom = '';
 
             // Pin the list to its smallest size first so measuring the panel's
             // own chrome (search box + bar + padding) below isn't thrown off by
@@ -1722,12 +1725,20 @@
             const pinned = document.elementFromPoint(window.innerWidth / 2, window.innerHeight - 4)?.closest('*');
             let el = pinned, barH = 0;
             while (el && el !== document.body) { const cs = getComputedStyle(el); if (cs.position === 'fixed' || cs.position === 'sticky') { barH = el.getBoundingClientRect().height; break; } el = el.parentElement; }
-            const limit = window.innerHeight - barH - 14; // 14px: a little breathing room above the pinned bar
+            const bottomLimit = window.innerHeight - barH - 14; // 14px: a little breathing room above the pinned bar
+            const topLimit = 78; // keep clear of any pinned header
 
             const chrome = panel.getBoundingClientRect().height - list.getBoundingClientRect().height; // search box + bar + padding
-            // a trigger sitting low on the page (or a short screen) gets a shorter list, so the whole panel fits
-            const room = limit - triggerRect.bottom - chrome - 8;
-            list.style.maxHeight = Math.max(120, Math.min(280, room)) + 'px';
+            const roomBelow = bottomLimit - triggerRect.bottom - 8 - chrome;
+            const roomAbove = triggerRect.top - topLimit - 8 - chrome;
+
+            if (roomBelow < 120 && roomAbove > roomBelow) {
+                panel.style.bottom = (window.innerHeight - triggerRect.top + 8) + 'px';
+                list.style.maxHeight = Math.max(120, Math.min(280, roomAbove)) + 'px';
+            } else {
+                panel.style.top = (triggerRect.bottom + 8) + 'px';
+                list.style.maxHeight = Math.max(120, Math.min(280, roomBelow)) + 'px';
+            }
         }
         // The panel's position is computed once, on open, not re-tracked on
         // scroll - simplest to just close it if the page moves under it.
