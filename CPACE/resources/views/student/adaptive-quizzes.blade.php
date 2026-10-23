@@ -1703,17 +1703,36 @@
         // The page has a bar pinned to the bottom of the screen; scroll just enough that the whole list clears it.
         function keepTopicPanelVisible() {
             const panel = document.getElementById('tpPanel'), list = document.getElementById('tpList'), trigger = document.getElementById('tpTrigger');
+            // Pin the list to its smallest size first. Left unset, a long topic
+            // list renders at full height and stretches the page's own scrollable
+            // area well past the pinned bar - every measurement below would then
+            // be taken against that temporarily-inflated page, making this think
+            // there's more room (to size into, to scroll into) than will actually
+            // be left once the list is sized down to fit.
+            list.style.maxHeight = '120px';
+
             const pinned = document.elementFromPoint(window.innerWidth / 2, window.innerHeight - 4)?.closest('*');
             let el = pinned, barH = 0;
             while (el && el !== document.body) { const cs = getComputedStyle(el); if (cs.position === 'fixed' || cs.position === 'sticky') { barH = el.getBoundingClientRect().height; break; } el = el.parentElement; }
             const limit = window.innerHeight - barH - 14, top = 78; // 78px: keep clear of any pinned header
-            // a short screen gets a shorter list, so the trigger and the list both fit
-            const room = limit - top - (panel.getBoundingClientRect().height - list.getBoundingClientRect().height) - trigger.getBoundingClientRect().height - 16;
+
+            // How far we could scroll the trigger up toward the safe top margin -
+            // it may already be well below that, so this is rarely the full gap -
+            // and never further than the page (at its pinned-down size) can scroll.
+            const scrollRoom = Math.max(0, Math.min(
+                trigger.getBoundingClientRect().top - top,
+                document.documentElement.scrollHeight - window.innerHeight - window.scrollY
+            ));
+            // Where the trigger's bottom (and so the panel's top) will actually sit
+            // once we've scrolled up by that much - not assumed to be at `top`.
+            const triggerBottomAfterScroll = trigger.getBoundingClientRect().bottom - scrollRoom;
+            const chrome = panel.getBoundingClientRect().height - list.getBoundingClientRect().height; // search box + bar + padding
+            // a short screen (or a trigger stuck low on the page) gets a shorter list, so the whole panel fits
+            const room = limit - triggerBottomAfterScroll - chrome - 8;
             list.style.maxHeight = Math.max(120, Math.min(280, room)) + 'px';
             const over = panel.getBoundingClientRect().bottom - limit;
             if (over > 0) {
-                const room2 = trigger.getBoundingClientRect().top - top; // never push the trigger itself off the top
-                window.scrollBy({ top: Math.min(over, Math.max(0, room2)), behavior: 'smooth' });
+                window.scrollBy({ top: Math.min(over, scrollRoom), behavior: 'smooth' });
             }
         }
         function closeTopicPanel() {
