@@ -1697,7 +1697,24 @@
             document.getElementById('tpPanel').hidden = false;
             document.getElementById('tp').classList.add('open');
             document.getElementById('tpTrigger').setAttribute('aria-expanded', 'true');
-            document.getElementById('tpSearch').focus();
+            document.getElementById('tpSearch').focus({ preventScroll: true });
+            keepTopicPanelVisible();
+        }
+        // The page has a bar pinned to the bottom of the screen; scroll just enough that the whole list clears it.
+        function keepTopicPanelVisible() {
+            const panel = document.getElementById('tpPanel'), list = document.getElementById('tpList'), trigger = document.getElementById('tpTrigger');
+            const pinned = document.elementFromPoint(window.innerWidth / 2, window.innerHeight - 4)?.closest('*');
+            let el = pinned, barH = 0;
+            while (el && el !== document.body) { const cs = getComputedStyle(el); if (cs.position === 'fixed' || cs.position === 'sticky') { barH = el.getBoundingClientRect().height; break; } el = el.parentElement; }
+            const limit = window.innerHeight - barH - 14, top = 78; // 78px: keep clear of any pinned header
+            // a short screen gets a shorter list, so the trigger and the list both fit
+            const room = limit - top - (panel.getBoundingClientRect().height - list.getBoundingClientRect().height) - trigger.getBoundingClientRect().height - 16;
+            list.style.maxHeight = Math.max(120, Math.min(280, room)) + 'px';
+            const over = panel.getBoundingClientRect().bottom - limit;
+            if (over > 0) {
+                const room2 = trigger.getBoundingClientRect().top - top; // never push the trigger itself off the top
+                window.scrollBy({ top: Math.min(over, Math.max(0, room2)), behavior: 'smooth' });
+            }
         }
         function closeTopicPanel() {
             const panel = document.getElementById('tpPanel');
