@@ -99,6 +99,9 @@ class ChairSubjectManagementTest extends TestCase
             $table->string('name');
             $table->text('description')->nullable();
             $table->integer('sort_order')->default(0);
+            $table->json('audience_years')->nullable();
+            $table->json('audience_sections')->nullable();
+            $table->json('audience_semesters')->nullable();
             $table->boolean('is_active')->default(true);
             $table->foreign('subject_id')->references('id')->on('subjects')->cascadeOnDelete();
         });

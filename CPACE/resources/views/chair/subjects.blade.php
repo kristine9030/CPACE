@@ -71,6 +71,12 @@
         .topic-search i { position:absolute; left:11px; top:50%; transform:translateY(-50%); color:#bbb; font-size:10px; }
         .topic-search input[type=text] { width:100%; padding:8px 10px 8px 32px; border:1.5px solid #e2e2e6; border-radius:8px; font:11px 'Poppins',sans-serif; }
         .topic-search input[type=text]:focus { outline:none; border-color:var(--primary); }
+        .audience-group { margin-bottom:8px; }
+        .audience-label { font-size:10.5px; font-weight:600; color:#777; margin-bottom:4px; }
+        .audience-options { display:flex; flex-wrap:wrap; gap:6px; max-height:90px; overflow-y:auto; }
+        .audience-chip { display:flex; align-items:center; gap:4px; font-size:10.5px; color:#555; background:#f5f5f7; border:1px solid #ececef; border-radius:6px; padding:4px 7px; cursor:pointer; }
+        .audience-chip input { margin:0; }
+        .topic-audience-badge { color:#7c3aed; font-weight:600; }
         .empty-msg { font-size:11px;color:#bbb;display:flex;align-items:center;gap:7px;padding:4px 0; }
         .modal-overlay { display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:2000;align-items:center;justify-content:center;padding:20px; }
         .modal-overlay.open { display:flex; } .modal { background:#fff;border-radius:16px;width:100%;max-width:560px;padding:24px;max-height:90vh;overflow-y:auto; }
@@ -603,6 +609,34 @@
                 <div class="form-group"><label>Display Order</label><input type="number" name="sort_order" min="0" max="9999" value="0" required></div>
                 <div class="form-group full"><label>Parent Topic</label><select name="parent_id" id="topicParent"><option value="">— None (top-level topic) —</option></select><div class="hint">Choose an existing topic to make this a subtopic of it.</div></div>
                 <div class="form-group full"><label>Description</label><textarea name="description" placeholder="Optional topic description"></textarea></div>
+                <div class="form-group full">
+                    <label>Who studies this topic <span style="font-weight:400;color:#999;">(leave all unchecked = every year/sem/section)</span></label>
+                    <div class="hint" style="margin-bottom:6px;">Use this when a topic is only covered in a specific term, e.g. "Non-Financial Assets" taught to 3rd Year in 2nd Sem only — students outside this won't be quizzed on it until it's their turn.</div>
+                    <div class="audience-group">
+                        <div class="audience-label">Year level</div>
+                        <div class="audience-options" id="topicAudienceYears">
+                            @foreach(\App\Models\Section::YEAR_LABELS as $yearValue => $yearLabel)
+                                <label class="audience-chip"><input type="checkbox" name="audience_years[]" value="{{ $yearValue }}">{{ $yearLabel }}</label>
+                            @endforeach
+                        </div>
+                    </div>
+                    <div class="audience-group">
+                        <div class="audience-label">Semester</div>
+                        <div class="audience-options" id="topicAudienceSemesters">
+                            @foreach(\App\Models\Section::SEMESTER_LABELS as $semValue => $semLabel)
+                                <label class="audience-chip"><input type="checkbox" name="audience_semesters[]" value="{{ $semValue }}">{{ $semLabel }}</label>
+                            @endforeach
+                        </div>
+                    </div>
+                    <div class="audience-group">
+                        <div class="audience-label">Section <span style="font-weight:400;color:#999;">(optional, narrows further)</span></div>
+                        <div class="audience-options" id="topicAudienceSections">
+                            @foreach($sectionNames as $sectionName)
+                                <label class="audience-chip"><input type="checkbox" name="audience_sections[]" value="{{ $sectionName }}">{{ $sectionName }}</label>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
                 <div class="toggle-row full"><input type="hidden" name="is_active" value="0"><input type="checkbox" name="is_active" id="topicActive" value="1" checked><label for="topicActive">Active and available for questions and quizzes</label></div>
             </div>
             <div class="modal-actions"><button type="button" class="btn btn-ghost" onclick="closeModal('topicModal')">Cancel</button><button class="btn btn-primary"><i class="fas fa-save"></i> Save Topic</button></div>
@@ -683,8 +717,19 @@ function openTopic(subjectId, subjectCode, topic = null, parentId = null) {
         f.elements['sort_order'].value = topic?.sort_order ?? 0;
     }
     document.getElementById('topicActive').checked = topic ? Boolean(topic.is_active) : true;
+    setAudienceCheckboxes('topicAudienceYears', 'audience_years[]', (topic?.audience_years ?? []).map(String));
+    setAudienceCheckboxes('topicAudienceSemesters', 'audience_semesters[]', (topic?.audience_semesters ?? []).map(String));
+    setAudienceCheckboxes('topicAudienceSections', 'audience_sections[]', topic?.audience_sections ?? []);
     populateParentOptions(subjectId, topic?.id ?? null, topic?.parent_id ?? parentId);
     document.getElementById('topicModal').classList.add('open');
+}
+
+function setAudienceCheckboxes(containerId, inputName, selectedValues) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    container.querySelectorAll(`input[name="${inputName}"]`).forEach(cb => {
+        cb.checked = selectedValues.includes(cb.value);
+    });
 }
 
 function applyChairTopicSearch(node, query) {

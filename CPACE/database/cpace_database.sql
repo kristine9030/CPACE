@@ -29,9 +29,14 @@ CREATE TABLE users (
     password        VARCHAR(255) NOT NULL,             -- bcrypt hash
     remember_token  VARCHAR(100) NULL,                 -- Laravel "remember me"
     profile_photo   VARCHAR(255) NULL,
+    avatar          VARCHAR(80)  NULL,                 -- preset avatar key when no uploaded photo
+    avatar_color    VARCHAR(20)  NULL,                 -- background color for the preset avatar
     is_active       BOOLEAN NOT NULL DEFAULT TRUE,
     email_verified  BOOLEAN NOT NULL DEFAULT FALSE,
     last_login_at   DATETIME NULL,
+    setup_completed_at      TIMESTAMP NULL,            -- finished the first-login profile setup wizard
+    mock_exam_notice_seen_at DATETIME NULL,             -- dismissed the "mock exam available" banner
+    temp_password   TEXT NULL,                         -- plaintext of an admin-issued temp password, cleared on first change
     created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT fk_users_role FOREIGN KEY (role_id) REFERENCES roles(id)
@@ -118,7 +123,24 @@ CREATE TABLE alumni_profiles (
     batch_year      YEAR        NULL,
     cpa_number      VARCHAR(30) NULL,
     passed_at       DATE        NULL,                  -- date CPA license obtained
+    current_job     VARCHAR(255) NULL,
+    company         VARCHAR(255) NULL,
+    linkedin_url    VARCHAR(255) NULL,
+    bio             TEXT        NULL,
     CONSTRAINT fk_ap_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Personal access tokens for programmatic API use (separate from the
+-- session-based web login).
+CREATE TABLE api_tokens (
+    id          BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id     BIGINT UNSIGNED NOT NULL,
+    name        VARCHAR(255) NULL,
+    token       VARCHAR(128) NOT NULL,
+    expires_at  TIMESTAMP NULL,
+    last_used_at TIMESTAMP NULL,
+    created_at  TIMESTAMP NULL,
+    updated_at  TIMESTAMP NULL
 );
 
 -- =============================================================
@@ -177,6 +199,9 @@ CREATE TABLE topics (
     tos_items   SMALLINT UNSIGNED NULL,         -- PRC Table of Specifications no. of items
     gap_flagged_at DATETIME NULL,               -- first seen short of tos_items (curriculum:fill-gaps)
     gap_warned_at  DATETIME NULL,               -- final warning sent before AI substitutes
+    audience_years     JSON NULL,               -- year levels this topic is taught to; NULL/empty = everyone
+    audience_sections  JSON NULL,               -- sections this topic is taught to; NULL/empty = everyone
+    audience_semesters JSON NULL,               -- semesters (1/2) this topic is taught in; NULL/empty = everyone
     is_active   BOOLEAN NOT NULL DEFAULT TRUE,
     KEY idx_topics_version (curriculum_version_id),
     CONSTRAINT fk_topics_subject FOREIGN KEY (subject_id) REFERENCES subjects(id),
@@ -219,6 +244,8 @@ CREATE TABLE curriculum_import_items (
 CREATE TABLE questions (
     id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     topic_id        SMALLINT UNSIGNED NOT NULL,
+    scenario_id     BIGINT UNSIGNED NULL,              -- case problem this question belongs to, if any
+    scenario_position SMALLINT UNSIGNED NOT NULL DEFAULT 0,
     created_by      INT UNSIGNED NULL,                 -- faculty user_id (NULL for AI substitutes)
     source          VARCHAR(20) NOT NULL DEFAULT 'faculty', -- faculty | ai_substitute
     question_text   TEXT NOT NULL,
@@ -231,8 +258,30 @@ CREATE TABLE questions (
     reviewed_at     DATETIME NULL,
     created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    CONSTRAINT fk_q_topic   FOREIGN KEY (topic_id)   REFERENCES topics(id),
-    CONSTRAINT fk_q_creator FOREIGN KEY (created_by) REFERENCES users(id)
+    image_path      VARCHAR(255) NULL,
+    table_data      JSON NULL,                         -- optional supporting table shown with the question
+    INDEX idx_q_scenario (scenario_id),
+    CONSTRAINT fk_q_topic    FOREIGN KEY (topic_id)    REFERENCES topics(id),
+    CONSTRAINT fk_q_creator  FOREIGN KEY (created_by)  REFERENCES users(id),
+    CONSTRAINT fk_q_scenario FOREIGN KEY (scenario_id) REFERENCES question_scenarios(id) ON DELETE SET NULL
+);
+
+-- A case problem: one shared situation with any number of questions under it.
+-- The Test Bank keeps this live; quizzes and mock exams snapshot the text
+-- onto their own items instead of pointing at it, so later edits never
+-- change something a student has already sat.
+CREATE TABLE question_scenarios (
+    id              BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    topic_id        SMALLINT UNSIGNED NOT NULL,
+    created_by      INT UNSIGNED NULL,
+    title           VARCHAR(150) NULL,
+    body            MEDIUMTEXT NOT NULL,
+    is_active       BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at      DATETIME NULL,
+    updated_at      DATETIME NULL,
+    INDEX idx_qs_topic (topic_id),
+    CONSTRAINT fk_qs_scenario_topic   FOREIGN KEY (topic_id)   REFERENCES topics(id) ON DELETE CASCADE,
+    CONSTRAINT fk_qs_scenario_creator FOREIGN KEY (created_by) REFERENCES users(id)  ON DELETE SET NULL
 );
 
 CREATE TABLE question_choices (
@@ -337,6 +386,11 @@ CREATE TABLE faculty_quiz_items (
     sort_order          SMALLINT UNSIGNED NOT NULL DEFAULT 0,
     created_at          DATETIME NULL,
     updated_at          DATETIME NULL,
+    image_path          VARCHAR(255) NULL,
+    table_data          JSON NULL,                     -- optional supporting table shown with the question
+    scenario_group      VARCHAR(40) NULL,               -- items sharing this value are one scenario
+    scenario_text       MEDIUMTEXT NULL,                 -- snapshot of the scenario body
+    scenario_id         BIGINT UNSIGNED NULL,            -- provenance only; snapshot above is authoritative
     CONSTRAINT fk_fqi_quiz FOREIGN KEY (quiz_id) REFERENCES faculty_quizzes(id) ON DELETE CASCADE
 );
 
@@ -477,6 +531,26 @@ CREATE TABLE spaced_repetition_items (
     CONSTRAINT fk_sr_question FOREIGN KEY (question_id) REFERENCES questions(id)
 );
 
+-- A student's own free-form review notes, optionally tagged to a subject/topic.
+CREATE TABLE review_notes (
+    id              BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    student_id      INT UNSIGNED NOT NULL,
+    subject_id      TINYINT UNSIGNED NULL,
+    topic_id        SMALLINT UNSIGNED NULL,
+    title           VARCHAR(180) NOT NULL,
+    content         LONGTEXT NULL,
+    tags            VARCHAR(255) NULL,
+    is_favorite     BOOLEAN NOT NULL DEFAULT FALSE,
+    review_count    INT UNSIGNED NOT NULL DEFAULT 0,
+    last_reviewed_at DATETIME NULL,
+    archived_at     DATETIME NULL,
+    created_at      TIMESTAMP NULL,
+    updated_at      TIMESTAMP NULL,
+    deleted_at      TIMESTAMP NULL,
+    INDEX idx_rn_student_subject (student_id, subject_id),
+    INDEX idx_rn_student_favorite (student_id, is_favorite)
+);
+
 -- =============================================================
 -- 7. STUDY PLANS  (output of Generate Study Plan & Spaced Repetition)
 -- =============================================================
@@ -499,6 +573,35 @@ CREATE TABLE study_plan_items (
     completed_at    DATETIME NULL,
     CONSTRAINT fk_spi_plan  FOREIGN KEY (plan_id)  REFERENCES study_plans(id) ON DELETE CASCADE,
     CONSTRAINT fk_spi_topic FOREIGN KEY (topic_id) REFERENCES topics(id)
+);
+
+-- A student's own calendar entries (self-scheduled study blocks), separate
+-- from the generated study_plan_items above.
+CREATE TABLE calendar_plans (
+    id          BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    student_id  INT UNSIGNED NOT NULL,
+    topic_id    SMALLINT UNSIGNED NULL,
+    title       VARCHAR(120) NULL,
+    plan_date   DATE NOT NULL,
+    start_min   SMALLINT UNSIGNED NOT NULL,          -- minutes since midnight
+    duration_min SMALLINT UNSIGNED NOT NULL DEFAULT 60,
+    created_at  TIMESTAMP NULL,
+    updated_at  TIMESTAMP NULL,
+    INDEX idx_cal_student_date (student_id, plan_date)
+);
+
+-- Legacy/simple calendar entries predating calendar_plans; kept so the dump
+-- still loads against existing databases.
+CREATE TABLE study_events (
+    id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    student_id      INT UNSIGNED NOT NULL,
+    title           VARCHAR(150) NOT NULL,
+    subject_code    VARCHAR(20) NULL,
+    event_date      DATE NOT NULL,
+    start_hour      TINYINT NOT NULL DEFAULT 9,
+    duration_hours  TINYINT NOT NULL DEFAULT 1,
+    created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_se_student_date (student_id, event_date)
 );
 
 -- =============================================================
@@ -580,6 +683,11 @@ CREATE TABLE mock_exam_items (
     sort_order          SMALLINT UNSIGNED NOT NULL DEFAULT 0,
     created_at          DATETIME NULL,
     updated_at          DATETIME NULL,
+    image_path          VARCHAR(255) NULL,
+    table_data          JSON NULL,                     -- optional supporting table shown with the question
+    scenario_group      VARCHAR(40) NULL,               -- items sharing this value are one scenario
+    scenario_text       MEDIUMTEXT NULL,                 -- snapshot of the scenario body
+    scenario_id         BIGINT UNSIGNED NULL,            -- provenance only; snapshot above is authoritative
     INDEX idx_mei_exam_order (exam_id, sort_order),
     CONSTRAINT fk_mei_exam FOREIGN KEY (exam_id) REFERENCES mock_exams(id) ON DELETE CASCADE
 );
@@ -674,8 +782,8 @@ CREATE TABLE mock_exam_results (
     overall_score   DECIMAL(5,2) NULL,
     is_passing      BOOLEAN NULL,
     taken_at        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_mer_session FOREIGN KEY (session_id)  REFERENCES quiz_sessions(id),
-    CONSTRAINT fk_mer_student FOREIGN KEY (student_id)  REFERENCES users(id)
+    CONSTRAINT fk_merl_session FOREIGN KEY (session_id)  REFERENCES quiz_sessions(id),
+    CONSTRAINT fk_merl_student FOREIGN KEY (student_id)  REFERENCES users(id)
 );
 
 -- =============================================================
@@ -705,6 +813,28 @@ CREATE TABLE study_resources (
     CONSTRAINT fk_sr_category FOREIGN KEY (category_id) REFERENCES resource_categories(id)
 );
 
+-- Per-topic supplementary materials (files or external links), distinct
+-- from the subject-level study_resources above.
+CREATE TABLE materials (
+    id            BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    topic_id      SMALLINT UNSIGNED NOT NULL,
+    uploaded_by   INT UNSIGNED NULL,
+    title         VARCHAR(255) NOT NULL,
+    description   TEXT NULL,
+    kind          ENUM('file','link') NOT NULL DEFAULT 'file',
+    file_category VARCHAR(20) NOT NULL DEFAULT 'other',
+    file_path     VARCHAR(255) NULL,
+    original_name VARCHAR(255) NULL,
+    file_size     BIGINT UNSIGNED NULL,
+    external_url  VARCHAR(255) NULL,
+    is_active     BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at    TIMESTAMP NULL,
+    updated_at    TIMESTAMP NULL,
+    INDEX idx_mat_topic_active (topic_id, is_active),
+    CONSTRAINT fk_mat_topic    FOREIGN KEY (topic_id)    REFERENCES topics(id) ON DELETE CASCADE,
+    CONSTRAINT fk_mat_uploader FOREIGN KEY (uploaded_by) REFERENCES users(id)  ON DELETE SET NULL
+);
+
 -- =============================================================
 -- 10. COMMUNITY HUB     (D4 in Diagram 0)
 -- Posts, replies - students, faculty, alumni
@@ -714,14 +844,16 @@ CREATE TABLE community_posts (
     id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     author_id       INT UNSIGNED NOT NULL,
     subject_id      TINYINT UNSIGNED NULL,             -- optional subject tag
+    resource_id     BIGINT UNSIGNED NULL,               -- set when post_type = 'resource'
     title           VARCHAR(200) NULL,
     body            TEXT NOT NULL,
     post_type       ENUM('tip','question','resource','discussion') NOT NULL DEFAULT 'discussion',
     is_pinned       BOOLEAN NOT NULL DEFAULT FALSE,
     created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    CONSTRAINT fk_cp_author  FOREIGN KEY (author_id)  REFERENCES users(id),
-    CONSTRAINT fk_cp_subject FOREIGN KEY (subject_id) REFERENCES subjects(id)
+    CONSTRAINT fk_cp_author   FOREIGN KEY (author_id)   REFERENCES users(id),
+    CONSTRAINT fk_cp_subject  FOREIGN KEY (subject_id)  REFERENCES subjects(id),
+    CONSTRAINT fk_cp_resource FOREIGN KEY (resource_id) REFERENCES community_resources(id) ON DELETE SET NULL
 );
 
 CREATE TABLE community_replies (
@@ -732,6 +864,50 @@ CREATE TABLE community_replies (
     created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_cr_post   FOREIGN KEY (post_id)   REFERENCES community_posts(id) ON DELETE CASCADE,
     CONSTRAINT fk_cr_author FOREIGN KEY (author_id) REFERENCES users(id)
+);
+
+-- Shared files/links in the Community Hub (what community_posts.resource_id
+-- points at when post_type = 'resource').
+CREATE TABLE community_resources (
+    id              BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    uploader_id     INT UNSIGNED NOT NULL,
+    subject_id      TINYINT UNSIGNED NULL,
+    title           VARCHAR(255) NOT NULL,
+    description     TEXT NULL,
+    file_path       VARCHAR(255) NOT NULL,
+    original_name   VARCHAR(255) NOT NULL,
+    file_category   VARCHAR(20) NOT NULL DEFAULT 'other',
+    file_size       BIGINT UNSIGNED NULL,
+    downloads_count INT UNSIGNED NOT NULL DEFAULT 0,
+    created_at      TIMESTAMP NULL,
+    updated_at      TIMESTAMP NULL,
+    INDEX idx_cres_downloads (downloads_count),
+    CONSTRAINT fk_cres_uploader FOREIGN KEY (uploader_id) REFERENCES users(id)    ON DELETE CASCADE,
+    CONSTRAINT fk_cres_subject  FOREIGN KEY (subject_id)  REFERENCES subjects(id) ON DELETE SET NULL
+);
+
+-- File attachments on a community post (not the resource shares above).
+CREATE TABLE community_post_attachments (
+    id                BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    community_post_id INT UNSIGNED NOT NULL,
+    file_path         VARCHAR(255) NOT NULL,
+    original_name     VARCHAR(255) NOT NULL,
+    file_size         BIGINT UNSIGNED NULL,
+    file_category     VARCHAR(20) NOT NULL DEFAULT 'other',
+    created_at        TIMESTAMP NULL,
+    updated_at        TIMESTAMP NULL,
+    CONSTRAINT fk_cpa_post FOREIGN KEY (community_post_id) REFERENCES community_posts(id) ON DELETE CASCADE
+);
+
+CREATE TABLE community_post_likes (
+    id                BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    community_post_id INT UNSIGNED NOT NULL,
+    user_id           INT UNSIGNED NOT NULL,
+    created_at        TIMESTAMP NULL,
+    updated_at        TIMESTAMP NULL,
+    UNIQUE KEY uq_cpl_post_user (community_post_id, user_id),
+    CONSTRAINT fk_cpl_post FOREIGN KEY (community_post_id) REFERENCES community_posts(id) ON DELETE CASCADE,
+    CONSTRAINT fk_cpl_user FOREIGN KEY (user_id)           REFERENCES users(id)           ON DELETE CASCADE
 );
 
 -- =============================================================
@@ -757,6 +933,16 @@ CREATE TABLE student_badges (
     CONSTRAINT fk_sb_badge   FOREIGN KEY (badge_id)   REFERENCES badges(id)
 );
 
+-- Lightweight one-off achievement flags, distinct from the badges above
+-- (keyed by a code rather than a badges.id row).
+CREATE TABLE student_achievements (
+    id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    student_id      INT UNSIGNED NOT NULL,
+    achievement_key VARCHAR(40) NOT NULL,
+    earned_at       DATETIME NOT NULL,
+    UNIQUE KEY uq_student_achievement (student_id, achievement_key)
+);
+
 CREATE TABLE points_log (
     id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     student_id  INT UNSIGNED NOT NULL,
@@ -773,15 +959,135 @@ CREATE TABLE points_log (
 
 CREATE TABLE notifications (
     id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    communication_id BIGINT UNSIGNED NULL,              -- set when raised from a chair/admin broadcast
     recipient_id    INT UNSIGNED NOT NULL,
+    sender_id       BIGINT UNSIGNED NULL,
     type            VARCHAR(50) NOT NULL,               -- 'review_reminder','new_post','score_ready'
     title           VARCHAR(150) NOT NULL,
     message         TEXT NULL,
+    link            VARCHAR(255) NULL,
     is_read         BOOLEAN NOT NULL DEFAULT FALSE,
     reference_type  VARCHAR(50) NULL,                  -- 'quiz_session','community_post', etc.
     reference_id    INT UNSIGNED NULL,
     created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at      TIMESTAMP NULL,
     CONSTRAINT fk_notif_recipient FOREIGN KEY (recipient_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- =============================================================
+-- 12b. COMMUNICATIONS  (chair/admin broadcast announcements)
+-- Each one fans out into `notifications` rows for its audience.
+-- =============================================================
+
+CREATE TABLE communications (
+    id              BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    sender_id       BIGINT UNSIGNED NULL,
+    audience        VARCHAR(20) NOT NULL,              -- 'all','students','faculty','alumni',...
+    target_type     VARCHAR(30) NOT NULL DEFAULT 'all', -- 'all','role','section','batch_year',...
+    target_filters  JSON NULL,                         -- extra targeting criteria for target_type
+    title           VARCHAR(255) NOT NULL,
+    message         TEXT NOT NULL,
+    type            VARCHAR(30) NOT NULL DEFAULT 'announcement',
+    priority        VARCHAR(20) NOT NULL DEFAULT 'normal',
+    link            VARCHAR(255) NULL,
+    recipient_count INT UNSIGNED NOT NULL DEFAULT 0,
+    created_at      TIMESTAMP NULL,
+    updated_at      TIMESTAMP NULL
+);
+
+CREATE TABLE communication_attachments (
+    id               BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    communication_id BIGINT UNSIGNED NOT NULL,
+    path             VARCHAR(255) NOT NULL,
+    original_name    VARCHAR(255) NOT NULL,
+    size             BIGINT UNSIGNED NOT NULL DEFAULT 0,
+    category         VARCHAR(20) NOT NULL DEFAULT 'other',
+    created_at       TIMESTAMP NULL,
+    updated_at       TIMESTAMP NULL,
+    INDEX idx_cmatt_communication (communication_id),
+    CONSTRAINT fk_cmatt_communication FOREIGN KEY (communication_id) REFERENCES communications(id) ON DELETE CASCADE
+);
+
+-- =============================================================
+-- 12c. DIRECT MESSAGING
+-- =============================================================
+
+CREATE TABLE conversations (
+    id               BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    type             ENUM('direct','group') NOT NULL DEFAULT 'direct',
+    name             VARCHAR(255) NULL,
+    is_default_group BOOLEAN NOT NULL DEFAULT FALSE,
+    created_by       INT UNSIGNED NULL,
+    created_at       TIMESTAMP NULL,
+    updated_at       TIMESTAMP NULL,
+    CONSTRAINT fk_conv_creator FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
+);
+
+CREATE TABLE conversation_participants (
+    id              BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    conversation_id BIGINT UNSIGNED NOT NULL,
+    user_id         INT UNSIGNED NOT NULL,
+    joined_at       TIMESTAMP NULL,
+    last_read_at    TIMESTAMP NULL,
+    created_at      TIMESTAMP NULL,
+    updated_at      TIMESTAMP NULL,
+    UNIQUE KEY uq_convpart_conv_user (conversation_id, user_id),
+    CONSTRAINT fk_convpart_conversation FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE,
+    CONSTRAINT fk_convpart_user         FOREIGN KEY (user_id)         REFERENCES users(id)          ON DELETE CASCADE
+);
+
+CREATE TABLE messages (
+    id              BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    conversation_id BIGINT UNSIGNED NOT NULL,
+    sender_id       INT UNSIGNED NOT NULL,
+    body            TEXT NOT NULL,
+    file_path       VARCHAR(255) NULL,
+    original_name   VARCHAR(255) NULL,
+    file_size       BIGINT UNSIGNED NULL,
+    file_category   VARCHAR(20) NULL,
+    created_at       TIMESTAMP NULL,
+    updated_at       TIMESTAMP NULL,
+    INDEX idx_msg_conversation_created (conversation_id, created_at),
+    CONSTRAINT fk_msg_conversation FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE,
+    CONSTRAINT fk_msg_sender       FOREIGN KEY (sender_id)       REFERENCES users(id)          ON DELETE CASCADE
+);
+
+-- =============================================================
+-- 12d. ISSUE REPORTS  (public "Report a problem" support form)
+-- =============================================================
+
+CREATE TABLE issue_reports (
+    id               BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id          INT UNSIGNED NULL,                -- NULL = reported while logged out
+    name             VARCHAR(120) NOT NULL,
+    email            VARCHAR(160) NOT NULL,
+    category         VARCHAR(40) NOT NULL DEFAULT 'other',
+    subject          VARCHAR(150) NULL,
+    message          TEXT NOT NULL,
+    page_url         VARCHAR(500) NULL,
+    user_agent       VARCHAR(500) NULL,
+    ip_address       VARCHAR(45) NULL,
+    status           VARCHAR(20) NOT NULL DEFAULT 'new',
+    resolved_at      TIMESTAMP NULL,
+    escalated_at     TIMESTAMP NULL,
+    escalated_by     INT UNSIGNED NULL,
+    last_activity_at TIMESTAMP NULL,
+    created_at       TIMESTAMP NULL,
+    updated_at       TIMESTAMP NULL,
+    INDEX idx_ir_status_created (status, created_at),
+    CONSTRAINT fk_ir_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+);
+
+CREATE TABLE issue_report_replies (
+    id              BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    issue_report_id BIGINT UNSIGNED NOT NULL,
+    user_id         INT UNSIGNED NULL,
+    body            TEXT NOT NULL,
+    created_at      TIMESTAMP NULL,
+    updated_at      TIMESTAMP NULL,
+    INDEX idx_irr_report_created (issue_report_id, created_at),
+    CONSTRAINT fk_irr_report FOREIGN KEY (issue_report_id) REFERENCES issue_reports(id) ON DELETE CASCADE,
+    CONSTRAINT fk_irr_user   FOREIGN KEY (user_id)         REFERENCES users(id)         ON DELETE SET NULL
 );
 
 -- =============================================================

@@ -109,7 +109,60 @@ class CurriculumScope
      */
     public static function restrictForStudent($query, ?int $studentId, string $column = 'topics.curriculum_version_id')
     {
-        return self::restrictTo($query, self::forStudent($studentId), $column);
+        $query = self::restrictTo($query, self::forStudent($studentId), $column);
+
+        return self::restrictToAudience($query, $studentId);
+    }
+
+    /**
+     * Narrow a topics query to the ones targeted at this student's year
+     * level, section, and semester — a topic with none of those set stays
+     * open to everyone. Semester isn't stored on the student directly: it's
+     * read off their section name (see Section::parseName()), so if that
+     * name doesn't match the pattern the semester dimension is skipped
+     * (fails open) rather than hiding every targeted topic from them.
+     *
+     * @template T of \Illuminate\Database\Query\Builder|\Illuminate\Database\Eloquent\Builder
+     * @param  T  $query
+     * @return T
+     */
+    public static function restrictToAudience($query, ?int $studentId)
+    {
+        if ($studentId === null || ! Schema::hasTable('student_profiles') || ! Schema::hasColumn('topics', 'audience_years')) {
+            return $query;
+        }
+
+        $profile = DB::table('student_profiles')->where('user_id', $studentId)->first(['year_level', 'section']);
+        if (! $profile) {
+            return $query;
+        }
+
+        $yearLevel = $profile->year_level !== null ? (int) $profile->year_level : null;
+        $section = $profile->section;
+        $semester = \App\Models\Section::parseName($section)['semester'] ?? null;
+
+        $query->where(function ($q) use ($yearLevel) {
+            $q->whereNull('audience_years')->orWhereJsonLength('audience_years', 0);
+            if ($yearLevel !== null) {
+                $q->orWhereJsonContains('audience_years', $yearLevel);
+            }
+        });
+
+        $query->where(function ($q) use ($section) {
+            $q->whereNull('audience_sections')->orWhereJsonLength('audience_sections', 0);
+            if ($section !== null) {
+                $q->orWhereJsonContains('audience_sections', $section);
+            }
+        });
+
+        if ($semester !== null) {
+            $query->where(function ($q) use ($semester) {
+                $q->whereNull('audience_semesters')->orWhereJsonLength('audience_semesters', 0)
+                    ->orWhereJsonContains('audience_semesters', $semester);
+            });
+        }
+
+        return $query;
     }
 
     /**

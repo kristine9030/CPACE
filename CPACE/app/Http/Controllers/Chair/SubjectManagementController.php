@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\CurriculumAudit;
 use App\Models\CurriculumImportBatch;
 use App\Models\CurriculumVersion;
+use App\Models\Section;
 use App\Models\Subject;
 use App\Models\Topic;
 use App\Support\BatchYear;
@@ -68,6 +69,7 @@ class SubjectManagementController extends Controller
             'readOnly' => $version !== null && ! $version->isEditable(),
             'audits' => $version ? $version->audits()->with(['user', 'subject'])->limit(15)->get() : collect(),
             'suggestedBatch' => $this->suggestedFirstBatch($versions),
+            'sectionNames' => Schema::hasTable('sections') ? Section::where('is_active', true)->orderBy('name')->pluck('name') : collect(),
         ]);
     }
 
@@ -125,7 +127,7 @@ class SubjectManagementController extends Controller
             return back()->with('error', self::ARCHIVED_MESSAGE);
         }
 
-        $data = $this->validateTopic($request, $subject, $version?->id);
+        $data = $this->normalizeAudience($this->validateTopic($request, $subject, $version?->id));
         $topic = $subject->topics()->create($version ? $data + ['curriculum_version_id' => $version->id] : $data);
 
         $this->audit($topic, CurriculumAudit::ACTION_TOPIC_ADDED, $topic->name);
@@ -141,7 +143,7 @@ class SubjectManagementController extends Controller
             return back()->with('error', self::ARCHIVED_MESSAGE);
         }
 
-        $data = $this->validateTopic($request, $subject, $topic->curriculum_version_id, $topic);
+        $data = $this->normalizeAudience($this->validateTopic($request, $subject, $topic->curriculum_version_id, $topic));
 
         $siblings = $subject->topics()->inCurriculum($topic->curriculum_version_id)->get();
         if (! empty($data['parent_id']) && $topic->isSelfOrDescendant((int) $data['parent_id'], $siblings)) {
@@ -341,6 +343,26 @@ class SubjectManagementController extends Controller
             'parent_id'    => ['nullable', 'integer', Rule::exists('topics', 'id')->where($sameCurriculum)],
             'sort_order'   => ['required', 'integer', 'min:0', 'max:9999'],
             'is_active'    => ['required', 'boolean'],
+            'audience_years' => ['nullable', 'array'],
+            'audience_years.*' => ['integer', 'between:1,6'],
+            'audience_sections' => ['nullable', 'array'],
+            'audience_sections.*' => ['string', 'max:100'],
+            'audience_semesters' => ['nullable', 'array'],
+            'audience_semesters.*' => ['integer', 'in:1,2'],
         ]);
+    }
+
+    /**
+     * Pull the audience arrays out of already-validated data, normalized the
+     * same way MockExamReviewController does (unique, sorted, empty -> null
+     * so "no selection" reads as unrestricted rather than an empty JSON array).
+     */
+    private function normalizeAudience(array $data): array
+    {
+        $data['audience_years'] = collect($data['audience_years'] ?? [])->map(fn ($y) => (int) $y)->unique()->sort()->values()->all() ?: null;
+        $data['audience_sections'] = collect($data['audience_sections'] ?? [])->unique()->sort()->values()->all() ?: null;
+        $data['audience_semesters'] = collect($data['audience_semesters'] ?? [])->map(fn ($s) => (int) $s)->unique()->sort()->values()->all() ?: null;
+
+        return $data;
     }
 }
