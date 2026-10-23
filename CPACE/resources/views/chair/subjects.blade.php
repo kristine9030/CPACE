@@ -616,7 +616,7 @@
                         <div class="audience-label">Year level</div>
                         <div class="audience-options" id="topicAudienceYears">
                             @foreach(\App\Models\Section::YEAR_LABELS as $yearValue => $yearLabel)
-                                <label class="audience-chip"><input type="checkbox" name="audience_years[]" value="{{ $yearValue }}">{{ $yearLabel }}</label>
+                                <label class="audience-chip"><input type="checkbox" name="audience_years[]" value="{{ $yearValue }}" onchange="filterTopicAudienceSections()">{{ $yearLabel }}</label>
                             @endforeach
                         </div>
                     </div>
@@ -630,9 +630,10 @@
                     </div>
                     <div class="audience-group">
                         <div class="audience-label">Section <span style="font-weight:400;color:#999;">(optional, narrows further)</span></div>
+                        <div class="hint" id="topicAudienceSectionsHint" style="margin:0 0 6px;">Pick a year level above to narrow this down to its sections.</div>
                         <div class="audience-options" id="topicAudienceSections">
-                            @foreach($sectionNames as $sectionName)
-                                <label class="audience-chip"><input type="checkbox" name="audience_sections[]" value="{{ $sectionName }}">{{ $sectionName }}</label>
+                            @foreach($sections as $section)
+                                <label class="audience-chip" data-year="{{ $section->year_level ?? '' }}"><input type="checkbox" name="audience_sections[]" value="{{ $section->name }}">{{ $section->name }}</label>
                             @endforeach
                         </div>
                     </div>
@@ -720,6 +721,7 @@ function openTopic(subjectId, subjectCode, topic = null, parentId = null) {
     setAudienceCheckboxes('topicAudienceYears', 'audience_years[]', (topic?.audience_years ?? []).map(String));
     setAudienceCheckboxes('topicAudienceSemesters', 'audience_semesters[]', (topic?.audience_semesters ?? []).map(String));
     setAudienceCheckboxes('topicAudienceSections', 'audience_sections[]', topic?.audience_sections ?? []);
+    filterTopicAudienceSections();
     populateParentOptions(subjectId, topic?.id ?? null, topic?.parent_id ?? parentId);
     document.getElementById('topicModal').classList.add('open');
 }
@@ -730,6 +732,25 @@ function setAudienceCheckboxes(containerId, inputName, selectedValues) {
     container.querySelectorAll(`input[name="${inputName}"]`).forEach(cb => {
         cb.checked = selectedValues.includes(cb.value);
     });
+}
+
+// Only show sections that belong to the year level(s) checked above, so a
+// chair can't end up with a mismatched combo like "3rd Year" + "BSA 4102".
+// No year checked = every section stays visible, same as before this existed.
+function filterTopicAudienceSections() {
+    const checkedYears = Array.from(document.querySelectorAll('#topicAudienceYears input:checked')).map(cb => cb.value);
+    const chips = document.querySelectorAll('#topicAudienceSections .audience-chip');
+    chips.forEach(chip => {
+        const chipYear = chip.dataset.year || '';
+        // A section with no recorded year level can't be matched either way, so it stays visible.
+        const visible = checkedYears.length === 0 || chipYear === '' || checkedYears.includes(chipYear);
+        chip.style.display = visible ? '' : 'none';
+        if (!visible) {
+            const cb = chip.querySelector('input');
+            if (cb.checked) cb.checked = false;
+        }
+    });
+    document.getElementById('topicAudienceSectionsHint').style.display = checkedYears.length === 0 ? '' : 'none';
 }
 
 function applyChairTopicSearch(node, query) {

@@ -69,7 +69,9 @@ class SubjectManagementController extends Controller
             'readOnly' => $version !== null && ! $version->isEditable(),
             'audits' => $version ? $version->audits()->with(['user', 'subject'])->limit(15)->get() : collect(),
             'suggestedBatch' => $this->suggestedFirstBatch($versions),
-            'sectionNames' => Schema::hasTable('sections') ? Section::where('is_active', true)->orderBy('name')->pluck('name') : collect(),
+            'sections' => Schema::hasTable('sections')
+                ? Section::where('is_active', true)->orderBy('name')->get(['name', 'year_level'])
+                : collect(),
         ]);
     }
 
