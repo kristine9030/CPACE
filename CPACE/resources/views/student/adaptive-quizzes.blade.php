@@ -456,11 +456,6 @@
             overflow: hidden;
             border-top: 3px solid var(--step-color, var(--accent));
         }
-        /* The Topic Mode dropdown is absolutely positioned and can extend below
-           this card's own bottom edge - overflow:hidden above (there to keep the
-           colored top border on the rounded corner) would clip it there too, so
-           it's lifted only while the dropdown is actually open. */
-        .step-card.tp-panel-open { overflow: visible; }
         .step-head {
             display: flex;
             align-items: center;
@@ -780,7 +775,10 @@
         .tp-trigger i { font-size: 12px; color: var(--muted); transition: transform .2s; }
         .tp.open .tp-trigger i { transform: rotate(180deg); }
         .tp-panel {
-            position: absolute; left: 0; right: 0; top: calc(100% + 8px); z-index: 30;
+            /* Fixed, not absolute: positioned from the trigger's screen coords in JS
+               (keepTopicPanelVisible) so it floats as its own overlay and never
+               stretches the page or any ancestor card's layout to make room for it. */
+            position: fixed; z-index: 30;
             background: #fff; border: 1px solid var(--line); border-radius: 14px;
             box-shadow: 0 18px 44px rgba(20, 22, 40, .18); overflow: hidden;
         }
@@ -1701,52 +1699,48 @@
         function openTopicPanel() {
             document.getElementById('tpPanel').hidden = false;
             document.getElementById('tp').classList.add('open');
-            document.getElementById('tp').closest('.step-card')?.classList.add('tp-panel-open');
             document.getElementById('tpTrigger').setAttribute('aria-expanded', 'true');
             document.getElementById('tpSearch').focus({ preventScroll: true });
             keepTopicPanelVisible();
+            window.addEventListener('scroll', closeTopicPanelOnScroll, { passive: true, capture: true });
         }
-        // The page has a bar pinned to the bottom of the screen; scroll just enough that the whole list clears it.
+        // Fixed-positioned, so it floats over the page from the trigger's current
+        // screen coords instead of pushing the page (or its card) taller to fit -
+        // just size the list to whatever room is left above the pinned bottom bar.
         function keepTopicPanelVisible() {
             const panel = document.getElementById('tpPanel'), list = document.getElementById('tpList'), trigger = document.getElementById('tpTrigger');
-            // Pin the list to its smallest size first. Left unset, a long topic
-            // list renders at full height and stretches the page's own scrollable
-            // area well past the pinned bar - every measurement below would then
-            // be taken against that temporarily-inflated page, making this think
-            // there's more room (to size into, to scroll into) than will actually
-            // be left once the list is sized down to fit.
+            const triggerRect = trigger.getBoundingClientRect();
+            panel.style.left = triggerRect.left + 'px';
+            panel.style.width = triggerRect.width + 'px';
+            panel.style.top = (triggerRect.bottom + 8) + 'px';
+
+            // Pin the list to its smallest size first so measuring the panel's
+            // own chrome (search box + bar + padding) below isn't thrown off by
+            // an unset, full-height list.
             list.style.maxHeight = '120px';
 
             const pinned = document.elementFromPoint(window.innerWidth / 2, window.innerHeight - 4)?.closest('*');
             let el = pinned, barH = 0;
             while (el && el !== document.body) { const cs = getComputedStyle(el); if (cs.position === 'fixed' || cs.position === 'sticky') { barH = el.getBoundingClientRect().height; break; } el = el.parentElement; }
-            const limit = window.innerHeight - barH - 14, top = 78; // 78px: keep clear of any pinned header
+            const limit = window.innerHeight - barH - 14; // 14px: a little breathing room above the pinned bar
 
-            // How far we could scroll the trigger up toward the safe top margin -
-            // it may already be well below that, so this is rarely the full gap -
-            // and never further than the page (at its pinned-down size) can scroll.
-            const scrollRoom = Math.max(0, Math.min(
-                trigger.getBoundingClientRect().top - top,
-                document.documentElement.scrollHeight - window.innerHeight - window.scrollY
-            ));
-            // Where the trigger's bottom (and so the panel's top) will actually sit
-            // once we've scrolled up by that much - not assumed to be at `top`.
-            const triggerBottomAfterScroll = trigger.getBoundingClientRect().bottom - scrollRoom;
             const chrome = panel.getBoundingClientRect().height - list.getBoundingClientRect().height; // search box + bar + padding
-            // a short screen (or a trigger stuck low on the page) gets a shorter list, so the whole panel fits
-            const room = limit - triggerBottomAfterScroll - chrome - 8;
+            // a trigger sitting low on the page (or a short screen) gets a shorter list, so the whole panel fits
+            const room = limit - triggerRect.bottom - chrome - 8;
             list.style.maxHeight = Math.max(120, Math.min(280, room)) + 'px';
-            const over = panel.getBoundingClientRect().bottom - limit;
-            if (over > 0) {
-                window.scrollBy({ top: Math.min(over, scrollRoom), behavior: 'smooth' });
-            }
+        }
+        // The panel's position is computed once, on open, not re-tracked on
+        // scroll - simplest to just close it if the page moves under it.
+        function closeTopicPanelOnScroll(e) {
+            if (e.target === document.getElementById('tpList')) return; // scrolling the list itself doesn't count
+            closeTopicPanel();
         }
         function closeTopicPanel() {
             const panel = document.getElementById('tpPanel');
+            window.removeEventListener('scroll', closeTopicPanelOnScroll, { capture: true });
             if (!panel || panel.hidden) return;
             panel.hidden = true;
             document.getElementById('tp').classList.remove('open');
-            document.getElementById('tp').closest('.step-card')?.classList.remove('tp-panel-open');
             document.getElementById('tpTrigger').setAttribute('aria-expanded', 'false');
             document.getElementById('tpSearch').value = '';
             renderTopicList();
