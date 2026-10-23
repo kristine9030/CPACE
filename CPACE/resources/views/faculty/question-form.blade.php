@@ -87,7 +87,12 @@
         .q-opt:focus-within { box-shadow:0 0 0 2px var(--primary-light); }
         .q-opt-type { background:var(--primary-light); color:var(--primary); box-shadow:inset 0 0 0 1px #e5c4c4; }
         .q-opt-type select { color:var(--primary); font-weight:600; }
-        .q-opt-type.empty { background:#fff3f0; box-shadow:inset 0 0 0 1.5px var(--accent); animation:qpulse 1.6s ease-in-out infinite; }
+        /* padding/text-align/color pinned explicitly: ".empty" alone is a very
+           generic class name reused across the app (e.g. partials/chair-sidebar's
+           own big "no items yet" placeholder) - without its own value here, this
+           pill inherits that unrelated rule's 40px padding whenever both tie on
+           specificity and the sidebar's happens to load later in the cascade. */
+        .q-opt-type.empty { background:#fff3f0; box-shadow:inset 0 0 0 1.5px var(--accent); animation:qpulse 1.6s ease-in-out infinite; padding:0 4px 0 11px; text-align:left; color:var(--primary); }
         @keyframes qpulse { 0%,100% { box-shadow:inset 0 0 0 1.5px var(--accent), 0 0 0 0 rgba(192,57,43,.25); } 50% { box-shadow:inset 0 0 0 1.5px var(--accent), 0 0 0 5px rgba(192,57,43,0); } }
         @media (max-width:760px) { .rte-tabs { flex-wrap:wrap; } .rte-tabs .q-head-opts { order:5; width:100%; margin:6px 0 0; flex-wrap:wrap; } }
 
