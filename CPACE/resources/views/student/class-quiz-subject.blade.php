@@ -249,9 +249,8 @@
         </div>
         <div class="sheet">
             <a class="back" href="{{ route('class-quizzes') }}"><i class="fas fa-arrow-left"></i> All classes</a>
-            @if($subject)@include('partials.subject-description', ['description' => $subject->description])@endif
 
-            <div class="banner">
+            <div class="banner"@if($subject) data-subject-hover data-code="{{ $subject->code }}" data-name="{{ $subject->name }}" data-desc="{{ $subject->description }}"@endif>
                 <div class="banner-illus" aria-hidden="true">
                     <span class="blob"></span>
                     <i class="fas {{ $icon2 }} i1"></i>
@@ -264,6 +263,7 @@
                     <div class="banner-kicker"><i class="fas fa-graduation-cap"></i> Class</div>
                     <div class="banner-code">{{ $code }}</div>
                     <div class="banner-name">{{ $name }}</div>
+                    @if($subject)@include('partials.subject-info-btn', ['subject' => $subject])@endif
                     @if($faculty->isNotEmpty())
                         <div class="banner-teacher">
                             @foreach($faculty->take(3) as $teacher)
