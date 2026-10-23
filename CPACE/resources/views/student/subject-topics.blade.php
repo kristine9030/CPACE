@@ -356,6 +356,7 @@
                 <div class="hero-kicker"><i class="fas fa-book"></i> Resources</div>
                 <h1>{{ $subject->code }}</h1>
                 <p>{{ $subject->name }}</p>
+                @include('partials.subject-info-btn', ['subject' => $subject])
                 @if(filled($subject->description))<p class="hero-desc">{{ $subject->description }}</p>@endif
             </div>
             <div class="hero-count">

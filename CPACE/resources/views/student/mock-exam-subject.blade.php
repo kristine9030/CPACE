@@ -35,6 +35,7 @@
             'subtitle' => $subject->name,
             'back' => ['url' => route('mock-exams'), 'label' => 'All folders'],
         ])
+        @include('partials.subject-description', ['description' => $subject->description])
 
         @error('exam')<div class="banner banner-danger"><i class="fas fa-triangle-exclamation"></i><div>{{ $message }}</div></div>@enderror
 

@@ -47,6 +47,7 @@
                    style="--sc-base:{{ $card['theme']['base'] }}; --sc-dark:{{ $card['theme']['dark'] }};">
                     <div class="sc-banner">
                         <i class="fas {{ $card['icon'] }} sc-illus"></i>
+                        @include('partials.subject-info-btn', ['subject' => $card['subject'], 'variant' => 'corner'])
                         <div class="sc-code">{{ $card['subject']->code }}</div>
                         <div class="sc-name">{{ $card['subject']->name }}</div>
                     </div>

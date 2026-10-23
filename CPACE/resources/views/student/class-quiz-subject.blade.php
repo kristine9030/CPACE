@@ -249,6 +249,7 @@
         </div>
         <div class="sheet">
             <a class="back" href="{{ route('class-quizzes') }}"><i class="fas fa-arrow-left"></i> All classes</a>
+            @if($subject)@include('partials.subject-description', ['description' => $subject->description])@endif
 
             <div class="banner">
                 <div class="banner-illus" aria-hidden="true">

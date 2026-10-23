@@ -52,6 +52,7 @@
                 @endif
                 <div class="sc-banner">
                     <i class="fas fa-folder sc-illus"></i>
+                    @include('partials.subject-info-btn', ['subject' => $card['subject'], 'variant' => 'corner'])
                     <div class="sc-code">{{ $card['subject']->code }}</div>
                     <div class="sc-name">{{ $card['subject']->name }}</div>
                 </div>

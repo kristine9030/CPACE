@@ -454,6 +454,7 @@
                     <div class="sj-title">
                         <a class="sj-name" href="{{ $openUrl }}">{{ $subject->name }}</a>
                         <div class="sj-meta">{{ $subject->code }} &bull; {{ $fig['topics'] }} topic{{ $fig['topics'] === 1 ? '' : 's' }} &bull; {{ number_format($fig['questions']) }} question{{ $fig['questions'] === 1 ? '' : 's' }}</div>
+                        @include('partials.subject-info-btn', ['subject' => $subject])
                         @if(filled($subject->description))<div class="sj-desc" title="{{ $subject->description }}">{{ $subject->description }}</div>@endif
                     </div>
                     <div class="sj-col sj-fac">

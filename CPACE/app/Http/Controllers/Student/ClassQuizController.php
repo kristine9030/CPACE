@@ -72,6 +72,7 @@ class ClassQuizController extends Controller
             'key' => $subject?->id ?? 'general',
             'code' => $subject?->code ?? 'General',
             'name' => $subject?->name ?? 'Quizzes without a subject',
+            'description' => $subject?->description,
             'icon' => self::SUBJECT_ICONS[strtoupper((string) $subject?->code)] ?? 'fa-layer-group',
             'icon2' => self::SUBJECT_ICONS_2[strtoupper((string) $subject?->code)] ?? 'fa-shapes',
             'theme' => self::theme($subject?->code),

@@ -579,6 +579,7 @@
                     <div class="subject-info">
                         <div class="subject-abbr">{{ $subject->code }}</div>
                         <div class="subject-full">{{ $subject->name }}</div>
+                        @include('partials.subject-info-btn', ['subject' => $subject])
                         @if(filled($subject->description))<div class="subject-desc" title="{{ $subject->description }}">{{ $subject->description }}</div>@endif
                     </div>
                 </div>
