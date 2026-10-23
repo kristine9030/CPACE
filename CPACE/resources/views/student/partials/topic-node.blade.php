@@ -13,7 +13,7 @@
             @endif
 
             <div class="node-body">
-                <div class="node-name">{{ $topic->name }}</div>
+                <div class="node-name">{{ $topic->name }} @include('partials.topic-info-btn', ['topic' => $topic])</div>
                 <div class="node-meta">
                     @if($topic->material_count > 0)
                         <a href="{{ route('subjects.topic', ['subject' => $subject->id, 'topic' => $topic->id]) }}" class="meta-link"><i class="fas fa-folder-open"></i> {{ $topic->material_count }} material{{ $topic->material_count == 1 ? '' : 's' }}</a>

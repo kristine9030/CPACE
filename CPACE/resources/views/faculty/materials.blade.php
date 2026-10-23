@@ -255,7 +255,7 @@
             {{-- Add-material form --}}
             <div class="panel">
                 @if($selectedTopic)
-                    <div class="panel-head"><span><span class="ph-eyebrow">Topic</span><span class="ph-name">{{ $selectedTopic->name }}</span></span></div>
+                    <div class="panel-head"><span><span class="ph-eyebrow">Topic</span><span class="ph-name">{{ $selectedTopic->name }} @include('partials.topic-info-btn', ['topic' => $selectedTopic])</span></span></div>
 
                     {{-- Upload / add form --}}
                     <form method="POST" action="{{ route('faculty.materials.store') }}" enctype="multipart/form-data" id="matForm"
