@@ -759,42 +759,54 @@
             padding-top: 18px;
             border-top: 1px dashed var(--line);
         }
-        .topic-picker-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
-            gap: 12px;
+        /* Topic dropdown: one control that opens a searchable checklist */
+        .tp { position: relative; max-width: 560px; }
+        .tp-trigger {
+            width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 12px;
+            background: #fff; border: 2px solid var(--line); border-radius: 12px; padding: 12px 16px;
+            font-family: 'Poppins', sans-serif; font-size: 13.5px; font-weight: 600; color: var(--ink); cursor: pointer;
+            transition: border-color .15s, box-shadow .15s; text-align: left;
         }
-        .topic-cell { display: block; cursor: pointer; margin: 0; }
-        .topic-cell.disabled { cursor: not-allowed; opacity: .55; }
-        .topic-select-card {
-            display: block;
-            background: white;
-            border-radius: 12px;
-            padding: 14px 12px;
-            text-align: center;
-            border: 2px solid var(--line);
-            transition: all 0.2s;
-            font-family: 'Poppins', sans-serif;
-            position: relative;
+        .tp-trigger:hover { border-color: var(--accent); }
+        .tp.open .tp-trigger, .tp-trigger:focus-visible { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); outline: none; }
+        .tp-trigger .tp-label { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .tp-trigger .tp-label.auto { color: var(--muted); font-weight: 500; }
+        .tp-trigger .tp-label small { color: var(--muted); font-weight: 500; }
+        .tp-trigger i { font-size: 12px; color: var(--muted); transition: transform .2s; }
+        .tp.open .tp-trigger i { transform: rotate(180deg); }
+        .tp-panel {
+            position: absolute; left: 0; right: 0; top: calc(100% + 8px); z-index: 30;
+            background: #fff; border: 1px solid var(--line); border-radius: 14px;
+            box-shadow: 0 18px 44px rgba(20, 22, 40, .18); overflow: hidden;
         }
-        .topic-cell:not(.disabled):hover .topic-select-card { border-color: var(--accent); }
-        .topic-select-name { display: block; font-size: 13.5px; font-weight: 700; color: var(--ink); margin-bottom: 6px; }
-        .topic-questions-count {
-            font-size: 11px; color: #4b5563; font-weight: 600;
-            background: #f3f4f6; display: inline-block; padding: 3px 10px; border-radius: 20px;
+        .tp-panel[hidden] { display: none; }
+        .tp-search { position: relative; padding: 10px 10px 6px; }
+        .tp-search i { position: absolute; left: 22px; top: 50%; transform: translateY(-35%); font-size: 12px; color: #9ca3af; pointer-events: none; }
+        .tp-search input {
+            width: 100%; font-family: 'Poppins', sans-serif; font-size: 13px; border: 1.5px solid var(--line);
+            border-radius: 10px; padding: 9px 12px 9px 34px; outline: none; background: #fff;
         }
-        .topic-check:checked + .topic-select-card {
-            border-color: var(--accent);
-            background: var(--accent-soft);
-        }
-        .topic-check:checked + .topic-select-card::after {
-            content: '\f00c';
-            font-family: 'Font Awesome 6 Free'; font-weight: 900;
-            position: absolute; top: 8px; right: 8px;
-            width: 18px; height: 18px; border-radius: 50%;
-            background: var(--accent); color: #fff;
-            display: flex; align-items: center; justify-content: center; font-size: 9px;
-        }
+        .tp-search input:focus { border-color: var(--accent); }
+        .tp-bar { display: flex; align-items: center; gap: 6px; padding: 4px 12px 8px; font-size: 12px; color: var(--muted); }
+        .tp-bar button { border: 0; background: none; color: var(--accent); font: 600 12px 'Poppins', sans-serif; cursor: pointer; padding: 3px 6px; border-radius: 6px; }
+        .tp-bar button:hover { background: var(--accent-soft); }
+        .tp-bar .tp-count { margin-left: auto; font-weight: 600; }
+        .tp-list { max-height: 280px; overflow-y: auto; padding: 0 6px 8px; }
+        .tp-group { font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); padding: 10px 10px 4px; }
+        .tp-row { display: flex; align-items: center; gap: 11px; padding: 9px 10px; border-radius: 9px; cursor: pointer; margin: 0; }
+        .tp-row:hover { background: #f6f7fa; }
+        .tp-row.disabled { cursor: not-allowed; opacity: .5; }
+        .tp-row.disabled:hover { background: none; }
+        .tp-row input { width: 17px; height: 17px; accent-color: var(--accent); flex-shrink: 0; cursor: inherit; }
+        .tp-row .tp-name { flex: 1; min-width: 0; font-size: 13.5px; font-weight: 500; color: var(--ink); line-height: 1.35; }
+        .tp-row.on .tp-name { font-weight: 700; }
+        .tp-row .tp-q { font-size: 11px; font-weight: 600; color: #4b5563; background: #f3f4f6; border-radius: 20px; padding: 2px 9px; white-space: nowrap; }
+        .tp-none { padding: 18px 12px; text-align: center; font-size: 13px; color: var(--muted); }
+        .tp-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+        .tp-chip { display: inline-flex; align-items: center; gap: 7px; background: var(--accent-soft); color: var(--accent); border-radius: 999px; padding: 5px 7px 5px 12px; font-size: 12.5px; font-weight: 600; max-width: 100%; }
+        .tp-chip span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 260px; }
+        .tp-chip button { border: 0; background: rgba(0, 0, 0, .08); color: inherit; width: 20px; height: 20px; border-radius: 50%; cursor: pointer; font-size: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .tp-chip button:hover { background: rgba(0, 0, 0, .16); }
         .topic-picker-empty { font-size: 13px; color: var(--muted); padding: 8px 0; }
 
         /* rail history list (replaces How It Works) */
@@ -1392,12 +1404,25 @@
                                  is chosen; leave none checked to auto-pick. -->
                             <div class="topic-picker-wrap" id="topicPickerWrap" style="display:none;">
                                 <div class="step-desc" style="margin-bottom:14px;">
-                                    <i class="fas fa-book-open"></i> Topic Mode: pick <strong>one or more</strong> specific topics to drill. Leave none checked to let the system auto-pick your weakest topic.
+                                    <i class="fas fa-book-open"></i> Topic Mode: open the list and pick <strong>one or more</strong> topics to drill. Pick none and the system chooses your weakest topic for you.
                                 </div>
-                                <div class="subject-toolbar">
-                                    <span class="selected-count none" id="topicSelectedCount"><i class="fas fa-check-circle"></i> 0 topics selected</span>
+                                <div class="tp" id="tp">
+                                    <button type="button" class="tp-trigger" id="tpTrigger" aria-haspopup="listbox" aria-expanded="false">
+                                        <span class="tp-label auto" id="tpLabel">Auto-pick my weakest topic</span>
+                                        <i class="fas fa-chevron-down"></i>
+                                    </button>
+                                    <div class="tp-panel" id="tpPanel" hidden>
+                                        <div class="tp-search"><i class="fas fa-magnifying-glass"></i><input type="text" id="tpSearch" placeholder="Search topics..." autocomplete="off" aria-label="Search topics"></div>
+                                        <div class="tp-bar">
+                                            <button type="button" id="tpAll">Select all</button>
+                                            <button type="button" id="tpClear">Clear</button>
+                                            <span class="tp-count" id="topicSelectedCount">0 selected</span>
+                                        </div>
+                                        <div class="tp-list" id="tpList" role="listbox" aria-multiselectable="true"></div>
+                                    </div>
                                 </div>
-                                <div class="topic-picker-grid" id="topicPickerGrid"></div>
+                                <div class="tp-chips" id="tpChips"></div>
+                                <div id="tpInputs"></div>
                             </div>
                         </form>
                     </div>
@@ -1610,57 +1635,104 @@
             return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
         }
 
+        let topicsInScope = [];
+
+        function subjectCode(sid) { return document.querySelector('.subject-check[value="' + sid + '"]')?.dataset.name || ''; }
+
         function renderTopicPicker() {
             const wrap = document.getElementById('topicPickerWrap');
-            const grid = document.getElementById('topicPickerGrid');
             const isTopicMode = document.querySelector('.mode-card.active')?.dataset.mode === 'topic';
             const subjectIds = Array.from(document.querySelectorAll('.subject-check:checked')).map(c => c.value);
 
             if (!isTopicMode || subjectIds.length === 0) {
                 wrap.style.display = 'none';
-                grid.innerHTML = '';
+                closeTopicPanel();
+                topicsInScope = [];
+                document.getElementById('tpInputs').innerHTML = ''; // not submitted while Topic Mode is off; the choice is kept
                 return;
             }
-
             wrap.style.display = '';
 
-            let topics = [];
-            subjectIds.forEach(sid => { topics = topics.concat(TOPICS_BY_SUBJECT[sid] || []); });
+            topicsInScope = [];
+            subjectIds.forEach(sid => (TOPICS_BY_SUBJECT[sid] || []).forEach(t => topicsInScope.push(Object.assign({ subject: subjectCode(sid), sid }, t))));
 
             // Drop selections for topics that fell out of scope (subject unchecked).
-            const validIds = new Set(topics.map(t => String(t.id)));
-            Array.from(selectedTopicIds).forEach(id => { if (!validIds.has(id)) selectedTopicIds.delete(id); });
+            const valid = new Set(topicsInScope.map(t => String(t.id)));
+            Array.from(selectedTopicIds).forEach(id => { if (!valid.has(id)) selectedTopicIds.delete(id); });
 
-            grid.innerHTML = topics.length
-                ? topics.map(t => `
-                    <label class="topic-cell ${t.question_count === 0 ? 'disabled' : ''}">
-                        <input type="checkbox" name="topic_ids[]" value="${t.id}" class="topic-check" hidden
-                               ${selectedTopicIds.has(String(t.id)) ? 'checked' : ''}
-                               ${t.question_count === 0 ? 'disabled' : ''}
-                               onchange="onTopicCheckChange(this)">
-                        <span class="topic-select-card">
-                            <span class="topic-select-name">${escapeHtml(t.name)}</span>
-                            <span class="topic-questions-count">${t.question_count} Questions</span>
-                        </span>
-                    </label>
-                `).join('')
-                : '<div class="topic-picker-empty">No topics found for the selected subject(s) yet.</div>';
-
-            updateTopicSelectedCount();
+            renderTopicList();
+            syncTopicInputs();
         }
 
-        function onTopicCheckChange(el) {
-            if (el.checked) selectedTopicIds.add(String(el.value));
-            else selectedTopicIds.delete(String(el.value));
-            updateTopicSelectedCount();
+        function renderTopicList() {
+            const q = (document.getElementById('tpSearch').value || '').trim().toLowerCase();
+            const list = document.getElementById('tpList');
+            const shown = topicsInScope.filter(t => !q || t.name.toLowerCase().includes(q));
+            const multi = new Set(topicsInScope.map(t => t.sid)).size > 1;
+            let last = null, html = '';
+            shown.forEach(t => {
+                if (multi && t.sid !== last) { html += '<div class="tp-group">' + escapeHtml(t.subject) + '</div>'; last = t.sid; }
+                const off = t.question_count === 0, on = selectedTopicIds.has(String(t.id));
+                html += '<label class="tp-row' + (off ? ' disabled' : '') + (on ? ' on' : '') + '" role="option" aria-selected="' + on + '">'
+                    + '<input type="checkbox" value="' + t.id + '"' + (on ? ' checked' : '') + (off ? ' disabled' : '') + '>'
+                    + '<span class="tp-name">' + escapeHtml(t.name) + '</span>'
+                    + '<span class="tp-q">' + (off ? 'No questions yet' : t.question_count + ' Q') + '</span></label>';
+            });
+            list.innerHTML = html || '<div class="tp-none">' + (topicsInScope.length ? 'No topics match "' + escapeHtml(q) + '".' : 'No topics found for the selected subject(s) yet.') + '</div>';
         }
 
-        function updateTopicSelectedCount() {
-            const n = selectedTopicIds.size;
-            const badge = document.getElementById('topicSelectedCount');
-            badge.innerHTML = '<i class="fas fa-check-circle"></i> ' + n + (n === 1 ? ' topic selected' : ' topics selected');
-            badge.classList.toggle('none', n === 0);
+        // The hidden inputs are what the form submits; the label, chips and count mirror them.
+        function syncTopicInputs() {
+            const ids = Array.from(selectedTopicIds);
+            document.getElementById('tpInputs').innerHTML = ids.map(id => '<input type="hidden" name="topic_ids[]" value="' + id + '">').join('');
+            const names = ids.map(id => topicsInScope.find(t => String(t.id) === id)).filter(Boolean);
+            const label = document.getElementById('tpLabel');
+            if (!names.length) { label.className = 'tp-label auto'; label.textContent = 'Auto-pick my weakest topic'; }
+            else { label.className = 'tp-label'; label.innerHTML = names.length === 1 ? escapeHtml(names[0].name) : names.length + ' topics selected <small>· ' + escapeHtml(names.map(n => n.name).slice(0, 2).join(', ')) + (names.length > 2 ? '…' : '') + '</small>'; }
+            document.getElementById('tpChips').innerHTML = names.map(t => '<span class="tp-chip"><span title="' + escapeHtml(t.name) + '">' + escapeHtml(t.name) + '</span><button type="button" data-remove="' + t.id + '" aria-label="Remove ' + escapeHtml(t.name) + '"><i class="fas fa-xmark"></i></button></span>').join('');
+            document.getElementById('topicSelectedCount').textContent = names.length + ' selected';
         }
+
+        function openTopicPanel() {
+            document.getElementById('tpPanel').hidden = false;
+            document.getElementById('tp').classList.add('open');
+            document.getElementById('tpTrigger').setAttribute('aria-expanded', 'true');
+            document.getElementById('tpSearch').focus();
+        }
+        function closeTopicPanel() {
+            const panel = document.getElementById('tpPanel');
+            if (!panel || panel.hidden) return;
+            panel.hidden = true;
+            document.getElementById('tp').classList.remove('open');
+            document.getElementById('tpTrigger').setAttribute('aria-expanded', 'false');
+            document.getElementById('tpSearch').value = '';
+            renderTopicList();
+        }
+
+        (function wireTopicPicker() {
+            const tp = document.getElementById('tp');
+            document.getElementById('tpTrigger').addEventListener('click', () => (document.getElementById('tpPanel').hidden ? openTopicPanel() : closeTopicPanel()));
+            document.getElementById('tpSearch').addEventListener('input', renderTopicList);
+            document.getElementById('tpSearch').addEventListener('keydown', e => { if (e.key === 'Enter') e.preventDefault(); });
+            document.getElementById('tpList').addEventListener('change', e => {
+                const box = e.target.closest('input[type=checkbox]'); if (!box) return;
+                box.checked ? selectedTopicIds.add(String(box.value)) : selectedTopicIds.delete(String(box.value));
+                box.closest('.tp-row').classList.toggle('on', box.checked);
+                syncTopicInputs();
+            });
+            document.getElementById('tpAll').addEventListener('click', () => {
+                const q = (document.getElementById('tpSearch').value || '').trim().toLowerCase();
+                topicsInScope.filter(t => t.question_count > 0 && (!q || t.name.toLowerCase().includes(q))).forEach(t => selectedTopicIds.add(String(t.id)));
+                renderTopicList(); syncTopicInputs();
+            });
+            document.getElementById('tpClear').addEventListener('click', () => { selectedTopicIds.clear(); renderTopicList(); syncTopicInputs(); });
+            document.getElementById('tpChips').addEventListener('click', e => {
+                const b = e.target.closest('[data-remove]'); if (!b) return;
+                selectedTopicIds.delete(String(b.dataset.remove)); renderTopicList(); syncTopicInputs();
+            });
+            document.addEventListener('mousedown', e => { if (!tp.contains(e.target)) closeTopicPanel(); });
+            document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeTopicPanel(); } });
+        })();
 
         // ── Quiz length ── the student MUST pick a length before any subject can
         // start. The choice is intentionally NOT remembered between visits.
