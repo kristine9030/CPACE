@@ -24,6 +24,7 @@
         .sd-titles { position:relative; flex:1; min-width:0; }
         .sd-code { font-size:24px; font-weight:700; text-shadow:0 1px 4px rgba(0,0,0,.25); display:flex; align-items:center; gap:10px; }
         .sd-name { font-size:13.5px; opacity:.95; margin-top:3px; }
+        .sj-desc { font-size:11.5px; line-height:1.45; color:#8a8a8e; margin-top:3px; display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; overflow:hidden; }
         .sd-desc { font-size:12px; opacity:.85; margin-top:8px; line-height:1.55; max-width:720px; }
         .sd-pill { display:inline-flex; align-items:center; gap:6px; margin-top:12px; padding:5px 11px; border-radius:20px; background:rgba(255,255,255,.2); font-size:11.5px; font-weight:600; }
         .sd-badge { font-size:10px; font-weight:700; background:rgba(255,255,255,.25); border-radius:12px; padding:3px 9px; text-shadow:none; }
@@ -453,6 +454,7 @@
                     <div class="sj-title">
                         <a class="sj-name" href="{{ $openUrl }}">{{ $subject->name }}</a>
                         <div class="sj-meta">{{ $subject->code }} &bull; {{ $fig['topics'] }} topic{{ $fig['topics'] === 1 ? '' : 's' }} &bull; {{ number_format($fig['questions']) }} question{{ $fig['questions'] === 1 ? '' : 's' }}</div>
+                        @if(filled($subject->description))<div class="sj-desc" title="{{ $subject->description }}">{{ $subject->description }}</div>@endif
                     </div>
                     <div class="sj-col sj-fac">
                         <div class="sj-lbl">Faculty</div>

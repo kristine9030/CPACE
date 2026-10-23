@@ -25,7 +25,7 @@ class FacultyQuizTest extends TestCase
         'weakness_reports', 'spaced_repetition_items', 'performance_records',
         'quiz_proctor_captures', 'quiz_proctor_events',
         'faculty_quiz_attempts', 'faculty_quiz_items', 'faculty_quizzes',
-        'question_choices', 'questions', 'topics', 'subjects', 'faculty_subjects',
+        'question_choices', 'questions', 'question_scenarios', 'topics', 'subjects', 'faculty_subjects',
         'notifications', 'messages', 'conversation_participants', 'conversations', 'student_profiles', 'users',
     ];
 
@@ -94,10 +94,21 @@ class FacultyQuizTest extends TestCase
             $table->unsignedSmallInteger('sort_order')->default(0);
             $table->boolean('is_active')->default(true);
         });
+        Schema::create('question_scenarios', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('topic_id');
+            $table->unsignedBigInteger('created_by')->nullable();
+            $table->string('title', 150)->nullable();
+            $table->text('body');
+            $table->boolean('is_active')->default(true);
+            $table->timestamps();
+        });
         Schema::create('questions', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('topic_id');
             $table->unsignedBigInteger('created_by')->nullable();
+            $table->unsignedBigInteger('scenario_id')->nullable();
+            $table->unsignedSmallInteger('scenario_position')->default(0);
             $table->text('question_text');
             $table->string('question_type')->default('mcq');
             $table->string('difficulty')->default('moderate');
@@ -146,6 +157,9 @@ class FacultyQuizTest extends TestCase
             $table->text('explanation')->nullable();
             $table->unsignedSmallInteger('points')->default(1);
             $table->unsignedSmallInteger('sort_order')->default(0);
+            $table->string('scenario_group', 40)->nullable();
+            $table->text('scenario_text')->nullable();
+            $table->unsignedBigInteger('scenario_id')->nullable();
             $table->timestamps();
         });
         Schema::create('faculty_quiz_attempts', function (Blueprint $table) {
@@ -795,6 +809,174 @@ class FacultyQuizTest extends TestCase
             ->assertDontSee('Hidden draft');
     }
 
+    // ── scenarios ────────────────────────────────────────────────────────────
+
+    public function test_scenario_questions_stay_together_and_share_one_text(): void
+    {
+        $faculty = $this->faculty();
+        $subjectId = $this->subjectFor($faculty);
+        $scn = fn (array $item) => $item + ['scenario_group' => 'g1', 'scenario_text' => '<div>ABC Corp. bought equipment.</div>'];
+
+        // The builder posts them scattered; the server keeps the scenario in one piece at its first position.
+        $this->actingAs($faculty)->post(route('faculty.quizzes.store'), [
+            'action' => 'draft', 'title' => 'Case quiz', 'subject_id' => $subjectId,
+            'items_json' => json_encode([
+                $this->mcqItem('Standalone one', 'A'),
+                $scn($this->mcqItem('Case Q1', 'B')),
+                $this->mcqItem('Standalone two', 'C'),
+                $scn($this->mcqItem('Case Q2', 'D')) + ['scenario_text' => ''],
+            ]),
+        ])->assertSessionHasNoErrors();
+
+        $rows = DB::table('faculty_quiz_items')->orderBy('sort_order')->get();
+        $this->assertSame(['Standalone one', 'Case Q1', 'Case Q2', 'Standalone two'], $rows->pluck('question_text')->all());
+        $this->assertSame([null, 'g1', 'g1', null], $rows->pluck('scenario_group')->all());
+        $this->assertSame(['<div>ABC Corp. bought equipment.</div>', '<div>ABC Corp. bought equipment.</div>'], [$rows[1]->scenario_text, $rows[2]->scenario_text]);
+        $this->assertNull($rows[0]->scenario_text);
+    }
+
+    public function test_a_scenario_without_text_is_refused(): void
+    {
+        $faculty = $this->faculty();
+        $subjectId = $this->subjectFor($faculty);
+
+        $this->actingAs($faculty)->post(route('faculty.quizzes.store'), [
+            'action' => 'draft', 'title' => 'Case quiz', 'subject_id' => $subjectId,
+            'items_json' => json_encode([$this->mcqItem('Case Q1', 'A') + ['scenario_group' => 'g1', 'scenario_text' => '<div><br></div>']]),
+        ])->assertSessionHasErrors('items_json');
+
+        $this->assertSame(0, DB::table('faculty_quiz_items')->count());
+    }
+
+    public function test_the_builder_loads_a_saved_scenario_back(): void
+    {
+        $faculty = $this->faculty();
+        $quizId = $this->quiz($faculty, 'draft', [
+            $this->mcqItem('Case Q1', 'A') + ['scenario_group' => 'g1', 'scenario_text' => '<div>Situation text here</div>'],
+        ]);
+
+        $this->actingAs($faculty)->get(route('faculty.quizzes.edit', $quizId))
+            ->assertOk()->assertSee('Situation text here', false)->assertSee('scenario_group', false);
+    }
+
+    public function test_the_bank_picker_brings_a_whole_scenario_with_its_text(): void
+    {
+        $faculty = $this->faculty();
+        $subjectId = $this->subjectFor($faculty);
+        $topicId = DB::table('topics')->insertGetId(['subject_id' => $subjectId, 'name' => 'Impairment']);
+        [$scenarioId, $ids] = $this->scenarioInTopic($topicId, '<div>ABC bought equipment</div>', ['Needle question', 'Second', 'Third']);
+
+        // Searching for one of them finds all three.
+        $res = $this->actingAs($faculty)->getJson(route('faculty.quizzes.bank-questions', ['search' => 'Needle']))->assertOk();
+
+        $this->assertSame(['Needle question', 'Second', 'Third'], collect($res->json())->pluck('question_text')->all());
+        $this->assertSame(['s' . $scenarioId], collect($res->json())->pluck('scenario_group')->unique()->values()->all());
+        $this->assertSame('<div>ABC bought equipment</div>', $res->json('0.scenario_text'));
+    }
+
+    public function test_picking_from_topics_never_splits_a_scenario(): void
+    {
+        $faculty = $this->faculty();
+        $subjectId = $this->subjectFor($faculty);
+        $topicId = DB::table('topics')->insertGetId(['subject_id' => $subjectId, 'name' => 'Leases']);
+        $this->scenarioInTopic($topicId, '<div>Lessee case</div>', ['S1', 'S2', 'S3']);
+        $this->bankQuestionInTopic($topicId, 'Loose one');
+        $this->bankQuestionInTopic($topicId, 'Loose two');
+
+        $all = $this->actingAs($faculty)->postJson(route('faculty.quizzes.pick-questions'), [
+            'subject_id' => $subjectId, 'mode' => 'all', 'topic_ids' => [$topicId],
+        ])->assertOk();
+        $this->assertCount(5, $all->json('questions'));
+        $group = collect($all->json('questions'))->pluck('scenario_group');
+        $this->assertSame(3, $group->filter()->count());
+        $this->assertSame(1, $group->filter()->unique()->count());
+        $this->assertTrue(collect($all->json('questions'))->where('scenario_group', '!=', null)->every(fn ($q) => $q['scenario_text'] === '<div>Lessee case</div>'));
+
+        // Auto-pick may land on any one question of the scenario; the scenario then comes whole (0 or all 3, never 1 or 2).
+        foreach (range(1, 6) as $attempt) {
+            $auto = $this->actingAs($faculty)->postJson(route('faculty.quizzes.pick-questions'), [
+                'subject_id' => $subjectId, 'mode' => 'auto', 'count' => 2, 'topic_ids' => [$topicId],
+            ])->assertOk();
+            $inScenario = collect($auto->json('questions'))->whereNotNull('scenario_group')->count();
+            $this->assertContains($inScenario, [0, 3]);
+        }
+    }
+
+    public function test_a_student_sees_the_scenario_once_above_its_questions_and_is_graded_per_question(): void
+    {
+        $faculty = $this->faculty();
+        $student = $this->student();
+        $scn = fn (array $item) => $item + ['scenario_group' => 'g1', 'scenario_text' => '<div>The ABC Corp. situation</div>'];
+        $quizId = $this->quiz($faculty, 'published', [
+            $this->mcqItem('Loose question', 'A'),
+            $scn($this->mcqItem('Case question one', 'B')),
+            $scn($this->mcqItem('Case question two', 'C')),
+        ]);
+        $token = DB::table('faculty_quizzes')->where('id', $quizId)->value('share_token');
+        $items = DB::table('faculty_quiz_items')->where('quiz_id', $quizId)->orderBy('sort_order')->pluck('id');
+
+        $this->actingAs($student)->post(route('class-quiz.start', $token));
+        $take = $this->actingAs($student)->get(route('class-quiz.take', $token))->assertOk();
+        $html = $take->getContent();
+        $this->assertSame(1, substr_count($html, 'The ABC Corp. situation'), 'shared by the group, printed once');
+        $this->assertLessThan(strpos($html, 'Case question one'), strpos($html, 'The ABC Corp. situation'), 'scenario comes before its first question');
+        $this->assertGreaterThan(strpos($html, 'Case question two'), strpos($html, 'Case question two') + 1);
+        $take->assertSee('Questions 2 to 3');
+        $this->assertSame(1, substr_count($html, 'class="sc-group"'));
+
+        // Each question of the scenario is graded on its own.
+        $this->actingAs($student)->post(route('class-quiz.submit', $token), [
+            'answers' => [$items[0] => 'A', $items[1] => 'B', $items[2] => 'A'],
+        ])->assertRedirect(route('class-quiz.result', $token));
+        $this->assertSame(2, (int) DB::table('faculty_quiz_attempts')->value('score'));
+
+        $result = $this->actingAs($student)->get(route('class-quiz.result', $token))->assertOk();
+        $this->assertSame(1, substr_count($result->getContent(), 'The ABC Corp. situation'));
+    }
+
+    public function test_shuffling_keeps_a_scenarios_questions_together_and_in_order(): void
+    {
+        $faculty = $this->faculty();
+        $students = [$this->student('a@example.com'), $this->student('b@example.com'), $this->student('c@example.com'), $this->student('d@example.com')];
+        $scn = fn (array $item) => $item + ['scenario_group' => 'g1', 'scenario_text' => '<div>Shared case</div>'];
+        $quizId = $this->quiz($faculty, 'published', [
+            $this->mcqItem('Solo 1', 'A'), $this->mcqItem('Solo 2', 'A'), $this->mcqItem('Solo 3', 'A'),
+            $scn($this->mcqItem('Case 1', 'A')), $scn($this->mcqItem('Case 2', 'A')), $scn($this->mcqItem('Case 3', 'A')),
+            $this->mcqItem('Solo 4', 'A'),
+        ], ['shuffle_questions' => true]);
+        $token = DB::table('faculty_quizzes')->where('id', $quizId)->value('share_token');
+
+        $orders = [];
+        foreach ($students as $student) {
+            $this->actingAs($student)->post(route('class-quiz.start', $token));
+            $html = $this->actingAs($student)->get(route('class-quiz.take', $token))->getContent();
+            preg_match_all('/(Solo \d|Case \d)/', $html, $m);
+            $seq = array_values(array_unique($m[1]));
+            $orders[] = implode(',', $seq);
+
+            $caseAt = array_keys(array_filter($seq, fn ($t) => str_starts_with($t, 'Case')));
+            $this->assertSame(range($caseAt[0], $caseAt[0] + 2), $caseAt, 'the scenario is one block: ' . implode(',', $seq));
+            $this->assertSame(['Case 1', 'Case 2', 'Case 3'], array_values(array_filter($seq, fn ($t) => str_starts_with($t, 'Case'))), 'in its own order');
+        }
+        $this->assertGreaterThan(1, count(array_unique($orders)), 'different students get different orders');
+    }
+
+    public function test_the_faculty_attempt_review_shows_the_scenario(): void
+    {
+        $faculty = $this->faculty();
+        $student = $this->student();
+        $quizId = $this->quiz($faculty, 'published', [
+            $this->mcqItem('Case Q1', 'A') + ['scenario_group' => 'g1', 'scenario_text' => '<div>Review-page scenario</div>'],
+        ]);
+        $attemptId = DB::table('faculty_quiz_attempts')->insertGetId([
+            'quiz_id' => $quizId, 'student_id' => $student->id, 'started_at' => now(), 'submitted_at' => now(),
+            'answers' => json_encode([]), 'score' => 0, 'total_points' => 1, 'created_at' => now(), 'updated_at' => now(),
+        ]);
+
+        $this->actingAs($faculty)->get(route('faculty.quizzes.attempt', [$quizId, $attemptId]))
+            ->assertOk()->assertSee('Review-page scenario', false)->assertSee('Question 1');
+    }
+
     // ── helpers ──────────────────────────────────────────────────────────────
 
     private function faculty(string $email = 'faculty@example.com'): User
@@ -864,6 +1046,22 @@ class FacultyQuizTest extends TestCase
         ]);
     }
 
+    /** A scenario with one answerable question per text; returns [scenarioId, [questionIds]]. */
+    private function scenarioInTopic(int $topicId, string $body, array $texts): array
+    {
+        $scenarioId = DB::table('question_scenarios')->insertGetId([
+            'topic_id' => $topicId, 'body' => $body, 'is_active' => true, 'created_at' => now(), 'updated_at' => now(),
+        ]);
+        $ids = [];
+        foreach ($texts as $i => $text) {
+            $id = $this->bankQuestionInTopic($topicId, $text);
+            DB::table('questions')->where('id', $id)->update(['scenario_id' => $scenarioId, 'scenario_position' => $i]);
+            $ids[] = $id;
+        }
+
+        return [$scenarioId, $ids];
+    }
+
     private function mcqItem(string $text, string $correct, int $points = 1): array
     {
         return [
@@ -908,6 +1106,8 @@ class FacultyQuizTest extends TestCase
                 'quiz_id' => $quizId, 'question_text' => $item['question_text'], 'question_type' => $item['question_type'],
                 'choices' => json_encode($item['choices']), 'points' => $item['points'], 'sort_order' => $order,
                 'source_question_id' => $item['source_question_id'] ?? null,
+                'scenario_group' => $item['scenario_group'] ?? null,
+                'scenario_text' => $item['scenario_text'] ?? null,
                 'created_at' => now(), 'updated_at' => now(),
             ]);
         }

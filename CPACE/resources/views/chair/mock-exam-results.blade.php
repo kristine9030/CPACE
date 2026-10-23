@@ -210,7 +210,7 @@
                 @forelse($exam->items as $i => $item)
                     @php $st = $itemStats[$item->id]; $rate = $st['rate']; @endphp
                     <div class="item-row">
-                        <div class="item-q"><b>Q{{ $i + 1 }}</b>{{ \Illuminate\Support\Str::limit($item->question_text, 110) }}</div>
+                        <div class="item-q"><b>Q{{ $i + 1 }}</b>{{ \Illuminate\Support\Str::limit(\App\Support\RichText::plain($item->question_text), 110) }}</div>
                         <div class="bar"><span style="width:{{ $rate ?? 0 }}%;background:{{ $barColor($rate) }};"></span></div>
                         <div class="item-meta">
                             <span>Correct: <b>{{ $item->correctLabel() }}</b>{{ $item->topic ? ' · ' . $item->topic->name : '' }}</span>

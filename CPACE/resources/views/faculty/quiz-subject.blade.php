@@ -95,6 +95,8 @@
         </div>
     </div>
 
+    @include('partials.subject-description', ['description' => $subject?->description])
+
     <div class="tabs">
         @foreach(['' => 'All', 'draft' => 'Drafts', 'published' => 'Published', 'closed' => 'Closed'] as $key => $label)
             <a href="{{ route('faculty.quizzes.subject', ['subject' => $subjectKey] + ($key ? ['status' => $key] : [])) }}" class="tab {{ ($status ?? '') === $key ? 'active' : '' }}">

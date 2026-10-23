@@ -21,6 +21,7 @@
 
         .topbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:22px; gap:16px; position:relative; z-index:100; }
         .page-title { font-size:26px; font-weight:700; color:#14283E; }
+        .cc-desc { font-size:11.5px; line-height:1.45; color:#8a8a8e; margin-bottom:8px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
         .page-sub { font-size:12px; color:#999; margin-top:2px; }
         .topbar-right { display:flex; align-items:center; gap:10px; }
         .btn { display:inline-flex; align-items:center; gap:7px; padding:9px 18px; border-radius:8px; font-size:13px; font-weight:600; font-family:'Poppins',sans-serif; cursor:pointer; border:none; text-decoration:none; transition:all .2s; white-space:nowrap; }
@@ -127,6 +128,7 @@
                     <span class="cc-icon"><i class="fas {{ $class['icon'] }}"></i></span>
 
                     <div class="cc-body">
+                        @if(filled($class['description'] ?? null))<div class="cc-desc" title="{{ $class['description'] }}">{{ $class['description'] }}</div>@endif
                         <div class="cc-sub">
                             {{ $class['total'] }} {{ Str::plural('quiz', $class['total']) }}
                             @if($class['submissions'] > 0)

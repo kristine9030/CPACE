@@ -76,6 +76,16 @@
 
         /* Question cards */
         .q-list { display:flex; flex-direction:column; gap:14px; }
+        /* a scenario groups its questions under one shared situation */
+        .sc-card { background:#faf8ff; border:1.5px dashed #d9ccf5; border-radius:16px; padding:16px 16px 14px; margin-bottom:14px; }
+        .sc-card-head { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:10px; }
+        .sc-card-tag { font-size:11px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:#6d28d9; background:#efe9fe; border-radius:999px; padding:4px 11px; }
+        .sc-card-n { font-size:11.5px; color:#8a8c97; }
+        .sc-card-qs { margin-top:12px; padding-left:14px; border-left:3px solid #d9ccf5; display:flex; flex-direction:column; gap:12px; }
+        .sc-card-add { display:flex; gap:8px; flex-wrap:wrap; margin:12px 0 0 17px; }
+        .bank-scn { padding:10px 4px 4px; font-size:11px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:#6d28d9; display:flex; align-items:center; gap:6px; }
+        .bank-scn small { font-weight:500; text-transform:none; letter-spacing:0; color:#8a8c97; }
+        .bank-row.in-scn { margin-left:12px; border-left:3px solid #e3dafa; padding-left:10px; }
         .q-card { border:1.5px solid #ececec; border-radius:12px; padding:16px 18px; background:#fcfcfc; transition:border-color .18s; }
         .q-card:focus-within { border-color:#d9b8b8; background:#fff; }
         .q-head { display:flex; align-items:center; gap:10px; margin-bottom:12px; flex-wrap:wrap; }
@@ -169,6 +179,7 @@
         @media (max-width:900px) { .main { margin-left:68px; } }
         @media (max-width:768px) { .main { margin-left:0; padding:16px; } .layout { grid-template-columns:minmax(0, 1fr); } .form-row { grid-template-columns:minmax(0, 1fr); } .topbar { flex-direction:column; align-items:flex-start; } }
     </style>
+    @include('partials.rich-editor')
 </head>
 <body>
 
@@ -244,6 +255,7 @@
                         @unless($locked)
                             <div style="display:flex;gap:8px;" id="manualBtns">
                                 <button type="button" class="btn btn-outline" id="openBankBtn" style="padding:7px 13px;font-size:12px;"><i class="fas fa-database"></i> Add from Test Bank</button>
+                                <button type="button" class="btn btn-outline" id="addScenarioBtn" style="padding:7px 13px;font-size:12px;" title="One situation with several questions under it"><i class="fas fa-layer-group"></i> Add scenario</button>
                                 <button type="button" class="btn btn-primary" id="addQuestionBtn" style="padding:7px 13px;font-size:12px;"><i class="fas fa-plus"></i> Write question</button>
                             </div>
                         @endunless
@@ -290,6 +302,7 @@
                         <div class="add-bar" id="addBar">
                             <button type="button" class="btn btn-ghost" data-add="mcq"><i class="fas fa-plus"></i> Multiple choice</button>
                             <button type="button" class="btn btn-ghost" data-add="true_false"><i class="fas fa-plus"></i> True / False</button>
+                            <button type="button" class="btn btn-ghost" id="addScenarioBtn2"><i class="fas fa-layer-group"></i> Scenario with questions</button>
                         </div>
                     @endunless
                 </div>
@@ -394,6 +407,7 @@
     const BANK_URL = @json(route('faculty.quizzes.bank-questions'));
     let items = @json($initialItems);
 
+    const UPLOAD_URL = @json(route('faculty.question.upload-image'));
     const qList = document.getElementById('qList');
     const itemsJson = document.getElementById('itemsJson');
     const actionInput = document.getElementById('actionInput');
@@ -419,11 +433,46 @@
         }
     }
 
+    /* Consecutive items sharing a scenario_group form one unit; everything else is a unit of one. */
+    function unitsOf(list) {
+        const units = [];
+        list.forEach(it => {
+            const g = it.scenario_group || null;
+            if (g && units.length && units[units.length - 1].group === g) units[units.length - 1].items.push(it);
+            else units.push({ group: g, items: [it] });
+        });
+        return units;
+    }
+    const flatten = units => units.flatMap(u => u.items);
+    function unitsHtml(cardHtml) {
+        let idx = 0;
+        return unitsOf(items).map((u, k, all) => {
+            if (!u.group) return cardHtml(u.items[0], idx++);
+            const inner = u.items.map(it => cardHtml(it, idx++)).join('');
+            const first = u.items[0];
+            return `<div class="sc-card" data-group="${esc(u.group)}">
+                <div class="sc-card-head">
+                    <span class="sc-card-tag"><i class="fas fa-layer-group"></i> Scenario</span>
+                    <span class="sc-card-n">${u.items.length} question${u.items.length === 1 ? '' : 's'}</span>
+                    ${first.scenario_id ? '<span class="q-src"><i class="fas fa-database"></i> Test Bank</span>' : ''}
+                    <span class="spacer"></span>
+                    ${LOCKED ? '' : `
+                    <button type="button" class="icon-btn" data-sc-move="-1" title="Move scenario up" ${k === 0 ? 'disabled' : ''}><i class="fas fa-arrow-up"></i></button>
+                    <button type="button" class="icon-btn" data-sc-move="1" title="Move scenario down" ${k === all.length - 1 ? 'disabled' : ''}><i class="fas fa-arrow-down"></i></button>
+                    <button type="button" class="icon-btn danger" data-sc-del title="Remove the scenario and its questions"><i class="fas fa-trash"></i></button>`}
+                </div>
+                <textarea class="rte-src" data-sc-text data-upload-url="${UPLOAD_URL}" placeholder="Write the scenario: the situation the questions below refer to..." ${LOCKED ? 'readonly' : ''}>${esc(first.scenario_text)}</textarea>
+                <div class="sc-card-qs">${inner}</div>
+                ${LOCKED ? '' : `<div class="sc-card-add"><button type="button" class="btn btn-ghost" data-sc-add="mcq"><i class="fas fa-plus"></i> Multiple choice</button><button type="button" class="btn btn-ghost" data-sc-add="true_false"><i class="fas fa-plus"></i> True / False</button></div>`}
+            </div>`;
+        }).join('');
+    }
+
     function render() {
         if (!items.length) {
             qList.innerHTML = `<div class="q-empty"><i class="fas fa-clipboard-question"></i>${LOCKED ? 'This quiz has no questions.' : 'No questions yet. Write one below or pull some from your Test Bank.'}</div>`;
         } else {
-            qList.innerHTML = items.map((it, i) => {
+            const cardHtml = (it, i) => {
                 const tf = it.question_type === 'true_false';
                 const choices = it.choices.map((c, j) => `
                     <div class="choice-row ${c.is_correct ? 'correct' : ''}">
@@ -445,23 +494,56 @@
                         ${(it.image_path || (it.table_data && it.table_data.rows)) ? '<span class="q-src" title="This question keeps its picture or table"><i class="fas fa-paperclip"></i> ' + (it.image_path ? 'Picture' : '') + (it.image_path && it.table_data && it.table_data.rows ? ' + ' : '') + (it.table_data && it.table_data.rows ? 'Table' : '') + '</span>' : ''}
                         <span class="spacer"></span>
                         ${LOCKED ? '' : `
-                        <button type="button" class="icon-btn" data-move="-1" title="Move up" ${i === 0 ? 'disabled' : ''}><i class="fas fa-arrow-up"></i></button>
-                        <button type="button" class="icon-btn" data-move="1" title="Move down" ${i === items.length - 1 ? 'disabled' : ''}><i class="fas fa-arrow-down"></i></button>
+                        <button type="button" class="icon-btn" data-move="-1" title="Move up" ${canMove(i, -1) ? '' : 'disabled'}><i class="fas fa-arrow-up"></i></button>
+                        <button type="button" class="icon-btn" data-move="1" title="Move down" ${canMove(i, 1) ? '' : 'disabled'}><i class="fas fa-arrow-down"></i></button>
                         <button type="button" class="icon-btn danger" data-remove-q title="Remove question"><i class="fas fa-trash"></i></button>`}
                     </div>
-                    <textarea data-field="question_text" placeholder="Type the question..." ${LOCKED ? 'readonly' : ''}>${esc(it.question_text)}</textarea>
+                    <textarea class="rte-src" data-upload-url="${UPLOAD_URL}" data-field="question_text" placeholder="Type the question..." ${LOCKED ? 'readonly' : ''}>${esc(it.question_text)}</textarea>
                     <div class="choices">
                         ${choices}
                         ${!tf && !LOCKED && it.choices.length < 26 ? '<button type="button" class="add-choice" data-add-choice><i class="fas fa-plus"></i> Add choice</button>' : ''}
                     </div>
                     <div class="expl">
-                        <input type="text" data-field="explanation" value="${esc(it.explanation)}" placeholder="Explanation shown after submitting (optional)" ${LOCKED ? 'readonly' : ''}>
+                        <textarea class="rte-src" data-upload-url="${UPLOAD_URL}" data-rte-size="sm" data-field="explanation" placeholder="Explanation shown after submitting (optional)" ${LOCKED ? 'readonly' : ''}>${esc(it.explanation)}</textarea>
                     </div>
                 </div>`;
-            }).join('');
+            };
+            qList.innerHTML = unitsHtml(cardHtml);
         }
+        RTE.init(qList);
         updateSummary();
     }
+
+    /* A question moves inside its scenario; a standalone question steps over whole scenarios. */
+    function locate(i) {
+        const units = unitsOf(items);
+        let n = 0;
+        for (let k = 0; k < units.length; k++) {
+            if (i < n + units[k].items.length) return { units, k, at: i - n };
+            n += units[k].items.length;
+        }
+        return null;
+    }
+    function canMove(i, dir) {
+        const loc = locate(i); if (!loc) return false;
+        const u = loc.units[loc.k];
+        return u.group ? (dir < 0 ? loc.at > 0 : loc.at < u.items.length - 1) : (dir < 0 ? loc.k > 0 : loc.k < loc.units.length - 1);
+    }
+    function moveItem(i, dir) {
+        if (!canMove(i, dir)) return;
+        const { units, k, at } = locate(i), u = units[k];
+        if (u.group) [u.items[at], u.items[at + dir]] = [u.items[at + dir], u.items[at]];
+        else [units[k], units[k + dir]] = [units[k + dir], units[k]];
+        items = flatten(units);
+    }
+    function moveUnit(group, dir) {
+        const units = unitsOf(items), k = units.findIndex(u => u.group === group), j = k + dir;
+        if (k < 0 || j < 0 || j >= units.length) return;
+        [units[k], units[j]] = [units[j], units[k]];
+        items = flatten(units);
+    }
+    const scenarioItem = (group, text, type) => Object.assign(blankItem(type), { scenario_group: group, scenario_text: text, scenario_id: null });
+    function newGroupId() { return 'c' + Date.now().toString(36) + Math.floor(Math.random() * 1296).toString(36); }
 
     function updateSummary() {
         const pts = items.reduce((a, it) => a + (parseInt(it.points, 10) || 1), 0);
@@ -472,6 +554,11 @@
 
     /* In-place edits: update state only, no re-render (keeps the cursor). */
     qList.addEventListener('input', ev => {
+        if (ev.target.matches && ev.target.matches('[data-sc-text]')) {
+            const group = ev.target.closest('.sc-card').dataset.group;
+            items.forEach(it => { if (it.scenario_group === group) it.scenario_text = ev.target.value; });
+            return;
+        }
         const card = ev.target.closest('.q-card'); if (!card) return;
         const it = items[+card.dataset.i]; if (!it) return;
         if (ev.target.dataset.field) {
@@ -499,17 +586,36 @@
         }
     });
 
-    qList.addEventListener('click', ev => {
+    qList.addEventListener('click', async ev => {
         const btn = ev.target.closest('button'); if (!btn) return;
+        const scn = btn.closest('.sc-card');
+        if (scn && !btn.closest('.q-card')) {
+            const group = scn.dataset.group;
+            if (btn.dataset.scMove) { moveUnit(group, +btn.dataset.scMove); render(); }
+            else if (btn.dataset.scAdd) {
+                const last = items.map(it => it.scenario_group).lastIndexOf(group);
+                const text = items[last].scenario_text;
+                items.splice(last + 1, 0, scenarioItem(group, text, btn.dataset.scAdd));
+                render();
+                qList.querySelectorAll('.sc-card[data-group="' + CSS.escape(group) + '"] .q-card:last-child .rte-area')[0]?.focus();
+            } else if (btn.hasAttribute('data-sc-del')) {
+                const n = items.filter(it => it.scenario_group === group).length;
+                const ok = window.CPACE?.confirm
+                    ? await CPACE.confirm({ title: 'Remove this scenario?', text: `The scenario and its ${n} question${n === 1 ? '' : 's'} will be removed from this quiz.`, icon: 'warning', confirmText: 'Yes, remove', danger: true })
+                    : confirm('Remove the scenario and its questions?');
+                if (!ok) return;
+                items = items.filter(it => it.scenario_group !== group);
+                render();
+            }
+            return;
+        }
         const card = btn.closest('.q-card'); if (!card) return;
         const i = +card.dataset.i, it = items[i]; if (!it) return;
 
         if (btn.hasAttribute('data-remove-q')) {
             items.splice(i, 1); render();
         } else if (btn.dataset.move) {
-            const j = i + (+btn.dataset.move);
-            if (j < 0 || j >= items.length) return;
-            [items[i], items[j]] = [items[j], items[i]]; render();
+            moveItem(i, +btn.dataset.move); render();
         } else if (btn.hasAttribute('data-add-choice')) {
             if (it.choices.length >= 26) return;
             it.choices.push({ label:'', text:'', is_correct:false }); relabel(it); render();
@@ -525,10 +631,18 @@
 
     function addQuestion(type) {
         items.push(blankItem(type)); render();
-        const last = qList.querySelector('.q-card:last-child textarea');
+        const last = qList.querySelector('.q-card:last-child .rte-area');
         if (last) { last.focus(); last.scrollIntoView({ behavior:'smooth', block:'center' }); }
     }
     document.getElementById('addQuestionBtn')?.addEventListener('click', () => addQuestion('mcq'));
+    function addScenario() {
+        items.push(scenarioItem(newGroupId(), '', 'mcq'));
+        render();
+        const box = [...qList.querySelectorAll('.sc-card')].pop();
+        if (box) { box.scrollIntoView({ behavior: 'smooth', block: 'center' }); box.querySelector('.rte-area')?.focus(); }
+    }
+    document.getElementById('addScenarioBtn')?.addEventListener('click', addScenario);
+    document.getElementById('addScenarioBtn2')?.addEventListener('click', addScenario);
     document.querySelectorAll('[data-add]').forEach(b => b.addEventListener('click', () => addQuestion(b.dataset.add)));
 
     /* ── Save / publish ── */
@@ -547,10 +661,17 @@
                 });
                 if (!ok) return;
             }
+            const emptyScenario = items.find(it => it.scenario_group && !RTE.toPlain(it.scenario_text) && !/<(img|table)/i.test(it.scenario_text || ''));
+            if (emptyScenario && !LOCKED) {
+                (window.CPACE?.error || alert)('A scenario needs its text. Write the situation, or remove the scenario.');
+                document.querySelector('.sc-card[data-group="' + CSS.escape(emptyScenario.scenario_group) + '"]')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                return;
+            }
             actionInput.value = action;
             itemsJson.value = JSON.stringify(items.map(it => ({
                 question_text: it.question_text, question_type: it.question_type, points: it.points,
                 explanation: it.explanation, source_question_id: it.source_question_id,
+                scenario_group: it.scenario_group || null, scenario_text: it.scenario_group ? (it.scenario_text || '') : null, scenario_id: it.scenario_id || null,
                 image_path: it.image_path || null, table_data: it.table_data || null,
                 choices: it.choices.map(c => ({ label: c.label, text: c.text, is_correct: !!c.is_correct })),
             })));
@@ -590,12 +711,20 @@
     function renderBank() {
         const added = addedIds();
         if (!bankResults.length) { bankBody.innerHTML = '<div class="modal-empty">No matching questions in your Test Bank.</div>'; return; }
+        let lastGroup = null;
         bankBody.innerHTML = bankResults.map(q => {
             const isAdded = added.has(q.id);
-            return `<label class="bank-row ${isAdded ? 'added' : ''}">
+            const g = q.scenario_group || null;
+            let head = '';
+            if (g && g !== lastGroup) {
+                const n = bankResults.filter(x => x.scenario_group === g).length;
+                head = `<div class="bank-scn"><i class="fas fa-layer-group"></i> Scenario <small>${n} question${n === 1 ? '' : 's'} · they are added together</small></div><div class="bank-q" style="font-size:12px;color:#777;margin:0 4px 4px 14px;">${esc(RTE.toPlain(q.scenario_text).slice(0, 220))}</div>`;
+            }
+            lastGroup = g;
+            return head + `<label class="bank-row ${isAdded ? 'added' : ''} ${g ? 'in-scn' : ''}">
                 <input type="checkbox" data-bank-id="${q.id}" ${isAdded ? 'disabled' : ''} ${bankSelected.has(q.id) ? 'checked' : ''}>
                 <div>
-                    <div class="bank-q">${esc(q.question_text)}</div>
+                    <div class="bank-q">${esc(RTE.toPlain(q.question_text))}</div>
                     <div class="bank-meta"><span>${esc(q.subject)}</span><span>${esc(q.topic)}</span><span>${q.question_type === 'true_false' ? 'True/False' : 'MCQ'}</span><span>${esc(q.difficulty)}</span>${isAdded ? '<span style="color:#059669;">already in quiz</span>' : ''}</div>
                 </div>
             </label>`;
@@ -611,7 +740,10 @@
     bankBody.addEventListener('change', ev => {
         const cb = ev.target.closest('[data-bank-id]'); if (!cb) return;
         const id = +cb.dataset.bankId;
-        cb.checked ? bankSelected.add(id) : bankSelected.delete(id);
+        // a scenario is taken whole: ticking one of its questions ticks them all
+        const hit = bankResults.find(q => q.id === id), ids = hit && hit.scenario_group ? bankResults.filter(q => q.scenario_group === hit.scenario_group).map(q => q.id) : [id];
+        ids.forEach(x => { cb.checked ? bankSelected.add(x) : bankSelected.delete(x); });
+        bankBody.querySelectorAll('[data-bank-id]').forEach(box => { if (ids.includes(+box.dataset.bankId)) box.checked = cb.checked; });
         syncBankFooter();
     });
 
@@ -621,11 +753,14 @@
                 question_text: q.question_text, question_type: q.question_type === 'true_false' ? 'true_false' : 'mcq',
                 points: 1, explanation: q.explanation || '', source_question_id: q.id,
                 image_path: q.image_path || null, table_data: q.table_data || null,
+                scenario_group: q.scenario_group || null, scenario_text: q.scenario_text || null, scenario_id: q.scenario_id || null,
                 choices: q.choices.map(c => ({ label: c.label, text: c.text, is_correct: !!c.is_correct })),
             };
             relabel(item);
             items.push(item);
         });
+        // keep each scenario's questions together even if the same scenario was already partly here
+        items = flatten(unitsOf(items));
         bankSelected.clear();
         render();
         closeBank();
@@ -736,20 +871,33 @@
                 if ($('pickReplace').checked) items = [];
                 const have = addedIds();
                 let added = 0, skipped = 0;
-                for (const q of data.questions) {
-                    if (have.has(q.id)) { skipped++; continue; }
-                    if (items.length >= MAX_ITEMS) break;
-                    const item = {
-                        question_text: q.question_text, question_type: q.question_type === 'true_false' ? 'true_false' : 'mcq',
-                        points: 1, explanation: q.explanation || '', source_question_id: q.id,
-                image_path: q.image_path || null, table_data: q.table_data || null,
-                        choices: q.choices.map(c => ({ label: c.label, text: c.text, is_correct: !!c.is_correct })),
-                    };
-                    relabel(item);
-                    items.push(item);
-                    have.add(q.id);
-                    added++;
+                // a scenario goes in whole or not at all, so the cap never cuts one in half
+                const units = [];
+                data.questions.forEach(q => {
+                    const g = q.scenario_group || null;
+                    if (g && units.length && units[units.length - 1].group === g) units[units.length - 1].qs.push(q);
+                    else units.push({ group: g, qs: [q] });
+                });
+                for (const u of units) {
+                    const fresh = u.qs.filter(q => !have.has(q.id));
+                    skipped += u.qs.length - fresh.length;
+                    if (!fresh.length) continue;
+                    if (items.length + fresh.length > MAX_ITEMS) { skipped += 0; continue; }
+                    for (const q of fresh) {
+                        const item = {
+                            question_text: q.question_text, question_type: q.question_type === 'true_false' ? 'true_false' : 'mcq',
+                            points: 1, explanation: q.explanation || '', source_question_id: q.id,
+                            image_path: q.image_path || null, table_data: q.table_data || null,
+                            scenario_group: q.scenario_group || null, scenario_text: q.scenario_text || null, scenario_id: q.scenario_id || null,
+                            choices: q.choices.map(c => ({ label: c.label, text: c.text, is_correct: !!c.is_correct })),
+                        };
+                        relabel(item);
+                        items.push(item);
+                        have.add(q.id);
+                        added++;
+                    }
                 }
+                items = flatten(unitsOf(items));
                 render();
 
                 let text = `Added ${added} question${added === 1 ? '' : 's'}.`;

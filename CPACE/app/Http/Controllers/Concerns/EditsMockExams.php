@@ -9,6 +9,8 @@ use App\Models\Question;
 use App\Models\Topic;
 use App\Models\User;
 use App\Support\BatchYear;
+use App\Support\CustomQuestionParser;
+use App\Support\ScenarioSupport;
 use App\Support\MockExamAuditor;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -51,6 +53,13 @@ trait EditsMockExams
         $scheduledAt = ! empty($data['scheduled_at']) ? Carbon::parse($data['scheduled_at']) : null;
         $topicIds = $this->validatedTopicIds($data['topic_ids'] ?? [], $exam->subject_id);
         $items = $this->parseItems($request);
+        // A hand-written question may name a topic (it feeds the student's analytics); only this subject's count.
+        $subjectTopics = Topic::where('subject_id', $exam->subject_id)->pluck('id')->map('intval')->all();
+        foreach ($items as $i => $item) {
+            if (empty($item['source_question_id']) && ! empty($item['topic_id']) && ! in_array((int) $item['topic_id'], $subjectTopics, true)) {
+                $items[$i]['topic_id'] = null;
+            }
+        }
 
         if ($scheduledAt) {
             $this->assertSubjectFree($exam, $scheduledAt);
@@ -116,10 +125,18 @@ trait EditsMockExams
     }
 
     /**
-     * Decode the builder's item list. Items reference Test Bank questions by
-     * id, and the snapshot is taken here from the live question rather than
-     * from anything the client posted - so a tampered payload cannot smuggle
-     * in altered question text or a different correct answer.
+     * Decode the builder's item list, in the order the faculty arranged it.
+     *
+     * Two kinds of row:
+     *  - a Test Bank question, referenced by id. The snapshot is taken here from the live
+     *    question rather than from anything the client posted - so a tampered payload cannot
+     *    smuggle in altered question text or a different correct answer;
+     *  - a question written in the builder (no source id): validated like a class quiz question
+     *    and stored on the exam only.
+     *
+     * A bank scenario is always taken whole: if any one of its questions is on the list, the
+     * rest of its active, answerable questions are added right after it. Hand-written
+     * scenarios (rows sharing a scenario_group) are kept together and share one text.
      *
      * @return array<int, array<string, mixed>>
      */
@@ -134,7 +151,8 @@ trait EditsMockExams
         if (! is_array($decoded)) {
             throw ValidationException::withMessages(['items_json' => 'The question list could not be read. Please try again.']);
         }
-        if (count($decoded) > MockExam::MAX_ITEMS) {
+        // A scenario can bring extra questions, so the cap is checked again on the finished list below.
+        if (count($decoded) > MockExam::MAX_ITEMS * 3) {
             throw ValidationException::withMessages([
                 'items_json' => 'A mock exam can have at most ' . MockExam::MAX_ITEMS . ' questions.',
             ]);
@@ -144,22 +162,80 @@ trait EditsMockExams
             fn ($row) => (int) ($row['source_question_id'] ?? $row['id'] ?? 0),
             $decoded
         ))));
-        if ($ids === []) {
-            return [];
+        $with = ScenarioSupport::enabled() ? ['choices', 'scenario'] : ['choices'];
+        $questions = $ids === [] ? collect() : Question::with($with)->whereIn('id', $ids)->where('is_active', true)->get()->keyBy('id');
+
+        // The other questions of every scenario that appears, in their own order.
+        $siblings = collect();
+        if (ScenarioSupport::enabled()) {
+            $scenarioIds = $questions->pluck('scenario_id')->filter()->unique()->values();
+            if ($scenarioIds->isNotEmpty()) {
+                $siblings = Question::with($with)->whereIn('scenario_id', $scenarioIds)->where('is_active', true)
+                    ->orderBy('scenario_position')->orderBy('id')->get()->groupBy('scenario_id');
+            }
         }
 
-        $questions = Question::with('choices')->whereIn('id', $ids)->where('is_active', true)->get()->keyBy('id');
-
         $items = [];
-        foreach ($ids as $id) {
-            $question = $questions->get($id);
-            // Silently drop rather than failing the whole save: a colleague
-            // may have retired the question from the bank mid-build, and an
-            // item with no correct answer would be unanswerable.
-            if (! $question || $question->choices->count() < 2 || ! $question->choices->contains('is_correct', true)) {
+        $seenQuestions = [];
+        $doneScenarios = [];
+        $number = 0;
+        foreach ($decoded as $row) {
+            $row = (array) $row;
+            $sourceId = (int) ($row['source_question_id'] ?? $row['id'] ?? 0);
+
+            if ($sourceId > 0) {
+                $question = $questions->get($sourceId);
+                // Silently drop rather than failing the whole save: a colleague may have retired
+                // the question from the bank mid-build, and an item with no correct answer would
+                // be unanswerable.
+                if (! $question || ! ScenarioSupport::isAnswerable($question)) {
+                    continue;
+                }
+                $members = [$question];
+                if ($question->scenario_id) {
+                    if (isset($doneScenarios[$question->scenario_id])) {
+                        continue;
+                    }
+                    $doneScenarios[$question->scenario_id] = true;
+                    $members = ($siblings->get($question->scenario_id) ?? collect([$question]))
+                        ->filter(fn (Question $m) => ScenarioSupport::isAnswerable($m))->values()->all() ?: [$question];
+                }
+                foreach ($members as $member) {
+                    if (isset($seenQuestions[$member->id])) {
+                        continue;
+                    }
+                    $seenQuestions[$member->id] = true;
+                    $items[] = MockExamItem::payloadFromQuestion($member, count($items));
+                    $number++;
+                }
                 continue;
             }
-            $items[] = MockExamItem::payloadFromQuestion($question, count($items));
+
+            if (trim((string) ($row['question_text'] ?? '')) === '' && empty($row['choices'])) {
+                continue; // an empty row from the builder
+            }
+            $number++;
+            $custom = CustomQuestionParser::parse($row, $number, 'items_json');
+            $difficulty = $row['difficulty'] ?? 'moderate';
+            $items[] = $custom + [
+                'source_question_id' => null,
+                'topic_id' => ! empty($row['topic_id']) ? (int) $row['topic_id'] : null, // checked against the exam's subject in saveMockExam()
+                'difficulty' => in_array($difficulty, ['easy', 'moderate', 'difficult'], true) ? $difficulty : 'moderate',
+                'scenario_group' => $row['scenario_group'] ?? null,
+                'scenario_text' => $row['scenario_text'] ?? null,
+                'scenario_id' => null,
+            ];
+        }
+
+        if (count($items) > MockExam::MAX_ITEMS) {
+            throw ValidationException::withMessages([
+                'items_json' => 'A mock exam can have at most ' . MockExam::MAX_ITEMS . ' questions.' . (ScenarioSupport::enabled() ? ' (A scenario counts all of its questions.)' : ''),
+            ]);
+        }
+
+        $items = array_map([ScenarioSupport::class, 'stripEmptyScenario'], ScenarioSupport::normalise($items, 'items_json'));
+        foreach ($items as $order => $item) {
+            $items[$order]['sort_order'] = $order;
         }
 
         return $items;

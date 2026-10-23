@@ -354,6 +354,7 @@
         }
 
         /* Header sits directly on the back panel, so its text is white. */
+        .subject-desc { font-size:11.5px; line-height:1.45; color:#8a817c; margin-top:5px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
         .folder-head {
             display: flex;
             align-items: center;
@@ -578,6 +579,7 @@
                     <div class="subject-info">
                         <div class="subject-abbr">{{ $subject->code }}</div>
                         <div class="subject-full">{{ $subject->name }}</div>
+                        @if(filled($subject->description))<div class="subject-desc" title="{{ $subject->description }}">{{ $subject->description }}</div>@endif
                     </div>
                 </div>
                 @php

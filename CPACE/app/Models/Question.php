@@ -18,6 +18,8 @@ class Question extends Model
 
     protected $fillable = [
         'topic_id',
+        'scenario_id',
+        'scenario_position',
         'created_by',
         'source',
         'question_text',
@@ -53,6 +55,11 @@ class Question extends Model
     public function topic()
     {
         return $this->belongsTo(Topic::class);
+    }
+
+    public function scenario()
+    {
+        return $this->belongsTo(QuestionScenario::class, 'scenario_id');
     }
 
     public function choices()

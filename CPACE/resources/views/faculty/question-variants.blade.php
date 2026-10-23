@@ -159,7 +159,7 @@
                         <span class="badge">{{ $question->topic->name ?? '' }}</span>
                         <span class="badge">{{ $typeLabel[$question->question_type] ?? $question->question_type }}</span>
                     </div>
-                    <div class="orig-text" id="originalText">{{ $question->question_text }}</div>
+                    <div class="orig-text" id="originalText">{{ \App\Support\RichText::render($question->question_text) }}</div>
                     <div class="orig-choices">
                         @foreach($question->choices as $c)
                             <div class="orig-choice {{ $c->is_correct ? 'correct' : '' }}">
@@ -269,7 +269,7 @@
 
 <script>
     const VOCAB = @json($vocabulary);
-    const ORIGINAL = @json($question->question_text);
+    const ORIGINAL = @json(\App\Support\RichText::plain($question->question_text));
     const SUGGEST_URL = @json(route('faculty.question.variants.suggest', $question->id));
     const CSRF = @json(csrf_token());
     const input = document.getElementById('variantInput');

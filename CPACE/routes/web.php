@@ -27,6 +27,7 @@ use App\Http\Controllers\QuizProctorController;
 use App\Http\Controllers\Student\ReviewNoteController;
 use App\Http\Controllers\Student\AiTutorController;
 use App\Http\Controllers\Faculty\TestBankController;
+use App\Http\Controllers\Faculty\ScenarioController;
 use App\Http\Controllers\Faculty\QuestionImportController;
 use App\Http\Controllers\Faculty\MaterialController;
 use App\Http\Controllers\Faculty\FacultyQuizController;
@@ -73,6 +74,12 @@ Route::get('/auth/microsoft/callback', [AuthController::class, 'handleMicrosoftC
 // Learning material files: never reachable by a direct storage URL. The
 // controller requires a signed-in session or a short-lived signed link.
 Route::get('/materials/{material}/file', [MaterialFileController::class, 'show'])->name('materials.file');
+
+// Pictures inside questions; see QuestionImageController for why this mirrors the storage path.
+Route::get('/storage/question-images/{file}', [\App\Http\Controllers\QuestionImageController::class, 'show'])
+    ->where('file', '[A-Za-z0-9._-]+')
+    ->middleware('auth')
+    ->name('question-images.show');
 
 Route::get('/community/resources/{resource}/file', [CommunityResourceController::class, 'file'])->name('community.resources.file');
 
@@ -264,6 +271,12 @@ Route::middleware(['auth', 'no-back-cache'])->group(function () {
         Route::get('/ai-review/questions/create', [TestBankController::class, 'create'])->name('question.create');
         Route::post('/ai-review/questions', [TestBankController::class, 'store'])->name('question.store');
         Route::post('/ai-review/questions/ai-draft', [TestBankController::class, 'aiDraft'])->middleware('throttle:8,1')->name('question.ai-draft');
+        Route::get('/ai-review/scenarios/create', [ScenarioController::class, 'create'])->name('scenario.create');
+        Route::post('/ai-review/scenarios', [ScenarioController::class, 'store'])->name('scenario.store');
+        Route::get('/ai-review/scenarios/{id}/edit', [ScenarioController::class, 'edit'])->name('scenario.edit');
+        Route::put('/ai-review/scenarios/{id}', [ScenarioController::class, 'update'])->name('scenario.update');
+        Route::delete('/ai-review/scenarios/{id}', [ScenarioController::class, 'destroy'])->name('scenario.destroy');
+        Route::post('/ai-review/questions/upload-image', [TestBankController::class, 'uploadImage'])->middleware('throttle:40,1')->name('question.upload-image');
         Route::get('/ai-review/questions/{id}/edit', [TestBankController::class, 'edit'])->name('question.edit');
         Route::put('/ai-review/questions/{id}', [TestBankController::class, 'update'])->name('question.update');
 
@@ -296,6 +309,12 @@ Route::middleware(['auth', 'no-back-cache'])->group(function () {
         Route::post('/test-bank/curriculum', [TestBankController::class, 'switchCurriculum'])->name('test-bank.curriculum');
         Route::get('/test-bank/create', [TestBankController::class, 'create'])->name('question.create');
         Route::post('/test-bank/ai-draft', [TestBankController::class, 'aiDraft'])->middleware('throttle:8,1')->name('question.ai-draft');
+        Route::get('/test-bank/scenarios/create', [ScenarioController::class, 'create'])->name('scenario.create');
+        Route::post('/test-bank/scenarios', [ScenarioController::class, 'store'])->name('scenario.store');
+        Route::get('/test-bank/scenarios/{id}/edit', [ScenarioController::class, 'edit'])->name('scenario.edit');
+        Route::put('/test-bank/scenarios/{id}', [ScenarioController::class, 'update'])->name('scenario.update');
+        Route::delete('/test-bank/scenarios/{id}', [ScenarioController::class, 'destroy'])->name('scenario.destroy');
+        Route::post('/test-bank/upload-image', [TestBankController::class, 'uploadImage'])->middleware('throttle:40,1')->name('question.upload-image');
         Route::post('/test-bank', [TestBankController::class, 'store'])->name('question.store');
         Route::get('/test-bank/{id}/edit', [TestBankController::class, 'edit'])->name('question.edit');
         Route::put('/test-bank/{id}', [TestBankController::class, 'update'])->name('question.update');

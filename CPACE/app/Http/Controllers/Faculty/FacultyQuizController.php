@@ -17,6 +17,8 @@ use App\Models\Topic;
 use App\Support\CurriculumScope;
 use App\Support\MockExamQuestionPicker;
 use App\Models\User;
+use App\Support\CustomQuestionParser;
+use App\Support\ScenarioSupport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -75,6 +77,7 @@ class FacultyQuizController extends Controller
             'key' => $subject?->id ?? 'general',
             'code' => $subject?->code ?? 'General',
             'name' => $subject?->name ?? 'Quizzes without a subject',
+            'description' => $subject?->description,
             'icon' => self::SUBJECT_ICONS[strtoupper((string) $subject?->code)] ?? 'fa-layer-group',
             'icon2' => self::SUBJECT_ICONS_2[strtoupper((string) $subject?->code)] ?? 'fa-shapes',
             'theme' => self::theme($subject?->code),
@@ -189,6 +192,9 @@ class FacultyQuizController extends Controller
                 'explanation' => $item->explanation,
                 'points' => $item->points,
                 'source_question_id' => $item->source_question_id,
+                'scenario_group' => $item->scenario_group ?? null,
+                'scenario_text' => $item->scenario_text ?? null,
+                'scenario_id' => $item->scenario_id ?? null,
             ])->values()->all(),
             'subjects' => $this->subjectsFor(Auth::user()),
             'locked' => $quiz->attempts()->exists(),
@@ -206,7 +212,7 @@ class FacultyQuizController extends Controller
         // scores keep meaning something; settings (deadline etc.) stay editable.
         $locked = $quiz->attempts()->exists();
         $items = $locked
-            ? $quiz->items->map(fn ($i) => $i->only(['question_text', 'question_type', 'choices', 'explanation', 'points', 'source_question_id', 'image_path', 'table_data']))->all()
+            ? $quiz->items->map(fn ($i) => array_filter($i->only(['question_text', 'question_type', 'choices', 'explanation', 'points', 'source_question_id', 'image_path', 'table_data', 'scenario_group', 'scenario_text', 'scenario_id']), fn ($v, $k) => ! str_starts_with($k, 'scenario_') || $v !== null, ARRAY_FILTER_USE_BOTH))->all()
             : $this->parseItems($request);
 
         if ($publish) {
@@ -538,6 +544,9 @@ class FacultyQuizController extends Controller
             ->where('questions.is_active', true)
             ->select('questions.*', 'topics.name as topic_name', 'subjects.code as subject_code', 'subjects.id as subject_id')
             ->with('choices');
+        if (ScenarioSupport::enabled()) {
+            $query->with('scenario');
+        }
 
         if ($search = trim((string) $request->input('search'))) {
             $query->where('questions.question_text', 'like', "%{$search}%");
@@ -546,7 +555,8 @@ class FacultyQuizController extends Controller
             $query->where('subjects.id', $subjectId);
         }
 
-        $questions = $query->orderByDesc('questions.id')->limit(50)->get();
+        // A question that belongs to a scenario brings the whole scenario with it.
+        $questions = ScenarioSupport::expand($query->orderByDesc('questions.id')->limit(50)->get());
 
         return response()->json($questions->map(fn ($q) => [
             'id' => $q->id,
@@ -556,14 +566,14 @@ class FacultyQuizController extends Controller
             'explanation' => $q->explanation,
             'image_path' => $q->image_path,
             'table_data' => $q->table_data,
-            'topic' => $q->topic_name,
-            'subject' => $q->subject_code,
+            'topic' => $q->topic_name ?? $q->topic?->name,
+            'subject' => $q->subject_code ?? $q->topic?->subject?->code,
             'choices' => $q->choices->sortBy('choice_label')->values()->map(fn ($c) => [
                 'label' => $c->choice_label,
                 'text' => $c->choice_text,
                 'is_correct' => (bool) $c->is_correct,
             ])->all(),
-        ]));
+        ] + ScenarioSupport::snapshotFields($q)));
     }
 
     /**
@@ -626,7 +636,7 @@ class FacultyQuizController extends Controller
             if (empty($data['count'])) {
                 throw ValidationException::withMessages(['count' => 'Enter how many questions you want.']);
             }
-            $questions = MockExamQuestionPicker::pick($topicIds, (int) $data['count']);
+            $questions = ScenarioSupport::expand(MockExamQuestionPicker::pick($topicIds, (int) $data['count']));
             $available = $questions->count();
             $requested = (int) $data['count'];
         } else {
@@ -640,7 +650,7 @@ class FacultyQuizController extends Controller
                 ->values();
             $available = $usable->count();
             $requested = $available;
-            $questions = $usable->take(self::MAX_ITEMS);
+            $questions = ScenarioSupport::expand($usable)->take(self::MAX_ITEMS);
         }
 
         return response()->json([
@@ -657,7 +667,7 @@ class FacultyQuizController extends Controller
                     'text' => $c->choice_text,
                     'is_correct' => (bool) $c->is_correct,
                 ])->all(),
-            ])->values(),
+            ] + ScenarioSupport::snapshotFields($q))->values(),
             'requested' => $requested,
             'returned' => $questions->count(),
             // The builder tells faculty when the bank ran dry or the cap cut the list.
@@ -796,51 +806,16 @@ class FacultyQuizController extends Controller
 
         $items = [];
         foreach (array_values($decoded) as $i => $row) {
-            $n = $i + 1;
-            $text = trim((string) ($row['question_text'] ?? ''));
-            if ($text === '') {
-                throw ValidationException::withMessages(['items_json' => "Question {$n} has no text."]);
-            }
-
-            $type = ($row['question_type'] ?? 'mcq') === 'true_false' ? 'true_false' : 'mcq';
-            $choices = [];
-            $correct = 0;
-            foreach (array_values((array) ($row['choices'] ?? [])) as $j => $choice) {
-                $choiceText = trim((string) ($choice['text'] ?? ''));
-                if ($choiceText === '') {
-                    continue;
-                }
-                $isCorrect = ! empty($choice['is_correct']);
-                $correct += $isCorrect ? 1 : 0;
-                $choices[] = [
-                    'label' => $type === 'true_false' ? ($j === 0 ? 'T' : 'F') : chr(65 + count($choices)),
-                    'text' => $choiceText,
-                    'is_correct' => $isCorrect,
-                ];
-            }
-
-            if (count($choices) < 2 || count($choices) > 26) {
-                throw ValidationException::withMessages(['items_json' => "Question {$n} needs between 2 and 26 answer choices."]);
-            }
-            if ($correct !== 1) {
-                throw ValidationException::withMessages(['items_json' => "Question {$n} must have exactly one correct answer."]);
-            }
-
-            $points = (int) ($row['points'] ?? 1);
-            $items[] = [
-                'question_text' => $text,
-                'question_type' => $type,
-                'choices' => $choices,
-                'explanation' => trim((string) ($row['explanation'] ?? '')) ?: null,
-                'points' => max(1, min(100, $points)),
+            $items[] = CustomQuestionParser::parse((array) $row, $i + 1, 'items_json') + [
                 'source_question_id' => ! empty($row['source_question_id']) ? (int) $row['source_question_id'] : null,
-            ] + \App\Support\QuestionExhibit::attributesOf((object) [
-                'image_path' => $row['image_path'] ?? null,
-                'table_data' => \App\Support\QuestionExhibit::sanitizeTable($row['table_data'] ?? null),
-            ]);
+                'scenario_group' => $row['scenario_group'] ?? null,
+                'scenario_text' => $row['scenario_text'] ?? null,
+                'scenario_id' => $row['scenario_id'] ?? null,
+            ];
         }
 
-        return $items;
+        // Scenario rows stay together and share one text; plain questions are untouched.
+        return array_map([ScenarioSupport::class, 'stripEmptyScenario'], ScenarioSupport::normalise($items, 'items_json'));
     }
 
     private function assertPublishable(array $items, $dueAt): void

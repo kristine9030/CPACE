@@ -13,6 +13,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        @include('partials.scenario-box-styles')
         :root {
             --primary:      #7B1D1D;
             --primary-hover:#6a1818;
@@ -375,18 +376,21 @@
         <!-- Review answers -->
         <div class="section-lbl">Review Answers</div>
 
+        @php $scn = \App\Support\ScenarioSupport::mapQuestions($questions); @endphp
         @foreach($questions as $i => $question)
             @php
+                $sc         = $scn[$question->id] ?? null;
                 $answer     = $answers[$question->id] ?? null;
                 $selectedId = $answer->selected_choice ?? null;
                 $isCorrect  = $answer->is_correct ?? false;
             @endphp
+            @if($sc && $sc['start'])@include('partials.scenario-box', ['text' => $sc['text'], 'sticky' => false, 'label' => \App\Support\ScenarioSupport::label($i + 1, $sc['size'])])@endif
             <div class="rq {{ $isCorrect ? 'correct' : 'wrong' }}">
                 <div class="rq-top">
                     <div class="rq-status {{ $isCorrect ? 'correct' : 'wrong' }}">
                         <i class="fas {{ $isCorrect ? 'fa-check' : 'fa-times' }}"></i>
                     </div>
-                    <div class="rq-text">{{ $i + 1 }}. {{ $question->question_text }}</div>
+                    <div class="rq-text">{{ $i + 1 }}. {{ \App\Support\RichText::render($question->question_text) }}</div>
                 @include('partials.question-exhibit', ['item' => $question])
                 </div>
                 <div class="opts-list">
@@ -410,7 +414,7 @@
                     <div class="skipped-note"><i class="fas fa-info-circle"></i> Skipped</div>
                 @endif
                 @if($question->explanation)
-                    <div class="explain"><i class="fas fa-lightbulb"></i> {{ $question->explanation }}</div>
+                    <div class="explain"><i class="fas fa-lightbulb"></i> {{ \App\Support\RichText::render($question->explanation) }}</div>
                 @endif
             </div>
         @endforeach

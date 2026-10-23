@@ -232,6 +232,32 @@ class MockExamAttemptTest extends TestCase
 
     // ── helpers ──────────────────────────────────────────────────────────
 
+    public function test_a_student_sees_each_scenario_once_above_its_questions_and_is_graded_per_question(): void
+    {
+        [$student, $exam] = $this->registeredFor(now()->subMinutes(10), itemCount: 4);
+        $items = $exam->items()->orderBy('sort_order')->get();
+        // questions 2 and 3 share a scenario
+        DB::table('mock_exam_items')->whereIn('id', [$items[1]->id, $items[2]->id])->update([
+            'scenario_group' => 's9', 'scenario_text' => '<div>Shared mock-exam situation</div>',
+        ]);
+        $this->actingAs($student)->post(route('mock-exams.start', $exam));
+
+        $take = $this->actingAs($student)->get(route('mock-exams.take', $exam))->assertOk();
+        $html = $take->getContent();
+        $this->assertSame(1, substr_count($html, 'Shared mock-exam situation'));
+        $this->assertLessThan(strpos($html, 'id="q2"'), strpos($html, 'Shared mock-exam situation'), 'scenario sits before its first question');
+        $this->assertSame(1, substr_count($html, 'class="sc-group"'));
+        $take->assertSee('Questions 2 to 3');
+
+        // scored per question: q1 right, q2 right, q3 wrong, q4 right
+        $answers = [$items[0]->id => 'A', $items[1]->id => 'A', $items[2]->id => 'B', $items[3]->id => 'A'];
+        $this->actingAs($student)->post(route('mock-exams.submit', $exam), ['answers' => $answers])->assertRedirect(route('mock-exams.result', $exam));
+        $this->assertSame(3, MockExamAttempt::first()->score);
+
+        $result = $this->actingAs($student)->get(route('mock-exams.result', $exam))->assertOk();
+        $this->assertSame(1, substr_count($result->getContent(), 'Shared mock-exam situation'));
+    }
+
     /**
      * A registered student and a published exam sitting at $sitting.
      *

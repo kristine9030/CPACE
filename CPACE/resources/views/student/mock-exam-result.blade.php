@@ -14,6 +14,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     @include('partials.mock-exam-styles')
     <style>
+        @include('partials.scenario-box-styles')
         .score-hero { display:flex; gap:32px; align-items:center; flex-wrap:wrap; }
         .ring { width:132px; height:132px; border-radius:50%; display:flex; flex-direction:column;
                 align-items:center; justify-content:center; color:#fff; flex-shrink:0;
@@ -110,14 +111,17 @@
         <div class="card">
             <div class="card-title"><i class="fas fa-list-check"></i> Review your answers</div>
             <div style="margin-top:16px;">
+                @php $scn = \App\Support\ScenarioSupport::mapItems($items); @endphp
                 @foreach($items as $i => $item)
                     @php
+                        $sc = $scn[$item->id] ?? null;
                         $picked = $answers[(string) $item->id] ?? null;
                         $correct = $item->isCorrect($picked);
                         $key = $item->correctLabel();
                     @endphp
+                    @if($sc && $sc['start'])@include('partials.scenario-box', ['text' => $sc['text'], 'sticky' => false, 'label' => \App\Support\ScenarioSupport::label($i + 1, $sc['size'])])@endif
                     <div class="rev {{ $correct ? 'right' : 'wrong' }}">
-                        <div class="rev-q"><strong>{{ $i + 1 }}.</strong> {{ $item->question_text }}</div>
+                        <div class="rev-q"><strong>{{ $i + 1 }}.</strong> {{ \App\Support\RichText::render($item->question_text) }}</div>
                         @include('partials.question-exhibit', ['item' => $item])
                         <div class="rev-a">
                             @if($correct)
@@ -131,7 +135,7 @@
                             @endif
                         </div>
                         @if($item->explanation)
-                            <div class="rev-exp"><strong>Why:</strong> {{ $item->explanation }}</div>
+                            <div class="rev-exp"><strong>Why:</strong> {{ \App\Support\RichText::render($item->explanation) }}</div>
                         @endif
                     </div>
                 @endforeach
