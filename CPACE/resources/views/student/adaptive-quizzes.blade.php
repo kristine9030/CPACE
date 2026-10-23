@@ -456,6 +456,11 @@
             overflow: hidden;
             border-top: 3px solid var(--step-color, var(--accent));
         }
+        /* The Topic Mode dropdown is absolutely positioned and can extend below
+           this card's own bottom edge - overflow:hidden above (there to keep the
+           colored top border on the rounded corner) would clip it there too, so
+           it's lifted only while the dropdown is actually open. */
+        .step-card.tp-panel-open { overflow: visible; }
         .step-head {
             display: flex;
             align-items: center;
@@ -1696,6 +1701,7 @@
         function openTopicPanel() {
             document.getElementById('tpPanel').hidden = false;
             document.getElementById('tp').classList.add('open');
+            document.getElementById('tp').closest('.step-card')?.classList.add('tp-panel-open');
             document.getElementById('tpTrigger').setAttribute('aria-expanded', 'true');
             document.getElementById('tpSearch').focus({ preventScroll: true });
             keepTopicPanelVisible();
@@ -1740,6 +1746,7 @@
             if (!panel || panel.hidden) return;
             panel.hidden = true;
             document.getElementById('tp').classList.remove('open');
+            document.getElementById('tp').closest('.step-card')?.classList.remove('tp-panel-open');
             document.getElementById('tpTrigger').setAttribute('aria-expanded', 'false');
             document.getElementById('tpSearch').value = '';
             renderTopicList();
