@@ -34,11 +34,6 @@
     .si-x:hover { background:#e4e6ec; }
     .si-body { padding:18px 22px 22px; overflow-y:auto; font-size:13.5px; line-height:1.75; color:#333; white-space:pre-line; overflow-wrap:anywhere; }
     .si-empty { color:#9a9cab; font-style:italic; white-space:normal; }
-    /* hover card for [data-subject-hover]: the same card as the popup, no backdrop, so the pointer can rest on it */
-    .si-pop { position:fixed; z-index:99980; width:min(460px, calc(100vw - 24px)); background:#fff; border-radius:16px; box-shadow:0 18px 50px rgba(20,22,40,.28), 0 2px 8px rgba(20,22,40,.12); font-family:'Poppins',sans-serif; opacity:0; transform:translateY(6px); pointer-events:none; transition:opacity .16s, transform .16s; overflow:hidden; }
-    .si-pop.show { opacity:1; transform:none; pointer-events:auto; }
-    .si-pop .si-head { padding:14px 16px 10px; } .si-pop .si-body { padding:12px 16px 16px; max-height:36vh; font-size:13px; }
-    [data-subject-hover] { cursor:help; }
 </style>
 <script>
 (function () {
@@ -68,44 +63,6 @@
         overlay.classList.add('open');
         overlay.querySelector('.si-x').focus();
     }
-    // Hover a subject card (mouse only) to read its description in a floating card; touch users use the About button.
-    let pop, hoverEl = null, showT, hideT;
-    const canHover = () => window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
-    function buildPop() {
-        pop = document.createElement('div');
-        pop.className = 'si-pop';
-        pop.innerHTML = '<div class="si-head"><span class="si-code"></span><div class="si-title"><b></b><small>About this subject</small></div></div><div class="si-body"></div>';
-        document.body.appendChild(pop);
-        pop.addEventListener('mouseenter', () => clearTimeout(hideT));
-        pop.addEventListener('mouseleave', () => scheduleHide());
-    }
-    function showPop(el) {
-        const text = (el.dataset.desc || '').trim();
-        if (!text) return; // nothing to read: stay quiet
-        if (!pop) buildPop();
-        pop.querySelector('.si-code').textContent = el.dataset.code || 'Subject';
-        pop.querySelector('.si-title b').textContent = el.dataset.name || '';
-        pop.querySelector('.si-body').textContent = text;
-        pop.classList.add('show');
-        const r = el.getBoundingClientRect(), h = pop.offsetHeight, w = pop.offsetWidth;
-        const below = r.bottom + 10 + h <= window.innerHeight - 8;
-        pop.style.top = Math.max(8, below ? r.bottom + 10 : r.top - h - 10) + 'px';
-        pop.style.left = Math.max(12, Math.min(r.left + 24, window.innerWidth - w - 12)) + 'px';
-    }
-    function scheduleHide() { clearTimeout(showT); clearTimeout(hideT); hideT = setTimeout(() => { if (pop) pop.classList.remove('show'); hoverEl = null; }, 160); }
-    document.addEventListener('mouseover', e => {
-        if (!canHover()) return;
-        const el = e.target.closest && e.target.closest('[data-subject-hover]');
-        if (!el || el === hoverEl) { if (el) clearTimeout(hideT); return; }
-        hoverEl = el; clearTimeout(hideT); clearTimeout(showT);
-        showT = setTimeout(() => showPop(el), 220);
-    });
-    document.addEventListener('mouseout', e => {
-        const el = e.target.closest && e.target.closest('[data-subject-hover]');
-        if (el && !el.contains(e.relatedTarget) && !(pop && pop.contains(e.relatedTarget))) scheduleHide();
-    });
-    window.addEventListener('scroll', () => { if (pop) pop.classList.remove('show'); hoverEl = null; }, true);
-
     // capture phase: the button often sits inside a card that is itself a link
     document.addEventListener('click', e => {
         const btn = e.target.closest && e.target.closest('[data-subject-info]');

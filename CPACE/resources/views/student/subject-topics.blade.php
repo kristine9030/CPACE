@@ -341,7 +341,7 @@
             ? ($overallAccuracy >= $subject->passing_threshold ? '#059669' : '#dc2626')
             : '#d1d5db';
     @endphp
-    <div class="subject-hero" data-subject-hover data-code="{{ $subject->code }}" data-name="{{ $subject->name }}" data-desc="{{ $subject->description }}" style="--s-base:{{ $theme['base'] }}; --s-dark:{{ $theme['dark'] }}; --s-pastel:{{ $theme['pastel'] }}; --s-soft:{{ $theme['soft'] }};">
+    <div class="subject-hero" style="--s-base:{{ $theme['base'] }}; --s-dark:{{ $theme['dark'] }}; --s-pastel:{{ $theme['pastel'] }}; --s-soft:{{ $theme['soft'] }};">
         {{-- Illustration cluster in the corner, same language as the Class Quizzes header. --}}
         <div class="hero-illus" aria-hidden="true">
             <span class="blob"></span>
