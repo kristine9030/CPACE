@@ -63,7 +63,7 @@
         .topic-toggle-spacer { width:18px;flex-shrink:0; }
         .topic-check { flex-shrink:0;width:15px;height:15px;cursor:pointer; }
         .topic-order { width:22px;height:22px;flex-shrink:0;border-radius:6px;background:#fff;color:#999;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700; }
-        .topic-info { flex:1;min-width:0; } .topic-name { font-size:11px;font-weight:600;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+        .topic-info { flex:1;min-width:0; } .topic-name { font-size:11px;font-weight:600;color:#333;display:flex;align-items:center;gap:0; } .topic-name .tn-text { white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
         .topic-meta { font-size:9.5px;color:#aaa;margin-top:2px; } .topic-actions { display:flex;gap:4px; }
         .topic-actions .icon-btn { width:25px;height:25px;font-size:9px; }
         .topic-children { margin-top:6px; }

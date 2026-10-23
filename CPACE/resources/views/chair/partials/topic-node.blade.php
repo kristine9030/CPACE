@@ -12,7 +12,11 @@
             @endif
             <span class="topic-order">{{ $topic->sort_order }}</span>
             <div class="topic-info">
-                <div class="topic-name">{{ $topic->name }} @unless($topic->is_active)<span class="inactive-pill">Inactive</span>@endunless</div>
+                <div class="topic-name">
+                    <span class="tn-text">{{ $topic->name }}</span>
+                    @include('partials.topic-info-btn', ['topic' => $topic, 'editable' => !$readOnly])
+                    @unless($topic->is_active)<span class="inactive-pill">Inactive</span>@endunless
+                </div>
                 <div class="topic-meta">{{ $topic->questions_count }} test-bank question{{ $topic->questions_count === 1 ? '' : 's' }}@if($topic->children->isNotEmpty()) &middot; {{ $topic->children->count() }} subtopic{{ $topic->children->count() === 1 ? '' : 's' }}@endif
                     @if($topic->tos_weight !== null || $topic->tos_items !== null)
                         &middot; <span title="From the PRC Table of Specifications" style="color:#b45309;font-weight:600;">TOS{{ $topic->tos_weight !== null ? ' ' . rtrim(rtrim(number_format($topic->tos_weight, 2), '0'), '.') . '%' : '' }}{{ $topic->tos_items !== null ? ' · ' . $topic->tos_items . ' item' . ($topic->tos_items === 1 ? '' : 's') : '' }}</span>
