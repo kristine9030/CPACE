@@ -138,6 +138,7 @@
         }
         .hero-info h1 { font-family:'Montserrat',ui-sans-serif,system-ui,sans-serif; font-size:28px; font-weight:700; line-height:1.15; color:#1a1a1a; }
         .hero-info p { font-size:13.5px; color:#5c5450; margin-top:4px; }
+        .hero-info p.hero-desc { font-size:12.5px; line-height:1.55; color:#7a716c; margin-top:8px; max-width:640px; white-space:pre-line; }
         /* Frosted stat pill; right margin keeps it clear of the illustration. */
         .hero-count {
             margin-left:auto; margin-right:150px; text-align:center; flex-shrink:0;
@@ -355,6 +356,8 @@
                 <div class="hero-kicker"><i class="fas fa-book"></i> Resources</div>
                 <h1>{{ $subject->code }}</h1>
                 <p>{{ $subject->name }}</p>
+                @include('partials.subject-info-btn', ['subject' => $subject])
+                @if(filled($subject->description))<p class="hero-desc">{{ $subject->description }}</p>@endif
             </div>
             <div class="hero-count">
                 <div class="n">{{ $topics->count() }}</div>

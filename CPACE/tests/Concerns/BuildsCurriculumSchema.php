@@ -158,6 +158,9 @@ trait BuildsCurriculumSchema
             $table->unsignedSmallInteger('tos_items')->nullable();
             $table->dateTime('gap_flagged_at')->nullable();
             $table->dateTime('gap_warned_at')->nullable();
+            $table->json('audience_years')->nullable();
+            $table->json('audience_sections')->nullable();
+            $table->json('audience_semesters')->nullable();
             $table->boolean('is_active')->default(true);
         });
         Schema::create('questions', function (Blueprint $table) {
@@ -201,6 +204,8 @@ trait BuildsCurriculumSchema
         Schema::create('student_profiles', function (Blueprint $table) {
             $table->unsignedBigInteger('user_id')->primary();
             $table->string('batch_year', 9)->nullable();
+            $table->unsignedTinyInteger('year_level')->nullable();
+            $table->string('section', 10)->nullable();
         });
 
         $this->activeId = DB::table('curriculum_versions')->insertGetId([
@@ -242,13 +247,20 @@ trait BuildsCurriculumSchema
 
     private function studentInBatch(?string $batch, string $email = 'student@example.com'): User
     {
+        return $this->studentInYearSection($batch, null, null, $email);
+    }
+
+    private function studentInYearSection(?string $batch, ?int $yearLevel, ?string $section, string $email = 'student@example.com'): User
+    {
         $student = User::create([
             'role_id' => Role::STUDENT,
             'first_name' => 'Test', 'last_name' => 'Student',
             'email' => $email, 'password' => Hash::make('password'),
             'is_active' => true, 'setup_completed_at' => now(),
         ]);
-        DB::table('student_profiles')->insert(['user_id' => $student->id, 'batch_year' => $batch]);
+        DB::table('student_profiles')->insert([
+            'user_id' => $student->id, 'batch_year' => $batch, 'year_level' => $yearLevel, 'section' => $section,
+        ]);
 
         return $student;
     }
@@ -269,11 +281,14 @@ trait BuildsCurriculumSchema
         return $id;
     }
 
-    private function topic(int $subjectId, int $versionId, string $name, ?int $parentId = null): int
+    private function topic(int $subjectId, int $versionId, string $name, ?int $parentId = null, array $audience = []): int
     {
         return DB::table('topics')->insertGetId([
             'subject_id' => $subjectId, 'curriculum_version_id' => $versionId,
             'parent_id' => $parentId, 'name' => $name, 'sort_order' => 1, 'is_active' => true,
+            'audience_years' => isset($audience['years']) ? json_encode($audience['years']) : null,
+            'audience_sections' => isset($audience['sections']) ? json_encode($audience['sections']) : null,
+            'audience_semesters' => isset($audience['semesters']) ? json_encode($audience['semesters']) : null,
         ]);
     }
 

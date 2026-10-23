@@ -26,6 +26,8 @@
         /* TOPBAR */
         .topbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:22px; gap:16px; position:relative; z-index:100; }
         .topbar-left { display:flex; align-items:center; gap:12px; }
+        .q-scn { display:inline-flex; align-items:center; gap:5px; font-size:10.5px; font-weight:600; color:#6d28d9; background:#f1ebff; border-radius:999px; padding:2px 9px; text-decoration:none; }
+        .q-scn:hover { background:#e6dbff; }
         .page-title { font-size:26px; font-weight:700; color:#14283E; }
         .page-sub { font-size:12px; color:#999; margin-top:2px; }
         .topbar-right { display:flex; align-items:center; gap:10px; }
@@ -233,6 +235,7 @@
                     <a href="#" data-format="pdf" target="_blank"><i class="fas fa-file-pdf" style="color:#c0392b;"></i> Export as PDF</a>
                 </div>
             </div>
+            <a href="{{ route('faculty.scenario.create') }}" class="btn btn-ghost" title="One situation with several questions under it"><i class="fas fa-layer-group"></i> New Scenario</a>
             <a href="{{ route('faculty.question.create') }}" class="btn btn-primary"><i class="fas fa-plus"></i> Add Question</a>
             @include('partials.topbar-actions')
         </div>
@@ -349,6 +352,14 @@
                 <option value="">All Types</option>
                 <option value="mcq" {{ ($filters['type'] ?? '') === 'mcq' ? 'selected' : '' }}>Multiple Choice</option>
                 <option value="true_false" {{ ($filters['type'] ?? '') === 'true_false' ? 'selected' : '' }}>True / False</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <span class="filter-label">Kind</span>
+            <select name="kind">
+                <option value="">All Kinds</option>
+                <option value="scenario" {{ ($filters['kind'] ?? '') === 'scenario' ? 'selected' : '' }}>Scenario questions</option>
+                <option value="single" {{ ($filters['kind'] ?? '') === 'single' ? 'selected' : '' }}>Standalone</option>
             </select>
         </div>
         <div class="filter-group">

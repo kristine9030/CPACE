@@ -24,6 +24,7 @@
         .sd-titles { position:relative; flex:1; min-width:0; }
         .sd-code { font-size:24px; font-weight:700; text-shadow:0 1px 4px rgba(0,0,0,.25); display:flex; align-items:center; gap:10px; }
         .sd-name { font-size:13.5px; opacity:.95; margin-top:3px; }
+        .sj-desc { font-size:11.5px; line-height:1.45; color:#8a8a8e; margin-top:3px; display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; overflow:hidden; }
         .sd-desc { font-size:12px; opacity:.85; margin-top:8px; line-height:1.55; max-width:720px; }
         .sd-pill { display:inline-flex; align-items:center; gap:6px; margin-top:12px; padding:5px 11px; border-radius:20px; background:rgba(255,255,255,.2); font-size:11.5px; font-weight:600; }
         .sd-badge { font-size:10px; font-weight:700; background:rgba(255,255,255,.25); border-radius:12px; padding:3px 9px; text-shadow:none; }
@@ -70,6 +71,12 @@
         .topic-search i { position:absolute; left:11px; top:50%; transform:translateY(-50%); color:#bbb; font-size:10px; }
         .topic-search input[type=text] { width:100%; padding:8px 10px 8px 32px; border:1.5px solid #e2e2e6; border-radius:8px; font:11px 'Poppins',sans-serif; }
         .topic-search input[type=text]:focus { outline:none; border-color:var(--primary); }
+        .audience-group { margin-bottom:8px; }
+        .audience-label { font-size:10.5px; font-weight:600; color:#777; margin-bottom:4px; }
+        .audience-options { display:flex; flex-wrap:wrap; gap:6px; max-height:90px; overflow-y:auto; }
+        .audience-chip { display:flex; align-items:center; gap:4px; font-size:10.5px; color:#555; background:#f5f5f7; border:1px solid #ececef; border-radius:6px; padding:4px 7px; cursor:pointer; }
+        .audience-chip input { margin:0; }
+        .topic-audience-badge { color:#7c3aed; font-weight:600; }
         .empty-msg { font-size:11px;color:#bbb;display:flex;align-items:center;gap:7px;padding:4px 0; }
         .modal-overlay { display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:2000;align-items:center;justify-content:center;padding:20px; }
         .modal-overlay.open { display:flex; } .modal { background:#fff;border-radius:16px;width:100%;max-width:560px;padding:24px;max-height:90vh;overflow-y:auto; }
@@ -453,6 +460,8 @@
                     <div class="sj-title">
                         <a class="sj-name" href="{{ $openUrl }}">{{ $subject->name }}</a>
                         <div class="sj-meta">{{ $subject->code }} &bull; {{ $fig['topics'] }} topic{{ $fig['topics'] === 1 ? '' : 's' }} &bull; {{ number_format($fig['questions']) }} question{{ $fig['questions'] === 1 ? '' : 's' }}</div>
+                        @include('partials.subject-info-btn', ['subject' => $subject])
+                        @if(filled($subject->description))<div class="sj-desc" title="{{ $subject->description }}">{{ $subject->description }}</div>@endif
                     </div>
                     <div class="sj-col sj-fac">
                         <div class="sj-lbl">Faculty</div>
@@ -600,6 +609,35 @@
                 <div class="form-group"><label>Display Order</label><input type="number" name="sort_order" min="0" max="9999" value="0" required></div>
                 <div class="form-group full"><label>Parent Topic</label><select name="parent_id" id="topicParent"><option value="">— None (top-level topic) —</option></select><div class="hint">Choose an existing topic to make this a subtopic of it.</div></div>
                 <div class="form-group full"><label>Description</label><textarea name="description" placeholder="Optional topic description"></textarea></div>
+                <div class="form-group full">
+                    <label>Who studies this topic <span style="font-weight:400;color:#999;">(leave all unchecked = every year/sem/section)</span></label>
+                    <div class="hint" style="margin-bottom:6px;">Use this when a topic is only covered in a specific term, e.g. "Non-Financial Assets" taught to 3rd Year in 2nd Sem only — students outside this won't be quizzed on it until it's their turn.</div>
+                    <div class="audience-group">
+                        <div class="audience-label">Year level</div>
+                        <div class="audience-options" id="topicAudienceYears">
+                            @foreach(\App\Models\Section::YEAR_LABELS as $yearValue => $yearLabel)
+                                <label class="audience-chip"><input type="checkbox" name="audience_years[]" value="{{ $yearValue }}" onchange="filterTopicAudienceSections()">{{ $yearLabel }}</label>
+                            @endforeach
+                        </div>
+                    </div>
+                    <div class="audience-group">
+                        <div class="audience-label">Semester</div>
+                        <div class="audience-options" id="topicAudienceSemesters">
+                            @foreach(\App\Models\Section::SEMESTER_LABELS as $semValue => $semLabel)
+                                <label class="audience-chip"><input type="checkbox" name="audience_semesters[]" value="{{ $semValue }}">{{ $semLabel }}</label>
+                            @endforeach
+                        </div>
+                    </div>
+                    <div class="audience-group">
+                        <div class="audience-label">Section <span style="font-weight:400;color:#999;">(optional, narrows further)</span></div>
+                        <div class="hint" id="topicAudienceSectionsHint" style="margin:0 0 6px;">Pick a year level above to narrow this down to its sections.</div>
+                        <div class="audience-options" id="topicAudienceSections">
+                            @foreach($sections as $section)
+                                <label class="audience-chip" data-year="{{ $section->year_level ?? '' }}"><input type="checkbox" name="audience_sections[]" value="{{ $section->name }}">{{ $section->name }}</label>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
                 <div class="toggle-row full"><input type="hidden" name="is_active" value="0"><input type="checkbox" name="is_active" id="topicActive" value="1" checked><label for="topicActive">Active and available for questions and quizzes</label></div>
             </div>
             <div class="modal-actions"><button type="button" class="btn btn-ghost" onclick="closeModal('topicModal')">Cancel</button><button class="btn btn-primary"><i class="fas fa-save"></i> Save Topic</button></div>
@@ -680,8 +718,39 @@ function openTopic(subjectId, subjectCode, topic = null, parentId = null) {
         f.elements['sort_order'].value = topic?.sort_order ?? 0;
     }
     document.getElementById('topicActive').checked = topic ? Boolean(topic.is_active) : true;
+    setAudienceCheckboxes('topicAudienceYears', 'audience_years[]', (topic?.audience_years ?? []).map(String));
+    setAudienceCheckboxes('topicAudienceSemesters', 'audience_semesters[]', (topic?.audience_semesters ?? []).map(String));
+    setAudienceCheckboxes('topicAudienceSections', 'audience_sections[]', topic?.audience_sections ?? []);
+    filterTopicAudienceSections();
     populateParentOptions(subjectId, topic?.id ?? null, topic?.parent_id ?? parentId);
     document.getElementById('topicModal').classList.add('open');
+}
+
+function setAudienceCheckboxes(containerId, inputName, selectedValues) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    container.querySelectorAll(`input[name="${inputName}"]`).forEach(cb => {
+        cb.checked = selectedValues.includes(cb.value);
+    });
+}
+
+// Only show sections that belong to the year level(s) checked above, so a
+// chair can't end up with a mismatched combo like "3rd Year" + "BSA 4102".
+// No year checked = every section stays visible, same as before this existed.
+function filterTopicAudienceSections() {
+    const checkedYears = Array.from(document.querySelectorAll('#topicAudienceYears input:checked')).map(cb => cb.value);
+    const chips = document.querySelectorAll('#topicAudienceSections .audience-chip');
+    chips.forEach(chip => {
+        const chipYear = chip.dataset.year || '';
+        // A section with no recorded year level can't be matched either way, so it stays visible.
+        const visible = checkedYears.length === 0 || chipYear === '' || checkedYears.includes(chipYear);
+        chip.style.display = visible ? '' : 'none';
+        if (!visible) {
+            const cb = chip.querySelector('input');
+            if (cb.checked) cb.checked = false;
+        }
+    });
+    document.getElementById('topicAudienceSectionsHint').style.display = checkedYears.length === 0 ? '' : 'none';
 }
 
 function applyChairTopicSearch(node, query) {

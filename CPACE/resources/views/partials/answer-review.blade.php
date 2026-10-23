@@ -20,17 +20,21 @@
     .ar-choice.right { background:#ecfdf5; border-color:#a7f3d0; color:#065f46; }
     .ar-choice.wrong { background:#fef2f2; border-color:#fecaca; color:#991b1b; }
     .ar-choice small { margin-left:auto; font-weight:700; white-space:nowrap; }
+    @include('partials.scenario-box-styles')
     .ar-expl { font-size:12px; color:#6b7280; background:#f8f9fb; border-radius:8px; padding:9px 12px; margin-top:8px; line-height:1.5; }
 </style>
+@php $scn = \App\Support\ScenarioSupport::mapItems($items); @endphp
 @foreach($items as $i => $item)
     @php
+        $sc = $scn[$item->id] ?? null;
         $picked = $answers[(string) $item->id] ?? null;
         $correct = $item->correctLabel();
         $state = $picked === null || $picked === '' ? 'skip' : ($picked === $correct ? 'ok' : 'no');
     @endphp
+    @if($sc && $sc['start'])@include('partials.scenario-box', ['text' => $sc['text'], 'sticky' => false, 'label' => \App\Support\ScenarioSupport::label($i + 1, $sc['size'])])@endif
     <div class="ar-item">
         <div class="ar-q">
-            <b>Q{{ $i + 1 }}</b>{{ $item->question_text }}
+            <b>Q{{ $i + 1 }}</b>{{ \App\Support\RichText::render($item->question_text) }}
             <span class="ar-tag {{ $state }}">{{ $state === 'ok' ? 'Correct' : ($state === 'no' ? 'Wrong' : 'Not answered') }}</span>
         </div>
         @include('partials.question-exhibit', ['item' => $item])
@@ -44,7 +48,7 @@
             </div>
         @endforeach
         @if(!empty($item->explanation))
-            <div class="ar-expl"><i class="fas fa-lightbulb"></i> {{ $item->explanation }}</div>
+            <div class="ar-expl"><i class="fas fa-lightbulb"></i> {{ \App\Support\RichText::render($item->explanation) }}</div>
         @endif
     </div>
 @endforeach

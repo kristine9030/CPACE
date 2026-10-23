@@ -38,6 +38,11 @@ class QuestionParaphraser
     {
         $original = trim($question->question_text);
 
+        // Formatted stems keep their author's wording; the rule-based rewrite works on plain text only.
+        if (\App\Support\RichText::looksLikeHtml($original)) {
+            return $original;
+        }
+
         // Human/AI-written variants for this question, if the relation is loaded.
         $stored = $question->relationLoaded('variants')
             ? $question->variants->where('is_active', true)->pluck('variant_text')->all()

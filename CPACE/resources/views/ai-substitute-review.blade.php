@@ -207,7 +207,7 @@
                                         <span class="pill d-{{ $q->difficulty }}">{{ $diffLabel[$q->difficulty] ?? $q->difficulty }}</span>
                                     </div>
                                 </div>
-                                <div class="q-text">{{ $q->question_text }}</div>
+                                <div class="q-text">{{ \App\Support\RichText::render($q->question_text) }}</div>
                                 @include('partials.question-exhibit', ['item' => $q])
                                 <ul class="choices">
                                     @foreach($q->choices as $choice)
@@ -218,7 +218,7 @@
                                     @endforeach
                                 </ul>
                                 @if($q->explanation)
-                                    <div class="expl"><strong>Explanation:</strong> {{ $q->explanation }}</div>
+                                    <div class="expl"><strong>Explanation:</strong> {{ \App\Support\RichText::render($q->explanation) }}</div>
                                 @endif
                                 <div class="q-actions">
                                     <form method="POST" action="{{ route($reviewRoute . '.approve', $q->id) }}">
@@ -253,7 +253,7 @@
                         @foreach($recent as $q)
                             <tr>
                                 <td style="width:70px;">{{ $q->topic->subject->code ?? '' }}</td>
-                                <td>{{ \Illuminate\Support\Str::limit($q->question_text, 110) }}<div style="font-size:11px;color:#999;">{{ $q->topic->name }}</div></td>
+                                <td>{{ \Illuminate\Support\Str::limit(\App\Support\RichText::plain($q->question_text), 110) }}<div style="font-size:11px;color:#999;">{{ $q->topic->name }}</div></td>
                                 <td style="white-space:nowrap;">
                                     <span class="st-{{ $q->review_status }}">{{ ucfirst($q->review_status) }}</span>
                                     <div style="font-size:11px;color:#999;">{{ $q->reviewer->name ?? '' }} · {{ $q->reviewed_at?->format('M j, Y') }}</div>

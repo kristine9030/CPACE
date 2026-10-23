@@ -152,6 +152,7 @@
                              style="--sc-base:{{ $folder['theme']['base'] }}; --sc-dark:{{ $folder['theme']['dark'] }};">
                             <div class="sc-banner">
                                 <i class="fas fa-folder sc-illus"></i>
+                                @include('partials.subject-info-btn', ['subject' => $folder['subject'], 'variant' => 'corner'])
                                 <div class="sc-code">{{ $folder['subject']->code }}</div>
                                 <div class="sc-name">{{ $folder['subject']->name }}</div>
                             </div>
@@ -178,6 +179,7 @@
                            style="--sc-base:{{ $folder['theme']['base'] }}; --sc-dark:{{ $folder['theme']['dark'] }};">
                             <div class="sc-banner">
                                 <i class="fas fa-folder sc-illus"></i>
+                                @include('partials.subject-info-btn', ['subject' => $folder['subject'], 'variant' => 'corner'])
                                 <div class="sc-code">{{ $folder['subject']->code }}</div>
                                 <div class="sc-name">{{ $folder['subject']->name }}</div>
                             </div>

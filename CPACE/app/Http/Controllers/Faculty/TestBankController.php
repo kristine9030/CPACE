@@ -15,6 +15,7 @@ use App\Services\AiQuestionAssistantService;
 use App\Services\BrandedXlsxReport;
 use App\Services\QuestionParaphraser;
 use App\Support\Auditor;
+use App\Support\ScenarioSupport;
 use App\Support\CurriculumScope;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -62,7 +63,7 @@ class TestBankController extends Controller
             'questions' => $questions,
             'stats'     => $stats,
             'subjects'  => $this->subjectsFor(Auth::user())->orderBy('id')->get(),
-            'filters'   => $request->only(['search', 'subject', 'type', 'difficulty', 'status']),
+            'filters'   => $request->only(['search', 'subject', 'type', 'difficulty', 'status', 'kind']),
             'draftCurriculum' => $draftId ? CurriculumVersion::find($draftId) : null,
             'showingDraft'    => CurriculumScope::testBankShowsDraft(),
             'aiPendingCount'  => Schema::hasColumn('questions', 'source') ? (clone $statsBase)->pendingAiReview()->count() : 0,
@@ -126,6 +127,9 @@ class TestBankController extends Controller
         }
         if (($status = $request->input('status')) !== null && $status !== '') {
             $query->where('questions.is_active', $status === 'active');
+        }
+        if (ScenarioSupport::enabled() && ($kind = $request->input('kind'))) {
+            $kind === 'scenario' ? $query->whereNotNull('questions.scenario_id') : $query->whereNull('questions.scenario_id');
         }
 
         return $query->orderByDesc('questions.id');
@@ -209,10 +213,10 @@ class TestBankController extends Controller
             $q->question_type === 'mcq' ? 'Multiple Choice' : 'True / False',
             self::DIFFICULTY_LABELS[$q->difficulty] ?? $q->difficulty,
             $q->is_active ? 'Active' : 'Draft',
-            $q->question_text,
+            \App\Support\RichText::plain($q->question_text),
             implode("\n", $this->choiceLines($q)),
             $this->correctAnswer($q),
-            $q->explanation,
+            \App\Support\RichText::plain($q->explanation),
             $q->variants_count,
         ])->all();
 
@@ -339,6 +343,7 @@ class TestBankController extends Controller
             ->orderByDesc('id')
             ->limit(15)
             ->pluck('question_text')
+            ->map(fn ($t) => \App\Support\RichText::plain($t))
             ->all();
 
         try {
@@ -406,6 +411,11 @@ class TestBankController extends Controller
 
         if (! $this->canManageSubject(Auth::user(), $question->topic->subject_id)) {
             return redirect()->route($this->backRoute())->with('warning', self::NOT_ASSIGNED_MESSAGE);
+        }
+
+        // A question that belongs to a scenario is edited together with its scenario.
+        if (ScenarioSupport::enabled() && $question->scenario_id) {
+            return redirect()->route(Auth::user()->isChair() ? 'chair.scenario.edit' : 'faculty.scenario.edit', $question->scenario_id);
         }
 
         // Offer the topics of the curriculum this question belongs to, so moving
@@ -511,7 +521,13 @@ class TestBankController extends Controller
             return redirect()->route($this->backRoute())->with('warning', self::NOT_ASSIGNED_MESSAGE);
         }
 
+        $scenarioId = ScenarioSupport::enabled() ? $question->scenario_id : null;
         $question->delete();
+
+        // Deleting the last question of a scenario leaves nothing to show: remove the scenario too.
+        if ($scenarioId && ! Question::where('scenario_id', $scenarioId)->exists()) {
+            \App\Models\QuestionScenario::whereKey($scenarioId)->delete();
+        }
 
         return redirect()->route($this->backRoute())->with('status', 'Question deleted.');
     }
@@ -617,7 +633,7 @@ class TestBankController extends Controller
                 $draft = $ai->rewriteVariant(
                     $question->topic->subject->name ?? $question->topic->subject->code ?? 'CPA Reviewer',
                     $question->topic->name ?? '',
-                    $question->question_text
+                    \App\Support\RichText::plain($question->question_text)
                 );
 
                 return response()->json(['draft' => $draft, 'source' => 'ai']);
@@ -627,7 +643,7 @@ class TestBankController extends Controller
         }
 
         $draft = QuestionParaphraser::rephrase(
-            $question->question_text,
+            \App\Support\RichText::plain($question->question_text),
             random_int(1, 2_000_000_000),
             $question->question_type
         );
@@ -645,6 +661,20 @@ class TestBankController extends Controller
      *
      * @return array<string, mixed>
      */
+    /** A picture dropped, pasted or inserted into the question editor; the editor puts the returned URL inline. */
+    public function uploadImage(Request $request)
+    {
+        $request->validate([
+            'image' => 'required|image|mimes:jpg,jpeg,png,webp|max:' . QuestionExhibit::MAX_IMAGE_KILOBYTES,
+        ], [
+            'image.max' => 'That picture is larger than 3 MB.',
+            'image.image' => 'Only JPG, PNG or WebP pictures can be inserted.',
+            'image.mimes' => 'Only JPG, PNG or WebP pictures can be inserted.',
+        ]);
+
+        return response()->json(['url' => QuestionExhibit::imageUrl(QuestionExhibit::storeImage($request->file('image')))]);
+    }
+
     private function exhibitFields(Request $request): array
     {
         $fields = [];
@@ -673,12 +703,18 @@ class TestBankController extends Controller
 
     private function validateQuestion(Request $request): array
     {
+        // Stems and explanations carry formatting; keep only the whitelisted markup.
+        $request->merge([
+            'question_text' => \App\Support\RichText::sanitize($request->input('question_text')),
+            'explanation'   => \App\Support\RichText::sanitize($request->input('explanation')),
+        ]);
+
         $rules = [
             'topic_id'      => 'required|exists:topics,id',
-            'question_text' => 'required|string',
+            'question_text' => 'required|string|max:60000',
             'question_type' => 'required|in:mcq,true_false',
             'difficulty'    => 'required|in:Easy,Medium,Hard',
-            'explanation'   => 'nullable|string',
+            'explanation'   => 'nullable|string|max:60000',
             'image'         => 'nullable|image|mimes:jpg,jpeg,png,webp|max:' . QuestionExhibit::MAX_IMAGE_KILOBYTES,
             'remove_image'  => 'nullable|boolean',
             'table_json'    => 'nullable|string|max:30000',

@@ -72,6 +72,7 @@ class ClassQuizController extends Controller
             'key' => $subject?->id ?? 'general',
             'code' => $subject?->code ?? 'General',
             'name' => $subject?->name ?? 'Quizzes without a subject',
+            'description' => $subject?->description,
             'icon' => self::SUBJECT_ICONS[strtoupper((string) $subject?->code)] ?? 'fa-layer-group',
             'icon2' => self::SUBJECT_ICONS_2[strtoupper((string) $subject?->code)] ?? 'fa-shapes',
             'theme' => self::theme($subject?->code),
@@ -412,7 +413,8 @@ class ClassQuizController extends Controller
             return $items->values();
         }
 
-        return $items->sortBy(fn ($item) => crc32($attempt->id . '-' . $item->id))->values();
+        // A scenario's questions stay together, in order; whole scenarios and standalone questions are what get shuffled.
+        return \App\Support\ScenarioSupport::shuffleUnits($items, fn ($item) => crc32($attempt->id . '-' . $item->id));
     }
 
     private function unavailableMessage(FacultyQuiz $quiz): string

@@ -29,6 +29,8 @@
         <div class="topbar-right">@include('partials.topbar-actions')</div>
     </div>
 
+    @include('partials.subject-description', ['description' => $subject->description])
+
     @error('exam')<div class="banner banner-danger"><i class="fas fa-triangle-exclamation"></i><div>{{ $message }}</div></div>@enderror
 
     <div class="card">

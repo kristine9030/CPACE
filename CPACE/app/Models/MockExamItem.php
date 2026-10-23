@@ -16,6 +16,7 @@ class MockExamItem extends Model
     protected $fillable = [
         'exam_id', 'source_question_id', 'topic_id', 'question_text', 'question_type',
         'difficulty', 'choices', 'explanation', 'points', 'sort_order', 'image_path', 'table_data',
+        'scenario_group', 'scenario_text', 'scenario_id',
     ];
 
     protected $casts = [
@@ -67,7 +68,7 @@ class MockExamItem extends Model
             'explanation' => $question->explanation,
             'points' => 1,
             'sort_order' => $sortOrder,
-        ] + \App\Support\QuestionExhibit::attributesOf($question);
+        ] + \App\Support\QuestionExhibit::attributesOf($question) + \App\Support\ScenarioSupport::snapshotFields($question);
     }
 
     /** The label ("A", "B", "T"...) of this item's correct choice. */

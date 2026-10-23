@@ -13,6 +13,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     @include('partials.mock-exam-styles')
+    @include('partials.rich-editor')
+    @include('partials.question-cards')
     <style>
         /* Stronger, "dark" card shadows for this page — the builder has a lot of
            panels stacked on a light grey background, so a heavier shadow reads
@@ -97,6 +99,22 @@
         .audit-row:last-child { border-bottom:none; }
         .audit-who { font-weight:600; color:var(--ink); }
         .audit-when { font-size:11px; color:var(--muted); margin-top:2px; }
+        /* scenarios in the question pool */
+        .scn-head { background:#faf8ff; padding:9px 14px 8px; font-size:11px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:#6d28d9; border-bottom:1px solid #eee9fb; display:flex; align-items:center; gap:7px; }
+        .scn-head small { font-weight:500; text-transform:none; letter-spacing:0; color:var(--muted); }
+        .scn-prev { padding:8px 14px 8px; font-size:12px; color:var(--muted); background:#fcfbff; border-bottom:1px solid #f0edfa; line-height:1.5; }
+        .q-row.in-scn { padding-left:26px; border-left:3px solid #e3dafa; }
+        /* the exam's own (hand-written) questions */
+        .own-block { border:1.5px solid #ececf2; border-radius:14px; padding:14px 16px 16px; margin-top:14px; background:#fcfcfd; }
+        .own-block.scn { background:#faf8ff; border:1.5px dashed #d9ccf5; }
+        .own-head { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:12px; }
+        .own-tag { font-size:11px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; border-radius:999px; padding:4px 11px; background:#eef0f4; color:#5b6377; }
+        .own-block.scn .own-tag { background:#efe9fe; color:#6d28d9; }
+        .own-topic { display:inline-flex; align-items:center; gap:6px; background:#f4f5f8; border-radius:10px; padding:0 4px 0 10px; font-size:11.5px; color:var(--muted); }
+        .own-topic select { border:0; background:transparent; padding:7px 8px 7px 0; font-size:12.5px; font-weight:500; max-width:210px; font-family:inherit; color:#3b3d45; outline:none; cursor:pointer; }
+        .own-x { margin-left:auto; border:0; background:transparent; color:#9a9cab; cursor:pointer; width:30px; height:30px; border-radius:9px; }
+        .own-x:hover { background:#fdecea; color:#c0392b; }
+        .own-block .rte { margin-bottom:14px; }
         @media (max-width: 1000px) { .split { grid-template-columns:minmax(0, 1fr); } .split > .card:last-child { position:static; } }
     </style>
 </head>
@@ -280,6 +298,27 @@
                                 <p>Go back to step 2, choose topics, then come back here.</p>
                             </div>
                         </div>
+                    </div>
+
+                    {{-- Questions written for this exam only --}}
+                    <div class="card" id="ownCard">
+                        <div class="card-title"><i class="fas fa-pen-to-square"></i> Your own questions <span class="counter" id="ownCounter" style="margin-left:8px;">0</span></div>
+                        <div class="card-sub">Write questions that belong to this exam only (they are not added to the Test Bank). When several questions share one situation, put them in a scenario.</div>
+                        @if($readOnly)
+                            <div id="ownReadOnly" style="margin-top:12px;font-size:13px;color:var(--muted);"></div>
+                        @else
+                            <div class="own-block" id="ownStandaloneBlock">
+                                <div class="own-head">
+                                    <span class="own-tag"><i class="fas fa-circle-question"></i> Single questions</span>
+                                    <label class="own-topic" title="The topic these questions count toward in students' analytics"><i class="fas fa-tag"></i><select id="ownStandaloneTopic"></select></label>
+                                </div>
+                                <div id="ownStandalone"></div>
+                            </div>
+                            <div id="ownScenarios"></div>
+                            <div class="qc-actions" style="margin-top:14px;">
+                                <button type="button" class="qc-btn" id="addOwnScenario"><i class="fas fa-layer-group"></i> Add a scenario with questions</button>
+                            </div>
+                        @endif
                     </div>
                 </div>
 
@@ -476,10 +515,34 @@
         ->filter(fn ($i) => $i->source_question_id)
         ->map(fn ($i) => [
             'id' => $i->source_question_id,
-            'question_text' => $i->question_text,
+            'question_text' => \App\Support\RichText::plain($i->question_text),
             'difficulty' => $i->difficulty,
             'topic' => null,
+            'scenario_group' => $i->scenario_group ?? null,
+            'scenario_text' => \App\Support\RichText::plain($i->scenario_text ?? ''),
         ])->values();
+
+    // Questions written in the builder: the single ones, then each hand-written scenario with its questions.
+    $diffLabel = ['easy' => 'Easy', 'moderate' => 'Medium', 'difficult' => 'Hard'];
+    $ownRows = $exam->items->filter(fn ($i) => ! $i->source_question_id)->map(fn ($i) => [
+        'question_text' => $i->question_text,
+        'question_type' => $i->question_type,
+        'difficulty' => $diffLabel[$i->difficulty] ?? 'Medium',
+        'explanation' => $i->explanation,
+        'points' => $i->points,
+        'topic_id' => $i->topic_id,
+        'scenario_group' => $i->scenario_group ?? null,
+        'scenario_text' => $i->scenario_text ?? null,
+        'choices' => collect((array) $i->choices)->map(fn ($c) => ['text' => $c['text'] ?? '', 'is_correct' => ! empty($c['is_correct'])])->values()->all(),
+    ])->values();
+    $ownData = [
+        'single' => $ownRows->filter(fn ($r) => ! $r['scenario_group'])->values()->all(),
+        'scenarios' => $ownRows->filter(fn ($r) => $r['scenario_group'])->groupBy('scenario_group')->map(fn ($g) => [
+            'text' => $g->first()['scenario_text'],
+            'topic_id' => $g->first()['topic_id'],
+            'items' => $g->values()->all(),
+        ])->values()->all(),
+    ];
 @endphp
 <script>
 (function () {
@@ -494,6 +557,8 @@
 
     // Items already on the exam, restored so a reload never loses the build.
     let selected = new Map(@json($existingItems).map(q => [q.id, q]));
+    const OWN = @json($ownData);
+    const UPLOAD_URL = @json(route('faculty.question.upload-image'));
 
     let pool = [];   // questions available for the selected topics
     let topicMode = @json($exam->topic_mode);
@@ -644,8 +709,18 @@
         const shown = [...pool];
         selected.forEach((q, id) => { if (!pool.some(p => p.id === id)) shown.push(q); });
 
-        list.innerHTML = shown.map(q => `
-            <label class="q-row">
+        let lastGroup = null;
+        list.innerHTML = shown.map(q => {
+            const g = q.scenario_group || null;
+            let head = '';
+            if (g && g !== lastGroup) {
+                const n = shown.filter(x => x.scenario_group === g).length;
+                head = `<div class="scn-head"><i class="fas fa-layer-group"></i> Scenario <small>${n} question${n === 1 ? '' : 's'}, taken together</small></div>` +
+                    (q.scenario_text ? `<div class="scn-prev">${escapeHtml(q.scenario_text).slice(0, 260)}</div>` : '');
+            }
+            lastGroup = g;
+            return head + `
+            <label class="q-row ${g ? 'in-scn' : ''}">
                 <input type="checkbox" class="q-check" value="${q.id}" ${selected.has(q.id) ? 'checked' : ''} ${readOnly ? 'disabled' : ''}>
                 <span class="q-text">
                     ${escapeHtml(q.question_text || '').slice(0, 260)}
@@ -654,20 +729,26 @@
                         ${q.topic ? `<span>${escapeHtml(q.topic)}</span>` : ''}
                     </span>
                 </span>
-            </label>`).join('');
+            </label>`;
+        }).join('');
 
         list.querySelectorAll('.q-check').forEach(c => c.addEventListener('change', () => {
             const id = Number(c.value);
+            const hit = shown.find(p => p.id === id);
+            // a scenario is picked or dropped as a whole
+            const ids = hit && hit.scenario_group ? shown.filter(p => p.scenario_group === hit.scenario_group).map(p => p.id) : [id];
             if (c.checked) {
-                if (selected.size >= MAX) {
+                const fresh = ids.filter(x => !selected.has(x)).length;
+                if (selected.size + ownCount() + fresh > MAX) {
                     c.checked = false;
-                    alert('A mock exam can hold at most ' + MAX + ' questions.');
+                    alert('A mock exam can hold at most ' + MAX + ' questions' + (ids.length > 1 ? ' (this scenario has ' + ids.length + ').' : '.'));
                     return;
                 }
-                selected.set(id, pool.find(p => p.id === id) || { id });
+                ids.forEach(x => selected.set(x, shown.find(p => p.id === x) || { id: x }));
             } else {
-                selected.delete(id);
+                ids.forEach(x => selected.delete(x));
             }
+            list.querySelectorAll('.q-check').forEach(box => { if (ids.includes(Number(box.value))) box.checked = c.checked; });
             updateCounter();
         }));
         updateCounter();
@@ -675,8 +756,9 @@
 
     function updateCounter() {
         const el = document.getElementById('itemCounter');
-        el.textContent = selected.size + ' / ' + MAX + ' selected';
-        el.classList.toggle('over', selected.size > MAX);
+        const total = selected.size + ownCount();
+        el.textContent = total + ' / ' + MAX + ' selected' + (ownCount() ? ' (' + ownCount() + ' of your own)' : '');
+        el.classList.toggle('over', total > MAX);
     }
 
     const clearBtn = document.getElementById('clearItems');
@@ -709,6 +791,86 @@
         return String(s).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
     }
 
+    // ── your own questions ───────────────────────────────────────────────
+    const DIFF_OUT = { Easy: 'easy', Medium: 'moderate', Hard: 'difficult' };
+    const ownScn = [];   // { el, qc, text: textarea, topic: select }
+    let ownSingle = null, ownSingleTopic = null;
+    function topicOptions(current) {
+        const rows = [...document.querySelectorAll('.topic-row')].map(r => ({ id: r.querySelector('.topic-check').value, name: r.querySelector('.topic-name').textContent.trim(), depth: Number(r.dataset.depth || 0) }));
+        return '<option value="">No topic (not tracked)</option>' + rows.map(t => `<option value="${t.id}" ${String(current) === String(t.id) ? 'selected' : ''}>${'\u00a0\u00a0'.repeat(t.depth)}${escapeHtml(t.name)}</option>`).join('');
+    }
+    function ownCount() {
+        if (readOnly) return OWN.single.length + OWN.scenarios.reduce((n, s) => n + s.items.length, 0);
+        return (ownSingle ? ownSingle.get().length : 0) + ownScn.reduce((n, b) => n + b.qc.get().length, 0);
+    }
+    function refreshOwn() {
+        if (readOnly) return;
+        document.getElementById('ownCounter').textContent = ownCount();
+        updateCounter();
+    }
+    function addScenarioBlock(data) {
+        const wrap = document.createElement('div');
+        wrap.className = 'own-block scn';
+        wrap.innerHTML = `<div class="own-head">
+                <span class="own-tag"><i class="fas fa-layer-group"></i> Scenario</span>
+                <label class="own-topic" title="The topic its questions count toward in students' analytics"><i class="fas fa-tag"></i><select data-own-topic>${topicOptions(data.topic_id)}</select></label>
+                <button type="button" class="own-x" title="Remove this scenario and its questions"><i class="fas fa-trash"></i></button>
+            </div>
+            <textarea class="rte-src" data-upload-url="${UPLOAD_URL}" placeholder="Write the scenario: the situation the questions below refer to...">${escapeHtml(data.text || '')}</textarea>
+            <div data-own-qs></div>`;
+        document.getElementById('ownScenarios').appendChild(wrap);
+        RTE.init(wrap);
+        const block = { el: wrap, text: wrap.querySelector('textarea.rte-src, textarea[data-upload-url]'), topic: wrap.querySelector('[data-own-topic]') };
+        block.qc = QCards.mount(wrap.querySelector('[data-own-qs]'), { uploadUrl: UPLOAD_URL, points: true, items: data.items && data.items.length ? data.items : [{ question_type: 'mcq' }], onChange: refreshOwn });
+        wrap.querySelector('.own-x').addEventListener('click', () => {
+            const n = block.qc.get().length;
+            if (n && !confirm('Remove this scenario and its ' + n + ' question' + (n === 1 ? '' : 's') + '?')) return;
+            wrap.remove();
+            ownScn.splice(ownScn.indexOf(block), 1);
+            refreshOwn();
+        });
+        ownScn.push(block);
+        refreshOwn();
+        return block;
+    }
+    if (readOnly) {
+        const ro = document.getElementById('ownReadOnly');
+        if (ro) {
+            const total = ownCount();
+            document.getElementById('ownCounter').textContent = total;
+            ro.textContent = total ? total + ' question' + (total === 1 ? '' : 's') + ' written for this exam.' : 'No questions were written for this exam.';
+        }
+    } else {
+        ownSingle = QCards.mount(document.getElementById('ownStandalone'), { uploadUrl: UPLOAD_URL, points: true, items: OWN.single, onChange: refreshOwn });
+        ownSingleTopic = document.getElementById('ownStandaloneTopic');
+        ownSingleTopic.innerHTML = topicOptions((OWN.single[0] || {}).topic_id || '');
+        OWN.scenarios.forEach(addScenarioBlock);
+        document.getElementById('addOwnScenario').addEventListener('click', () => {
+            const b = addScenarioBlock({ text: '', items: [{ question_type: 'mcq' }] });
+            b.el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            b.el.querySelector('.rte-area')?.focus();
+        });
+        refreshOwn();
+    }
+    function ownRows() {
+        if (readOnly) return { rows: [], error: null };
+        const rows = [];
+        const topicOf = sel => (sel && sel.value ? Number(sel.value) : null);
+        const row = (it, extra) => Object.assign({
+            question_text: it.question_text, question_type: it.question_type, difficulty: DIFF_OUT[it.difficulty] || 'moderate',
+            explanation: it.explanation, points: it.points || 1, choices: it.choices,
+        }, extra);
+        ownSingle.get().forEach(it => rows.push(row(it, { topic_id: topicOf(ownSingleTopic) })));
+        for (let k = 0; k < ownScn.length; k++) {
+            const b = ownScn[k], text = b.text.value, group = 'c' + (k + 1);
+            const items = b.qc.get();
+            if (!items.length) continue;
+            if (!RTE.toPlain(text) && !/<(img|table)/i.test(text)) return { rows, error: 'A scenario needs its text. Write the situation, or remove the scenario.', block: b.el };
+            items.forEach(it => rows.push(row(it, { topic_id: topicOf(b.topic), scenario_group: group, scenario_text: text })));
+        }
+        return { rows, error: null };
+    }
+
     // ── submit ───────────────────────────────────────────────────────────
     function packForm() {
         const form = document.getElementById('buildForm');
@@ -718,22 +880,29 @@
             input.type = 'hidden'; input.name = 'topic_ids[]'; input.value = id;
             form.appendChild(input);
         });
-        document.getElementById('itemsJson').value = JSON.stringify([...selected.keys()].map(id => ({ source_question_id: id })));
+        const own = ownRows();
+        if (own.error) {
+            alert(own.error);
+            own.block?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            return false;
+        }
+        document.getElementById('itemsJson').value = JSON.stringify([...selected.keys()].map(id => ({ source_question_id: id })).concat(own.rows));
+        return true;
     }
 
     const buildForm = document.getElementById('buildForm');
-    if (buildForm) buildForm.addEventListener('submit', packForm);
+    if (buildForm) buildForm.addEventListener('submit', e => { if (!packForm()) e.preventDefault(); });
 
     const reviewBtn = document.getElementById('submitReviewBtn');
     if (reviewBtn) reviewBtn.addEventListener('click', () => {
-        if (!selected.size) { alert('Add at least one question before submitting for review.'); return; }
+        if (!selected.size && !ownCount()) { alert('Add at least one question before submitting for review.'); return; }
         if (!confirm('Send this to the Program Chair for review?\n\nYou can keep editing until they publish it.')) return;
         // then_submit makes the save and the hand-over one request, so the Chair
         // always reviews exactly what is on screen right now.
         const marker = document.createElement('input');
         marker.type = 'hidden'; marker.name = 'then_submit'; marker.value = '1';
         buildForm.appendChild(marker);
-        packForm();
+        if (!packForm()) { marker.remove(); return; }
         buildForm.submit();
     });
 

@@ -108,12 +108,12 @@
             </span>
         </div>
         <div class="q-meta">{{ $q->topic_name }}</div>
-        <div class="q-text">{{ $q->question_text }}</div>
+        <div class="q-text">{{ \App\Support\RichText::render($q->question_text) }}</div>
         @foreach($q->choices->sortBy('choice_label') as $c)
             <div class="choice {{ $c->is_correct ? 'correct' : '' }}">{{ $c->choice_label }}. {{ $c->choice_text }}</div>
         @endforeach
         @if($q->explanation)
-            <div class="q-expl"><b>Explanation:</b> {{ $q->explanation }}</div>
+            <div class="q-expl"><b>Explanation:</b> {{ \App\Support\RichText::render($q->explanation) }}</div>
         @endif
     </div>
 @empty

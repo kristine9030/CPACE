@@ -183,6 +183,41 @@ class MockExamReviewTest extends TestCase
     // ── helpers ──────────────────────────────────────────────────────────
 
     /** An exam sitting in for_review with one real question attached. */
+    public function test_the_chairs_edit_keeps_written_questions_and_scenarios_intact(): void
+    {
+        $chair = $this->makeChair();
+        $faculty = $this->makeFaculty('f@example.com', $this->farId);
+        $exam = $this->reviewable($this->farId, $faculty->id, now()->addWeek());
+        $topicId = DB::table('mock_exam_items')->where('exam_id', $exam->id)->value('topic_id');
+        $choices = json_encode([['label' => 'A', 'text' => 'Yes', 'is_correct' => true], ['label' => 'B', 'text' => 'No', 'is_correct' => false]]);
+        foreach ([1, 2] as $n) {
+            DB::table('mock_exam_items')->insert([
+                'exam_id' => $exam->id, 'source_question_id' => null, 'topic_id' => $topicId, 'question_text' => "Written case Q{$n}",
+                'question_type' => 'mcq', 'difficulty' => 'moderate', 'choices' => $choices, 'points' => 2, 'sort_order' => $n,
+                'scenario_group' => 'c1', 'scenario_text' => '<div>The written case</div>', 'created_at' => now(), 'updated_at' => now(),
+            ]);
+        }
+
+        // The review page shows the scenario and ships every row back in its payload.
+        $page = $this->actingAs($chair)->get(route('chair.mock-exams.review', $exam))->assertOk()->assertSee('The written case', false);
+        preg_match('/id="itemsJson" value="([^"]*)"/', $page->getContent(), $m);
+        $payload = json_decode(html_entity_decode($m[1]), true);
+        $this->assertCount(3, $payload);
+        $this->assertSame('Written case Q1', $payload[1]['question_text']);
+
+        // Saving that payload back (as the chair's form does) keeps all three.
+        $this->actingAs($chair)->put(route('chair.mock-exams.update', $exam), [
+            'version' => $exam->version, 'title' => $exam->title, 'scheduled_at' => $exam->scheduled_at->format('Y-m-d\TH:i'),
+            'duration_minutes' => 180, 'topic_mode' => 'manual', 'question_mode' => 'manual', 'topic_ids' => [$topicId],
+            'items_json' => json_encode($payload),
+        ])->assertSessionHasNoErrors();
+
+        $rows = DB::table('mock_exam_items')->where('exam_id', $exam->id)->orderBy('sort_order')->get();
+        $this->assertCount(3, $rows);
+        $this->assertSame(['c1', 'c1'], [$rows[1]->scenario_group, $rows[2]->scenario_group]);
+        $this->assertStringContainsString('The written case', $rows[2]->scenario_text);
+    }
+
     private function reviewable(int $subjectId, int $facultyId, $sitting): MockExam
     {
         $topicId = $this->makeTopic($subjectId, 'Topic ' . uniqid());

@@ -16,6 +16,7 @@ use App\Models\User;
 use App\Support\CurriculumScope;
 use App\Support\MockExamAuditor;
 use App\Support\MockExamQuestionPicker;
+use App\Support\ScenarioSupport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -234,12 +235,16 @@ class MockExamController extends Controller
             return response()->json(['questions' => []]);
         }
 
-        $questions = Question::with(['choices', 'topic'])
+        $questions = Question::with(array_filter(['choices', 'topic', ScenarioSupport::enabled() ? 'scenario' : null]))
             ->whereIn('topic_id', $topicIds)
             ->where('is_active', true)
             ->orderBy('topic_id')
             ->orderBy('id')
-            ->get();
+            ->get()
+            ->filter(fn (Question $q) => ScenarioSupport::isAnswerable($q))
+            ->values();
+        // a scenario's questions sit together in the list, even across topics
+        $questions = ScenarioSupport::expand($questions);
 
         return response()->json([
             'questions' => $questions->map(fn (Question $q) => $this->questionPayload($q))->values(),
@@ -266,7 +271,9 @@ class MockExamController extends Controller
         ]);
 
         $topicIds = $this->validatedTopicIds($data['topic_ids'], $subjectId);
-        $picked = MockExamQuestionPicker::pick($topicIds, (int) $data['count']);
+        // A scenario comes whole, so the exam can end up a little over the number asked for.
+        $found = MockExamQuestionPicker::pick($topicIds, (int) $data['count']);
+        $picked = ScenarioSupport::expand($found);
 
         return response()->json([
             'questions' => $picked->map(fn (Question $q) => $this->questionPayload($q))->values(),
@@ -274,7 +281,7 @@ class MockExamController extends Controller
             'returned' => $picked->count(),
             // The builder surfaces this so faculty know the bank ran dry
             // rather than silently shipping a shorter exam.
-            'short' => $picked->count() < (int) $data['count'],
+            'short' => $found->count() < (int) $data['count'],
         ]);
     }
 
@@ -347,7 +354,7 @@ class MockExamController extends Controller
             'topic_id' => $question->topic_id,
             'topic' => $question->topic?->name,
             'difficulty' => $question->difficulty,
-            'question_text' => $question->question_text,
+            'question_text' => \App\Support\RichText::plain($question->question_text),
             'question_type' => $question->question_type,
             'explanation' => $question->explanation,
             'choices' => $question->choices->sortBy('choice_label')->values()->map(fn ($c) => [
@@ -355,7 +362,10 @@ class MockExamController extends Controller
                 'text' => $c->choice_text,
                 'is_correct' => (bool) $c->is_correct,
             ])->all(),
-        ];
+        ] + (ScenarioSupport::enabled() && $question->scenario_id ? [
+            'scenario_group' => 's' . $question->scenario_id,
+            'scenario_text' => \App\Support\RichText::plain($question->scenario?->body),
+        ] : []);
     }
 
 

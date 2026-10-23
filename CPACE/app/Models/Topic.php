@@ -13,6 +13,7 @@ class Topic extends Model
     protected $fillable = [
         'subject_id', 'curriculum_version_id', 'parent_id', 'name', 'description', 'sort_order', 'is_active',
         'tos_weight', 'tos_items', 'gap_flagged_at', 'gap_warned_at',
+        'audience_years', 'audience_sections', 'audience_semesters',
     ];
 
     protected $casts = [
@@ -22,7 +23,37 @@ class Topic extends Model
         'tos_items' => 'integer',
         'gap_flagged_at' => 'datetime',
         'gap_warned_at' => 'datetime',
+        'audience_years' => 'array',
+        'audience_sections' => 'array',
+        'audience_semesters' => 'array',
     ];
+
+    /**
+     * Who this topic is for. No targeting on any dimension = everyone, same
+     * convention as MockExam::hasAudience()/admitsStudent().
+     */
+    public function hasAudience(): bool
+    {
+        return ! empty($this->audience_years) || ! empty($this->audience_sections) || ! empty($this->audience_semesters);
+    }
+
+    /** "Year 3 · 1st Sem" for the chair's topic list, "All years" when unrestricted. */
+    public function audienceLabel(): string
+    {
+        if (! $this->hasAudience()) {
+            return 'All years';
+        }
+
+        $years = collect((array) $this->audience_years)
+            ->map(fn ($y) => \App\Models\Section::YEAR_LABELS[(int) $y] ?? "Year {$y}")
+            ->implode(', ');
+        $sections = collect((array) $this->audience_sections)->implode(', ');
+        $semesters = collect((array) $this->audience_semesters)
+            ->map(fn ($s) => \App\Models\Section::SEMESTER_LABELS[(int) $s] ?? "Sem {$s}")
+            ->implode(', ');
+
+        return collect([$years, $semesters, $sections])->filter()->implode(' · ');
+    }
 
     public function subject()
     {

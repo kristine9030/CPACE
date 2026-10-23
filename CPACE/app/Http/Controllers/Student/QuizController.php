@@ -10,6 +10,7 @@ use App\Models\QuizSession;
 use App\Models\Subject;
 use App\Services\PerformanceRecorder;
 use App\Services\QuestionParaphraser;
+use App\Support\ScenarioSupport;
 use App\Services\RivalTierService;
 use App\Services\SpacedRepetitionScheduler;
 use App\Services\StreakService;
@@ -272,6 +273,9 @@ class QuizController extends Controller
             return back()->with('error', 'No questions are available for that subject yet.');
         }
 
+        // A scenario is always served whole: picking one of its questions brings the rest.
+        $questionIds = $this->withScenarioSiblings($questionIds);
+
         $session = QuizSession::create([
             'student_id'          => Auth::id(),
             'session_type'        => $sessionType,
@@ -398,6 +402,22 @@ class QuizController extends Controller
     }
 
     /**
+     * Add the other (active, answerable) questions of any scenario that was picked, keeping the picked order
+     * and putting each scenario's questions together where its first question appeared.
+     */
+    private function withScenarioSiblings($ids)
+    {
+        if (! ScenarioSupport::enabled() || collect($ids)->isEmpty()) {
+            return collect($ids);
+        }
+
+        $order = collect($ids)->values()->flip();
+        $picked = Question::with('choices')->whereIn('id', $ids)->get()->sortBy(fn ($q) => $order[$q->id])->values();
+
+        return ScenarioSupport::expand($picked)->pluck('id')->values();
+    }
+
+    /**
      * Top up a partial question list with more random questions from the pool,
      * never repeating an already-chosen id, until it reaches $target (or the
      * pool runs dry).
@@ -459,7 +479,7 @@ class QuizController extends Controller
 
         $questionIds = $session->answers()->pluck('question_id');
         $questions = $this->presentQuestions(
-            Question::with(['choices', 'variants'])->whereIn('id', $questionIds)->get(),
+            Question::with($this->quizRelations())->whereIn('id', $questionIds)->get(),
             $session->id
         );
 
@@ -609,7 +629,7 @@ class QuizController extends Controller
 
         $answers = $session->answers()->get()->keyBy('question_id');
         $questions = $this->presentQuestions(
-            Question::with(['choices', 'variants'])->whereIn('id', $answers->keys())->get(),
+            Question::with($this->quizRelations())->whereIn('id', $answers->keys())->get(),
             $session->id
         );
 
@@ -627,6 +647,11 @@ class QuizController extends Controller
      * session id, so a single session always renders identically (the quiz page
      * and its results match) while a different session (a retake) varies.
      */
+    private function quizRelations(): array
+    {
+        return array_filter(['choices', 'variants', ScenarioSupport::enabled() ? 'scenario' : null]);
+    }
+
     private function presentQuestions($questions, int $sessionId)
     {
         $labels = range('A', 'Z');
@@ -661,8 +686,15 @@ class QuizController extends Controller
             return $question;
         });
 
-        return $questions
-            ->sortBy(fn ($q) => crc32($sessionId . '-q-' . $q->id))
+        // Shuffle whole units: a scenario's questions stay together, in their own order.
+        $units = [];
+        foreach ($questions->sortBy(fn ($q) => [$q->scenario_id ?? 0, $q->scenario_position ?? 0, $q->id]) as $q) {
+            $units[$q->scenario_id ? 's' . $q->scenario_id : 'q' . $q->id][] = $q;
+        }
+
+        return collect($units)
+            ->sortBy(fn (array $unit) => crc32($sessionId . '-q-' . $unit[0]->id))
+            ->flatten(1)
             ->values();
     }
 

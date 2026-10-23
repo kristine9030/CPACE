@@ -10,30 +10,33 @@
         ? \App\Support\QuestionExhibit::sanitizeTable($exOldTable)
         : ($editMode ? $question->table_data : null);
 @endphp
-<div class="card" id="exhibitCard">
-    <div class="card-title"><span class="step-no" aria-hidden="true">2</span> <i class="fas fa-image"></i> Picture or table <span style="font-size:11px;color:#aaa;font-weight:500;">(optional)</span></div>
-    <p style="font-size:12px;color:#aaa;margin-bottom:14px;">For accounting problems: add a journal, schedule or statement as a table, or attach a picture of a chart or form. It shows under the question text.</p>
+<div class="ex-embed" id="exhibitCard">
+    <div class="ex-attach" id="exDrop">
+        <div class="ex-drop-row" @if(! empty($legacy)) hidden @endif>
+            <i class="fas fa-cloud-arrow-up ex-drop-ico"></i>
+            <div class="ex-drop-text">
+                <b>Drag &amp; drop a picture anywhere in this card</b>
+                <span>or paste one with Ctrl+V &middot; JPG, PNG or WebP, up to 3 MB. For accounting problems you can also add a table (journal, schedule, statement).</span>
+            </div>
+            <div class="ex-attach-btns">
+                <label class="ex-btn" for="exImageInput"><i class="fas fa-image"></i> <span id="exPicLabel">{{ $exCurrentImage ? 'Replace picture' : 'Add picture' }}</span></label>
+                <button type="button" class="ex-btn" id="exAddTable"><i class="fas fa-table"></i> Add table</button>
+            </div>
+        </div>
+        <div class="ex-msg" id="exMsg" hidden></div>
 
-    {{-- Picture --}}
-    <div class="form-group">
-        <label>Picture <span style="font-size:11px;color:#aaa;">(JPG, PNG or WebP · up to 3 MB)</span></label>
+        {{-- Picture --}}
         <div class="ex-pic" id="exPic">
             <div class="ex-pic-preview" id="exPicPreview" @if(! $exCurrentImage) hidden @endif>
                 <img src="{{ $exCurrentImage }}" alt="Current picture" id="exPicImg">
+                <button type="button" class="ex-pic-x" id="exPicRemove" title="Remove picture" aria-label="Remove picture" @if(! $exCurrentImage) hidden @endif><i class="fas fa-xmark"></i></button>
             </div>
-            <div class="ex-pic-actions">
-                <label class="ex-btn" for="exImageInput"><i class="fas fa-upload"></i> <span id="exPicLabel">{{ $exCurrentImage ? 'Replace picture' : 'Upload picture' }}</span></label>
-                <input type="file" name="image" id="exImageInput" accept="image/png,image/jpeg,image/webp" style="display:none;">
-                <button type="button" class="ex-link" id="exPicRemove" @if(! $exCurrentImage) hidden @endif><i class="fas fa-xmark"></i> Remove picture</button>
-                <input type="hidden" name="remove_image" id="exRemoveImage" value="0">
-            </div>
+            <input type="file" name="image" id="exImageInput" accept="image/png,image/jpeg,image/webp" style="display:none;">
+            <input type="hidden" name="remove_image" id="exRemoveImage" value="0">
         </div>
-    </div>
 
     {{-- Table --}}
-    <div class="form-group" style="margin-bottom:0;">
-        <label>Table</label>
-        <button type="button" class="ex-btn" id="exAddTable"><i class="fas fa-table"></i> Add a table</button>
+    <div>
         <div id="exTableWrap" hidden>
             <div class="ex-tools">
                 <span class="ex-group"><span>Rows</span>
@@ -55,6 +58,7 @@
         </div>
         <input type="hidden" name="table_json" id="exTableJson" value="">
     </div>
+    </div>
 </div>
 
 <style>
@@ -62,11 +66,26 @@
     .ex-btn:hover { background:var(--primary-light); }
     .ex-link { background:none; border:0; padding:0; color:#888; font-size:12px; font-family:'Poppins',sans-serif; cursor:pointer; }
     .ex-link:hover { color:var(--accent); } .ex-link.danger { margin-left:auto; }
-    .ex-btn[hidden], .ex-link[hidden], .ex-pic-preview[hidden], #exTableWrap[hidden] { display:none; }
-    .ex-pic { display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
-    .ex-pic-preview { width:150px; max-height:110px; border:1px solid #e5e7eb; border-radius:10px; overflow:hidden; background:#fafafa; display:flex; align-items:center; justify-content:center; }
-    .ex-pic-preview img { max-width:100%; max-height:110px; display:block; }
-    .ex-pic-actions { display:flex; flex-direction:column; align-items:flex-start; gap:8px; }
+    .ex-btn[hidden], .ex-link[hidden], .ex-pic-preview[hidden], #exTableWrap[hidden] { display:none !important; }
+    .ex-embed { margin-bottom:18px; }
+    .ex-attach { border:1.5px dashed #d9d9e0; border-radius:12px; padding:14px 16px; background:#fcfcfd; transition:border-color .15s, background .15s; }
+    .is-dragging .ex-attach { border-color:var(--primary); background:var(--primary-light); }
+    .is-dragging { outline:2px dashed var(--primary); outline-offset:-6px; }
+    .ex-drop-row[hidden] { display:none; }
+    .ex-drop-row { display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+    .ex-drop-ico { font-size:24px; color:#c4c4cc; }
+    .ex-drop-text { flex:1; min-width:200px; display:flex; flex-direction:column; gap:2px; }
+    .ex-drop-text b { font-size:12.5px; color:#444; }
+    .ex-drop-text span { font-size:11.5px; color:#9a9aa2; line-height:1.5; }
+    .ex-attach-btns { display:flex; gap:8px; flex-wrap:wrap; }
+    .ex-msg { margin-top:10px; font-size:12px; color:var(--accent); }
+    .ex-msg[hidden] { display:none; }
+    .ex-pic { margin-top:12px; }
+    .ex-pic-preview { position:relative; display:inline-block; max-width:100%; border:1px solid #e5e7eb; border-radius:10px; overflow:hidden; background:#fff; }
+    .ex-pic-preview img { max-width:100%; max-height:240px; display:block; }
+    .ex-pic-x { position:absolute; top:6px; right:6px; width:26px; height:26px; border:0; border-radius:50%; background:rgba(0,0,0,.6); color:#fff; cursor:pointer; font-size:12px; }
+    .ex-pic-x:hover { background:var(--accent); }
+    .ex-pic-x[hidden] { display:none; }
     #exTableWrap { margin-top:12px; }
     .ex-tools { display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-bottom:10px; font-size:12.5px; color:#555; }
     .ex-group { display:inline-flex; align-items:center; gap:7px; } .ex-group > span { color:#888; font-size:12px; }
@@ -95,8 +114,13 @@
     let cells = data ? data.rows.map((r) => r.slice()) : [];
 
     // ── Picture ──
-    const input = $('exImageInput'), preview = $('exPicPreview'), img = $('exPicImg');
-    input.addEventListener('change', () => {
+    const input = $('exImageInput'), preview = $('exPicPreview'), img = $('exPicImg'), msg = $('exMsg');
+    const card = $('exhibitCard').closest('.card') || $('exhibitCard');
+    const MAX_BYTES = {{ \App\Support\QuestionExhibit::MAX_IMAGE_KILOBYTES }} * 1024;
+    const OK_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
+    const say = (t) => { msg.textContent = t || ''; msg.hidden = !t; };
+
+    function showPicture() {
         const file = input.files[0];
         if (!file) return;
         img.src = URL.createObjectURL(file);
@@ -104,14 +128,49 @@
         $('exRemoveImage').value = '0';
         $('exPicRemove').hidden = false;
         $('exPicLabel').textContent = 'Replace picture';
+    }
+    function takeFile(file) {
+        if (!file) return false;
+        if (!OK_TYPES.includes(file.type)) { say('Only JPG, PNG or WebP pictures can be attached.'); return false; }
+        if (file.size > MAX_BYTES) { say('That picture is larger than ' + (MAX_BYTES / 1048576) + ' MB.'); return false; }
+        say('');
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        input.files = dt.files;
+        showPicture();
+        return true;
+    }
+    input.addEventListener('change', () => {
+        const f = input.files[0];
+        if (f && !takeFile(f)) input.value = '';
     });
     $('exPicRemove').addEventListener('click', () => {
         input.value = '';
+        say('');
         $('exRemoveImage').value = '1';
         preview.hidden = true;
         $('exPicRemove').hidden = true;
-        $('exPicLabel').textContent = 'Upload picture';
+        $('exPicLabel').textContent = 'Add picture';
     });
+
+    // Drag & drop a picture anywhere on the question card; paste works too.
+    const hasFiles = (e) => e.dataTransfer && [...e.dataTransfer.types].includes('Files');
+    let depth = 0;
+    card.addEventListener('dragenter', (e) => { if (hasFiles(e)) { e.preventDefault(); depth++; card.classList.add('is-dragging'); } });
+    card.addEventListener('dragover', (e) => { if (hasFiles(e)) e.preventDefault(); });
+    card.addEventListener('dragleave', () => { depth = Math.max(0, depth - 1); if (!depth) card.classList.remove('is-dragging'); });
+    card.addEventListener('drop', (e) => {
+        if (!hasFiles(e)) return;
+        e.preventDefault(); depth = 0; card.classList.remove('is-dragging');
+        const file = [...e.dataTransfer.files].find((f) => f.type.startsWith('image/')) || e.dataTransfer.files[0];
+        takeFile(file);
+    });
+    card.addEventListener('paste', (e) => {
+        const item = [...(e.clipboardData ? e.clipboardData.items : [])].find((i) => i.kind === 'file' && i.type.startsWith('image/'));
+        if (!item) return;
+        e.preventDefault(); e.stopPropagation();
+        takeFile(item.getAsFile());
+    }, true);
 
     // ── Table ──
     const grid = $('exGrid');

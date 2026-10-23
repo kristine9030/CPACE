@@ -14,6 +14,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     @include('partials.mock-exam-styles')
     <style>
+        @include('partials.scenario-box-styles')
         .split { display:grid; grid-template-columns:minmax(0, 1fr) 320px; gap:18px; align-items:start; }
         .item { padding:14px; border:1px solid var(--line); border-radius:10px; margin-bottom:10px; }
         .item-head { display:flex; gap:10px; align-items:flex-start; font-size:13px; }
@@ -78,8 +79,25 @@
                 <input type="hidden" name="question_mode" value="{{ $exam->question_mode }}">
                 {{-- The Chair edits settings here; the item list is preserved
                      verbatim unless questions are removed below. --}}
-                <input type="hidden" name="items_json" id="itemsJson"
-                       value='@json($exam->items->map(fn ($i) => ["source_question_id" => $i->source_question_id]))'>
+                @php
+                    $diffOut = ['easy' => 'easy', 'moderate' => 'moderate', 'difficult' => 'difficult'];
+                    $itemsPayload = $exam->items->map(function ($i) use ($diffOut) {
+                        // _key lets the page remove a row (or a whole scenario) from this payload; the server ignores it.
+                        if ($i->source_question_id) {
+                            return ['_key' => $i->id, '_group' => $i->scenario_group ?? null, 'source_question_id' => $i->source_question_id];
+                        }
+
+                        return [
+                            '_key' => $i->id, '_group' => $i->scenario_group ?? null,
+                            'question_text' => $i->question_text, 'question_type' => $i->question_type,
+                            'difficulty' => $diffOut[$i->difficulty] ?? 'moderate', 'explanation' => $i->explanation,
+                            'points' => $i->points, 'topic_id' => $i->topic_id,
+                            'scenario_group' => $i->scenario_group ?? null, 'scenario_text' => $i->scenario_text ?? null,
+                            'choices' => collect((array) $i->choices)->map(fn ($c) => ['text' => $c['text'] ?? '', 'is_correct' => ! empty($c['is_correct'])])->values()->all(),
+                        ];
+                    })->values()->all();
+                @endphp
+                <input type="hidden" name="items_json" id="itemsJson" value="{{ json_encode($itemsPayload) }}">
                 @foreach($selectedTopics as $tid)
                     <input type="hidden" name="topic_ids[]" value="{{ $tid }}">
                 @endforeach
@@ -117,12 +135,17 @@
                         </div>
                     </div>
                     <div style="margin-top:14px;max-height:640px;overflow-y:auto;padding-right:6px;">
+                        @php $scn = \App\Support\ScenarioSupport::mapItems($exam->items); @endphp
                         @forelse($exam->items as $i => $item)
-                            <div class="item" data-qid="{{ $item->source_question_id }}">
+                            @php $sc = $scn[$item->id] ?? null; @endphp
+                            @if($sc && $sc['start'])
+                                @include('partials.scenario-box', ['text' => $sc['text'], 'sticky' => false, 'label' => \App\Support\ScenarioSupport::label($i + 1, $sc['size'])])
+                            @endif
+                            <div class="item" data-key="{{ $item->id }}" data-group="{{ $item->scenario_group }}" data-qid="{{ $item->source_question_id }}">
                                 <div class="item-head">
                                     <span class="item-n">{{ $i + 1 }}</span>
                                     <div style="flex:1;">
-                                        <div>{{ $item->question_text }}</div>
+                                        <div>{{ \App\Support\RichText::render($item->question_text) }}</div>
                                         <div style="margin-top:5px;display:flex;gap:8px;align-items:center;">
                                             @if($item->difficulty)
                                                 <span class="diff diff-{{ $item->difficulty }}">{{ $item->difficulty }}</span>
@@ -131,7 +154,7 @@
                                         </div>
                                     </div>
                                     @unless($readOnly)
-                                        <button type="button" class="btn btn-ghost btn-sm remove-item" style="color:var(--red);">
+                                        <button type="button" class="btn btn-ghost btn-sm remove-item" style="color:var(--red);" title="{{ $sc ? 'Removes the whole scenario (' . $sc['size'] . ' questions)' : 'Remove this question' }}">
                                             <i class="fas fa-xmark"></i>
                                         </button>
                                     @endunless
@@ -317,10 +340,15 @@
     // happens on save, so the Chair can back out by simply not saving.
     document.querySelectorAll('.remove-item').forEach(btn => btn.addEventListener('click', () => {
         const row = btn.closest('.item');
-        const qid = Number(row.dataset.qid);
-        const items = JSON.parse(itemsInput.value || '[]').filter(i => Number(i.source_question_id) !== qid);
+        const group = row.dataset.group || null;
+        // a scenario goes whole: dropping one of its questions would just be put back on save
+        const rows = group ? [...document.querySelectorAll('.item')].filter(r => r.dataset.group === group) : [row];
+        const keys = new Set(rows.map(r => Number(r.dataset.key)));
+        if (rows.length > 1 && !confirm('This question is part of a scenario. Remove the scenario and all ' + rows.length + ' of its questions?')) return;
+        const items = JSON.parse(itemsInput.value || '[]').filter(i => !keys.has(Number(i._key)));
         itemsInput.value = JSON.stringify(items);
-        row.style.display = 'none';
+        rows.forEach(r => { r.style.display = 'none'; });
+        if (group) { const box = rows[0].previousElementSibling; if (box && box.classList.contains('sc-box')) box.style.display = 'none'; }
     }));
 
     const publishBtn = document.getElementById('publishBtn');

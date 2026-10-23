@@ -365,7 +365,7 @@
             @forelse($quiz->items as $i => $item)
                 @php $st = $itemStats[$item->id]; $rate = $st['rate']; @endphp
                 <div class="item-row">
-                    <div class="item-q"><b>Q{{ $i + 1 }}</b>{{ \Illuminate\Support\Str::limit($item->question_text, 110) }}</div>
+                    <div class="item-q"><b>Q{{ $i + 1 }}</b>{{ \Illuminate\Support\Str::limit(\App\Support\RichText::plain($item->question_text), 110) }}</div>
                     <div class="bar"><span style="width:{{ $rate ?? 0 }}%;background:{{ $rate === null ? '#ddd' : ($rate >= 75 ? '#10b981' : ($rate >= 50 ? '#f59e0b' : '#c0392b')) }};"></span></div>
                     <div class="item-meta">
                         <span>Correct: <b>{{ $item->correctLabel() }}</b> · {{ $item->points }} pt{{ $item->points === 1 ? '' : 's' }}</span>

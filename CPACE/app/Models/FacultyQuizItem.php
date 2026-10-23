@@ -16,6 +16,7 @@ class FacultyQuizItem extends Model
     protected $fillable = [
         'quiz_id', 'source_question_id', 'question_text', 'question_type',
         'choices', 'explanation', 'points', 'sort_order', 'image_path', 'table_data',
+        'scenario_group', 'scenario_text', 'scenario_id',
     ];
 
     protected $casts = [

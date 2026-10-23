@@ -17,6 +17,7 @@
     <style>
         /* The runner deliberately has no sidebar: fewer exits, fewer accidents. */
         body { background:#eef0f4; }
+        @include('partials.scenario-box-styles')
         .exam-bar { position:sticky; top:0; z-index:500;
                     padding:12px 22px; display:flex; align-items:center; gap:14px; flex-wrap:wrap;
                     box-shadow:0 4px 16px rgba(0,0,0,.15); }
@@ -90,10 +91,13 @@
 <div class="wrap">
     <form method="POST" action="{{ route('mock-exams.submit', $exam) }}" id="examForm">
         @csrf
+        @php $scn = \App\Support\ScenarioSupport::mapItems($items); @endphp
         @foreach($items as $i => $item)
+            @php $sc = $scn[$item->id] ?? null; @endphp
+            @if($sc && $sc['start'])<div class="sc-group">@include('partials.scenario-box', ['text' => $sc['text'], 'label' => \App\Support\ScenarioSupport::label($i + 1, $sc['size'])])@endif
             <div class="q-card" id="q{{ $i + 1 }}">
                 <div class="q-num">Question {{ $i + 1 }} of {{ $items->count() }}</div>
-                <div class="q-text">{{ $item->question_text }}</div>
+                <div class="q-text">{{ \App\Support\RichText::render($item->question_text) }}</div>
                 @include('partials.question-exhibit', ['item' => $item])
                 @foreach((array) $item->choices as $choice)
                     @php $label = $choice['label'] ?? ''; @endphp
@@ -105,6 +109,7 @@
                     </label>
                 @endforeach
             </div>
+            @if($sc && $sc['position'] === $sc['size'])</div>@endif
         @endforeach
 
         <button class="btn btn-primary" type="button" id="submitBtn" style="width:100%;padding:14px;font-size:14px;">
@@ -163,6 +168,14 @@
        style="position:fixed; left:0; top:0; width:2px; height:2px; opacity:0.01; z-index:-1; pointer-events:none;"></video>
 <canvas id="shot" style="display:none;"></canvas>
 
+<script>
+    // keep a scenario visible just under the sticky exam bar while its questions scroll by
+    (function () {
+        const bar = document.querySelector('.exam-bar');
+        const set = () => document.documentElement.style.setProperty('--sc-top', (bar ? bar.offsetHeight + 8 : 8) + 'px');
+        set(); window.addEventListener('resize', set);
+    })();
+</script>
 <script>
 (function () {
     const EXAM = {

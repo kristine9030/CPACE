@@ -13,6 +13,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        @include('partials.scenario-box-styles')
         :root {
             --primary:       #7B1D1D;
             --primary-hover: #6a1818;
@@ -888,16 +889,21 @@
 
                 <form method="POST" action="{{ route('quiz.submit', $session->id) }}" id="quizForm">
                     @csrf
+                    @php $scn = \App\Support\ScenarioSupport::mapQuestions($questions); @endphp
                     @foreach($questions as $i => $question)
+                    @php $sc = $scn[$question->id] ?? null; @endphp
                     <div class="q-slide{{ $i === 0 ? ' active' : '' }}" id="slide-{{ $i }}">
 
                         <div class="flag-banner" id="flagBanner-{{ $i }}">
                             <i class="fas fa-flag"></i> Marked for Review
                         </div>
 
+                        @if($sc)
+                            @include('partials.scenario-box', ['text' => $sc['text'], 'sticky' => false, 'collapsed' => ! $sc['start'], 'label' => 'Question ' . $sc['position'] . ' of ' . $sc['size']])
+                        @endif
                         <div class="q-card">
                             <div class="q-card-label">{{ $typeLabel[$question->question_type] ?? 'Question' }}</div>
-                            <div class="q-text">{{ $question->question_text }}</div>
+                            <div class="q-text">{{ \App\Support\RichText::render($question->question_text) }}</div>
                             @include('partials.question-exhibit', ['item' => $question])
                         </div>
 
@@ -913,7 +919,7 @@
                         </div>
 
                         <div class="feedback-panel" id="feedback-{{ $i }}"
-                             data-explanation="{{ $question->explanation ?? '' }}">
+                             data-explanation="{{ (string) \App\Support\RichText::render($question->explanation) }}">
                         </div>
 
                     </div>

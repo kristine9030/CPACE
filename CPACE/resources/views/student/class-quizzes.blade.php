@@ -269,6 +269,7 @@
                     <a class="class-card" href="{{ route('class-quizzes.subject', $class['key']) }}"
                        style="--cc-base:{{ $class['theme']['base'] }}; --cc-dark:{{ $class['theme']['dark'] }}; --cc-pastel:{{ $class['theme']['pastel'] }}; --cc-soft:{{ $class['theme']['soft'] }};">
                         <div class="cc-banner">
+                        @if($class['key'] !== 'general')@include('partials.subject-info-btn', ['code' => $class['code'], 'name' => $class['name'], 'description' => $class['description'] ?? null, 'variant' => 'corner'])@endif
                             <div class="cc-banner-illus" aria-hidden="true">
                                 <i class="fas {{ $class['icon2'] }} i1"></i>
                                 <i class="fas {{ $class['icon'] }} i2"></i>

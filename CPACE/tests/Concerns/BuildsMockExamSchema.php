@@ -28,7 +28,7 @@ trait BuildsMockExamSchema
         'mock_exam_registrations', 'mock_exam_audits', 'mock_exam_items', 'mock_exam_topics',
         'mock_exams', 'mock_exam_events',
         'points_log', 'weakness_reports', 'spaced_repetition_items', 'performance_records',
-        'question_choices', 'questions', 'topics', 'faculty_subjects', 'subjects',
+        'question_choices', 'questions', 'question_scenarios', 'topics', 'faculty_subjects', 'subjects',
         'student_profiles', 'sections', 'notifications', 'messages', 'conversation_participants',
         'conversations', 'users',
     ];
@@ -128,10 +128,21 @@ trait BuildsMockExamSchema
             $table->integer('sort_order')->default(0);
             $table->boolean('is_active')->default(true);
         });
+        Schema::create('question_scenarios', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('topic_id');
+            $table->unsignedBigInteger('created_by')->nullable();
+            $table->string('title', 150)->nullable();
+            $table->text('body');
+            $table->boolean('is_active')->default(true);
+            $table->timestamps();
+        });
         Schema::create('questions', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('topic_id');
             $table->unsignedBigInteger('created_by')->nullable();
+            $table->unsignedBigInteger('scenario_id')->nullable();
+            $table->unsignedSmallInteger('scenario_position')->default(0);
             $table->text('question_text');
             $table->string('question_type')->default('mcq');
             $table->string('difficulty')->default('moderate');
@@ -239,6 +250,9 @@ trait BuildsMockExamSchema
             $table->text('explanation')->nullable();
             $table->unsignedSmallInteger('points')->default(1);
             $table->unsignedSmallInteger('sort_order')->default(0);
+            $table->string('scenario_group', 40)->nullable();
+            $table->text('scenario_text')->nullable();
+            $table->unsignedBigInteger('scenario_id')->nullable();
             $table->timestamps();
         });
         Schema::create('mock_exam_audits', function (Blueprint $table) {
@@ -352,6 +366,27 @@ trait BuildsMockExamSchema
     /**
      * A question with two choices, A correct. Returns its id.
      */
+    /**
+     * A scenario with $count questions (each answerable: A correct, B wrong). Returns [scenarioId, [questionIds]].
+     *
+     * @return array{0: int, 1: array<int, int>}
+     */
+    protected function makeScenario(int $topicId, string $body = 'ABC Corp. bought equipment.', int $count = 3, bool $active = true): array
+    {
+        $scenarioId = DB::table('question_scenarios')->insertGetId([
+            'topic_id' => $topicId, 'body' => $body, 'is_active' => $active,
+            'created_at' => now(), 'updated_at' => now(),
+        ]);
+        $ids = [];
+        for ($i = 0; $i < $count; $i++) {
+            $id = $this->makeQuestion($topicId, 'moderate', "Scenario question " . ($i + 1));
+            DB::table('questions')->where('id', $id)->update(['scenario_id' => $scenarioId, 'scenario_position' => $i, 'is_active' => $active]);
+            $ids[] = $id;
+        }
+
+        return [$scenarioId, $ids];
+    }
+
     protected function makeQuestion(int $topicId, string $difficulty = 'moderate', ?string $text = null): int
     {
         $id = DB::table('questions')->insertGetId([

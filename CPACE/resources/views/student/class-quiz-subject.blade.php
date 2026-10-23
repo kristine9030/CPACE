@@ -263,6 +263,7 @@
                     <div class="banner-kicker"><i class="fas fa-graduation-cap"></i> Class</div>
                     <div class="banner-code">{{ $code }}</div>
                     <div class="banner-name">{{ $name }}</div>
+                    @if($subject)@include('partials.subject-info-btn', ['subject' => $subject])@endif
                     @if($faculty->isNotEmpty())
                         <div class="banner-teacher">
                             @foreach($faculty->take(3) as $teacher)

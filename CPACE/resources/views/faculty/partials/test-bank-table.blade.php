@@ -31,12 +31,13 @@
         <tr>
             <td class="col-check"><input type="checkbox" class="row-checkbox q-checkbox" value="{{ $q->id }}"></td>
             <td>
-                <div class="q-text" title="{{ $q->question_text }}">{{ \Illuminate\Support\Str::limit($q->question_text, 110) }}</div>
+                <div class="q-text" title="{{ \App\Support\RichText::plain($q->question_text) }}">{{ \Illuminate\Support\Str::limit(\App\Support\RichText::plain($q->question_text), 110) }}</div>
                 <div class="q-meta">
                     <span class="subj-badge {{ $subjectClass[$q->subject_code] ?? 'b-far' }}">{{ $q->subject_code }}</span>
                     <span class="q-topic" title="{{ $q->topic_name }}">{{ $q->topic_name }}</span>
                     @if($q->exhibitImageUrl())<i class="fas fa-image q-flag" title="Has a picture"></i>@endif
                     @if(! empty($q->table_data['rows']))<i class="fas fa-table q-flag" title="Has a table"></i>@endif
+                    @if($q->scenario_id ?? null)<a href="{{ route('faculty.scenario.edit', $q->scenario_id) }}" class="q-scn" title="Part of a scenario: open it to edit the scenario and all its questions"><i class="fas fa-layer-group"></i> Scenario #{{ $q->scenario_id }}</a>@endif
                     <span class="q-id">#{{ $q->id }}</span>
                 </div>
             </td>
@@ -57,7 +58,11 @@
                 <div class="row-menu">
                     <button type="button" class="row-dots" onclick="toggleRowMenu(event, this)" aria-label="Actions for question {{ $q->id }}"><i class="fas fa-ellipsis"></i></button>
                     <div class="row-dropdown">
-                        <a href="{{ route('faculty.question.edit', $q->id) }}"><i class="fas fa-pen"></i> Edit question</a>
+                        @if($q->scenario_id ?? null)
+                            <a href="{{ route('faculty.scenario.edit', $q->scenario_id) }}"><i class="fas fa-layer-group"></i> Edit scenario</a>
+                        @else
+                            <a href="{{ route('faculty.question.edit', $q->id) }}"><i class="fas fa-pen"></i> Edit question</a>
+                        @endif
                         <a href="{{ route('faculty.question.variants', $q->id) }}"><i class="fas fa-shuffle"></i> Manage variants @if($q->variants_count) <span class="rd-count">{{ $q->variants_count }}</span>@endif</a>
                         <form method="POST" action="{{ route('faculty.question.destroy', $q->id) }}"
                               data-confirm="This question and all of its variants will be permanently removed from the test bank."

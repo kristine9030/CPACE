@@ -18,6 +18,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        @include('partials.scenario-box-styles')
         :root { --primary:#7B1D1D; --accent:#c0392b; }
         * { margin:0; padding:0; box-sizing:border-box; }
         body { font-family:'Poppins',sans-serif; background:#f4f5f7; color:#1f2430; }
@@ -81,18 +82,21 @@
             Your instructor has chosen not to show the answer key for this quiz. Your score has been recorded.
         </div>
     @else
+        @php $scn = \App\Support\ScenarioSupport::mapItems($items); @endphp
         @foreach($items as $i => $item)
             @php
+                $sc = $scn[$item->id] ?? null;
                 $picked = $answers[$item->id] ?? null;
                 $correct = $item->correctLabel();
                 $state = $picked === null ? 'skip' : ($picked === $correct ? 'right' : 'wrong');
             @endphp
+            @if($sc && $sc['start'])<div class="sc-group">@include('partials.scenario-box', ['text' => $sc['text'], 'sticky' => false, 'label' => \App\Support\ScenarioSupport::label($i + 1, $sc['size'])])@endif
             <div class="q {{ $state === 'skip' ? '' : $state }}">
                 <div class="q-head">
                     <span>Question {{ $i + 1 }} · {{ $item->points }} pt{{ $item->points === 1 ? '' : 's' }}</span>
                     <span class="tag t-{{ $state }}">{{ ['right' => 'Correct', 'wrong' => 'Incorrect', 'skip' => 'Not answered'][$state] }}</span>
                 </div>
-                <div class="q-text">{{ $item->question_text }}</div>
+                <div class="q-text">{{ \App\Support\RichText::render($item->question_text) }}</div>
                 @include('partials.question-exhibit', ['item' => $item])
                 @foreach($item->choices as $choice)
                     @php $isC = $choice['label'] === $correct; $isP = $choice['label'] === $picked; @endphp
@@ -104,9 +108,10 @@
                     </div>
                 @endforeach
                 @if($item->explanation)
-                    <div class="expl"><b>Explanation:</b> {{ $item->explanation }}</div>
+                    <div class="expl"><b>Explanation:</b> {{ \App\Support\RichText::render($item->explanation) }}</div>
                 @endif
             </div>
+            @if($sc && $sc['position'] === $sc['size'])</div>@endif
         @endforeach
     @endif
 </div>

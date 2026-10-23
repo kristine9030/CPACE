@@ -32,6 +32,7 @@
            selection popup (and any other browser selection toolbar) from
            appearing over a highlighted question/choice. */
         .wrap { max-width:820px; margin:0 auto; padding:22px 16px 120px; -webkit-user-select:none; user-select:none; }
+        @include('partials.scenario-box-styles')
         .q { background:#fff; border-radius:16px; padding:22px 24px; margin-bottom:14px; box-shadow:0 1px 6px rgba(0,0,0,.05); scroll-margin-top:110px; }
         .q-label { font-size:10.5px; font-weight:700; color:#9ca3af; text-transform:uppercase; letter-spacing:.8px; margin-bottom:8px; display:flex; justify-content:space-between; }
         .q-text { font-size:15.5px; font-weight:500; line-height:1.65; color:#111; margin-bottom:14px; }
@@ -88,13 +89,16 @@
 <div class="wrap">
     <form method="POST" action="{{ route('class-quiz.submit', $quiz->share_token) }}" id="quizForm">
         @csrf
+        @php $scn = \App\Support\ScenarioSupport::mapItems($items); @endphp
         @foreach($items as $i => $item)
+            @php $sc = $scn[$item->id] ?? null; @endphp
+            @if($sc && $sc['start'])<div class="sc-group">@include('partials.scenario-box', ['text' => $sc['text'], 'label' => \App\Support\ScenarioSupport::label($i + 1, $sc['size'])])@endif
             <div class="q" id="q-{{ $i }}">
                 <div class="q-label">
                     <span>Question {{ $i + 1 }} of {{ $items->count() }}</span>
                     <span>{{ $item->points }} pt{{ $item->points === 1 ? '' : 's' }}</span>
                 </div>
-                <div class="q-text">{{ $item->question_text }}</div>
+                <div class="q-text">{{ \App\Support\RichText::render($item->question_text) }}</div>
                 @include('partials.question-exhibit', ['item' => $item])
                 <div class="choices">
                     @foreach($item->choices as $choice)
@@ -106,6 +110,7 @@
                     @endforeach
                 </div>
             </div>
+            @if($sc && $sc['position'] === $sc['size'])</div>@endif
         @endforeach
     </form>
 </div>
@@ -119,6 +124,11 @@
 
 <script>
 (function () {
+    // keep a scenario visible just under the sticky header while its questions scroll by
+    const head = document.querySelector('.top');
+    const setTop = () => document.documentElement.style.setProperty('--sc-top', (head ? head.offsetHeight + 8 : 8) + 'px');
+    setTop(); window.addEventListener('resize', setTop);
+
     const TOTAL = {{ $items->count() }};
     const form = document.getElementById('quizForm');
     const submitBtn = document.getElementById('submitBtn');

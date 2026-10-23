@@ -47,11 +47,13 @@
                    style="--sc-base:{{ $card['theme']['base'] }}; --sc-dark:{{ $card['theme']['dark'] }};">
                     <div class="sc-banner">
                         <i class="fas {{ $card['icon'] }} sc-illus"></i>
+                        @include('partials.subject-info-btn', ['subject' => $card['subject'], 'variant' => 'corner'])
                         <div class="sc-code">{{ $card['subject']->code }}</div>
                         <div class="sc-name">{{ $card['subject']->name }}</div>
                     </div>
                     <div class="sc-icon"><i class="fas {{ $card['icon'] }}"></i></div>
                     <div class="sc-body">
+                        @if(filled($card['subject']->description))<div class="sc-desc" title="{{ $card['subject']->description }}" style="font-size:11.5px;line-height:1.45;color:#8a8a8e;margin-bottom:8px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">{{ $card['subject']->description }}</div>@endif
                         <div class="sc-stats">
                             <span><strong>{{ $card['total'] }}</strong> total</span>
                             @if($card['draft'] > 0)<span>{{ $card['draft'] }} draft</span>@endif
