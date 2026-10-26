@@ -32,8 +32,7 @@ class HelpCenter
         return [
             'role'  => 'Student Reviewer',
             'intro' => 'Guides for practising, taking mock exams, and tracking your CPA board readiness.',
-            // Planned chapters, shown as a "coming soon" outline until the manual is written.
-            'manual' => ['Getting started and your dashboard', 'Resources and learning materials', 'Practice quizzes and class quizzes', 'Taking a proctored mock exam', 'Performance, calendar and achievements', 'Community, messages and settings'],
+            'manual' => self::manualChapters(),
             'quickLinks' => [
                 ['icon' => 'fa-pen-fancy',     'label' => 'Practice Quizzes', 'hint' => 'Adaptive drills by topic',        'url' => route('adaptive-quizzes')],
                 ['icon' => 'fa-file-alt',      'label' => 'Mock Exams',       'hint' => 'Timed, proctored board simulations', 'url' => route('mock-exams')],
@@ -68,8 +67,7 @@ class HelpCenter
         return [
             'role'  => 'Faculty',
             'intro' => 'Guides for building your test bank, running class quizzes and mock exams, and monitoring students.',
-            // Planned chapters, shown as a "coming soon" outline until the manual is written.
-            'manual' => ['Getting started and your dashboard', 'Building and importing the test bank', 'Uploading learning materials', 'Creating class quizzes', 'Building a mock exam for review', 'Student performance and reports'],
+            'manual' => self::manualChapters(),
             'quickLinks' => [
                 ['icon' => 'fa-database',       'label' => 'Test Bank',           'hint' => 'Write, import and review questions', 'url' => route('faculty.test-bank')],
                 ['icon' => 'fa-folder-open',    'label' => 'Learning Materials',  'hint' => 'Upload handouts for your subjects',   'url' => route('faculty.materials')],
@@ -103,8 +101,7 @@ class HelpCenter
         return [
             'role'  => 'Program Chair',
             'intro' => 'Administration guides, plus the Support Inbox where every request from students, faculty and alumni lands.',
-            // Planned chapters, shown as a "coming soon" outline until the manual is written.
-            'manual' => ['Getting started and your dashboard', 'Student and faculty accounts', 'Sections and subject assignments', 'Reviewing, publishing and monitoring mock exams', 'Communications and analytics', 'Handling the Support Inbox'],
+            'manual' => self::manualChapters(),
             'quickLinks' => [
                 ['icon' => 'fa-life-ring',        'label' => 'Support Inbox',       'hint' => 'Answer and resolve requests',     'url' => route('chair.support.index')],
                 ['icon' => 'fa-user-graduate',    'label' => 'Students',            'hint' => 'Enrol, import and manage',        'url' => route('chair.students')],
@@ -129,13 +126,33 @@ class HelpCenter
         ];
     }
 
+    /**
+     * Table of contents for the single downloadable PDF ("help.manual"),
+     * which covers every role in one document. Kept in one place so the
+     * outline shown on the page can't drift from what the file actually has.
+     */
+    private static function manualChapters(): array
+    {
+        return [
+            'System overview',
+            'How to sign in and first-time setup',
+            'Student workflow',
+            'Faculty workflow',
+            'Program Chair workflow',
+            'Alumni and community use',
+            'Messages, notifications, and search',
+            'Help and support',
+            'Security, privacy, and proctoring',
+            'Quick reference checklist',
+        ];
+    }
+
     private static function alumni(): array
     {
         return [
             'role'  => 'Alumni',
             'intro' => 'Guides for the alumni community, the resource library and your profile.',
-            // Planned chapters, shown as a "coming soon" outline until the manual is written.
-            'manual' => ['Getting started as alumni', 'Posting on the community feed', 'Sharing in the resource library', 'Messages and group chats', 'Your alumni profile'],
+            'manual' => self::manualChapters(),
             'quickLinks' => [
                 ['icon' => 'fa-people-group', 'label' => 'Community Feed',   'hint' => 'Post tips and encouragement',   'url' => route('community.index')],
                 ['icon' => 'fa-book',         'label' => 'Resource Library', 'hint' => 'Share review materials',        'url' => route('community.resources.index')],

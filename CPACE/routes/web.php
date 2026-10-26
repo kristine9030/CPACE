@@ -122,6 +122,7 @@ Route::middleware(['auth', 'no-back-cache'])->group(function () {
 
     // Help & Support - every role. Tickets are visible to their requester and the Program Chair.
     Route::get('/help', [HelpCenterController::class, 'index'])->name('help.index');
+    Route::get('/help/manual', [HelpCenterController::class, 'manual'])->name('help.manual');
     Route::post('/help/tickets', [HelpCenterController::class, 'store'])->middleware('throttle:6,1')->name('help.tickets.store');
     Route::get('/help/tickets/{report}', [HelpCenterController::class, 'show'])->name('help.tickets.show');
     Route::post('/help/tickets/{report}/replies', [HelpCenterController::class, 'reply'])->middleware('throttle:20,1')->name('help.tickets.reply');

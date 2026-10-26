@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
 /**
@@ -44,6 +45,22 @@ class HelpCenterController extends Controller
             'tickets'    => $tickets,
             'categories' => IssueReport::CATEGORIES,
             'openInbox'  => $openInbox,
+        ]);
+    }
+
+    /**
+     * Streams the CPAce user manual PDF. Same document for every role (it
+     * covers each workflow in its own part); lives on the private disk like
+     * other served files, so only signed-in users can reach it.
+     */
+    public function manual()
+    {
+        $path = 'manual/CPAce-User-Manual.pdf';
+
+        abort_unless(Storage::disk('local')->exists($path), 404);
+
+        return Storage::disk('local')->download($path, 'CPAce User Manual.pdf', [
+            'Cache-Control' => 'private, no-store, max-age=0',
         ]);
     }
 
