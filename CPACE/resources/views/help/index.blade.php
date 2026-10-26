@@ -96,17 +96,16 @@
         @endforeach
     </div>
 
-    {{-- Placeholder until the written manual is ready. --}}
     <section class="card manual" id="manual" aria-labelledby="manualTitle">
         <div class="manual-head">
             <span class="manual-icon"><i class="fas fa-book-open-reader"></i></span>
             <div>
-                <h2 class="card-title" id="manualTitle" style="margin:0">User Manual <span class="soon">Coming soon</span></h2>
-                <p class="card-sub" style="margin:4px 0 0">A step-by-step guide for {{ $help['role'] }} accounts is being prepared. Here’s what it will cover.</p>
+                <h2 class="card-title" id="manualTitle" style="margin:0">User Manual</h2>
+                <p class="card-sub" style="margin:4px 0 0">A step-by-step guide covering every role, including {{ $help['role'] }}. Here’s what it covers.</p>
             </div>
-            <button class="btn btn-ghost manual-dl" type="button" disabled aria-disabled="true" title="Available once the manual is published">
+            <a class="btn btn-ghost manual-dl" href="{{ route('help.manual') }}">
                 <i class="fas fa-file-arrow-down"></i> Download PDF
-            </button>
+            </a>
         </div>
         <ol class="manual-list">
             @foreach($help['manual'] as $i => $chapter)

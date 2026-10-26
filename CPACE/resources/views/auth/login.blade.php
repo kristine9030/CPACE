@@ -930,13 +930,13 @@
                     <div class="demo-accounts">
                         <div class="divider">or try a demo account</div>
                         <div class="demo-grid">
-                            <button type="button" class="demo-btn" onclick="fillDemo('0918millan@gmail.com', '123_Millan')">
+                            <button type="button" class="demo-btn" onclick="fillDemo('chair@cpace.test', 'ProgramChair123')">
                                 <i class="fas fa-user-tie"></i> Program Chair
                             </button>
-                            <button type="button" class="demo-btn" onclick="fillDemo('layscapricorn@gmail.com', '123_Millan')">
+                            <button type="button" class="demo-btn" onclick="fillDemo('layscapricorn@gmail.com', '123millan')">
                                 <i class="fas fa-user-graduate"></i> Student
                             </button>
-                            <button type="button" class="demo-btn" onclick="fillDemo('detorreskristine58@gmail.com', 'Tintin0903')">
+                            <button type="button" class="demo-btn" onclick="fillDemo('felman@gmail.com', '123millan')">
                                 <i class="fas fa-chalkboard-teacher"></i> Faculty
                             </button>
                             <button type="button" class="demo-btn" onclick="fillDemo('adrian.cornado@cpace.edu', '123_Adrian')">
