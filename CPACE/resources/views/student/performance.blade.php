@@ -310,6 +310,11 @@
         .ai-panel-head button:hover { background: var(--primary); color: #fff; }
         .ai-panel-head button:disabled { opacity: 0.5; cursor: not-allowed; }
 
+        .ai-panel-disclaimer {
+            font-size: 10px; color: #aaa; text-align: center;
+            padding: 6px 22px; border-bottom: 1px solid var(--line);
+        }
+
         .ai-panel-body {
             padding: 18px 22px;
             overflow-y: auto;
@@ -1792,6 +1797,7 @@
                 <button type="button" id="aiCloseBtn" title="Close"
                     onclick="document.getElementById('aiOverlay').classList.remove('open')"><i class="fas fa-xmark"></i></button>
             </div>
+            <div class="ai-panel-disclaimer">AI-generated — may be inaccurate. Verify important details. Up to 20 refreshes/day.</div>
             <div class="ai-panel-body" id="aiPanelBody">
                 <div class="ai-loading"><i class="fas fa-circle-notch fa-spin"></i> Analyzing your performance...</div>
             </div>

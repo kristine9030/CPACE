@@ -698,6 +698,7 @@
 
         #quizModal .modal { max-width: 660px; }
         .quiz-sub { font-size: 12px; color: #8a8a8e; margin-top: 3px; }
+        .quiz-disclaimer { font-size: 10px; color: #aaa; text-align: center; padding: 6px 20px; border-bottom: 1px solid #f2f2f4; }
 
         .quiz-state { padding: 46px 24px; text-align: center; color: #8a8a8e; font-size: 13px; }
         .quiz-state i { font-size: 30px; color: var(--brand); display: block; margin-bottom: 14px; }
@@ -1090,6 +1091,7 @@
                 </div>
                 <button class="modal-close" onclick="closeModal('quizModal')">&times;</button>
             </div>
+            <div class="quiz-disclaimer">AI-generated — may be inaccurate. Verify important details. Up to 30 quizzes/day.</div>
             <div class="modal-body" id="quizBody"></div>
             <div class="modal-foot" id="quizFoot"></div>
         </div>

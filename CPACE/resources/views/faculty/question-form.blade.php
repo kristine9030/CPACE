@@ -319,6 +319,7 @@
                     <button type="button" class="btn" id="aiDraftBtn" style="background:#7c3aed;color:white;">
                         <i class="fas fa-wand-magic-sparkles"></i> Draft with AI
                     </button>
+                    <p style="font-size:10px;color:#aaa;text-align:center;margin:10px 0 0;">AI-generated — may be inaccurate. Review before saving. Up to 100 drafts/day.</p>
                     </div></div>
                 </div>
 

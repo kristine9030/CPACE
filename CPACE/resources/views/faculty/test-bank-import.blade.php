@@ -166,7 +166,7 @@
                 <div class="note">
                     <i class="fas fa-circle-info"></i>
                     <div>
-                        <strong>Nothing is saved until you review and approve it</strong> on the next screen.
+                        <strong>Nothing is saved until you review and approve it</strong> on the next screen. AI-generated — may be inaccurate. Up to 40 imports/day.
                     </div>
                 </div>
 
