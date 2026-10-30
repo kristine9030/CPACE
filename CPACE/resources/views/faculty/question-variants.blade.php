@@ -233,6 +233,7 @@
                             <button type="submit" class="btn btn-primary"><i class="fas fa-check"></i> Save Variant</button>
                         </div>
                     </div>
+                    <p style="font-size:10px;color:#aaa;text-align:center;margin:10px 0 0;">AI-generated — may be inaccurate. Review before saving. Up to 100 suggestions/day.</p>
                 </form>
             </div>
         </div>

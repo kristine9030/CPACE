@@ -71,6 +71,11 @@
     }
     .ai-head .ai-clear:hover { background: rgba(255,255,255,0.15); color: #fff; }
 
+    .ai-disclaimer {
+        font-size: 10px; color: #aaa; text-align: center;
+        padding: 6px 14px; border-bottom: 1px solid #f0f0f0; flex-shrink: 0;
+    }
+
     .ai-body {
         flex: 1;
         overflow-y: auto;
@@ -205,6 +210,7 @@
         </div>
         <button type="button" class="ai-clear" id="aiClearBtn" title="Clear conversation"><i class="fas fa-rotate-left"></i></button>
     </div>
+    <div class="ai-disclaimer">AI-generated — may be inaccurate. Verify important details. Up to 60 messages/day.</div>
     <div class="ai-body" id="aiBody">
         <div class="ai-welcome" id="aiWelcome">
             <i class="fas fa-highlighter"></i>

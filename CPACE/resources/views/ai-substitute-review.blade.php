@@ -38,6 +38,7 @@
         .rv-title { display:flex; align-items:center; gap:9px; font-size:14px; font-weight:700; color:#14283E; }
         .rv-title i { color:#7c3aed; }
         .rv-count { font-size:11px; font-weight:700; color:#7c3aed; background:#ede9fe; padding:2px 9px; border-radius:20px; }
+        .rv-disclaimer { font-size:10px; color:#aaa; text-align:center; padding:6px 18px; border-bottom:1px solid #f3f3f3; }
         .rv-sub { font-size:11.5px; color:#999; padding:10px 18px 0; }
 
         /* left: topics short of their TOS count */
@@ -192,6 +193,7 @@
                     <div class="rv-title"><i class="fas fa-clipboard-check"></i> Waiting for your review</div>
                     <span class="rv-count">{{ $pending->flatten(1)->count() }}</span>
                 </div>
+                <div class="rv-disclaimer">AI-generated — may be inaccurate. Verify before approving. Up to 100 generations/day.</div>
                 @forelse($pending as $subjectCode => $questions)
                     <div class="rv-body">
                         <div class="subj-head">{{ $subjectCode }} <span class="count">{{ $questions->count() }} pending</span></div>

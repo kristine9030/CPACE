@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\LimitsAiUsage;
 use App\Models\Question;
 use App\Models\Topic;
 use App\Models\User;
@@ -19,6 +20,10 @@ use Illuminate\Support\Facades\DB;
  */
 class AiSubstituteReviewController extends Controller
 {
+    use LimitsAiUsage;
+
+    private const GAP_FILL_DAILY_LIMIT = 100;
+
     public function index(CurriculumGapFiller $filler)
     {
         $user = Auth::user();
@@ -58,6 +63,10 @@ class AiSubstituteReviewController extends Controller
 
         if (! $user->isChair() && ! $user->assignedSubjects()->where('subjects.id', $topic->subject_id)->exists()) {
             return back()->with('warning', "You're not assigned to this subject, so you can't generate questions for it.");
+        }
+
+        if ($this->aiDailyLimitReached('gap_fill_generate', self::GAP_FILL_DAILY_LIMIT)) {
+            return back()->with('warning', "You've reached today's limit for generating AI substitute questions. Please try again tomorrow.");
         }
 
         // Up to gap_fill_max_per_topic sequential AI calls, each with a Gemini->OpenRouter
