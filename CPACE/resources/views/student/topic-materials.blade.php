@@ -340,6 +340,9 @@
         if (m.file_category === 'image') {
             return `<img src="${esc(m.view_url)}" alt="${esc(m.title)}">`;
         }
+        if (m.file_category === 'video') {
+            return `<video src="${esc(m.view_url)}" controls style="max-width:100%;max-height:100%;margin:auto;background:#000;"></video>`;
+        }
         if (OFFICE_CATEGORIES.includes(m.file_category) && IS_PUBLIC_HOST) {
             const viewerUrl = 'https://view.officeapps.live.com/op/embed.aspx?src=' + encodeURIComponent(m.view_url);
             return `<iframe src="${viewerUrl}" title="${esc(m.title)}"></iframe>`;
