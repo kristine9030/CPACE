@@ -53,19 +53,32 @@ class FacultySettingsTest extends TestCase
         parent::tearDown();
     }
 
-    public function test_faculty_can_update_their_name_and_email(): void
+    public function test_faculty_can_update_their_email(): void
     {
         $faculty = $this->faculty();
 
         $this->actingAs($faculty)->post(route('faculty.settings.profile'), [
-            'first_name' => 'Updated',
-            'last_name' => 'Name',
             'email' => 'updated@example.com',
         ])->assertRedirect();
 
+        $this->assertSame('updated@example.com', $faculty->fresh()->email);
+    }
+
+    public function test_faculty_cannot_change_their_own_name_via_settings(): void
+    {
+        $faculty = $this->faculty();
+        $originalFirstName = $faculty->first_name;
+        $originalLastName = $faculty->last_name;
+
+        $this->actingAs($faculty)->post(route('faculty.settings.profile'), [
+            'first_name' => 'Updated',
+            'last_name' => 'Name',
+            'email' => $faculty->email,
+        ])->assertRedirect();
+
         $fresh = $faculty->fresh();
-        $this->assertSame('Updated', $fresh->first_name);
-        $this->assertSame('updated@example.com', $fresh->email);
+        $this->assertSame($originalFirstName, $fresh->first_name);
+        $this->assertSame($originalLastName, $fresh->last_name);
     }
 
     public function test_faculty_cannot_update_their_email_to_one_already_taken_by_someone_else(): void
