@@ -326,6 +326,8 @@
         font-size: 13.5px; font-family: 'Poppins', sans-serif; color: #1a1a1a; outline: none;
     }
     .fp-field input:focus { border-color: var(--primary); }
+    .fp-field input:disabled { background: #f4f5f7; color: #888; cursor: not-allowed; }
+    .fp-name-note { margin: -6px 0 14px; font-size: 11.5px; color: #999; }
     .fp-row-2 { display: flex; gap: 12px; }
     .fp-row-2 .fp-field { flex: 1; }
     .fp-modal-footer { display: flex; justify-content: flex-end; gap: 10px; padding-top: 6px; }
@@ -446,13 +448,14 @@
                 <div class="fp-row-2">
                     <div class="fp-field">
                         <label>First name</label>
-                        <input type="text" name="first_name" value="{{ old('first_name', Auth::user()->first_name) }}" required>
+                        <input type="text" value="{{ Auth::user()->first_name }}" disabled>
                     </div>
                     <div class="fp-field">
                         <label>Last name</label>
-                        <input type="text" name="last_name" value="{{ old('last_name', Auth::user()->last_name) }}" required>
+                        <input type="text" value="{{ Auth::user()->last_name }}" disabled>
                     </div>
                 </div>
+                <p class="fp-name-note">To change your name, please contact the Program Chair.</p>
                 <div class="fp-field">
                     <label>Email</label>
                     <input type="email" name="email" value="{{ old('email', Auth::user()->email) }}" required>
