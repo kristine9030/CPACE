@@ -27,16 +27,16 @@ class StudentSettingsController extends Controller
     }
 
     /**
-     * Quick profile edit (name, email, avatar) — used by both the topbar/sidebar
+     * Quick profile edit (email, avatar) — used by both the topbar/sidebar
      * "Profile Settings" links and the Account card on the full settings page.
+     * Name is not editable here — the Program Chair changes it on request,
+     * so names stay reliable for monitoring/attendance.
      */
     public function update(Request $request)
     {
         $user = Auth::user();
 
         $data = $request->validate([
-            'first_name'   => ['required', 'string', 'max:100'],
-            'last_name'    => ['required', 'string', 'max:100'],
             'email'        => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
             'photo'        => ['nullable', 'image', 'max:2048'],
             'avatar_color' => ['nullable', 'string', Rule::in(self::AVATAR_COLORS)],
