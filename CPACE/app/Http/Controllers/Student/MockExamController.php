@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\MockExam;
 use App\Models\MockExamAttempt;
 use App\Models\Subject;
+use App\Services\CertificateService;
 use App\Services\MockExamGrader;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -230,9 +231,19 @@ class MockExamController extends Controller
         // started_at against the exam's own window, never from client state.
         $isLate = now()->greaterThan($mockExam->endsAt());
 
+        // Checked before grading so we can tell whether THIS submission is the
+        // one that completes all 6 subjects (and only then show the celebration).
+        $certificates = app(CertificateService::class);
+        $wasEligible = $certificates->isEligible($student->id);
+
         // Grading, analytics and the recording cleanup live in one place so a
         // submit and a server-side close can never grade differently.
         app(MockExamGrader::class)->grade($mockExam, $attempt, $answers, now(), $isLate);
+
+        if (! $wasEligible && $certificates->isEligible($student->id)) {
+            session()->flash('all_mock_exams_completed', true);
+        }
+
         return redirect()->route('mock-exams.result', $mockExam);
     }
 

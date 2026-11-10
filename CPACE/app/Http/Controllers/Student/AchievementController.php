@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Student;
 use App\Http\Controllers\Controller;
 
 use App\Services\AchievementService;
+use App\Services\CertificateService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -18,7 +19,10 @@ use Illuminate\Support\Facades\DB;
  */
 class AchievementController extends Controller
 {
-    public function __construct(private AchievementService $achievements) {}
+    public function __construct(
+        private AchievementService $achievements,
+        private CertificateService $certificates,
+    ) {}
 
     public function index()
     {
@@ -47,6 +51,7 @@ class AchievementController extends Controller
             'leaderboard'  => $leaderboard,
             'subjectBoards' => $this->achievements->subjectLeaderboards($studentId),
             'daysToExam'   => $daysToExam,
+            'certificate'  => $this->certificates->status($studentId),
         ]);
     }
 }

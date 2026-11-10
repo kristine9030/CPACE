@@ -2086,22 +2086,29 @@
                         <div class="panel-head">
                             <div class="panel-title">
                                 <span class="title-emoji">&#127942;</span>
-                                Your Badges
+                                @{{ view === 'certificates' ? 'Your Certificates' : 'Your Badges' }}
                                 <i class="fas fa-arrow-trend-up title-doodle"></i>
                             </div>
                             <div class="panel-head-right">
-                                <span class="unlocked-count">@{{ earnedCount }} of @{{ totalCount }} unlocked</span>
-                                <button class="see-all-btn" v-on:click="seeAll">See All</button>
+                                <span class="unlocked-count" v-if="view === 'badges'">@{{ earnedCount }} of @{{ totalCount }} unlocked</span>
+                                <button class="see-all-btn" v-if="view === 'badges'" v-on:click="seeAll">See All</button>
                             </div>
                         </div>
 
                         <div class="badge-tabs">
+                            <button type="button" class="badge-tab" v-bind:class="{ active: view === 'badges' }"
+                                    v-on:click="view = 'badges'">Badges</button>
+                            <button type="button" class="badge-tab" v-bind:class="{ active: view === 'certificates' }"
+                                    v-on:click="view = 'certificates'">Certificates</button>
+                        </div>
+
+                        <div class="badge-tabs" v-if="view === 'badges'">
                             <button v-for="c in categoryList" v-bind:key="c.key"
                                     class="badge-tab" v-bind:class="{ active: filter === c.key }"
                                     v-on:click="setFilter(c.key)">@{{ c.label }}</button>
                         </div>
 
-                        <div class="badge-grid">
+                        <div class="badge-grid" v-if="view === 'badges'">
                             <div v-for="b in visibleBadges" v-bind:key="b.key"
                                  class="badge-card" v-bind:class="[ 'c-' + b.colour, { locked: !b.earned } ]"
                                  v-on:click="onBadgeClick(b, $event)">
@@ -2128,10 +2135,57 @@
                             </div>
                         </div>
 
-                        <div class="badge-empty" v-if="visibleBadges.length === 0"
+                        <div class="badge-empty" v-if="view === 'badges' && visibleBadges.length === 0"
                              style="text-align:center; color:#999; font-size:13px; padding:20px 0 24px;">
                             <img src="{{ asset('images/13.png') }}" alt="" style="width:110px; height:110px; object-fit:contain; display:block; margin:0 auto 8px;">
                             No badges in this category yet &mdash; keep studying to unlock the surprise!
+                        </div>
+
+                        <!-- CERTIFICATES -->
+                        <div v-if="view === 'certificates'" style="padding: 6px 0 4px;">
+                            <div class="badge-cert" v-bind:class="{ locked: !certificate.eligible }" style="max-width:380px; margin:0 auto 20px;">
+                                <span class="cert-spark a">&#10024;</span>
+                                <span class="cert-spark b">&#11088;</span>
+                                <span class="cert-spark c">&#10024;</span>
+                                <div class="cert-brand">CPACE &middot; CPA Reviewer</div>
+                                <div class="badge-medal-wrap">
+                                    <div class="badge-rays"></div>
+                                    <div class="badge-sparkle s1"></div>
+                                    <div class="badge-sparkle s2"></div>
+                                    <div class="badge-sparkle s3"></div>
+                                    <div class="badge-medal"><i class="fas fa-award"></i></div>
+                                </div>
+                                <div class="cert-name">Certificate of Completion</div>
+                                <div class="cert-desc">Awarded for finishing the mock exam in all 6 subjects.</div>
+                                <div v-if="certificate.eligible" class="cert-status">
+                                    <i class="fas fa-check-circle"></i> Unlocked
+                                </div>
+                                <div v-else class="cert-status locked">
+                                    <i class="fas fa-hourglass-half"></i> @{{ certificate.completed }}/@{{ certificate.total }} subjects complete
+                                </div>
+                            </div>
+
+                            <div style="text-align:center; margin-bottom:22px;">
+                                <a v-if="certificate.eligible" class="badge-save-btn" style="display:inline-flex; max-width:260px;"
+                                   href="{{ route('certificate.download') }}">
+                                    <i class="fas fa-download"></i> Download Certificate
+                                </a>
+                                <button v-else class="badge-save-btn" disabled style="display:inline-flex; max-width:260px; opacity:.65; cursor:default;">
+                                    <i class="fas fa-lock"></i> Finish all 6 mock exams to unlock
+                                </button>
+                                <p style="font-size:11.5px; color:#999; margin-top:10px;">
+                                    The official certificate design is still being finalized &mdash; this is a placeholder document.
+                                </p>
+                            </div>
+
+                            <div style="max-width:380px; margin:0 auto;">
+                                <div v-for="s in certificate.subjects" v-bind:key="s.subject_id"
+                                     style="display:flex; align-items:center; justify-content:space-between; padding:9px 4px; border-bottom:1px solid #f1eef0; font-size:13px;">
+                                    <span style="color:#333;">@{{ s.name }}</span>
+                                    <i class="fas" v-bind:class="s.done ? 'fa-check-circle' : 'fa-lock'"
+                                       v-bind:style="{ color: s.done ? '#16a34a' : '#c3c9cf' }"></i>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Badge detail modal -->
@@ -2392,8 +2446,9 @@
     <script src="https://unpkg.com/vue@3.4.38/dist/vue.global.prod.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
     <script>
-        window.__BADGES__     = @json($badges);
-        window.__CATEGORIES__ = @json($categories);
+        window.__BADGES__      = @json($badges);
+        window.__CATEGORIES__  = @json($categories);
+        window.__CERTIFICATE__ = @json($certificate);
 
         (function () {
             if (!window.Vue) { console.warn('Vue failed to load — badges will not be interactive.'); return; }
@@ -2580,6 +2635,8 @@
                     return {
                         badges: window.__BADGES__ || [],
                         categories: window.__CATEGORIES__ || {},
+                        certificate: window.__CERTIFICATE__ || { eligible: false, completed: 0, total: 6, subjects: [] },
+                        view: 'badges',
                         filter: 'all',
                         active: null,
                         saving: false,
@@ -2596,6 +2653,11 @@
                             ? this.badges
                             : this.badges.filter(b => b.category === this.filter);
                     },
+                },
+                mounted() {
+                    if (window.location.hash === '#certificates') {
+                        this.view = 'certificates';
+                    }
                 },
                 methods: {
                     setFilter(key) { this.filter = key; },

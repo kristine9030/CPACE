@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Student\AchievementController;
+use App\Http\Controllers\Student\CertificateController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Auth\AccountSetupController;
 use App\Http\Controllers\Auth\FacultyAccountSetupController;
@@ -514,6 +515,7 @@ Route::middleware(['auth', 'no-back-cache'])->group(function () {
     Route::post('/calendar/plan', [CalendarController::class, 'storePlan'])->name('calendar.plan.store');
     Route::delete('/calendar/plan/{id}', [CalendarController::class, 'destroyPlan'])->name('calendar.plan.destroy');
     Route::get('/achievements', [AchievementController::class, 'index'])->name('achievements');
+    Route::get('/achievements/certificate/download', [CertificateController::class, 'download'])->name('certificate.download');
 
     // Settings & profile
     Route::get('/settings', [StudentSettingsController::class, 'edit'])->name('settings');
