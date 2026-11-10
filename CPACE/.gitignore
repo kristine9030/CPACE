@@ -26,6 +26,12 @@ Thumbs.db
 # Raw JMeter result logs (large; regenerate with testing/jmeter/cpace-load-test.jmx)
 /testing/jmeter/results/
 /testing/jmeter/results_local/
+
+# Raw Locust result logs (large; regenerate with testing/locust/cpace_load_test.py)
+/testing/locust/results_local/
+/testing/locust/results_local_apache/
+/testing/locust/__pycache__/
+
 .env.*
 !.env.example
 
