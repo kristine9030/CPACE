@@ -362,6 +362,34 @@ class FacultyTestBankTest extends TestCase
         $response->assertViewHas('questions', fn ($questions) => $questions->total() === 1);
     }
 
+    public function test_searching_by_topic_name_finds_its_questions(): void
+    {
+        $faculty = $this->faculty();
+        $topicId = $this->topic($faculty); // named "Inventory"
+        $this->mcqQuestion($topicId, $faculty->id, correct: 'a'); // question_text is "Seed question", no "Inventory" in it
+
+        $response = $this->actingAs($faculty)->get(route('faculty.test-bank', ['search' => 'Inventory']));
+
+        $response->assertOk();
+        $response->assertViewHas('questions', fn ($questions) => $questions->total() === 1);
+    }
+
+    public function test_searching_by_question_text_still_works_alongside_topic_search(): void
+    {
+        $faculty = $this->faculty();
+        $topicId = $this->topic($faculty); // named "Inventory"
+        DB::table('questions')->insert([
+            'topic_id' => $topicId, 'created_by' => $faculty->id,
+            'question_text' => 'What is the FIFO method?', 'question_type' => 'true_false', 'difficulty' => 'easy',
+            'created_at' => now(), 'updated_at' => now(),
+        ]);
+
+        $response = $this->actingAs($faculty)->get(route('faculty.test-bank', ['search' => 'FIFO']));
+
+        $response->assertOk();
+        $response->assertViewHas('questions', fn ($questions) => $questions->total() === 1);
+    }
+
     public function test_the_add_and_edit_question_forms_render_for_mcq_and_true_false(): void
     {
         $faculty = $this->faculty();

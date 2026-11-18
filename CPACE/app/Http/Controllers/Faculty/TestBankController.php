@@ -114,7 +114,9 @@ class TestBankController extends Controller
             ->withCount('variants');
 
         if ($search = $request->input('search')) {
-            $query->where('questions.question_text', 'like', "%{$search}%");
+            $query->where(fn ($q) => $q
+                ->where('questions.question_text', 'like', "%{$search}%")
+                ->orWhere('topics.name', 'like', "%{$search}%"));
         }
         if ($subjectId = $request->input('subject')) {
             $query->where('subjects.id', $subjectId);

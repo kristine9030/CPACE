@@ -144,6 +144,22 @@
     </main>
 </div>
 
+@if (session('all_mock_exams_completed'))
+    <div id="certCompleteOverlay" style="position:fixed; inset:0; background:rgba(24,8,8,.6); backdrop-filter:blur(4px); display:flex; align-items:center; justify-content:center; z-index:9000; padding:20px;">
+        <div style="background:#fff; border-radius:24px; width:min(420px, 100%); padding:34px 28px 28px; text-align:center; box-shadow:0 30px 80px rgba(0,0,0,.45);">
+            <div style="font-size:52px; margin-bottom:14px;">&#127881;</div>
+            <h2 style="font-family:'Montserrat',sans-serif; font-size:21px; color:#14283E; margin-bottom:10px;">You've finished all 6 mock exams!</h2>
+            <p style="font-size:13.5px; color:#666; line-height:1.6; margin-bottom:22px;">
+                Great work &mdash; you can now check your Certificate of Completion under Achievements.
+            </p>
+            <a href="{{ route('achievements') }}#certificates" style="display:inline-flex; align-items:center; justify-content:center; gap:8px; background:linear-gradient(160deg,#ef5b4d,#c0392b); color:#fff; padding:13px 22px; border-radius:14px; font-size:13.5px; font-weight:700; text-decoration:none; box-shadow:0 6px 16px rgba(192,57,43,.4);">
+                <i class="fas fa-award"></i> View my Certificate
+            </a>
+            <button type="button" onclick="document.getElementById('certCompleteOverlay').remove()" style="display:block; margin:16px auto 0; background:none; border:none; color:#999; font-size:12.5px; cursor:pointer;">Maybe later</button>
+        </div>
+    </div>
+@endif
+
 @include('partials.global-search')
 @include('partials.alerts')
 <script>

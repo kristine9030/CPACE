@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Student\AchievementController;
+use App\Http\Controllers\Student\CertificateController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Auth\AccountSetupController;
 use App\Http\Controllers\Auth\FacultyAccountSetupController;
@@ -27,6 +28,7 @@ use App\Http\Controllers\QuizProctorController;
 use App\Http\Controllers\Student\ReviewNoteController;
 use App\Http\Controllers\Student\AiTutorController;
 use App\Http\Controllers\Faculty\TestBankController;
+use App\Http\Controllers\Faculty\TopicController as FacultyTopicController;
 use App\Http\Controllers\Faculty\ScenarioController;
 use App\Http\Controllers\Faculty\QuestionImportController;
 use App\Http\Controllers\Faculty\MaterialController;
@@ -308,6 +310,13 @@ Route::middleware(['auth', 'no-back-cache'])->group(function () {
         Route::post('/test-bank/ai-review/{id}/reject', [AiSubstituteReviewController::class, 'reject'])->name('test-bank.ai-review.reject');
         Route::post('/test-bank/ai-review/generate/{topic}', [AiSubstituteReviewController::class, 'generate'])->middleware('throttle:8,1')->name('test-bank.ai-review.generate');
         Route::post('/test-bank/curriculum', [TestBankController::class, 'switchCurriculum'])->name('test-bank.curriculum');
+        // Faculty-managed topics (year/section/semester assignment) for their own assigned subjects
+        Route::get('/test-bank/topics', [FacultyTopicController::class, 'index'])->name('test-bank.topics');
+        Route::post('/test-bank/topics/{subject}', [FacultyTopicController::class, 'storeTopic'])->name('test-bank.topics.store');
+        Route::put('/test-bank/topics/{subject}/{topic}', [FacultyTopicController::class, 'updateTopic'])->name('test-bank.topics.update');
+        Route::delete('/test-bank/topics/{subject}/{topic}', [FacultyTopicController::class, 'destroyTopic'])->name('test-bank.topics.destroy');
+        Route::patch('/test-bank/topics/{subject}/{topic}/toggle', [FacultyTopicController::class, 'toggleTopic'])->name('test-bank.topics.toggle');
+        Route::post('/test-bank/topics/{subject}/bulk-destroy', [FacultyTopicController::class, 'bulkDestroyTopics'])->name('test-bank.topics.bulk-destroy');
         Route::get('/test-bank/create', [TestBankController::class, 'create'])->name('question.create');
         Route::post('/test-bank/ai-draft', [TestBankController::class, 'aiDraft'])->middleware('throttle:8,1')->name('question.ai-draft');
         Route::get('/test-bank/scenarios/create', [ScenarioController::class, 'create'])->name('scenario.create');
@@ -514,6 +523,7 @@ Route::middleware(['auth', 'no-back-cache'])->group(function () {
     Route::post('/calendar/plan', [CalendarController::class, 'storePlan'])->name('calendar.plan.store');
     Route::delete('/calendar/plan/{id}', [CalendarController::class, 'destroyPlan'])->name('calendar.plan.destroy');
     Route::get('/achievements', [AchievementController::class, 'index'])->name('achievements');
+    Route::get('/achievements/certificate/download', [CertificateController::class, 'download'])->name('certificate.download');
 
     // Settings & profile
     Route::get('/settings', [StudentSettingsController::class, 'edit'])->name('settings');
