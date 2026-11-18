@@ -73,9 +73,9 @@
         .topic-search input[type=text]:focus { outline:none; border-color:var(--primary); }
         .audience-group { margin-bottom:12px; }
         .audience-label { font-size:10.5px; font-weight:600; color:#777; margin-bottom:6px; }
-        .audience-options { display:flex; flex-wrap:wrap; gap:8px; max-height:90px; overflow-y:auto; }
-        .audience-chip { display:flex; align-items:center; gap:6px; font-size:10.5px; color:#555; background:#f5f5f7; border:1px solid #ececef; border-radius:6px; padding:5px 9px; cursor:pointer; white-space:nowrap; }
-        .audience-chip input { margin:0; width:13px; height:13px; accent-color:var(--primary); flex-shrink:0; }
+        .audience-options { display:flex; flex-wrap:wrap; gap:10px; max-height:90px; overflow-y:auto; }
+        .audience-chip { display:flex; align-items:center; gap:9px; font-size:10.5px; color:#555; background:#f5f5f7; border:1px solid #ececef; border-radius:6px; padding:6px 10px; cursor:pointer; white-space:nowrap; }
+        .audience-chip input { margin:0 1px 0 0; width:14px; height:14px; accent-color:var(--primary); flex-shrink:0; }
         .topic-audience-badge { color:#7c3aed; font-weight:600; }
         .empty-msg { font-size:11px;color:#bbb;display:flex;align-items:center;gap:7px;padding:4px 0; }
         .modal-overlay { display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:2000;align-items:center;justify-content:center;padding:20px; }

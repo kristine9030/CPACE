@@ -69,9 +69,9 @@
         .modal-actions { display:flex;justify-content:flex-end;gap:9px;margin-top:20px; }
         .audience-group { margin-bottom:12px; }
         .audience-label { font-size:10.5px; font-weight:600; color:#777; margin-bottom:6px; }
-        .audience-options { display:flex; flex-wrap:wrap; gap:8px; max-height:90px; overflow-y:auto; }
-        .audience-chip { display:flex; align-items:center; gap:6px; font-size:10.5px; color:#555; background:#f5f5f7; border:1px solid #ececef; border-radius:6px; padding:5px 9px; cursor:pointer; white-space:nowrap; }
-        .audience-chip input { margin:0; width:13px; height:13px; accent-color:var(--primary); flex-shrink:0; }
+        .audience-options { display:flex; flex-wrap:wrap; gap:10px; max-height:90px; overflow-y:auto; }
+        .audience-chip { display:flex; align-items:center; gap:9px; font-size:10.5px; color:#555; background:#f5f5f7; border:1px solid #ececef; border-radius:6px; padding:6px 10px; cursor:pointer; white-space:nowrap; }
+        .audience-chip input { margin:0 1px 0 0; width:14px; height:14px; accent-color:var(--primary); flex-shrink:0; }
         @media(max-width:620px) { .modal-grid { grid-template-columns:minmax(0, 1fr); }.full { grid-column:auto; } }
         @media (max-width:980px) { .main { margin-left:0; padding:18px; } }
     </style>
