@@ -16,6 +16,7 @@
         .empty { text-align:center; padding:40px 20px; color:#aaa; }
         .form-group { margin-bottom:16px; } .form-group.full { grid-column:1 / -1; }
         .form-group label { display:block; font-size:12px; font-weight:600; color:#555; margin-bottom:6px; }
+        .hint { font-size:11px; color:#aaa; margin-top:5px; }
 
         /* Opened subject: same gradient banner language as the subject cards, themed per subject. */
         .crumb { display:inline-flex; align-items:center; gap:8px; font-size:12.5px; color:#888; text-decoration:none; margin-bottom:14px; }
