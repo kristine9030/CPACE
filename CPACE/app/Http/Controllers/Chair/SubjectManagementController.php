@@ -2,26 +2,29 @@
 
 namespace App\Http\Controllers\Chair;
 
+use App\Http\Controllers\Concerns\ManagesTopics;
 use App\Http\Controllers\Concerns\SubjectTheme;
 use App\Http\Controllers\Controller;
-use App\Models\CurriculumAudit;
 use App\Models\CurriculumImportBatch;
 use App\Models\CurriculumVersion;
 use App\Models\Section;
 use App\Models\Subject;
 use App\Models\Topic;
 use App\Support\BatchYear;
-use App\Support\CurriculumAuditor;
 use App\Support\CurriculumScope;
-use App\Support\Auditor;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
 
 class SubjectManagementController extends Controller
 {
-    use SubjectTheme;
+    use SubjectTheme, ManagesTopics;
+
+    /** Chair manages every subject's topics, so this hook is always open. */
+    protected function canManageTopicSubject(Subject $subject): bool
+    {
+        return true;
+    }
 
     /**
      * The Subject & Curriculum page. Subjects are shared by every curriculum;
@@ -122,132 +125,6 @@ class SubjectManagementController extends Controller
         return back()->with('status', "{$code} was removed.");
     }
 
-    public function storeTopic(Request $request, Subject $subject)
-    {
-        $version = $this->targetVersion($request);
-        if ($version && ! $version->isEditable()) {
-            return back()->with('error', self::ARCHIVED_MESSAGE);
-        }
-
-        $data = $this->normalizeAudience($this->validateTopic($request, $subject, $version?->id));
-        $topic = $subject->topics()->create($version ? $data + ['curriculum_version_id' => $version->id] : $data);
-
-        $this->audit($topic, CurriculumAudit::ACTION_TOPIC_ADDED, $topic->name);
-        Auditor::log(Auth::user(), 'topic_added', "Added topic \"{$topic->name}\" to {$subject->code}.", 'Topic', $topic->id);
-
-        return back()->with('status', "Topic “{$data['name']}” was added to {$subject->code}.");
-    }
-
-    public function updateTopic(Request $request, Subject $subject, Topic $topic)
-    {
-        abort_unless($topic->subject_id === $subject->id, 404);
-        if ($this->isArchived($topic)) {
-            return back()->with('error', self::ARCHIVED_MESSAGE);
-        }
-
-        $data = $this->normalizeAudience($this->validateTopic($request, $subject, $topic->curriculum_version_id, $topic));
-
-        $siblings = $subject->topics()->inCurriculum($topic->curriculum_version_id)->get();
-        if (! empty($data['parent_id']) && $topic->isSelfOrDescendant((int) $data['parent_id'], $siblings)) {
-            return back()->withInput()->withErrors(['parent_id' => 'A topic cannot be moved under itself or one of its own subtopics.']);
-        }
-
-        $topic->update($data);
-        $this->audit($topic, CurriculumAudit::ACTION_TOPIC_EDITED, $topic->name);
-        Auditor::log(Auth::user(), 'topic_edited', "Edited topic \"{$topic->name}\" in {$subject->code}.", 'Topic', $topic->id);
-
-        return back()->with('status', "Topic “{$topic->name}” was updated.");
-    }
-
-    public function toggleTopic(Subject $subject, Topic $topic)
-    {
-        abort_unless($topic->subject_id === $subject->id, 404);
-        if ($this->isArchived($topic)) {
-            return back()->with('error', self::ARCHIVED_MESSAGE);
-        }
-
-        $topic->update(['is_active' => !$topic->is_active]);
-
-        $status = $topic->is_active ? 'enabled' : 'disabled';
-        return back()->with('status', "Topic “{$topic->name}” has been {$status}.");
-    }
-
-    public function destroyTopic(Subject $subject, Topic $topic)
-    {
-        abort_unless($topic->subject_id === $subject->id, 404);
-        if ($this->isArchived($topic)) {
-            return back()->with('error', self::ARCHIVED_MESSAGE);
-        }
-
-        if ($topic->questions()->exists()) {
-            return back()->with('error', 'This topic contains test-bank questions and cannot be removed. Edit it and mark it inactive instead.');
-        }
-
-        if ($topic->children()->exists()) {
-            return back()->with('error', 'This topic has subtopics and cannot be removed. Remove or reassign its subtopics first.');
-        }
-
-        $name = $topic->name;
-        $this->audit($topic, CurriculumAudit::ACTION_TOPIC_REMOVED, $name);
-        Auditor::log(Auth::user(), 'topic_removed', "Removed topic \"{$name}\" from {$subject->code}.", 'Topic', $topic->id);
-        $topic->delete();
-
-        return back()->with('status', "Topic “{$name}” was removed from {$subject->code}.");
-    }
-
-    public function bulkDestroyTopics(Request $request, Subject $subject)
-    {
-        $ids = collect($request->input('topic_ids', []))->map(fn ($id) => (int) $id)->filter()->unique();
-        if ($ids->isEmpty()) {
-            return back()->with('error', 'No topics were selected.');
-        }
-
-        $pending = $subject->topics()->whereIn('id', $ids)->get()->keyBy('id');
-
-        $removed = [];
-        $skipped = [];
-
-        // Deletes in passes so a selected subtopic clears the way for its
-        // selected parent in the same request, regardless of selection order.
-        do {
-            $progress = false;
-            foreach ($pending as $id => $topic) {
-                if ($this->isArchived($topic) || $topic->questions()->exists()) {
-                    $skipped[] = $topic->name;
-                    $pending->forget($id);
-                    $progress = true;
-                    continue;
-                }
-                if ($topic->children()->exists()) {
-                    continue;
-                }
-
-                $this->audit($topic, CurriculumAudit::ACTION_TOPIC_REMOVED, $topic->name);
-                $topic->delete();
-                $removed[] = $topic->name;
-                $pending->forget($id);
-                $progress = true;
-            }
-        } while ($progress && $pending->isNotEmpty());
-
-        foreach ($pending as $topic) {
-            $skipped[] = $topic->name;
-        }
-
-        if (empty($removed)) {
-            return back()->with('error', 'None of the selected topics could be removed — they contain test-bank questions or subtopics, or belong to an archived curriculum.');
-        }
-
-        $message = count($removed) . ' topic' . (count($removed) === 1 ? '' : 's') . ' removed from ' . $subject->code . '.';
-        if (! empty($skipped)) {
-            $message .= ' ' . count($skipped) . ' skipped (contains questions, subtopics, or archived): ' . implode(', ', $skipped) . '.';
-        }
-
-        Auditor::log(Auth::user(), 'topic_removed', 'Bulk removed ' . count($removed) . " topic(s) from {$subject->code}: " . implode(', ', $removed) . '.', 'Subject', $subject->id);
-
-        return back()->with('status', $message);
-    }
-
     /**
      * Default first batch for a new curriculum: next school year's batch, but
      * never at or before the current curriculum's first batch (the new one
@@ -265,42 +142,6 @@ class SubjectManagementController extends Controller
         return $suggested;
     }
 
-    private const ARCHIVED_MESSAGE = 'This curriculum is archived and kept as read-only history, so its topics can no longer be changed.';
-
-    /**
-     * The curriculum a new topic goes into: the version the chair is viewing
-     * (posted by the form), falling back to the active one.
-     */
-    private function targetVersion(Request $request): ?CurriculumVersion
-    {
-        if (! CurriculumScope::enabled()) {
-            return null;
-        }
-
-        $id = (int) $request->input('curriculum_version_id') ?: CurriculumScope::activeId();
-
-        return $id ? CurriculumVersion::find($id) : null;
-    }
-
-    private function isArchived(Topic $topic): bool
-    {
-        return CurriculumScope::enabled()
-            && $topic->curriculum_version_id !== null
-            && CurriculumVersion::whereKey($topic->curriculum_version_id)->where('status', CurriculumVersion::STATUS_ARCHIVED)->exists();
-    }
-
-    private function audit(Topic $topic, string $action, string $details): void
-    {
-        if (! CurriculumScope::enabled() || $topic->curriculum_version_id === null) {
-            return;
-        }
-
-        $version = CurriculumVersion::find($topic->curriculum_version_id);
-        if ($version) {
-            CurriculumAuditor::record($version, Auth::user(), $action, $details, $topic->subject_id);
-        }
-    }
-
     private function validateSubject(Request $request, ?Subject $subject = null): array
     {
         return $request->validate([
@@ -316,55 +157,4 @@ class SubjectManagementController extends Controller
         ]);
     }
 
-    /**
-     * Names are unique among siblings (same parent) within a subject in ONE
-     * curriculum version: a new curriculum reuses the same names, and the TOS
-     * itself repeats leaf names under different parents ("Accounting for
-     * SMEs"). A parent must be in the same subject and version.
-     */
-    private function validateTopic(Request $request, Subject $subject, ?int $versionId, ?Topic $topic = null): array
-    {
-        $sameCurriculum = function ($query) use ($subject, $versionId) {
-            $query->where('subject_id', $subject->id);
-            if ($versionId !== null) {
-                $query->where('curriculum_version_id', $versionId);
-            }
-        };
-        $parentId = $request->filled('parent_id') ? (int) $request->input('parent_id') : null;
-        $sameParent = function ($query) use ($sameCurriculum, $parentId) {
-            $sameCurriculum($query);
-            $parentId === null ? $query->whereNull('parent_id') : $query->where('parent_id', $parentId);
-        };
-
-        return $request->validate([
-            'name' => [
-                'required', 'string', 'max:150',
-                Rule::unique('topics', 'name')->where($sameParent)->ignore($topic?->id),
-            ],
-            'description' => ['nullable', 'string', 'max:2000'],
-            'parent_id'    => ['nullable', 'integer', Rule::exists('topics', 'id')->where($sameCurriculum)],
-            'sort_order'   => ['required', 'integer', 'min:0', 'max:9999'],
-            'is_active'    => ['required', 'boolean'],
-            'audience_years' => ['nullable', 'array'],
-            'audience_years.*' => ['integer', 'between:1,6'],
-            'audience_sections' => ['nullable', 'array'],
-            'audience_sections.*' => ['string', 'max:100'],
-            'audience_semesters' => ['nullable', 'array'],
-            'audience_semesters.*' => ['integer', 'in:1,2'],
-        ]);
-    }
-
-    /**
-     * Pull the audience arrays out of already-validated data, normalized the
-     * same way MockExamReviewController does (unique, sorted, empty -> null
-     * so "no selection" reads as unrestricted rather than an empty JSON array).
-     */
-    private function normalizeAudience(array $data): array
-    {
-        $data['audience_years'] = collect($data['audience_years'] ?? [])->map(fn ($y) => (int) $y)->unique()->sort()->values()->all() ?: null;
-        $data['audience_sections'] = collect($data['audience_sections'] ?? [])->unique()->sort()->values()->all() ?: null;
-        $data['audience_semesters'] = collect($data['audience_semesters'] ?? [])->map(fn ($s) => (int) $s)->unique()->sort()->values()->all() ?: null;
-
-        return $data;
-    }
 }

@@ -224,6 +224,7 @@
             </div>
         </div>
         <div class="topbar-right">
+            <a href="{{ route('faculty.test-bank.topics') }}" class="btn btn-ghost" title="Assign topics to a year level, section, and semester"><i class="fas fa-list-check"></i> Topics</a>
             <a href="{{ route('faculty.test-bank.import') }}" class="btn btn-ghost"><i class="fas fa-file-import"></i> Import</a>
             <div class="export-wrap">
                 <button class="btn btn-ghost" id="exportBtn" type="button">
