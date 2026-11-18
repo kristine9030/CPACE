@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Faculty;
 
 use App\Http\Controllers\Concerns\ManagesTopics;
+use App\Http\Controllers\Concerns\SubjectTheme;
 use App\Http\Controllers\Controller;
 use App\Models\CurriculumVersion;
 use App\Models\Section;
@@ -21,7 +22,7 @@ use Illuminate\Support\Facades\Schema;
  */
 class TopicController extends Controller
 {
-    use ManagesTopics;
+    use ManagesTopics, SubjectTheme;
 
     protected function canManageTopicSubject(Subject $subject): bool
     {
@@ -61,6 +62,10 @@ class TopicController extends Controller
             'openSubject' => $openSubject,
             'version' => $version,
             'readOnly' => $version !== null && ! $version->isEditable(),
+            'looks' => $subjects->mapWithKeys(fn (Subject $subject) => [$subject->id => [
+                'theme' => self::theme($subject->code),
+                'icon' => self::subjectIcon($subject->code),
+            ]]),
             'sections' => Schema::hasTable('sections')
                 ? Section::where('is_active', true)->orderBy('name')->get(['name', 'year_level'])
                 : collect(),

@@ -11,41 +11,20 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    @include('partials.mock-exam-styles')
     <style>
-        :root { --primary:#7B1D1D; --primary-hover:#6a1818; --primary-light:#f5e8e8; --accent:#c0392b; }
-        * { margin:0; padding:0; box-sizing:border-box; }
-        body { font-family:'Poppins',sans-serif; background:#f4f5f7; color:#333; }
-        .main { margin-left:230px; padding:26px 30px; min-height:100vh; transition:margin-left .3s; }
-        .sidebar.collapsed ~ .main { margin-left:70px; }
-        .topbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:22px; gap:16px; flex-wrap:wrap; }
-        .page-title { font-size:26px; font-weight:700; color:#14283E; }
-        .page-sub { font-size:12px; color:#999; margin-top:2px; }
-        .btn { display:inline-flex; align-items:center; gap:7px; padding:9px 18px; border-radius:8px; font-size:13px; font-weight:600; font-family:'Poppins',sans-serif; cursor:pointer; border:none; text-decoration:none; transition:all .2s; }
-        .btn-primary { background:var(--primary); color:white; } .btn-primary:hover { background:var(--primary-hover); }
-        .btn-ghost { background:white; color:#555; border:1px solid #e0e0e0; } .btn-ghost:hover { background:#f5f5f5; }
-        .btn-sm { padding:7px 13px; font-size:12px; }
-        .card { background:white; border-radius:14px; padding:22px; box-shadow:0 1px 2px rgba(16,24,40,.04), 0 4px 14px rgba(16,24,40,.06); }
-        .card + .card { margin-top:18px; }
         .empty { text-align:center; padding:40px 20px; color:#aaa; }
         .form-group { margin-bottom:16px; } .form-group.full { grid-column:1 / -1; }
         .form-group label { display:block; font-size:12px; font-weight:600; color:#555; margin-bottom:6px; }
-        .hint { font-size:11px; color:#aaa; margin-top:5px; }
 
-        /* Subject picker */
-        .sub-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(230px, 1fr)); gap:14px; }
-        .sub-card { display:flex; align-items:center; gap:13px; padding:16px; background:#fff; border-radius:13px; border-left:4px solid var(--sc-base, var(--primary)); box-shadow:0 1px 2px rgba(16,24,40,.04), 0 4px 14px rgba(16,24,40,.06); text-decoration:none; color:inherit; transition:transform .15s, box-shadow .15s; }
-        .sub-card:hover { transform:translateY(-1px); box-shadow:0 2px 4px rgba(16,24,40,.05), 0 8px 20px rgba(16,24,40,.09); }
-        .sub-ic { width:44px; height:44px; border-radius:12px; flex-shrink:0; background:var(--primary-light); color:var(--primary); display:flex; align-items:center; justify-content:center; font-size:17px; }
-        .sub-code { font-size:14px; font-weight:700; color:#1a1a1a; }
-        .sub-name { font-size:11.5px; color:#888; margin-top:2px; }
-        .sub-topics { font-size:11px; color:#aaa; margin-top:4px; }
-
-        /* Opened subject */
+        /* Opened subject: same gradient banner language as the subject cards, themed per subject. */
         .crumb { display:inline-flex; align-items:center; gap:8px; font-size:12.5px; color:#888; text-decoration:none; margin-bottom:14px; }
         .crumb:hover { color:var(--primary); }
-        .sd-head { position:relative; display:flex; align-items:center; gap:18px; padding:20px 24px; border-radius:16px; color:#fff; margin-bottom:18px; background:linear-gradient(135deg, var(--primary) 0%, #4a1212 100%); }
-        .sd-icon { width:50px; height:50px; border-radius:14px; flex-shrink:0; background:#fff; color:var(--primary); display:flex; align-items:center; justify-content:center; font-size:20px; }
-        .sd-code { font-size:21px; font-weight:700; }
+        .sd-head { position:relative; display:flex; align-items:center; gap:18px; padding:20px 24px; border-radius:16px; color:#fff; margin-bottom:18px; overflow:hidden; background:linear-gradient(135deg, var(--sc-base) 0%, var(--sc-dark) 100%); }
+        .sd-head::before { content:''; position:absolute; inset:0; background:linear-gradient(115deg, rgba(255,255,255,.18) 0%, rgba(255,255,255,0) 55%); pointer-events:none; }
+        .sd-icon { position:relative; width:50px; height:50px; border-radius:14px; flex-shrink:0; background:#fff; color:var(--sc-base); display:flex; align-items:center; justify-content:center; font-size:20px; box-shadow:0 4px 10px -2px rgba(0,0,0,.25); }
+        .sd-titles { position:relative; flex:1; min-width:0; }
+        .sd-code { font-size:21px; font-weight:700; text-shadow:0 1px 4px rgba(0,0,0,.25); }
         .sd-name { font-size:12.5px; opacity:.95; margin-top:2px; }
 
         .section-head { display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:9px; }
@@ -87,11 +66,11 @@
         .toggle-row { display:flex;align-items:center;gap:9px;padding:10px 12px;background:#f8f8fa;border-radius:8px; }
         .toggle-row input { width:17px;height:17px;accent-color:var(--primary); } .toggle-row label { margin:0;font-size:11px; }
         .modal-actions { display:flex;justify-content:flex-end;gap:9px;margin-top:20px; }
-        .audience-group { margin-bottom:8px; }
-        .audience-label { font-size:10.5px; font-weight:600; color:#777; margin-bottom:4px; }
-        .audience-options { display:flex; flex-wrap:wrap; gap:6px; max-height:90px; overflow-y:auto; }
-        .audience-chip { display:flex; align-items:center; gap:4px; font-size:10.5px; color:#555; background:#f5f5f7; border:1px solid #ececef; border-radius:6px; padding:4px 7px; cursor:pointer; }
-        .audience-chip input { margin:0; }
+        .audience-group { margin-bottom:12px; }
+        .audience-label { font-size:10.5px; font-weight:600; color:#777; margin-bottom:6px; }
+        .audience-options { display:flex; flex-wrap:wrap; gap:8px; max-height:90px; overflow-y:auto; }
+        .audience-chip { display:flex; align-items:center; gap:6px; font-size:10.5px; color:#555; background:#f5f5f7; border:1px solid #ececef; border-radius:6px; padding:5px 9px; cursor:pointer; white-space:nowrap; }
+        .audience-chip input { margin:0; width:13px; height:13px; accent-color:var(--primary); flex-shrink:0; }
         @media(max-width:620px) { .modal-grid { grid-template-columns:minmax(0, 1fr); }.full { grid-column:auto; } }
         @media (max-width:980px) { .main { margin-left:0; padding:18px; } }
     </style>
@@ -109,12 +88,12 @@
     </div>
 
     @if($openSubject)
-        @php $subject = $openSubject; @endphp
+        @php $subject = $openSubject; $look = $looks[$subject->id]; @endphp
         <a class="crumb" href="{{ route('faculty.test-bank.topics') }}"><i class="fas fa-arrow-left"></i> All subjects</a>
 
-        <div class="sd-head">
-            <div class="sd-icon"><i class="fas fa-book"></i></div>
-            <div>
+        <div class="sd-head" style="--sc-base:{{ $look['theme']['base'] }}; --sc-dark:{{ $look['theme']['dark'] }};">
+            <div class="sd-icon"><i class="fas {{ $look['icon'] }}"></i></div>
+            <div class="sd-titles">
                 <div class="sd-code">{{ $subject->code }}</div>
                 <div class="sd-name">{{ $subject->name }}</div>
             </div>
@@ -153,15 +132,34 @@
         @if($subjects->isEmpty())
             <div class="card"><div class="empty"><i class="fas fa-layer-group"></i><div>You're not assigned to any subjects yet. Ask your Program Chair for access.</div></div></div>
         @else
-            <div class="sub-grid">
+            <div class="subject-grid">
                 @foreach($subjects as $subject)
-                    <a class="sub-card" href="{{ route('faculty.test-bank.topics', ['subject' => $subject->id]) }}">
-                        <div class="sub-ic"><i class="fas fa-book"></i></div>
-                        <div>
-                            <div class="sub-code">{{ $subject->code }}</div>
-                            <div class="sub-name">{{ $subject->name }}</div>
-                            <div class="sub-topics">{{ $subject->topics->count() }} topic{{ $subject->topics->count() === 1 ? '' : 's' }}</div>
+                    @php
+                        $look = $looks[$subject->id];
+                        $total = $subject->topics->count();
+                        $active = $subject->topics->where('is_active', true)->count();
+                        $inactive = $total - $active;
+                    @endphp
+                    <a class="subject-card" href="{{ route('faculty.test-bank.topics', ['subject' => $subject->id]) }}"
+                       style="--sc-base:{{ $look['theme']['base'] }}; --sc-dark:{{ $look['theme']['dark'] }};">
+                        <div class="sc-banner">
+                            <i class="fas {{ $look['icon'] }} sc-illus"></i>
+                            @include('partials.subject-info-btn', ['subject' => $subject, 'variant' => 'corner'])
+                            <div class="sc-code">{{ $subject->code }}</div>
+                            <div class="sc-name">{{ $subject->name }}</div>
                         </div>
+                        <div class="sc-icon"><i class="fas {{ $look['icon'] }}"></i></div>
+                        <div class="sc-body">
+                            @if(filled($subject->description))
+                                <div class="sc-desc" title="{{ $subject->description }}" style="font-size:11.5px;line-height:1.45;color:#8a8a8e;margin-bottom:8px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">{{ $subject->description }}</div>
+                            @endif
+                            <div class="sc-stats">
+                                <span><strong>{{ $total }}</strong> total</span>
+                                @if($inactive > 0)<span>{{ $inactive }} inactive</span>@endif
+                                @if($active > 0)<span style="color:var(--green);font-weight:600;">{{ $active }} active</span>@endif
+                            </div>
+                        </div>
+                        <div class="sc-foot">Open folder <i class="fas fa-arrow-right"></i></div>
                     </a>
                 @endforeach
             </div>
